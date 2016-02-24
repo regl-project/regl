@@ -82,30 +82,92 @@ Thinking in terms of data flow reframes the problem of rendering as detecting ch
 
 Unfortunately, some of these properties might be really big binary typed arrays. Even scanning this data is expensive, so we need to think carefully about how to detect such changes.
 
-### Do nothing!
+Here are some ways to solve this problem.  In each possible solution there is some psuedocode sketch showing how such a test might be implemented.
+
+### Only update one time
 We could also just sweep the problem under the rug by not allowing for dynamic vertex buffers or texture data, or only changing them at configuration time.
+
+Example implementation:
+
+```JavaScript
+function shouldUpdate(nextProps) {
+  if(this.hasUpdated) {
+    return false
+  }
+  this.hasUpdated = true
+  return true
+}
+```
 
 Systems that don't need dynamic vertex/texture data can reasonably do this (for example shadertoy doesn't need to upload vertex buffers other than once when the page first loads.)
 
-### `update()` method
-Have a special method to notify the system of changes.  Pretty much what we started with.  
+### Notification flag
+Have a special method to notify the system of changes.
 
-WebGL, stack.gl and plot.ly all basically work this way.
+Example implementation:
+
+```JavaScript
+//Somewhere this method is exposed
+function notifyUpdateNeeded() {
+  this.needsUpdate = true
+}
+
+// ...
+
+function shouldUpdate(nextProps) {
+  var needsUpdate = this.needsUpdate
+  this.needsUpdate = false
+  return needsUpdate
+}
+```
 
 ### `dirty` flag
 Maintain a copy of the data in the wrapper, which the user directly mutates.  Whenever data changes, user needs to set a flag notifying the system to flush changes to the GPU.
 
-THREE.js uses this method.
+```JavaScript
+function shouldUpdate(nextProps) {
+  return nextProps.dirty
+}
+```
+
+### Poll a user callback
+The user provides a callback which can be polled by render() method to check if something changed and needs to be updated.  This method is similar to the `dirty` flag technique.
+
+```javascript
+function shouldUpdate(nextProps) {
+  return nextProps.dirty()
+}
+```
 
 ### Naive structural comparison
 Diff the structures by scanning them byte-by-byte.  For typed arrays this is way too slow.  Vertex buffers are just too big to be scanning them every frame, so this is pretty much a no-go.
+
+```javascript
+function shouldUpdate(nextProps) {
+  if(deepEqual(nextProps, this.savedProps)) {
+    return false
+  }
+  this.savedProps = nextProps
+  return true
+}
+```
 
 ### Copy-on-write
 Make a copy of the vertex buffer whenever we modify it.  As a result we can check equality of two data structures by just checking that their references are equal.
 
 All updates to typedarrays become O(n) operations and we can no longer reuse buffers, which sucks.  Requires programmer discipline on the user's side.  Would be hard to use for attributes which are computed from user inputs.  For example, we might take an array of triangles as input and flatten them out into a typed array for WebGL.
 
-react and virtual-dom use this approach, more-or-less
+```javascript
+function shouldUpdate(nextProps) {
+  if(nextProps === this.savedProps) {
+    return false
+  }
+  this.savedProps = nextProps
+  return true
+}
+```
+
+react and virtual-dom use a variation of this approach, more-or-less
 
 ### Functional data structures
 The performance of copy-on-write can be improved using functionally persistent data structures.  This lets us get faster incremental updates in some cases via structural sharing.  Obviously this is incompatible with typed arrays, so we'd still pay the cost of converting the functional data structure back to a typed array before we upload it.  There may be ways to offset this though, like using recursive structural diffing to do partial updates.  Still it seems like it would be pretty expensive and cause a bit too much garbage collection to be really viable in an interactive applications (but who knows).
@@ -115,8 +177,31 @@ immutable.js is a library designed to work with react that solves this problem
 ### Version counter
 Every time we write to the object we increment a version flag.  Then we can use references + version counters to do structural comparisons.  While this would work, keeping track of that version counter without automatic instrumentation requires a lot of programmer discipline.  Might as well use a dirty flag, unless you want to force all users to run some insane whole-program transform.
 
+```javascript
+function shouldUpdate(nextProps, nextVersion) {
+  if(nextProps === this.savedProps &&
+     nextVersion === this.savedVersion) {
+    return false
+  }
+  this.savedProps = nextProps
+  this.savedVersion = nextVersion
+  return true
+}
+```
+
 ### Hashing
 Instead of a version counter we could just compute a hash of the input and compare that against some stored value.  If all pointers are replaced with hashes, we can directly diff two objects by recursively comparing their pointers.  Large arrays can be diffed incrementally using techniques like Rabin finger printing.
+
+```javascript
+function shouldUpdate(nextProps) {
+  var h = hash(nextProps)
+  if(h === this.savedHash) {
+    return false
+  }
+  this.savedHash = h
+  return true
+}
+```
 
 rsync, bittorrent and IPFS use this approach.
 
@@ -128,8 +213,8 @@ If we had a smart enough source code transform, we could do dataflow analysis of
 
 Microsoft Excel is designed around this paradigm
 
-### Poll a user callback
-The user provides a callback which can be polled by render() method to check if something changed and needs to be updated.  This method is similar to the `dirty` flag technique.
+### Use special per-component logic
+Here the component would implement its own weird special-case logic to test if its inputs have changed and need to update.
 
 ### Hybrid methods
 Maybe combining some of the above methods is effective?
