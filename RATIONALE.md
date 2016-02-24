@@ -26,21 +26,27 @@ Wrapper libraries can reduce boilerplate by grouping common operations and setti
 
 Immediate mode rendering is a minimal extension of direct wrapping which abstracts rendering of multiple draw calls using the composition of subroutines. State changes are tracked by pushing/popping to a stack, allowing for the procedural nesting. I think there is a strong case to be made that immediate mode rendering is an intuitive way to reason about computer graphics. Immediate concepts are present in "turtle graphics" systems like [Logo](https://en.wikipedia.org/wiki/Turtle_graphics) which are used to teach children basic programming skills. Historically, it is also how OpenGL 1.x worked. A more modern example is the [processing language](https://processing.org) or the DOM's [Canvas 2D API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API), both of which are popular with artists and creative/non-technical developers.
 
-However, the convenience of immediate mode rendering comes at a cost. Modern GPUs are distributed systems, and the bus connecting them to the CPU has limited bandwidth and high latency. In order to take full advantage of their processing power it is necessary to cache data locally on the GPU and minimize this communication bottleneck. This is hard to do in the immediate mode rendering paradigm, since it encourages a style of development where resources are continuously resent from the CPU down to the GPU for each drawable object.
+However, the convenience of immediate mode rendering comes at a cost. Modern GPUs are distributed systems, and the bus connecting them to the CPU has limited bandwidth and high latency. In order to take full advantage of their processing power it is necessary to cache data locally on the GPU and minimize this communication bottleneck. This is hard to do in the simple immediate mode rendering paradigm, since it encourages the CPU to retransmit all data each frame.
+
+### Retained mode
+
+Low latency rendering requires storing data on the GPU.  
+
+#### CRUD pattern
+
+* *Creation*
+* *Rendering*
+* *Update*
+* *Deletion*
 
 
-
-* Easier to extend immediate mode
-* Complex resource life cycle management
-    + initialization
-    + render
-    + update
-    + destruction
 * Hard to manage state transitions, can waste time rebinding
 * Hard to share resources
 * Multipass coordination is difficult
 
-### Retained mode
+#### Scene graphs
+
+Motivation is to make rendering more declarative
 
 Examples:
 
@@ -59,10 +65,67 @@ Negative:
 * Extending the system from the outside is harder.  Depending on a large system tends to make your code more fragile, breaking changes are more common
 
 
-### Functional rendering
+### Data flow perspective
 
 High level idea:
 
-`render: scene props -> [draw calls]`
+`render: scene properties -> [draw calls]`
 
 Simple, declarative, easy to reason about.  Unfortunately, also very slow if implemented naively.  So we need to turn this into
+
+
+
+## Rendering as change detection
+Thinking in terms of data flow reframes the problem of rendering as detecting changes in the properties of the `render()` function.
+
+Unfortunately, some of these properties might be really big binary typed arrays. Even scanning this data is expensive, so we need to think carefully about how to detect such changes.
+
+### Do nothing!
+We could also just sweep the problem under the rug by not allowing for dynamic vertex buffers or texture data, or only changing them at configuration time.
+
+Systems that don't need dynamic vertex/texture data can reasonably do this (for example shadertoy doesn't need to upload vertex buffers other than once when the page first loads.)
+
+### `update()` method
+Have a special method to notify the system of changes.  Pretty much what we started with.  
+
+WebGL, stack.gl and plot.ly all basically work this way.
+
+### `dirty` flag
+Maintain a copy of the data in the wrapper, which the user directly mutates.  Whenever data changes, user needs to set a flag notifying the system to flush changes to the GPU.
+
+THREE.js uses this method.
+
+### Naive structural comparison
+Diff the structures by scanning them byte-by-byte.  For typed arrays this is way too slow.  Vertex buffers are just too big to be scanning them every frame, so this is pretty much a no-go.
+
+### Copy-on-write
+Make a copy of the vertex buffer whenever we modify it.  As a result we can check equality of two data structures by just checking that their references are equal.
+
+All updates to typedarrays become O(n) operations and we can no longer reuse buffers, which sucks.  Requires programmer discipline on the user's side.  Would be hard to use for attributes which are computed from user inputs.  For example, we might take an array of triangles as input and flatten them out into a typed array for WebGL.
+
+react and virtual-dom use this approach, more-or-less
+
+### Functional data structures
+The performance of copy-on-write can be improved using functionally persistent data structures.  This lets us get faster incremental updates in some cases via structural sharing.  Obviously this is incompatible with typed arrays, so we'd still pay the cost of converting the functional data structure back to a typed array before we upload it.  There may be ways to offset this though, like using recursive structural diffing to do partial updates.  Still it seems like it would be pretty expensive and cause a bit too much garbage collection to be really viable in an interactive applications (but who knows).
+
+### Version counter
+Every time we write to the object we increment a version flag.  Then we can use references + version counters to do structural comparisons.  While this would work, keeping track of that version counter without automatic instrumentation requires a lot of programmer discipline and whole programmer analysis.  Practically you might as well use a dirty flag (unless you want to force all users to run some insane whole-program transform.)
+
+### Hashing
+Instead of a version counter we could just compute a hash of the input before.  If all pointers are replaced with hashes, we can directly diff two objects by recursively comparing their pointers.  Large arrays can be diffed incrementally using techniques like Rabin finger printing.
+
+Many distributed systems like rsync or bittorrent use this approach.
+
+### Events
+Similar to an `update()` method, only with an extra layer of indirection.  If the events are serializable, this might be kind of cool for stuff like workers or distributed rendering.  Probably overkill for rendering.
+
+### Whole program instrumentation
+Theoretically if we had a smart enough abstract interpreter, we could do dataflow analysis of the entire program and figure out exactly when the arguments to our `render()` method change and update only when necessary.  In practice this is probably too hard to do in JavaScript.
+
+Incremental computation uses this paradigm
+
+### Poll a user callback
+The user provides a callback which can be polled by render() method to check if something changed and needs to be updated.  This method is similar to the `dirty` flag technique.
+
+### Hybrid methods
+Maybe combining some of the above methods is effective
