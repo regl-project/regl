@@ -51,5 +51,3 @@ function render() {
 }
 render()
 ```
-
-The high level idea is to use partial evaluation to serialize the data dependencies in the render function, and then 
