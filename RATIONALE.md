@@ -67,6 +67,8 @@ Negative:
 
 ### Data flow perspective
 
+Immediate mode revisited
+
 High level idea:
 
 `render: scene properties -> [draw calls]`
@@ -108,24 +110,26 @@ react and virtual-dom use this approach, more-or-less
 ### Functional data structures
 The performance of copy-on-write can be improved using functionally persistent data structures.  This lets us get faster incremental updates in some cases via structural sharing.  Obviously this is incompatible with typed arrays, so we'd still pay the cost of converting the functional data structure back to a typed array before we upload it.  There may be ways to offset this though, like using recursive structural diffing to do partial updates.  Still it seems like it would be pretty expensive and cause a bit too much garbage collection to be really viable in an interactive applications (but who knows).
 
+immutable.js is a library designed to work with react that solves this problem
+
 ### Version counter
-Every time we write to the object we increment a version flag.  Then we can use references + version counters to do structural comparisons.  While this would work, keeping track of that version counter without automatic instrumentation requires a lot of programmer discipline and whole programmer analysis.  Practically you might as well use a dirty flag (unless you want to force all users to run some insane whole-program transform.)
+Every time we write to the object we increment a version flag.  Then we can use references + version counters to do structural comparisons.  While this would work, keeping track of that version counter without automatic instrumentation requires a lot of programmer discipline.  Might as well use a dirty flag, unless you want to force all users to run some insane whole-program transform.
 
 ### Hashing
-Instead of a version counter we could just compute a hash of the input before.  If all pointers are replaced with hashes, we can directly diff two objects by recursively comparing their pointers.  Large arrays can be diffed incrementally using techniques like Rabin finger printing.
+Instead of a version counter we could just compute a hash of the input and compare that against some stored value.  If all pointers are replaced with hashes, we can directly diff two objects by recursively comparing their pointers.  Large arrays can be diffed incrementally using techniques like Rabin finger printing.
 
-Many distributed systems like rsync or bittorrent use this approach.
+rsync, bittorrent and IPFS use this approach.
 
 ### Events
-Similar to an `update()` method, only with an extra layer of indirection.  If the events are serializable, this might be kind of cool for stuff like workers or distributed rendering.  Probably overkill for rendering.
+Similar to an `update()` method, only with an extra layer of indirection.  If the events are serializable, this might be kind of cool for stuff like workers or distributed rendering. Probably overkill for rendering.
 
 ### Whole program instrumentation
-Theoretically if we had a smart enough abstract interpreter, we could do dataflow analysis of the entire program and figure out exactly when the arguments to our `render()` method change and update only when necessary.  In practice this is probably too hard to do in JavaScript.
+If we had a smart enough source code transform, we could do dataflow analysis of the entire program and figure out exactly when the arguments to our `render()` method change and update only when necessary.  In practice this is probably too hard to do in JavaScript, but maybe in a pure functional language it would be possible.
 
-Incremental computation uses this paradigm
+Microsoft Excel is designed around this paradigm
 
 ### Poll a user callback
 The user provides a callback which can be polled by render() method to check if something changed and needs to be updated.  This method is similar to the `dirty` flag technique.
 
 ### Hybrid methods
-Maybe combining some of the above methods is effective
+Maybe combining some of the above methods is effective?
