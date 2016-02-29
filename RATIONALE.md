@@ -77,6 +77,7 @@ Simple, declarative, easy to reason about.  Unfortunately, also very slow if imp
 
 
 
+
 ## Rendering as change detection
 Thinking in terms of data flow reframes the problem of rendering as detecting changes in the properties of the `render()` function.
 
@@ -218,3 +219,24 @@ Here the component would implement its own weird special-case logic to test if i
 
 ### Hybrid methods
 Maybe combining some of the above methods is effective?
+
+# Requirements
+
+* Must be able to reuse GPU resident resources, with minimal reinitialization
+* No garbage collection
+* Dataflow programming model
+* Code generation
+
+
+# Syntax sketches
+
+```javascript
+function someNode(someInput, someOtherInput) {
+  //Construct sub nodes
+
+  //return output nodes
+
+
+  var x = connect(nodeClass)(input0, input1, ....)
+}
+```

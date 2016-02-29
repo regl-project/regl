@@ -1,0 +1,41 @@
+{
+  "name": "regl",
+  "version": "1.0.0",
+  "description": "Dataflow programming for WebGL",
+  "main": "regl.js",
+  "directories": {
+    "example": "example"
+  },
+  "devDependencies": {
+    "standard": "^6.0.7",
+    "tape": "^4.4.0"
+  },
+  "dependencies": {},
+  "scripts": {
+    "test": "standard && tape test/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mikolalysenko/regl.git"
+  },
+  "keywords": [
+    "webgl",
+    "stackgl",
+    "regl",
+    "gl",
+    "graphics",
+    "cg",
+    "opengl",
+    "glsl",
+    "data",
+    "flow",
+    "reactive",
+    "functional"
+  ],
+  "author": "Mikola Lysenko",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mikolalysenko/regl/issues"
+  },
+  "homepage": "https://github.com/mikolalysenko/regl#readme"
+}

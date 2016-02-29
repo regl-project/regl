@@ -22,18 +22,18 @@ var draw = regl({
   ].join('\n'),
 
   uniforms: {
-    color: [0, 0, 1, 1],
+    color: [0, 0, 1, 1]
   },
 
   attributes: {
     position: regl.buffer(new Float32Array([
       -2, -2,
-       4, -2,
-       4,  4,
+      4, -2,
+      4, 4
     ]))
   },
 
-  count: 1,
+  count: 1
 })
 
 regl.exec(state, draw)

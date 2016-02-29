@@ -1,29 +1,27 @@
-'use strict'
+/*
 
-var nodes = require('./lib/nodes')
+var createFlowClass = require('./lib/flow')
 var createShaderCache = require('./lib/shaders')
 
-function wrapREGL(gl) {
+function wrapREGL (gl) {
   var getProgram = createShaderCache(gl)
 
-  function regl(state, draw, params) {
+  function regl (state, draw, params) {
     bindState(state, params)
     execDraw(draw, params)
   }
 
-  function parseCommand(command) {
+  function parseCommand (command) {
     var program = getProgram(command.fragSource, command.vertSource)
 
-    var uniforms = program.uniforms.map(function(name) {
+    var uniforms = program.uniforms.map(function (name) {
       var uniform = command.uniforms[name]
     })
 
-    var attributes = program.attributes.map(function(name) {
+    var attributes = program.attributes.map(function (name) {
       var attribute = command.attributes[name]
-      if(attribute instanceof REGLBuffer) {
-
-      } else if(Array.isArray(attribute)) {
-
+      if (attribute instanceof REGLBuffer) {
+      } else if (Array.isArray(attribute)) {
       }
     })
 
@@ -42,20 +40,18 @@ function wrapREGL(gl) {
       count)
   }
 
-  function parseGroup(commandList) {
+  function parseGroup (commandList) {
   }
 
-
-
-  regl.buffer = function(param) {
+  regl.buffer = function (param) {
     return new REGLBuffer()
   }
 
-  regl.state = function(params) {
+  regl.state = function (params) {
     var clearFlags = 0
 
     var clearColor = params.clearColor
-    if(clearColor) {
+    if (clearColor) {
       clearFlags |= gl.COLOR_BUFFER_BIT
     }
 
@@ -65,12 +61,11 @@ function wrapREGL(gl) {
     )
   }
 
+  function bindState (state, params) {
+    // Set up fbo binding
 
-  function bindState(state, params) {
-    //Set up fbo binding
-
-    //Set up viewport
-    if(state.viewport) {
+    // Set up viewport
+    if (state.viewport) {
       var viewportParams = state.viewport
       gl.viewport(
         viewportParams[0],
@@ -81,10 +76,10 @@ function wrapREGL(gl) {
       gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
     }
 
-    //Set up depth range
+  // Set up depth range
   }
 
-  function execDraw(command, params) {
+  function execDraw (command, params) {
     var program = command.program
   }
 
@@ -92,3 +87,4 @@ function wrapREGL(gl) {
 }
 
 module.exports = wrapREGL
+*/
