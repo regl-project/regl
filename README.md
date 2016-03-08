@@ -55,7 +55,37 @@ render()
 
 ## API (WORK IN PROGRESS)
 
-```JavaScript
+### Constructor
 
-var regl = require('regl')
-```
+#### `var regl = require('regl')([options])`
+
+#### `var regl = require('regl')(element, [options])`
+
+#### `var regl = require('regl')(canvas, [options])`
+
+#### `var regl = require('regl')(gl, [options])`
+
+### Resources
+
+#### `regl.buffer(options)`
+
+#### `regl.texture(options)`
+
+#### `regl.fbo(options)`
+
+### Rendering
+
+#### `regl(options)`
+
+### Clean up
+
+#### `regl.destroy()`
+
+### Errors
+
+#### `var REGLError = require('regl/error')`
+
+## License
+(c) 2016 MIT License
+
+Supported by the Freeman Lab and the Howard Hughes Medical Institute
