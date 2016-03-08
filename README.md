@@ -51,3 +51,11 @@ function render() {
 }
 render()
 ```
+
+
+## API (WORK IN PROGRESS)
+
+```JavaScript
+
+var regl = require('regl')
+```
