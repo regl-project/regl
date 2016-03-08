@@ -1,90 +1,78 @@
-/*
+var createShaderCache = require('./lib/shader')
+var createBufferCache = require('./lib/buffer')
+var createTextureCache = require('./lib/texture')
+var createFBOCache = require('./lib/fbo')
 
-var createFlowClass = require('./lib/flow')
-var createShaderCache = require('./lib/shaders')
+function wrapREGL (gl, options) {
+  options = options || {}
 
-function wrapREGL (gl) {
-  var getProgram = createShaderCache(gl)
+  var shaderCache = createShaderCache(gl)
+  var bufferCache = createBufferCache(gl)
+  var textureCache = createTextureCache(gl)
+  var fboCache = createFBOCache(gl, textureCache)
+  var canvas = gl.canvas
+  var handleLoss = options.contextLoss !== false
 
-  function regl (state, draw, params) {
-    bindState(state, params)
-    execDraw(draw, params)
+  // Context loss handling
+  function handleContextLoss (event) {
   }
 
-  function parseCommand (command) {
-    var program = getProgram(command.fragSource, command.vertSource)
-
-    var uniforms = program.uniforms.map(function (name) {
-      var uniform = command.uniforms[name]
-    })
-
-    var attributes = program.attributes.map(function (name) {
-      var attribute = command.attributes[name]
-      if (attribute instanceof REGLBuffer) {
-      } else if (Array.isArray(attribute)) {
-      }
-    })
-
-    var primitiveType = gl.TRIANGLES
-
-    var offset = command.offset || 0
-
-    var count = command.count || 0
-
-    return new REGLDraw(
-      shader,
-      uniforms,
-      attributes,
-      primitiveType,
-      offset,
-      count)
+  function handleContextRestored (event) {
   }
 
-  function parseGroup (commandList) {
+  if (handleLoss) {
+    canvas.addEventListener(handleContextLoss, false)
+    canvas.addEventListener(handleContextRestored, false)
   }
 
-  regl.buffer = function (param) {
-    return new REGLBuffer()
-  }
-
-  regl.state = function (params) {
-    var clearFlags = 0
-
-    var clearColor = params.clearColor
-    if (clearColor) {
-      clearFlags |= gl.COLOR_BUFFER_BIT
+  // Resource destructuion
+  function destroy () {
+    if (handleLoss) {
+      canvas.removeEventListener(handleContextLoss)
+      canvas.removeEventListener(handleContextRestored)
     }
 
-    return new REGLState(
-      clearFlags,
-      clearColor
-    )
+    shaderCache.clear()
+    fboCache.clear()
+    bufferCache.clear()
+    textureCache.clear()
   }
 
-  function bindState (state, params) {
-    // Set up fbo binding
+  // Object allocation
+  function createBuffer (options) {
+    options = options || {}
 
-    // Set up viewport
-    if (state.viewport) {
-      var viewportParams = state.viewport
-      gl.viewport(
-        viewportParams[0],
-        viewportParams[1],
-        viewportParams[2] - viewportParams[0],
-        viewportParams[3] - viewportParams[1])
-    } else {
-      gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
-    }
-
-  // Set up depth range
+    
   }
 
-  function execDraw (command, params) {
-    var program = command.program
+  function createTexture (options) {
   }
 
-  return regl
+  function createDraw (options) {
+  }
+
+  function createEnv (options) {
+  }
+
+  function createFBO (options) {
+  }
+
+  // Execute a list of draw commands
+  function executeCommand(env, commands) {
+  }
+
+  return Object.assign(executeCommand, {
+
+    // Object constructors
+    draw: createDraw,
+    env: createEnv,
+    buffer: createBuffer,
+    texture: createTexture,
+    fbo: createFBO,
+
+    // Destroy regl and all associated resources
+    destroy: destroy
+  })
 }
 
 module.exports = wrapREGL
-*/
