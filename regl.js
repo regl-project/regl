@@ -1,10 +1,10 @@
 var getContext = require('./lib/context')
-var createExtensionCache = require('./lib/extension')
-var createShaderCache = require('./lib/shader')
-var createBufferCache = require('./lib/buffer')
-var createTextureCache = require('./lib/texture')
-var createFBOCache = require('./lib/fbo')
-var createStateCache = require('./lib/state')
+var wrapExtensions = require('./lib/extension')
+var wrapShaders = require('./lib/shader')
+var wrapBuffers = require('./lib/buffer')
+var wrapTextures = require('./lib/texture')
+var wrapFBOs = require('./lib/fbo')
+var wrapContext = require('./lib/state')
 
 var CONTEXT_LOST_EVENT = 'webglcontextlost'
 var CONTEXT_RESTORED_EVENT = 'webglcontextrestored'
@@ -14,22 +14,18 @@ module.exports = function wrapREGL () {
   var gl = args.gl
   var options = args.options
 
-  var extensionCache = createExtensionCache(gl,
-    options.requiredExtensions || [])
-  var shaderCache = createShaderCache(gl)
-  var bufferCache = createBufferCache(gl,
-    extensionCache.extensions)
-  var textureCache = createTextureCache(gl,
-    extensionCache.extensions)
-  var fboCache = createFBOCache(gl,
-    extensionCache.extensions,
-    textureCache)
-  var stateCache = createStateCache(gl,
-    extensionCache.extensions,
-    shaderCache,
-    bufferCache,
-    textureCache,
-    fboCache)
+  var extensionState = wrapExtensions(gl, options.requiredExtensions || [])
+  var bufferState = wrapBuffers(gl, extensionState)
+  var textureState = wrapTextures(gl, extensionState)
+  var fboState = wrapFBOs(gl, extensionState, textureState)
+  var shaderState = wrapShaders(gl)
+  var contextState = wrapContext(
+    gl,
+    extensionState,
+    shaderState,
+    bufferState,
+    textureState,
+    fboState)
   var canvas = gl.canvas
 
   function handleContextLoss (event) {
@@ -41,12 +37,12 @@ module.exports = function wrapREGL () {
 
   function handleContextRestored (event) {
     gl.getError()
-    extensionCache.refresh()
-    shaderCache.refresh()
-    textureCache.refresh()
-    bufferCache.refresh()
-    fboCache.refresh()
-    stateCache.refresh()
+    extensionState.refresh()
+    bufferState.refresh()
+    textureState.refresh()
+    fboState.refresh()
+    shaderState.refresh()
+    contextState.refresh()
     if (options.onContextRestored) {
       options.onContextRestored()
     }
@@ -64,11 +60,11 @@ module.exports = function wrapREGL () {
       canvas.removeEventListener(CONTEXT_RESTORED_EVENT, handleContextRestored)
     }
 
-    shaderCache.clear()
-    fboCache.clear()
-    bufferCache.clear()
-    textureCache.clear()
-    stateCache.clear()
+    contextState.clear()
+    shaderState.clear()
+    fboState.clear()
+    textureState.clear()
+    bufferState.clear()
 
     if (options.onDestroy) {
       options.onDestroy()
@@ -81,11 +77,15 @@ module.exports = function wrapREGL () {
     }
   }
 
-  return Object.assign(create(stateCache), {
+  // The main regl entry point
+  function regl (options) {
+  }
+
+  return Object.assign(regl, {
     // Object constructors
-    buffer: create(bufferCache),
-    texture: create(textureCache),
-    fbo: create(fboCache),
+    buffer: create(bufferState),
+    texture: create(textureState),
+    fbo: create(fboState),
 
     // Destroy regl and all associated resources
     destroy: destroy
