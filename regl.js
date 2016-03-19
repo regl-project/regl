@@ -7,7 +7,7 @@ var wrapTextures = require('./lib/texture')
 var wrapFBOs = require('./lib/fbo')
 var wrapContext = require('./lib/state')
 
-var DYNAMIC = require('./constants/dynamic')
+var DYNAMIC = require('./lib/constants/dynamic')
 
 var CONTEXT_LOST_EVENT = 'webglcontextlost'
 var CONTEXT_RESTORED_EVENT = 'webglcontextrestored'
@@ -17,15 +17,15 @@ module.exports = function wrapREGL () {
   var gl = args.gl
   var options = args.options
 
-  var GL_COLOR_BUFFER_BIT = gl.COLOR_BUFFER_BIT
-  var GL_DEPTH_BUFFER_BIT = gl.DEPTH_BUFFER_BIT
-  var GL_STENCIL_BUFFER_BIT = gl.STENCIL_BUFFER_BIT
+  var GL_COLOR_BUFFER_BIT = 16384
+  var GL_DEPTH_BUFFER_BIT = 256
+  var GL_STENCIL_BUFFER_BIT = 1024
 
   var extensionState = wrapExtensions(gl, options.requiredExtensions || [])
   var bufferState = wrapBuffers(gl, extensionState)
   var textureState = wrapTextures(gl, extensionState)
   var fboState = wrapFBOs(gl, extensionState, textureState)
-  var shaderState = wrapShaders(gl)
+  var shaderState = wrapShaders(gl, extensionState)
   var contextState = wrapContext(
     gl,
     extensionState,

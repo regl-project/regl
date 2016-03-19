@@ -10,7 +10,9 @@
     "standard": "^6.0.7",
     "tape": "^4.4.0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "gl-format-compiler-error": "^1.0.2"
+  },
   "scripts": {
     "test": "standard && tape test/*.js"
   },
