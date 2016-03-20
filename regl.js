@@ -6,8 +6,7 @@ var wrapBuffers = require('./lib/buffer')
 var wrapTextures = require('./lib/texture')
 var wrapFBOs = require('./lib/fbo')
 var wrapContext = require('./lib/state')
-
-var DYNAMIC = require('./lib/constants/dynamic')
+var dynamic = require('./lib/dynamic')
 
 var CONTEXT_LOST_EVENT = 'webglcontextlost'
 var CONTEXT_RESTORED_EVENT = 'webglcontextrestored'
@@ -86,13 +85,14 @@ module.exports = function wrapREGL () {
 
   // Compiles a set of procedures for an object
   function compileProcedure (options) {
+    // First we separate the options into static and dynamic components
     function separateDynamic (object) {
       var staticItems = {}
-      var dynamicItems = []
+      var dynamicItems = {}
       Object.keys(object).forEach(function (option) {
         var value = object[option]
-        if (value === DYNAMIC) {
-          dynamicItems.push(option)
+        if (dynamic.isDynamic(value)) {
+          dynamicItems[option] = dynamic.unbox(value)
         } else {
           staticItems[option] = value
         }
@@ -156,7 +156,7 @@ module.exports = function wrapREGL () {
     clear: clear,
 
     // Place holder for dynamic keys
-    dynamic: DYNAMIC,
+    dynamic: dynamic.define,
 
     // Object constructors
     buffer: create(bufferState),
