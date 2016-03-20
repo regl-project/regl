@@ -85,6 +85,8 @@ module.exports = function wrapREGL () {
 
   // Compiles a set of procedures for an object
   function compileProcedure (options) {
+    var hasDynamic = false
+
     // First we separate the options into static and dynamic components
     function separateDynamic (object) {
       var staticItems = {}
@@ -92,6 +94,7 @@ module.exports = function wrapREGL () {
       Object.keys(object).forEach(function (option) {
         var value = object[option]
         if (dynamic.isDynamic(value)) {
+          hasDynamic = true
           dynamicItems[option] = dynamic.unbox(value, option)
         } else {
           staticItems[option] = value
@@ -116,7 +119,8 @@ module.exports = function wrapREGL () {
       attributes.static,
       parts.dynamic,
       uniforms.dynamic,
-      attributes.dynamic)
+      attributes.dynamic,
+      hasDynamic)
   }
 
   // The main regl entry point

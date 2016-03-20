@@ -1,7 +1,7 @@
 var regl = require('../regl')()
 
 regl.clear({
-  color: [0, 0, 0, 0],
+  color: [0, 0, 0, 1],
   depth: 1
 })
 
