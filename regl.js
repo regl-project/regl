@@ -92,7 +92,7 @@ module.exports = function wrapREGL () {
       Object.keys(object).forEach(function (option) {
         var value = object[option]
         if (dynamic.isDynamic(value)) {
-          dynamicItems[option] = dynamic.unbox(value)
+          dynamicItems[option] = dynamic.unbox(value, option)
         } else {
           staticItems[option] = value
         }
