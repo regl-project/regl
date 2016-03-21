@@ -43,9 +43,19 @@ module.exports = function wrapREGL () {
   // raf stuff
   var rafCallbacks = []
   var activeRAF = raf.next(handleRAF)
+  var prevWidth = 0
+  var prevHeight = 0
   function handleRAF () {
     activeRAF = raf.next(handleRAF)
     frameState.count += 1
+
+    if (prevWidth !== gl.drawingBufferWidth ||
+        prevHeight !== gl.drawingBufferHeight) {
+      prevWidth = gl.drawingBufferWidth
+      prevHeight = gl.drawingBufferHeight
+      contextState.notifyViewportChanged()
+    }
+
     for (var i = 0; i < rafCallbacks.length; ++i) {
       var cb = rafCallbacks[i]
       cb(frameState.count)
