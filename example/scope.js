@@ -25,9 +25,9 @@ regl({
 
   attributes: {
     position: regl.buffer([
-      0.25, 0,
-      0, 0.25,
-      0.5, 0.5])
+      0.5, 0,
+      0, 0.5,
+      1, 1])
   },
 
   count: 3

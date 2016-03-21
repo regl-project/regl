@@ -155,6 +155,9 @@ module.exports = function wrapREGL () {
   function clear (options) {
     var clearFlags = 0
 
+    // Update context state
+    contextState.poll()
+
     var c = options.color
     if (c) {
       gl.clearColor(+c[0] || 0, +c[1] || 0, +c[2] || 0, +c[3] || 0)
@@ -191,6 +194,9 @@ module.exports = function wrapREGL () {
       cancel: cancel
     }
   }
+
+  // Initialize state variables
+  contextState.poll()
 
   return Object.assign(compileProcedure, {
     // Clear current FBO
