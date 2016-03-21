@@ -1,13 +1,6 @@
-// This example is a simple demonstration of how to use regl.
-// The default method exposed by the module wraps a canvas element
 var regl = require('../regl')()
 
-regl.clear({
-  color: [0, 0, 0, 1],
-  depth: 1
-})
-
-regl({
+var draw = regl({
   frag: [
     'precision mediump float;',
     'uniform vec4 color;',
@@ -32,8 +25,24 @@ regl({
   },
 
   uniforms: {
-    color: [1, 0, 0, 1]
+    color: regl.prop('color')
   },
 
   count: 3
-})()
+})
+
+regl.frame(function (count) {
+  regl.clear({
+    color: [0, 0, 0, 1],
+    depth: 1
+  })
+
+  draw({
+    color: [
+      Math.sin(0.001 * count),
+      Math.cos(0.02 * count),
+      Math.sin(0.3 * count),
+      1
+    ]
+  })
+})

@@ -7,6 +7,11 @@ var wrapTextures = require('./lib/texture')
 var wrapFBOs = require('./lib/fbo')
 var wrapContext = require('./lib/state')
 var dynamic = require('./lib/dynamic')
+var raf = require('./lib/raf')
+
+var GL_COLOR_BUFFER_BIT = 16384
+var GL_DEPTH_BUFFER_BIT = 256
+var GL_STENCIL_BUFFER_BIT = 1024
 
 var CONTEXT_LOST_EVENT = 'webglcontextlost'
 var CONTEXT_RESTORED_EVENT = 'webglcontextrestored'
@@ -15,10 +20,6 @@ module.exports = function wrapREGL () {
   var args = getContext(Array.prototype.slice.call(arguments))
   var gl = args.gl
   var options = args.options
-
-  var GL_COLOR_BUFFER_BIT = 16384
-  var GL_DEPTH_BUFFER_BIT = 256
-  var GL_STENCIL_BUFFER_BIT = 1024
 
   var extensionState = wrapExtensions(gl, options.requiredExtensions || [])
   var bufferState = wrapBuffers(gl, extensionState)
@@ -34,7 +35,22 @@ module.exports = function wrapREGL () {
     fboState)
   var canvas = gl.canvas
 
+  // raf stuff
+  var frameCount = 0
+  var rafCallbacks = []
+  var activeRAF = raf.next(handleRAF)
+  function handleRAF () {
+    activeRAF = raf.next(handleRAF)
+    frameCount += 1
+    for (var i = 0; i < rafCallbacks.length; ++i) {
+      var cb = rafCallbacks[i]
+      cb(frameCount)
+    }
+  }
+
   function handleContextLoss (event) {
+    raf.cancel(activeRAF)
+    activeRAF = 0
     event.preventDefault()
     if (options.onContextLost) {
       options.onContextLost()
@@ -52,6 +68,7 @@ module.exports = function wrapREGL () {
     if (options.onContextRestored) {
       options.onContextRestored()
     }
+    handleRAF()
   }
 
   if (canvas) {
@@ -61,6 +78,10 @@ module.exports = function wrapREGL () {
 
   // Resource destructuion
   function destroy () {
+    if (activeRAF) {
+      raf.cancel(activeRAF)
+    }
+
     if (canvas) {
       canvas.removeEventListener(CONTEXT_LOST_EVENT, handleContextLoss)
       canvas.removeEventListener(CONTEXT_RESTORED_EVENT, handleContextRestored)
@@ -85,6 +106,9 @@ module.exports = function wrapREGL () {
 
   // Compiles a set of procedures for an object
   function compileProcedure (options) {
+    check(!!options, 'invalid args to regl({...})')
+    check.type(options, 'object', 'invalid args to regl({...})')
+
     var hasDynamic = false
 
     // First we separate the options into static and dynamic components
@@ -113,7 +137,7 @@ module.exports = function wrapREGL () {
     delete staticOptions.uniforms
     delete staticOptions.attributes
 
-    return contextState.create(
+    var compiled = contextState.create(
       staticOptions,
       uniforms.static,
       attributes.static,
@@ -121,14 +145,10 @@ module.exports = function wrapREGL () {
       uniforms.dynamic,
       attributes.dynamic,
       hasDynamic)
-  }
 
-  // The main regl entry point
-  function regl (options) {
-    var compiled = compileProcedure(options)
-    var result = compiled.scope
-    result.draw = compiled.draw
-    return result
+    return Object.assign(compiled.draw, {
+      scope: compiled.scope
+    })
   }
 
   // Clears the currently bound frame buffer
@@ -155,17 +175,37 @@ module.exports = function wrapREGL () {
     gl.clear(clearFlags)
   }
 
-  return Object.assign(regl, {
+  function frame (cb) {
+    rafCallbacks.push(cb)
+
+    function cancel () {
+      var index = rafCallbacks.find(function (item) {
+        return item === cb
+      })
+      if (index >= 0) {
+        rafCallbacks.splice(index, 1)
+      }
+    }
+
+    return {
+      cancel: cancel
+    }
+  }
+
+  return Object.assign(compileProcedure, {
     // Clear current FBO
     clear: clear,
 
     // Place holder for dynamic keys
-    dynamic: dynamic.define,
+    prop: dynamic.define,
 
     // Object constructors
     buffer: create(bufferState),
     texture: create(textureState),
     fbo: create(fboState),
+
+    // Frame rendering
+    frame: frame,
 
     // Destroy regl and all associated resources
     destroy: destroy
