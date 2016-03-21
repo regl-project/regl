@@ -12,8 +12,11 @@ var draw = regl({
   vert: [
     'precision mediump float;',
     'attribute vec2 position;',
+    'uniform float angle;',
     'void main() {',
-    '  gl_Position = vec4(position, 0, 1);',
+    '  gl_Position = vec4(',
+    '    cos(angle) * position.x + sin(angle) * position.y,',
+    '    -sin(angle) * position.x + cos(angle) * position.y, 0, 1);',
     '}'
   ].join('\n'),
 
@@ -25,16 +28,20 @@ var draw = regl({
   },
 
   uniforms: {
-    color: regl.prop('color')
+    color: regl.prop('color'),
+    angle: function (count) {
+      return 0.01 * count
+    }
   },
+
+  depthTest: false,
 
   count: 3
 })
 
 regl.frame(function (count) {
   regl.clear({
-    color: [0, 0, 0, 1],
-    depth: 1
+    color: [0, 0, 0, 1]
   })
 
   draw({

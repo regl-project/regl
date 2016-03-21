@@ -21,30 +21,34 @@ module.exports = function wrapREGL () {
   var gl = args.gl
   var options = args.options
 
+  var frameState = {
+    count: 0
+  }
+
   var extensionState = wrapExtensions(gl, options.requiredExtensions || [])
-  var bufferState = wrapBuffers(gl, extensionState)
+  var shaderState = wrapShaders(gl, extensionState)
+  var bufferState = wrapBuffers(gl, extensionState, shaderState)
   var textureState = wrapTextures(gl, extensionState)
   var fboState = wrapFBOs(gl, extensionState, textureState)
-  var shaderState = wrapShaders(gl, extensionState)
   var contextState = wrapContext(
     gl,
     extensionState,
     shaderState,
     bufferState,
     textureState,
-    fboState)
+    fboState,
+    frameState)
   var canvas = gl.canvas
 
   // raf stuff
-  var frameCount = 0
   var rafCallbacks = []
   var activeRAF = raf.next(handleRAF)
   function handleRAF () {
     activeRAF = raf.next(handleRAF)
-    frameCount += 1
+    frameState.count += 1
     for (var i = 0; i < rafCallbacks.length; ++i) {
       var cb = rafCallbacks[i]
-      cb(frameCount)
+      cb(frameState.count)
     }
   }
 
