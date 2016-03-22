@@ -54,9 +54,14 @@ regl.frame(function (count) {
   })
 
   draw([
-    { offset: [0, 0] },
+    { offset: [-1, -1] },
     { offset: [-1, 0] },
+    { offset: [-1, 1] },
     { offset: [0, -1] },
-    { offset: [-1, -1] }
+    { offset: [0, 0] },
+    { offset: [0, 1] },
+    { offset: [1, -1] },
+    { offset: [1, 0] },
+    { offset: [1, 1] }
   ])
 })
