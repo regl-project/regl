@@ -1,11 +1,14 @@
 var check = require('./lib/check')
 var getContext = require('./lib/context')
 var wrapExtensions = require('./lib/extension')
-var wrapShaders = require('./lib/shader')
 var wrapBuffers = require('./lib/buffer')
 var wrapTextures = require('./lib/texture')
 var wrapFBOs = require('./lib/fbo')
+var wrapUniforms = require('./lib/uniform')
+var wrapAttributes = require('./lib/attribute')
+var wrapShaders = require('./lib/shader')
 var wrapContext = require('./lib/state')
+var createCompiler = require('./lib/compile')
 var dynamic = require('./lib/dynamic')
 var raf = require('./lib/raf')
 
@@ -26,18 +29,33 @@ module.exports = function wrapREGL () {
   }
 
   var extensionState = wrapExtensions(gl, options.requiredExtensions || [])
-  var shaderState = wrapShaders(gl, extensionState)
-  var bufferState = wrapBuffers(gl, extensionState, shaderState)
+  var bufferState = wrapBuffers(gl, extensionState)
   var textureState = wrapTextures(gl, extensionState)
   var fboState = wrapFBOs(gl, extensionState, textureState)
-  var contextState = wrapContext(
+  var uniformState = wrapUniforms()
+  var attributeState = wrapAttributes(gl, extensionState, bufferState)
+  var shaderState = wrapShaders(
     gl,
     extensionState,
-    shaderState,
+    attributeState,
+    uniformState,
+    function (program) {
+      return compiler.poll(program)
+    })
+  var glState = wrapContext(gl, shaderState)
+
+  var compiler = createCompiler(
+    gl,
+    extensionState,
     bufferState,
     textureState,
     fboState,
+    glState,
+    uniformState,
+    attributeState,
+    shaderState,
     frameState)
+
   var canvas = gl.canvas
 
   // raf stuff
@@ -53,7 +71,7 @@ module.exports = function wrapREGL () {
         prevHeight !== gl.drawingBufferHeight) {
       prevWidth = gl.drawingBufferWidth
       prevHeight = gl.drawingBufferHeight
-      contextState.notifyViewportChanged()
+      glState.notifyViewportChanged()
     }
 
     for (var i = 0; i < rafCallbacks.length; ++i) {
@@ -78,7 +96,7 @@ module.exports = function wrapREGL () {
     textureState.refresh()
     fboState.refresh()
     shaderState.refresh()
-    contextState.refresh()
+    glState.refresh()
     if (options.onContextRestored) {
       options.onContextRestored()
     }
@@ -101,7 +119,7 @@ module.exports = function wrapREGL () {
       canvas.removeEventListener(CONTEXT_RESTORED_EVENT, handleContextRestored)
     }
 
-    contextState.clear()
+    glState.clear()
     shaderState.clear()
     fboState.clear()
     textureState.clear()
@@ -151,13 +169,9 @@ module.exports = function wrapREGL () {
     delete staticOptions.uniforms
     delete staticOptions.attributes
 
-    var compiled = contextState.create(
-      staticOptions,
-      uniforms.static,
-      attributes.static,
-      parts.dynamic,
-      uniforms.dynamic,
-      attributes.dynamic,
+    var compiled = compiler.command(
+      staticOptions, uniforms.static, attributes.static,
+      parts.dynamic, uniforms.dynamic, attributes.dynamic,
       hasDynamic)
 
     return Object.assign(compiled.draw, {
@@ -171,7 +185,7 @@ module.exports = function wrapREGL () {
     var clearFlags = 0
 
     // Update context state
-    contextState.poll()
+    glState.poll()
 
     var c = options.color
     if (c) {
@@ -211,7 +225,7 @@ module.exports = function wrapREGL () {
   }
 
   // Initialize state variables
-  contextState.poll()
+  glState.poll()
 
   return Object.assign(compileProcedure, {
     // Clear current FBO
