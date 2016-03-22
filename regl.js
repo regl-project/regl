@@ -232,7 +232,7 @@ module.exports = function wrapREGL () {
     // Clear current FBO
     clear: clear,
 
-    // Place holder for dynamic keys
+    // Dynamic variable binding
     prop: dynamic.define,
 
     // Object constructors
