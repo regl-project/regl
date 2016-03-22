@@ -210,6 +210,7 @@ module.exports = function wrapREGL () {
     gl.clear(clearFlags)
   }
 
+  // Registers another requestAnimationFrame callback
   function frame (cb) {
     rafCallbacks.push(cb)
 
@@ -235,6 +236,7 @@ module.exports = function wrapREGL () {
     prop: dynamic.define,
 
     // Object constructors
+    elements: create(drawState),
     buffer: create(bufferState),
     texture: create(textureState),
     fbo: create(fboState),
