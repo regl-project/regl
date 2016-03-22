@@ -161,7 +161,8 @@ module.exports = function wrapREGL () {
       hasDynamic)
 
     return Object.assign(compiled.draw, {
-      scope: compiled.scope
+      scope: compiled.scope,
+      batch: compiled.batch || void 0
     })
   }
 
