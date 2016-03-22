@@ -2,6 +2,7 @@ var check = require('./lib/check')
 var getContext = require('./lib/context')
 var wrapExtensions = require('./lib/extension')
 var wrapBuffers = require('./lib/buffer')
+var wrapDraw = require('./lib/draw')
 var wrapTextures = require('./lib/texture')
 var wrapFBOs = require('./lib/fbo')
 var wrapUniforms = require('./lib/uniform')
@@ -30,6 +31,7 @@ module.exports = function wrapREGL () {
 
   var extensionState = wrapExtensions(gl, options.requiredExtensions || [])
   var bufferState = wrapBuffers(gl, extensionState)
+  var drawState = wrapDraw(gl, extensionState, bufferState)
   var textureState = wrapTextures(gl, extensionState)
   var fboState = wrapFBOs(gl, extensionState, textureState)
   var uniformState = wrapUniforms()
@@ -48,6 +50,7 @@ module.exports = function wrapREGL () {
     gl,
     extensionState,
     bufferState,
+    drawState,
     textureState,
     fboState,
     glState,
