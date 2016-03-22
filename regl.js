@@ -40,7 +40,7 @@ module.exports = function wrapREGL () {
     attributeState,
     uniformState,
     function (program) {
-      return compiler.poll(program)
+      return compiler.draw(program)
     })
   var glState = wrapContext(gl, shaderState)
 
@@ -223,9 +223,6 @@ module.exports = function wrapREGL () {
       cancel: cancel
     }
   }
-
-  // Initialize state variables
-  glState.poll()
 
   return Object.assign(compileProcedure, {
     // Clear current FBO

@@ -46,7 +46,7 @@ var draw = regl({
   depthTest: false,
 
   count: 3
-})
+}).batch
 
 regl.frame(function (count) {
   regl.clear({
