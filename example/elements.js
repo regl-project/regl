@@ -25,10 +25,10 @@ regl({
   ].join('\n'),
 
   attributes: {
-    position: regl.buffer([
-      -1, 0,
-      0, -1,
-      1, 1])
+    position: regl.buffer((new Array(10)).fill().map(function (x, i) {
+      var theta = 2.0 * Math.PI * (i >> 1) / 5
+      return (i & 1) ? Math.cos(theta) : Math.sin(theta)
+    }))
   },
 
   uniforms: {
@@ -40,11 +40,11 @@ regl({
     [0, 2],
     [0, 3],
     [0, 4],
-    [0, 5],
     [1, 2],
+    [1, 3],
+    [1, 4],
     [2, 3],
-    [3, 4],
-    [4, 5],
-    [5, 1]
+    [2, 4],
+    [3, 4]
   ])
 })()

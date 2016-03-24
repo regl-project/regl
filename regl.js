@@ -2,12 +2,13 @@ var check = require('./lib/check')
 var getContext = require('./lib/context')
 var wrapExtensions = require('./lib/extension')
 var wrapBuffers = require('./lib/buffer')
-var wrapDraw = require('./lib/draw')
+var wrapElements = require('./lib/elements')
 var wrapTextures = require('./lib/texture')
 var wrapFBOs = require('./lib/fbo')
 var wrapUniforms = require('./lib/uniform')
 var wrapAttributes = require('./lib/attribute')
 var wrapShaders = require('./lib/shader')
+var wrapDraw = require('./lib/draw')
 var wrapContext = require('./lib/state')
 var createCompiler = require('./lib/compile')
 var dynamic = require('./lib/dynamic')
@@ -25,13 +26,9 @@ module.exports = function wrapREGL () {
   var gl = args.gl
   var options = args.options
 
-  var frameState = {
-    count: 0
-  }
-
   var extensionState = wrapExtensions(gl, options.requiredExtensions || [])
   var bufferState = wrapBuffers(gl, extensionState)
-  var drawState = wrapDraw(gl, extensionState, bufferState)
+  var elementState = wrapElements(gl, extensionState, bufferState)
   var textureState = wrapTextures(gl, extensionState)
   var fboState = wrapFBOs(gl, extensionState, textureState)
   var uniformState = wrapUniforms()
@@ -44,19 +41,24 @@ module.exports = function wrapREGL () {
     function (program) {
       return compiler.draw(program)
     })
+  var drawState = wrapDraw(gl, extensionState, bufferState)
   var glState = wrapContext(gl, shaderState)
+  var frameState = {
+    count: 0
+  }
 
   var compiler = createCompiler(
     gl,
     extensionState,
     bufferState,
-    drawState,
+    elementState,
     textureState,
     fboState,
     glState,
     uniformState,
     attributeState,
     shaderState,
+    drawState,
     frameState)
 
   var canvas = gl.canvas
@@ -236,7 +238,7 @@ module.exports = function wrapREGL () {
     prop: dynamic.define,
 
     // Object constructors
-    elements: create(drawState),
+    elements: create(elementState),
     buffer: create(bufferState),
     texture: create(textureState),
     fbo: create(fboState),
