@@ -58,71 +58,37 @@ regl.frame(() => {
 })
 ```
 
-# API (WORK IN PROGRESS)
-
-## Initialization
-
-### `require('regl')`
-
-#### `var regl = require('regl')([options])`
-
-#### `var regl = require('regl')(element, [options])`
-
-#### `var regl = require('regl')(canvas, [options])`
-
-#### `var regl = require('regl')(gl, [options])`
-
-## Rendering
-
-### Declaration
-
-#### `var draw = regl(options)`
-
-#### `regl.prop([path])`
-
-### Invocation
-
-#### `draw([options])`
-
-#### `draw.scope([options,] func)`
-
-#### `draw.batch(optionList)`
-
-### Clear draw buffer
-
-#### `regl.clear(options)`
-
-### Render callback
-
-#### `regl.frame(func)`
-
-## Resources
-
-### Constructors
-
-#### `regl.buffer(options)`
-
-#### `regl.elements(options)`
-
-#### `regl.texture(options)`
-
-#### `regl.fbo(options)`
-
-### Usage patterns
-
-#### `resource(options)`
-Updates a resource
-
-#### `resource.destroy()`
-Destroy resource
-
-## Clean up
-
-#### `regl.destroy()`
-
-## Errors and exceptions
-
-All thrown exceptions inherit from `regl.Error`
+## API
+  * [Initialization](API.md#initialization)
+    + [`require('regl')`](API.md#-require--regl---)
+      - [`var regl = require('regl')([options])`](API.md#-var-regl---require--regl----options---)
+      - [`var regl = require('regl')(element, [options])`](API.md#-var-regl---require--regl---element---options---)
+      - [`var regl = require('regl')(canvas, [options])`](API.md#-var-regl---require--regl---canvas---options---)
+      - [`var regl = require('regl')(gl, [options])`](API.md#-var-regl---require--regl---gl---options---)
+  * [Rendering](API.md#rendering)
+    + [Declaration](API.md#declaration)
+      - [`var draw = regl(options)`](API.md#-var-draw---regl-options--)
+      - [`regl.prop([path])`](API.md#-reglprop--path---)
+    + [Invocation](API.md#invocation)
+      - [`draw([options])`](API.md#-draw--options---)
+      - [`draw.scope([options,] func)`](API.md#-drawscope--options---func--)
+      - [`draw.batch(optionList)`](API.md#-drawbatch-optionlist--)
+    + [Clear draw buffer](API.md#clear-draw-buffer)
+      - [`regl.clear(options)`](API.md#-reglclear-options--)
+    + [Render callback](API.md#render-callback)
+      - [`regl.frame(func)`](API.md#-reglframe-func--)
+  * [Resources](API.md#resources)
+    + [Constructors](API.md#constructors)
+      - [`regl.buffer(options)`](API.md#-reglbuffer-options--)
+      - [`regl.elements(options)`](API.md#-reglelements-options--)
+      - [`regl.texture(options)`](API.md#-regltexture-options--)
+      - [`regl.fbo(options)`](API.md#-reglfbo-options--)
+    + [Usage patterns](API.md#usage-patterns)
+      - [`resource(options)`](API.md#-resource-options--)
+      - [`resource.destroy()`](API.md#-resourcedestroy---)
+  * [Clean up](API.md#clean-up)
+      - [`regl.destroy()`](API.md#-regldestroy---)
+  * [Errors and exceptions](API.md#errors-and-exceptions)
 
 ## License
 (c) 2016 MIT License
