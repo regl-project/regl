@@ -18,6 +18,8 @@ var GL_COLOR_BUFFER_BIT = 16384
 var GL_DEPTH_BUFFER_BIT = 256
 var GL_STENCIL_BUFFER_BIT = 1024
 
+var GL_ARRAY_BUFFER = 34962
+
 var CONTEXT_LOST_EVENT = 'webglcontextlost'
 var CONTEXT_RESTORED_EVENT = 'webglcontextrestored'
 
@@ -27,7 +29,7 @@ module.exports = function wrapREGL () {
   var options = args.options
 
   var extensionState = wrapExtensions(gl, options.requiredExtensions || [])
-  var bufferState = wrapBuffers(gl, extensionState)
+  var bufferState = wrapBuffers(gl)
   var elementState = wrapElements(gl, extensionState, bufferState)
   var textureState = wrapTextures(gl, extensionState)
   var fboState = wrapFBOs(gl, extensionState, textureState)
@@ -239,7 +241,9 @@ module.exports = function wrapREGL () {
 
     // Object constructors
     elements: create(elementState),
-    buffer: create(bufferState),
+    buffer: function (options) {
+      return bufferState.create(options, GL_ARRAY_BUFFER)
+    },
     texture: create(textureState),
     fbo: create(fboState),
 

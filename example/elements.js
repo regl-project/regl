@@ -1,5 +1,3 @@
-// This example is a simple demonstration of how to use regl.
-// The default method exposed by the module wraps a canvas element
 var regl = require('../regl')()
 
 regl.clear({
@@ -25,9 +23,9 @@ regl({
   ].join('\n'),
 
   attributes: {
-    position: regl.buffer((new Array(10)).fill().map(function (x, i) {
-      var theta = 2.0 * Math.PI * (i >> 1) / 5
-      return (i & 1) ? Math.cos(theta) : Math.sin(theta)
+    position: regl.buffer((new Array(5)).fill().map(function (x, i) {
+      var theta = 2.0 * Math.PI * i / 5
+      return [ Math.sin(theta), Math.cos(theta) ]
     }))
   },
 
