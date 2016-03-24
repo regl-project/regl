@@ -67,7 +67,9 @@ render()
 
 # API (WORK IN PROGRESS)
 
-## Constructors
+## Initialization
+
+### `require('regl')`
 
 #### `var regl = require('regl')([options])`
 
@@ -77,17 +79,43 @@ render()
 
 #### `var regl = require('regl')(gl, [options])`
 
+## Rendering
+
+### Declaration
+
+#### `var draw = regl(options)`
+
+#### `regl.prop([path])`
+
+### Invocation
+
+#### `draw([options])`
+
+#### `draw.scope([options,] func)`
+
+#### `draw.batch(optionList)`
+
+### Clear draw buffer
+
+#### `regl.clear(options)`
+
+### Render callback
+
+#### `regl.frame(func)`
+
 ## Resources
 
-### Resource constructors
+### Constructors
 
 #### `regl.buffer(options)`
+
+#### `regl.elements(options)`
 
 #### `regl.texture(options)`
 
 #### `regl.fbo(options)`
 
-### Resource methods
+### Usage patterns
 
 #### `resource(options)`
 Updates a resource
@@ -95,17 +123,13 @@ Updates a resource
 #### `resource.destroy()`
 Destroy resource
 
-## Rendering
-
-#### `regl(options)`
-
 ## Clean up
 
 #### `regl.destroy()`
 
-## Errors
+## Errors and exceptions
 
-#### `var REGLError = require('regl/error')`
+All thrown exceptions inherit from `regl.Error`
 
 ## License
 (c) 2016 MIT License

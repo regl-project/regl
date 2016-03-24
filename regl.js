@@ -251,6 +251,10 @@ module.exports = function wrapREGL () {
     frame: frame,
 
     // Destroy regl and all associated resources
-    destroy: destroy
+    destroy: destroy,
+
+    Error: check.REGLError
   })
 }
+
+module.exports.Error = check.error
