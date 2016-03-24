@@ -13,7 +13,7 @@ const regl = require('regl')()
 
 // This creates a new partially evaluated draw call.  We flag the dynamic
 // parts of the draw call using the special `regl.dynamic` variable
-const draw = regl({
+const drawTriangle = regl({
   frag: `
     precision mediump float;
     uniform vec4 color;
@@ -29,18 +29,17 @@ const draw = regl({
     }`,
 
   attributes: {
-    position: regl.buffer(new Float32Array([-2, -2, 4, -2, 4,  4]))
+    position: regl.buffer([[-2, -2], [4, -2], [4,  4]]))
   },
 
   uniforms: {
-    // This makes the color uniform dynamic
-    color: regl.dynamic
+    color: regl.prop('color')
   },
 
   count: 3
-}).draw
+})
 
-function render() {  
+regl.frame(() => {
   // clear contents of the drawing buffer
   regl.clear({
     color: [0, 0, 0, 0],
@@ -49,20 +48,14 @@ function render() {
 
   // draw a triangle
   drawTriangle({
-    uniforms: {
-      color: [
-        Math.cos(Date.now() * 0.001),
-        Math.sin(Date.now() * 0.0008),
-        Math.cos(Date.now() * 0.003),
-        1
-      ]
-    }
+    color: [
+      Math.cos(Date.now() * 0.001),
+      Math.sin(Date.now() * 0.0008),
+      Math.cos(Date.now() * 0.003),
+      1
+    ]
   })
-
-  // schedule next render event
-  requestAnimationFrame(render)
-}
-render()
+})
 ```
 
 # API (WORK IN PROGRESS)
