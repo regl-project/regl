@@ -50,7 +50,7 @@ module.exports = function wrapREGL () {
     count: 0
   }
 
-  var readPixels = wrapRead(gl)
+  var readPixels = wrapRead(gl, glState)
 
   var compiler = createCompiler(
     gl,
@@ -70,7 +70,7 @@ module.exports = function wrapREGL () {
 
   // raf stuff
   var rafCallbacks = []
-  var activeRAF = raf.next(handleRAF)
+  var activeRAF = 0
   var prevWidth = 0
   var prevHeight = 0
   function handleRAF () {
@@ -90,8 +90,16 @@ module.exports = function wrapREGL () {
     }
   }
 
+  function startRAF () {
+    if (!activeRAF && rafCallbacks.length > 0) {
+      handleRAF()
+    }
+  }
+
   function handleContextLoss (event) {
-    raf.cancel(activeRAF)
+    if (activeRAF) {
+      raf.cancel(activeRAF)
+    }
     activeRAF = 0
     event.preventDefault()
     if (options.onContextLost) {
@@ -230,6 +238,8 @@ module.exports = function wrapREGL () {
       }
     }
 
+    startRAF()
+
     return {
       cancel: cancel
     }
@@ -257,10 +267,6 @@ module.exports = function wrapREGL () {
     read: readPixels,
 
     // Destroy regl and all associated resources
-    destroy: destroy,
-
-    Error: check.REGLError
+    destroy: destroy
   })
 }
-
-module.exports.Error = check.error

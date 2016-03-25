@@ -59,7 +59,3 @@ Destroy resource
 ## Clean up
 
 #### `regl.destroy()`
-
-## Errors and exceptions
-
-All thrown exceptions inherit from `regl.Error`
