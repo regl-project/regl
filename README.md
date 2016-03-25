@@ -2,7 +2,7 @@
 
 This repo is an attempt at building some new functional abstractions for working with WebGL.  It is still pretty experimental right now, so expect things to change a lot in the near future.  If you want to know more about why I am writing this thing, take a look at the [rationale](RATIONALE.md).
 
-## Some sketches
+## Example
 
 In regl, you write functions which transform data into sequences of WebGL draw calls.  These functions are then partially evaluated at run time into optimized JavaScript code.  Here is a sketch of how this might look:
 
@@ -58,6 +58,14 @@ regl.frame(() => {
 })
 ```
 
+## Installation
+
+### npm
+
+```sh
+npm i -S regl
+```
+
 ## API
   * [Initialization](API.md#initialization)
     + [`require('regl')`](API.md#-require--regl---)
@@ -93,4 +101,4 @@ regl.frame(() => {
 ## License
 (c) 2016 MIT License
 
-Supported by the Freeman Lab and the Howard Hughes Medical Institute
+Supported by the [Freeman Lab](https://www.janelia.org/lab/freeman-lab) and the Howard Hughes Medical Institute

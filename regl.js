@@ -11,6 +11,7 @@ var wrapShaders = require('./lib/shader')
 var wrapDraw = require('./lib/draw')
 var wrapContext = require('./lib/state')
 var createCompiler = require('./lib/compile')
+var wrapRead = require('./lib/read')
 var dynamic = require('./lib/dynamic')
 var raf = require('./lib/raf')
 
@@ -48,6 +49,8 @@ module.exports = function wrapREGL () {
   var frameState = {
     count: 0
   }
+
+  var readPixels = wrapRead(gl)
 
   var compiler = createCompiler(
     gl,
@@ -249,6 +252,9 @@ module.exports = function wrapREGL () {
 
     // Frame rendering
     frame: frame,
+
+    // Read pixels
+    read: readPixels,
 
     // Destroy regl and all associated resources
     destroy: destroy,
