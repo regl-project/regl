@@ -7,8 +7,6 @@ This repo is an attempt at building some new functional abstractions for working
 In regl, you write functions which transform data into sequences of WebGL draw calls.  These functions are then partially evaluated at run time into optimized JavaScript code.  Here is a sketch of how this might look:
 
 ```JavaScript
-// NOTE: This doesn't work yet, it is just for illustration
-
 const regl = require('regl')()
 
 // This creates a new partially evaluated draw call.  We flag the dynamic
