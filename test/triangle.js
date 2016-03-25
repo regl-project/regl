@@ -1,6 +1,6 @@
 'use strict'
 
-var createContext = require('gl')
+var createContext = require('./util/create-context')
 var createREGL = require('../../regl')
 var tape = require('tape')
 

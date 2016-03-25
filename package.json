@@ -6,15 +6,19 @@
   "directories": {
     "example": "example"
   },
+  "dependencies": {},
   "devDependencies": {
+    "browserify": "^13.0.0",
     "budo": "^8.1.0",
     "gl": "^2.1.5",
     "standard": "^6.0.7",
-    "tape": "^4.4.0"
+    "tap-browser-color": "^0.1.2",
+    "tape": "^4.4.0",
+    "uglify-js": "^2.6.2"
   },
-  "dependencies": {},
   "scripts": {
     "test": "standard && tape test/*.js",
+    "test-browser": "budo test/util/browser.js --open",
     "bench": "budo bench/index.js --open"
   },
   "repository": {
