@@ -56,6 +56,8 @@ regl.frame(() => {
 })
 ```
 
+## Demos
+
 ## Installation
 
 ### npm
@@ -63,6 +65,10 @@ regl.frame(() => {
 ```sh
 npm i -S regl
 ```
+
+## Philosophy
+
+## Benchmarks
 
 ## API
   * [Initialization](API.md#initialization)

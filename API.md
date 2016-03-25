@@ -32,9 +32,15 @@
 
 #### `regl.clear(options)`
 
+### Reading pixels
+
+#### `regl.read([options])`
+
 ### Render callback
 
-#### `regl.frame(func)`
+#### `var tick = regl.frame(func)`
+
+#### `tick.cancel()`
 
 ## Resources
 
@@ -48,10 +54,12 @@
 
 #### `regl.fbo(options)`
 
-### Usage patterns
+### Updates
 
 #### `resource(options)`
 Updates a resource
+
+### Destruction
 
 #### `resource.destroy()`
 Destroy resource

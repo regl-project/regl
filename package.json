@@ -14,7 +14,8 @@
   },
   "dependencies": {},
   "scripts": {
-    "test": "standard && tape test/*.js"
+    "test": "standard && tape test/*.js",
+    "bench": "budo bench/index.js --open"
   },
   "repository": {
     "type": "git",

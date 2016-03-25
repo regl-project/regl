@@ -14,6 +14,7 @@ var createCompiler = require('./lib/compile')
 var wrapRead = require('./lib/read')
 var dynamic = require('./lib/dynamic')
 var raf = require('./lib/raf')
+var clock = require('./lib/clock')
 
 var GL_COLOR_BUFFER_BIT = 16384
 var GL_DEPTH_BUFFER_BIT = 256
@@ -47,9 +48,12 @@ module.exports = function wrapREGL () {
   var drawState = wrapDraw(gl, extensionState, bufferState)
   var glState = wrapContext(gl, shaderState)
   var frameState = {
-    count: 0
+    count: 0,
+    start: clock(),
+    dt: 0,
+    t: clock(),
+    renderTime: 0
   }
-
   var readPixels = wrapRead(gl, glState)
 
   var compiler = createCompiler(
@@ -84,10 +88,14 @@ module.exports = function wrapREGL () {
       glState.notifyViewportChanged()
     }
 
+    var now = clock()
+    frameState.dt = now - frameState.t
+    frameState.t = now
     for (var i = 0; i < rafCallbacks.length; ++i) {
       var cb = rafCallbacks[i]
-      cb(frameState.count)
+      cb(frameState.count, frameState.t, frameState.dt)
     }
+    frameState.renderTime = clock() - now
   }
 
   function startRAF () {
@@ -96,11 +104,15 @@ module.exports = function wrapREGL () {
     }
   }
 
-  function handleContextLoss (event) {
+  function stopRAF () {
     if (activeRAF) {
-      raf.cancel(activeRAF)
+      raf.cancel(handleRAF)
+      activeRAF = 0
     }
-    activeRAF = 0
+  }
+
+  function handleContextLoss (event) {
+    stopRAF()
     event.preventDefault()
     if (options.onContextLost) {
       options.onContextLost()
@@ -128,9 +140,7 @@ module.exports = function wrapREGL () {
 
   // Resource destructuion
   function destroy () {
-    if (activeRAF) {
-      raf.cancel(activeRAF)
-    }
+    stopRAF()
 
     if (canvas) {
       canvas.removeEventListener(CONTEXT_LOST_EVENT, handleContextLoss)
@@ -233,8 +243,12 @@ module.exports = function wrapREGL () {
       var index = rafCallbacks.find(function (item) {
         return item === cb
       })
-      if (index >= 0) {
-        rafCallbacks.splice(index, 1)
+      if (index < 0) {
+        return
+      }
+      rafCallbacks.splice(index, 1)
+      if (rafCallbacks.length <= 0) {
+        stopRAF()
       }
     }
 
@@ -262,6 +276,7 @@ module.exports = function wrapREGL () {
 
     // Frame rendering
     frame: frame,
+    stats: frameState,
 
     // Read pixels
     read: readPixels,
