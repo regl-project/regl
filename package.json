@@ -7,11 +7,12 @@
     "example": "example"
   },
   "devDependencies": {
+    "budo": "^8.1.0",
+    "gl": "^2.1.5",
     "standard": "^6.0.7",
     "tape": "^4.4.0"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "scripts": {
     "test": "standard && tape test/*.js"
   },
@@ -25,7 +26,7 @@
     "regl",
     "gl",
     "graphics",
-    "cg",
+    "computer graphics",
     "opengl",
     "glsl",
     "data",
