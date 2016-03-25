@@ -19,7 +19,11 @@
   "scripts": {
     "test": "standard && tape test/*.js",
     "test-browser": "budo test/util/browser.js --open",
-    "bench": "budo bench/index.js --open"
+    "bench": "budo bench/index.js --open",
+    "build": "npm run build-script && npm run build-min",
+    "build-script": "browserify regl.js -s regl | derequire > dist/regl.js",
+    "build-min": "uglifyjs < dist/regl.js > dist/regl.min.js"
+
   },
   "repository": {
     "type": "git",

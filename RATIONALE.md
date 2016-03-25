@@ -1,10 +1,10 @@
 # New abstractions for WebGL
 
-The high level goal of stack.gl is to deconstruct a 3D engine into reusable, interchangeable, composable modules.  More precisely, we mean that a module is,
+The high level goal of stack.gl is to deconstruct a 3D engine into modules.  Ideally these modules should be
 
-* *Reusable* if it can be extracted from its original environment and used again
-* *Interchangeable* if it can be replaced with a module having an equivalent interface
-* *Composable* if it is composed itself of simpler, smaller modules
+* *Reusable*: if it can be extracted from its original environment and used again
+* *Interchangeable*: if it can be replaced with a module having an equivalent interface
+* *Composable*: if it is composed itself of simpler, smaller modules
 
 stack.gl is a loosely coupled collection of modules that communicate using standard interfaces.  At a high level, there are three basic parts of stack.gl,
 
@@ -78,7 +78,7 @@ Simple, declarative, easy to reason about.  Unfortunately, also very slow if imp
 
 
 
-## Rendering as change detection
+## Functional rendering
 Thinking in terms of data flow reframes the problem of rendering as detecting changes in the properties of the `render()` function.
 
 Unfortunately, some of these properties might be really big binary typed arrays. Even scanning this data is expensive, so we need to think carefully about how to detect such changes.

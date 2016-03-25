@@ -4,7 +4,7 @@ This repo is an attempt at building some new functional abstractions for working
 
 ## Example
 
-In regl, you write functions which transform data into sequences of WebGL draw calls.  These functions are then partially evaluated at run time into optimized JavaScript code.  Here is a sketch of how this might look:
+In `regl`, the basic unit of functionality is a **command**.  A command is a complete representation of the WebGL state required to perform some draw call.  To define a command you specify a mixture of static and dynamic data for the object. Once this is done, `regl` takes this description and then compiles it into optimized JavaScript code.  For example, here is a simple `regl` program to draw a colored triangle:
 
 ```JavaScript
 const regl = require('regl')()
@@ -31,6 +31,7 @@ const drawTriangle = regl({
   },
 
   uniforms: {
+    // This defines the color of the triangle to be a dynamic variable
     color: regl.prop('color')
   },
 
@@ -56,19 +57,40 @@ regl.frame(() => {
 })
 ```
 
-## Demos
-
 ## Installation
 
-### npm
+#### Live editing
+To try out regl right away, you can use [RequireBin](http://requirebin.com/) (recommended) or [codepen](http://codepen.io/) if you are more familiar that environment.  The following links should help get you started:
+
+* requirebin
+* codepen
+
+#### npm
+The easiest way to use `regl` is via [npm](http://npmjs.com).  Once you have node set up, you can install and use `regl` in your project using the following command:
 
 ```sh
 npm i -S regl
 ```
 
-## Philosophy
+For more info on how to use npm, [check out the official docs](https://docs.npmjs.com/).
+
+#### Prebuilt scripts
+You can also use `regl` as a prebuilt script.  The most recent versions can be found under the [releases tab](releases).
+
+
+## Demos
+
+TODO generate demo gallery
+
+## Comparisons
+
+* vs THREE.js
+* vs gl-* modules from stack.gl
+
 
 ## Benchmarks
+
+TODO
 
 ## API
   * [Initialization](API.md#initialization)
