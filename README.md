@@ -102,6 +102,10 @@ npm i -S regl
       - [`regl.destroy()`](API.md#-regldestroy---)
   * [Errors and exceptions](API.md#errors-and-exceptions)
 
+## Contributing
+
+[For info on how to build and test headless, see the contributing guide here](DEVELOPING.md)
+
 ## License
 (c) 2016 MIT License
 
