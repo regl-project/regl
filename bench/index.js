@@ -5,10 +5,18 @@ var regl = require('../regl')()
 var container = document.createElement('div')
 Object.assign(container.style, {
   'position': 'absolute',
-  'left': '5px',
-  'top': '5px',
+  'left': '0px',
+  'top': '0px',
+  'height': '100%',
+  'width': '100%',
+  'overflow': 'auto',
+  'padding': '15px',
   'z-index': '10'
 })
+
+var header = document.createElement('h2')
+header.innerHTML = '<u>benchmarks</u>'
+container.appendChild(header)
 
 document.body.appendChild(container)
 
@@ -109,12 +117,17 @@ function button (text, onClick) {
   result.href = '#' + text
   result.addEventListener('click', onClick)
 
-  var statNode = document.createElement('p')
+  var statNode = document.createElement('h5')
+  statNode.innerText = 'n:0, t:(---), m:(---)'
+  Object.assign(statNode.style, {
+    'margin': '4px',
+    'display': 'inline'
+  })
 
   var buttonContainer = document.createElement('div')
   buttonContainer.appendChild(result)
+  buttonContainer.appendChild(statNode)
   container.appendChild(buttonContainer)
-  container.appendChild(statNode)
 
   return {
     link: result,
