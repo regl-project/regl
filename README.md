@@ -2,7 +2,7 @@
 
 This repo is an attempt at building some new functional abstractions for working with WebGL.  It is still pretty experimental right now, so expect things to change a lot in the near future.  If you want to know more about why I am writing this thing, take a look at the [rationale](RATIONALE.md).
 
-## Example
+## Simple example
 
 In `regl`, the basic unit of functionality is a **command**.  A command is a complete representation of the WebGL state required to perform some draw call.  To define a command you specify a mixture of static and dynamic data for the object. Once this is done, `regl` takes this description and then compiles it into optimized JavaScript code.  For example, here is a simple `regl` program to draw a colored triangle:
 
@@ -57,7 +57,9 @@ regl.frame(() => {
 })
 ```
 
-## Installation
+## Setup
+
+regl has no dependencies, so setting it up is pretty easy
 
 #### Live editing
 To try out regl right away, you can use [RequireBin](http://requirebin.com/) (recommended) or [codepen](http://codepen.io/) if you are more familiar that environment.  The following links should help get you started:
@@ -74,19 +76,23 @@ npm i -S regl
 
 For more info on how to use npm, [check out the official docs](https://docs.npmjs.com/).
 
-#### Prebuilt scripts
-You can also use `regl` as a prebuilt script.  The most recent versions can be found under the [releases tab](releases).
+#### Standalone script tag
+You can also use `regl` as a prebuilt script.  The most recent versions can be found under the [releases tab](releases).  To do this, add the following script tag to your HTML:
 
+```html
+<script src="[some cdn tbd]/regl.min.js"></script>
+```
 
-## Demos
+## More examples
 
 TODO generate demo gallery
+
+## Demo gallery
 
 ## Comparisons
 
 * vs THREE.js
 * vs gl-* modules from stack.gl
-
 
 ## Benchmarks
 

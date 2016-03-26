@@ -1,8 +1,5 @@
 /* globals performance */
-var CASES = {
-  clear: require('./clear')
-}
-
+var CASES = require('./list')
 var regl = require('../regl')()
 
 var container = document.createElement('div')
@@ -15,37 +12,7 @@ Object.assign(container.style, {
 
 document.body.appendChild(container)
 
-function button (text, onClick) {
-  var result = document.createElement('a')
-  result.text = text
-  result.href = '#' + text
-  result.addEventListener('click', onClick)
-
-  var statNode = document.createElement('p')
-
-  var buttonContainer = document.createElement('p')
-  buttonContainer.appendChild(result)
-  container.appendChild(buttonContainer)
-  container.appendChild(statNode)
-
-  return {
-    link: result,
-    text: statNode,
-    container: buttonContainer
-  }
-}
-
-Object.keys(CASES).map(function (caseName) {
-  var result
-  result = button(caseName, function () {
-    var proc = CASES[caseName]
-    var bench = benchmark(proc(regl), 5000, 500)
-    result.text.innerHTML = JSON.stringify(bench)
-  })
-  return result
-})
-
-function analyze (samples) {
+function analyze (samples, fmt) {
   // Moments
   var m0 = samples.length
   var m1 = 0.0
@@ -65,17 +32,38 @@ function analyze (samples) {
     return a - b
   })
 
-  return {
-    n: m0,
-    mean: mean,
-    stddev: stddev,
+  return [
+    'μ=', fmt(mean), '∓', fmt(stddev),
+    ', q=[',
+    fmt(sorted[(0.5 * m0) | 0]), ', ',
+    fmt(sorted[(0.95 * m0) | 0]), ', ',
+    fmt(sorted[m0 - 1]), ']'
+  ].join('')
+}
 
-    min: sorted[0],
-    max: sorted[m0 - 1],
-    median: sorted[m0 >> 1],
-    p10: sorted[(0.1 * m0) | 0],
-    p90: sorted[(0.9 * m0) | 0]
+function sigfigs (x) {
+  var xr = Math.round(x * 100)
+  return (xr / 100)
+}
+
+function formatTime (x) {
+  if (x > 1000) {
+    return sigfigs(x / 1000.0) + 's'
   }
+  if (x > 1) {
+    return sigfigs(x) + 'ms'
+  }
+  return sigfigs(x * 1e3) + 'μs'
+}
+
+function formatMemory (x) {
+  if (x > (1 << 20)) {
+    return sigfigs(x / (1 << 20)) + 'Mb'
+  }
+  if (x > (1 << 10)) {
+    return sigfigs(x / (1 << 10)) + 'kb'
+  }
+  return x + 'b'
 }
 
 function benchmark (procedure, duration, warmup) {
@@ -89,21 +77,59 @@ function benchmark (procedure, duration, warmup) {
     heapSamples.push(performance.memory.usedJSHeapSize)
   }
 
-  var warmStop = warmup + performance.now()
-  while (performance.now() < warmStop) {
-    sample()
-  }
+  return function run () {
+    regl.clear({
+      color: [ 0, 0, 0, 0 ],
+      depth: 1,
+      stencil: 0
+    })
+    for (var i = 0; i < warmup; ++i) {
+      procedure()
+    }
 
-  timeSamples.length = 0
-  heapSamples.length = 0
+    timeSamples.length = 0
+    heapSamples.length = 0
 
-  var stop = duration + performance.now()
-  while (performance.now() <= stop) {
-    sample()
-  }
+    var stop = duration + performance.now()
+    while (performance.now() <= stop) {
+      sample()
+    }
 
-  return {
-    time: analyze(timeSamples),
-    space: analyze(heapSamples)
+    return {
+      n: timeSamples.length,
+      time: analyze(timeSamples, formatTime),
+      space: analyze(heapSamples, formatMemory)
+    }
   }
 }
+
+function button (text, onClick) {
+  var result = document.createElement('a')
+  result.text = text
+  result.href = '#' + text
+  result.addEventListener('click', onClick)
+
+  var statNode = document.createElement('p')
+
+  var buttonContainer = document.createElement('div')
+  buttonContainer.appendChild(result)
+  container.appendChild(buttonContainer)
+  container.appendChild(statNode)
+
+  return {
+    link: result,
+    text: statNode,
+    container: buttonContainer
+  }
+}
+
+Object.keys(CASES).map(function (caseName) {
+  var result
+  var proc = CASES[caseName]
+  var sample = benchmark(proc(regl), 1000, 10)
+  result = button(caseName, function () {
+    var bench = sample()
+    result.text.innerText = 'n:' + bench.n + ', t:(' + bench.time + '), m:(' + bench.space + ')'
+  })
+  return result
+})
