@@ -62,13 +62,13 @@ regl.frame(() => {
 regl has no dependencies, so setting it up is pretty easy
 
 #### Live editing
-To try out regl right away, you can use [RequireBin](http://requirebin.com/) (recommended) or [codepen](http://codepen.io/) if you are more familiar that environment.  The following links should help get you started:
+To try out regl right away, you can use [RequireBin](http://requirebin.com/) or [codepen](http://codepen.io/).  The following links should help get you started:
 
 * requirebin
 * codepen
 
 #### npm
-The easiest way to use `regl` is via [npm](http://npmjs.com).  Once you have node set up, you can install and use `regl` in your project using the following command:
+The easiest way to use `regl` in a project is via [npm](http://npmjs.com).  Once you have node set up, you can install and use `regl` in your project using the following command:
 
 ```sh
 npm i -S regl
@@ -77,7 +77,7 @@ npm i -S regl
 For more info on how to use npm, [check out the official docs](https://docs.npmjs.com/).
 
 #### Standalone script tag
-You can also use `regl` as a prebuilt script.  The most recent versions can be found under the [releases tab](releases).  To do this, add the following script tag to your HTML:
+You can also use `regl` as a standalone script if you are really stubborn.  The most recent versions can be found under the [releases tab](releases).  To do this, add the following script tag to your HTML:
 
 ```html
 <script src="[some cdn tbd]/regl.min.js"></script>
@@ -91,8 +91,9 @@ TODO generate demo gallery
 
 ## Comparisons
 
-* vs THREE.js
+* vs WebGL
 * vs gl-* modules from stack.gl
+* vs TWGL
 
 ## Benchmarks
 

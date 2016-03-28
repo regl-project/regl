@@ -43,10 +43,12 @@ tape('triangle', function (t) {
   for (var i = 0; i < 16; ++i) {
     for (var j = 0; j < 16; ++j) {
       var ptr = 4 * (16 * i + j)
-      t.equals(pixels[ptr], i < j ? 255 : 0)
-      t.equals(pixels[ptr + 1], 0)
-      t.equals(pixels[ptr + 2], i < j ? 0 : 255)
-      t.equals(pixels[ptr + 3], 255)
+      if (i !== j) {
+        t.equals(pixels[ptr], i > j ? 255 : 0)
+        t.equals(pixels[ptr + 1], 0)
+        t.equals(pixels[ptr + 2], i > j ? 0 : 255)
+        t.equals(pixels[ptr + 3], 255)
+      }
     }
   }
 
