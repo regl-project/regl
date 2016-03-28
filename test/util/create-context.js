@@ -1,6 +1,9 @@
 if (typeof document !== 'undefined') {
   var canvas = document.createElement('canvas')
-  var context = canvas.getContext('webgl', {antialias: false})
+  var context = canvas.getContext('webgl', {
+    antialias: false,
+    stencil: true
+  })
   canvas.style.position = 'absolute'
   canvas.style.top = '0'
   canvas.style.right = '0'
@@ -12,5 +15,5 @@ if (typeof document !== 'undefined') {
     return context
   }
 } else {
-  //module.exports = require('gl')
+  module.exports = require('gl')
 }

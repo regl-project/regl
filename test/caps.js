@@ -32,7 +32,9 @@ tape('caps', function (t) {
   })
 
   // Test in dynamic mode
-  var dynOptions = {}
+  var dynOptions = {
+    frag: 'void main() {gl_FragColor=vec4(1,0,1,0);}'
+  }
   CAP_LIST.forEach(function (desc) {
     dynOptions[desc[0]] = regl.prop
   })
