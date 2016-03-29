@@ -147,7 +147,6 @@ module.exports = function wrapREGL () {
       canvas.removeEventListener(CONTEXT_RESTORED_EVENT, handleContextRestored)
     }
 
-    glState.clear()
     shaderState.clear()
     fboState.clear()
     textureState.clear()

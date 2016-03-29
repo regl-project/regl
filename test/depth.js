@@ -53,7 +53,7 @@ tape('depth', function (t) {
     t.equals(gl.getParameter(gl.DEPTH_CLEAR_VALUE), cdepth, prefix + ' clear depth')
     t.equals(gl.getParameter(gl.DEPTH_FUNC), depthFuncs[flags.depthFunc], prefix + ' depth func')
     t.equals(gl.getParameter(gl.DEPTH_TEST), flags.depthTest, prefix + ' depth test')
-    t.equals(gl.getParameter(gl.DEPTH_WRITEMASK), flags.depthMask, prefix + ' depth test')
+    t.equals(gl.getParameter(gl.DEPTH_WRITEMASK), flags.depthMask, prefix + ' depth mask')
   }
 
   function testPixels (cdepth, depths, flags, prefix) {
@@ -64,13 +64,13 @@ tape('depth', function (t) {
         case gl.NEVER: return false
         case gl.LESS: return x < y
         case gl.LEQUAL: return x <= y
-        case gl.EQUALS: return x === y
+        case gl.EQUAL: return x === y
         case gl.GEQUAL: return x >= y
         case gl.GREATER: return x > y
         case gl.NOTEQUAL: return x !== y
         case gl.ALWAYS: return true
         default:
-          t.fail('invalid depth func: ', flags.depthFunc)
+          t.fail('invalid depth func: ' + flags.depthFunc)
       }
     }
 
@@ -146,7 +146,7 @@ tape('depth', function (t) {
         }
       }
     }
-    t.equals(broken.join('\n\t'), '', prefix + ' pixels')
+    t.equals(broken.join('; '), '', prefix + ' pixels')
   }
 
   function testDynamic (cdepth, batch, depths, flags) {
@@ -206,13 +206,13 @@ tape('depth', function (t) {
       slope: [0, 1],
       depth: depths[1]
     }])
-    var prefix = 'static ' + JSON.stringify(flags)
+    var prefix = 'static ' + JSON.stringify(flags) + ' d:' + depths + ', cd: ' + cdepth
     testFlags(cdepth, flags, prefix)
     testPixels(cdepth, depths, flags, prefix)
   }
 
   var cases = []
-  var funcs = ['never', '<', '<=', '=', '>', '>=', '!=', 'always']
+  var funcs = ['always', 'never', '<', '<=', '=', '>', '>=', '!=']
   funcs.forEach(function (func) {
     for (var mask = 0; mask <= 1; ++mask) {
       for (var test = 1; test <= 1; ++test) {
@@ -221,9 +221,9 @@ tape('depth', function (t) {
           depthTest: !!test,
           depthFunc: func
         }
-        for (var clearDepth = 0; clearDepth <= 1; clearDepth += 1) {
-          for (var depth0 = 0; depth0 <= 1; depth0 += 0.5) {
-            for (var depth1 = 0; depth1 <= 1; depth1 += 0.5) {
+        for (var clearDepth = 1; clearDepth <= 1; clearDepth += 1.0) {
+          for (var depth0 = 0.25; depth0 <= 1; depth0 += 0.5) {
+            for (var depth1 = 0.25; depth1 <= depth0; depth1 += 0.5) {
               cases.push([+clearDepth, [+depth0, +depth1], flags])
             }
           }
