@@ -1,7 +1,4 @@
 # regl
-
-<img src="https://badge-size.herokuapp.com/mikolalysenko/regl/dist/regl.min.js.svg?compression=gzip" />
-
 This repo is an attempt at building new functional abstractions for working with WebGL.  It is still pretty experimental right now, so expect things to change a lot in the near future! If you want to know more about why I am writing this thing and why it looks the way it does, take a look at the [rationale](RATIONALE.md).
 
 `regl` offers the following advantages over raw WebGL code:
@@ -110,7 +107,9 @@ You can also use `regl` as a standalone script if you are really stubborn.  The 
 * vs TWGL
 
 ## Benchmarks
+You can run benchmarks locally using `npm run bench` or check them out here:
 
+* [Interactive benchmarks](https://mikolalysenko.github.io/regl/www/bench.html)
 
 ## API
 
