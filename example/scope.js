@@ -31,7 +31,7 @@ regl({
   },
 
   count: 3
-}).scope(function () {
+})(function () {
   regl({
     uniforms: {
       color: [1, 0, 0, 1],

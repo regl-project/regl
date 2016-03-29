@@ -12,7 +12,7 @@
 
 #### `var regl = require('regl')(gl, [options])`
 
-## Rendering
+## Commands
 
 ### Declaration
 
@@ -22,11 +22,11 @@
 
 ### Invocation
 
-#### `draw([options])`
+#### Drawing `draw([options])`
 
-#### `draw.scope([options,] func)`
+#### Scope `scope([options,] func)`
 
-#### `draw.batch(optionList)`
+#### Batch `batch(optionList)`
 
 ### Clear draw buffer
 
@@ -41,6 +41,10 @@
 #### `var tick = regl.frame(func)`
 
 #### `tick.cancel()`
+
+### Frame stats
+
+#### `regl.stats`
 
 ## Resources
 

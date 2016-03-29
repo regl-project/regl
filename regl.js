@@ -202,10 +202,35 @@ module.exports = function wrapREGL () {
       parts.dynamic, uniforms.dynamic, attributes.dynamic,
       hasDynamic)
 
-    return Object.assign(compiled.draw, {
-      scope: compiled.scope,
-      batch: compiled.batch || void 0
-    })
+    var draw = compiled.draw
+    var batch = compiled.batch
+    var scope = compiled.scope
+
+    function dynamicCommand (args, body) {
+      if (Array.isArray(args)) {
+        return batch(args)
+      } else if (typeof body === 'function') {
+        return scope(args, body)
+      }
+      return draw(args)
+    }
+    dynamicCommand.draw = draw
+    dynamicCommand.batch = batch
+    dynamicCommand.scope = scope
+
+    function staticCommand (body) {
+      if (body) {
+        return scope(body)
+      }
+      return draw()
+    }
+    staticCommand.draw = draw
+    staticCommand.scope = scope
+
+    if (hasDynamic) {
+      return dynamicCommand
+    }
+    return staticCommand
   }
 
   // Clears the currently bound frame buffer
