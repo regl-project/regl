@@ -9,7 +9,7 @@ This repo is an attempt at building new functional abstractions for working with
 * **Less verbose**
 * **Fewer silent failure** If you pass incorrect parameters to some WebGL method, the default behavior is to set an error code and continue on. Because `regl` commands have more structure, we can do more validation up front without the run time performance cost.
 * **Sane defaults** Many WebGL APIs have redundant or outright broken parameters (for example `border` in `gl.texImage2D` or `transpose` in `gl.uniformMatrix4fv`). `regl` wraps these APIs in such a way that you will never have to see this mess.
-* **More consistent API** 
+* **More consistent API**
 
 ## Simple example
 
@@ -114,36 +114,38 @@ TODO generate demo gallery
 TODO
 
 ## API
-  * [Initialization](API.md#initialization)
-    + [`require('regl')`](API.md#-require--regl---)
-      - [`var regl = require('regl')([options])`](API.md#-var-regl---require--regl----options---)
-      - [`var regl = require('regl')(element, [options])`](API.md#-var-regl---require--regl---element---options---)
-      - [`var regl = require('regl')(canvas, [options])`](API.md#-var-regl---require--regl---canvas---options---)
-      - [`var regl = require('regl')(gl, [options])`](API.md#-var-regl---require--regl---gl---options---)
-  * [Rendering](API.md#rendering)
-    + [Declaration](API.md#declaration)
-      - [`var draw = regl(options)`](API.md#-var-draw---regl-options--)
-      - [`regl.prop([path])`](API.md#-reglprop--path---)
-    + [Invocation](API.md#invocation)
-      - [`draw([options])`](API.md#-draw--options---)
-      - [`draw.scope([options,] func)`](API.md#-drawscope--options---func--)
-      - [`draw.batch(optionList)`](API.md#-drawbatch-optionlist--)
-    + [Clear draw buffer](API.md#clear-draw-buffer)
-      - [`regl.clear(options)`](API.md#-reglclear-options--)
-    + [Render callback](API.md#render-callback)
-      - [`regl.frame(func)`](API.md#-reglframe-func--)
-  * [Resources](API.md#resources)
-    + [Constructors](API.md#constructors)
-      - [`regl.buffer(options)`](API.md#-reglbuffer-options--)
-      - [`regl.elements(options)`](API.md#-reglelements-options--)
-      - [`regl.texture(options)`](API.md#-regltexture-options--)
-      - [`regl.fbo(options)`](API.md#-reglfbo-options--)
-    + [Usage patterns](API.md#usage-patterns)
-      - [`resource(options)`](API.md#-resource-options--)
-      - [`resource.destroy()`](API.md#-resourcedestroy---)
-  * [Clean up](API.md#clean-up)
-      - [`regl.destroy()`](API.md#-regldestroy---)
-  * [Errors and exceptions](API.md#errors-and-exceptions)
+* [Initialization](#initialization)
+* [Commands](#commands)
+  + [Dynamic properties](#dynamic-properties)
+  + [Command properties](#command-properties)
+    - [Shaders](#shaders)
+    - [Uniforms](#uniforms)
+    - [Attributes](#attributes)
+    - [Drawing](#drawing)
+    - [Depth](#depth)
+    - [Stencil](#stencil)
+    - [Blending](#blending)
+    - [Polygon offset](#polygon-offset)
+    - [Culling](#culling)
+    - [Miscellaneous parameters](#miscellaneous-parameters)
+  + [Executing commands](#executing-commands)
+    - [One-shot rendering](#one-shot-rendering)
+    - [Scoped parameters](#scoped-parameters)
+    - [Batch rendering](#batch-rendering)
+* [Resources](#resources)
+  + [Constructors](#constructors)
+    - [`regl.buffer(options)`](#-reglbuffer-options--)
+    - [`regl.elements(options)`](#-reglelements-options--)
+    - [`regl.texture(options)`](#-regltexture-options--)
+    - [`regl.fbo(options)`](#-reglfbo-options--)
+  + [Updates](#updates)
+  + [Destruction](#destruction)
+* [Other stuff](#other-properties)
+  + [Clear the draw buffer](#clear-the-draw-buffer)
+  + [Reading pixels](#reading-pixels)
+  + [Per-frame callbacks](#per-frame-callbacks)
+  + [Frame stats](#frame-stats)
+  + [Clean up](#clean-up)
 
 ## Contributing
 

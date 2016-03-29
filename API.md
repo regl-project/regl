@@ -18,16 +18,24 @@ var regl = require('regl')(element, [options])
 ```
 
 ##### From a canvas
-If a canvas element already exists, then this canvas can be passed to regl
+If the first argument is an HTMLCanvasElement, then `regl` will use this canvas to create a new WebGLRenderingContext that it renders into.
 
 ```javascript
 var regl = require('regl')(canvas, [options])
 ```
 
 ##### From a WebGL context
+Finally, if the first argument is a WebGLRenderingContext, then `regl` will just use this context without touching the DOM at all.
 
 ```javascript
 var regl = require('regl')(gl, [options])
+```
+
+Note that this form is compatible with `headless-gl` and can be used to do offscreen rendering in node.js. For example,
+
+```javascript
+//Creates a headless 256x256 regl instance
+var regl = require('regl')(require('gl')(256, 256))
 ```
 
 ## Commands
@@ -84,7 +92,7 @@ var command = regl({
 
 ### Command properties
 
-##### Shaders
+#### Shaders
 
 | Property | Description | Default |
 |----------|-------------|---------|
@@ -93,9 +101,9 @@ var command = regl({
 
 **Note**: Dynamic shaders are not supported.
 
-##### Uniforms
+#### Uniforms
 
-##### Attributes
+#### Attributes
 
 Each attribute can have any of the following optional properties,
 
@@ -108,7 +116,7 @@ Each attribute can have any of the following optional properties,
 | `size` | | `0` |
 | `divisor` | | `0` * |
 
-##### Drawing
+#### Drawing
 
 | Property | Description | Default |
 |----------|-------------|---------|
@@ -134,7 +142,7 @@ Each attribute can have any of the following optional properties,
 | `'triangle strip'` | `gl.TRIANGLE_STRIP` |
 | `'triangle fan'` | `gl.TRIANGLE_FAN` |
 
-##### Depth
+#### Depth
 
 | Property | Description | Default |
 |----------|-------------|---------|
@@ -155,7 +163,7 @@ Each attribute can have any of the following optional properties,
 | `'=', 'equal'` | gl.EQUAL |
 | `'!=', 'notequal'` | gl.NOTEQUAL |
 
-##### Stencil
+#### Stencil
 
 | Property | Description | Default |
 |----------|-------------|---------|
@@ -164,7 +172,7 @@ Each attribute can have any of the following optional properties,
 | `func` | Sets `gl.stencilFunc` | `` |
 | `op` | Sets `gl.stencilOpSeparate` | `` |
 
-##### Blending
+#### Blending
 
 | Property | Description | Default |
 |----------|-------------|---------|
@@ -173,21 +181,21 @@ Each attribute can have any of the following optional properties,
 | `color` | Sets `gl.blendColor` | `[0, 0, 0, 0]` |
 | `equation` | Sets `gl.blendEquation` | `''` |
 
-##### Polygon offset
+#### Polygon offset
 
 | Property | Description | Default |
 |----------|-------------|---------|
 | `enable` | Sets `gl.enable(gl.POLYGON_OFFSET)` | `false` |
 | `offset` | Sets `gl.polygonOffset` | `{}` |
 
-##### Culling
+#### Culling
 
 | Property | Description | Default |
 |----------|-------------|---------|
 | `enable` | Sets `gl.enable(gl.CULL_FACE)` | `false` |
 | `face` | Sets `gl.cullFace` | `'back'` |
 
-##### Miscellaneous parameters
+#### Miscellaneous parameters
 
 | Property | Description | Default |
 |----------|-------------|---------|
@@ -197,14 +205,34 @@ Each attribute can have any of the following optional properties,
 | `colorMask` | | `[true, true, true, true]` |
 | `viewport` | | `null` |
 
-### Invocation
+### Executing commands
+There are 3 ways to execute a regl command,
 
 #### One-shot rendering
 
+```javascript
+command()
+
+command(args)
+```
+
 #### Scoped parameters
+
+```javascript
+command(function () {
+  // ...
+})
+
+command(args, function () {
+  // ...
+})
+```
 
 #### Batch rendering
 
+```javascript
+command([arg0, arg1, arg2, ...])
+```
 
 ## Resources
 
