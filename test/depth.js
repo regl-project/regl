@@ -215,7 +215,7 @@ tape('depth', function (t) {
   var funcs = ['always', 'never', '<', '<=', '=', '>', '>=', '!=']
   funcs.forEach(function (func) {
     for (var mask = 0; mask <= 1; ++mask) {
-      for (var test = 1; test <= 1; ++test) {
+      for (var test = 0; test <= 1; ++test) {
         var flags = {
           depthMask: !!mask,
           depthTest: !!test,
@@ -244,5 +244,5 @@ tape('depth', function (t) {
       testDynamic(top[0], false, top[1], top[2])
       testDynamic(top[0], true, top[1], top[2])
     }
-  }, 10)
+  }, 1)
 })

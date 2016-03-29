@@ -11,6 +11,7 @@
     "browserify": "^13.0.0",
     "budo": "^8.1.0",
     "gl": "^2.1.5",
+    "indexhtmlify": "^1.2.1",
     "standard": "^6.0.7",
     "tap-browser-color": "^0.1.2",
     "tape": "^4.4.0",
@@ -22,8 +23,8 @@
     "bench": "budo bench/index.js --open",
     "build": "npm run build-script && npm run build-min",
     "build-script": "browserify regl.js -s regl | derequire > dist/regl.js",
-    "build-min": "uglifyjs < dist/regl.js > dist/regl.min.js"
-
+    "build-min": "uglifyjs < dist/regl.js > dist/regl.min.js",
+    "build-bench": "browserify bench/index.js | indexhtmlify > www/bench.html"
   },
   "repository": {
     "type": "git",

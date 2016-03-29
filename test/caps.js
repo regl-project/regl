@@ -7,7 +7,6 @@ tape('caps', function (t) {
   var regl = createREGL(gl)
 
   var CAP_LIST = [
-    ['depthTest', gl.DEPTH_TEST],
     ['cull', gl.CULL_FACE],
     ['blend', gl.BLEND],
     ['dither', gl.DITHER],
