@@ -18,7 +18,7 @@ tape('depth', function (t) {
     ].join('\n'),
 
     vert: [
-      'precision mediump float;',
+      'precision highp float;',
       'attribute float t;',
       'uniform vec2 offset, slope;',
       'uniform float depth;',
@@ -50,10 +50,10 @@ tape('depth', function (t) {
   var drawDynamic = regl(desc)
 
   function testFlags (cdepth, flags, prefix) {
-    t.equals(gl.getParameter(gl.DEPTH_CLEAR_VALUE), cdepth, prefix + 'clear depth ok')
-    t.equals(gl.getParameter(gl.DEPTH_FUNC), depthFuncs[flags.depthFunc], prefix + 'depth func ok')
-    t.equals(gl.getParameter(gl.DEPTH_TEST), flags.depthTest, prefix + 'depth test')
-    t.equals(gl.getParameter(gl.DEPTH_WRITEMASK), flags.depthMask, prefix + 'depth test')
+    t.equals(gl.getParameter(gl.DEPTH_CLEAR_VALUE), cdepth, prefix + ' clear depth')
+    t.equals(gl.getParameter(gl.DEPTH_FUNC), depthFuncs[flags.depthFunc], prefix + ' depth func')
+    t.equals(gl.getParameter(gl.DEPTH_TEST), flags.depthTest, prefix + ' depth test')
+    t.equals(gl.getParameter(gl.DEPTH_WRITEMASK), flags.depthMask, prefix + ' depth test')
   }
 
   function testPixels (cdepth, depths, flags, prefix) {
@@ -146,7 +146,7 @@ tape('depth', function (t) {
         }
       }
     }
-    t.equals(broken.join('\n\t'), '', prefix)
+    t.equals(broken.join('\n\t'), '', prefix + ' pixels')
   }
 
   function testDynamic (cdepth, batch, depths, flags) {
@@ -184,7 +184,7 @@ tape('depth', function (t) {
         flags: flags
       })
     }
-    var prefix = (batch ? 'batch' : 'dynamic') + ' ' + JSON.stringify(flags)
+    var prefix = (batch ? 'batch' : 'dynamic') + ' ' + JSON.stringify(flags) + ' d:' + depths + ', cd: ' + cdepth
     testFlags(cdepth, flags, prefix)
     testPixels(cdepth, depths, flags, prefix)
   }
@@ -211,29 +211,38 @@ tape('depth', function (t) {
     testPixels(cdepth, depths, flags, prefix)
   }
 
-  for (var clearDepth = 0; clearDepth <= 1; clearDepth += 0.5) {
-    for (var depth0 = 0; depth0 <= 1; depth0 += 0.5) {
-      for (var depth1 = 0; depth1 <= 1; depth1 += 0.5) {
-        var DEPTHS = [depth0, depth1]
-        for (var mask = 0; mask <= 1; ++mask) {
-          for (var test = 0; test <= 1; ++test) {
-            Object.keys(depthFuncs).forEach(function (func) {
-              var flags = {
-                depthMask: !!mask,
-                depthTest: !!test,
-                depthFunc: func
-              }
-              testStatic(clearDepth, DEPTHS, flags)
-              for (var batch = 0; batch < 2; ++batch) {
-                testDynamic(clearDepth, !!batch, DEPTHS, flags)
-              }
-            })
+  var cases = []
+  var funcs = ['never', '<', '<=', '=', '>', '>=', '!=', 'always']
+  funcs.forEach(function (func) {
+    for (var mask = 0; mask <= 1; ++mask) {
+      for (var test = 1; test <= 1; ++test) {
+        var flags = {
+          depthMask: !!mask,
+          depthTest: !!test,
+          depthFunc: func
+        }
+        for (var clearDepth = 0; clearDepth <= 1; clearDepth += 1) {
+          for (var depth0 = 0; depth0 <= 1; depth0 += 0.5) {
+            for (var depth1 = 0; depth1 <= 1; depth1 += 0.5) {
+              cases.push([+clearDepth, [+depth0, +depth1], flags])
+            }
           }
         }
       }
     }
-  }
+  })
 
-  regl.destroy()
-  t.end()
+  var poll = setInterval(function () {
+    if (cases.length === 0) {
+      clearInterval(poll)
+      regl.destroy()
+      t.end()
+    } else {
+      var top = cases.pop()
+
+      testStatic(top[0], top[1], top[2])
+      testDynamic(top[0], false, top[1], top[2])
+      testDynamic(top[0], true, top[1], top[2])
+    }
+  }, 10)
 })
