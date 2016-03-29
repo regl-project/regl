@@ -1,50 +1,210 @@
 # REGL API
 
 ## Initialization
+There are four ways to initialize `regl`:
 
-### `require('regl')`
+##### As a fullscreen canvas
+By default calling `module.exports` on the `regl` package creates a full screen canvas element and new WebGLRenderingContext.
 
-#### `var regl = require('regl')([options])`
+```javascript
+var regl = require('regl')([options])
+```
 
-#### `var regl = require('regl')(element, [options])`
+##### From a container div
+Alternatively passing a container element as the first argument appends the generated canvas to its children.
 
-#### `var regl = require('regl')(canvas, [options])`
+```javascript
+var regl = require('regl')(element, [options])
+```
 
-#### `var regl = require('regl')(gl, [options])`
+##### From a canvas
+If a canvas element already exists, then this canvas can be passed to regl
+
+```javascript
+var regl = require('regl')(canvas, [options])
+```
+
+##### From a WebGL context
+
+```javascript
+var regl = require('regl')(gl, [options])
+```
 
 ## Commands
+The fundamental abstraction in REGL is the idea of a draw command.  Each draw command wraps up all of the WebGL state associated with a draw call and packages it into a single reusable procedure. For example, here is a command that draws a triangle,
 
-### Declaration
+```javascript
+const drawTriangle = regl({
+  frag: `
+  void main() {
+    gl_FragColor = vec4(1, 0, 0, 1);
+  }`,
 
-#### `var draw = regl(options)`
+  vert: `
+  attribute vec2 position;
+  void main() {
+    gl_Position = vec4(position, 0, 1);
+  }`,
 
-#### `regl.prop([path])`
+  attributes: {
+    position: regl.buffer([[0, -1], [-1, 0], [1, 1]])
+  },
+
+  count: 3
+})
+```
+
+Once a command is declared, you can call it just like you would any function:
+
+```javascript
+drawTriangle()
+```
+
+### Dynamic properties
+
+
+```javascript
+var command = regl({
+  // ...
+
+  // You can declare dynamic properties using functions
+  someDynamicProp: function (args) {
+  },
+
+  // Or using the prop syntax
+  anotherDynamicProp: regl.prop('myProp'),
+  // This is a shortcut for:
+  //
+  //  function (args) { return args['myProp'] }
+  //
+
+  // ...
+})
+```
+
+### Command properties
+
+##### Shaders
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `vert` | Source code of vertex shader | `''`` |
+| `frag` | Source code of fragment shader | `''` |
+
+**Note**: Dynamic shaders are not supported.
+
+##### Uniforms
+
+##### Attributes
+
+Each attribute can have any of the following optional properties,
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `buffer` | A `REGLBuffer` wrapping the buffer object | `null` |
+| `offset` | | `0` |
+| `stride` | | `0` |
+| `normalized` | | `false` |
+| `size` | | `0` |
+| `divisor` | | `0` * |
+
+##### Drawing
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `primitive` | Sets the primitive type | `'triangles'` * |
+| `count` | Number of vertices to draw | `0` * |
+| `offset` | Offset of primitives to draw | `0` |
+| `instances` | Number of instances to render | `0` ** |
+| `elements` | Element array buffer | `null` |
+
+**Notes**
+
+* If `elements` is specified while `primitive`, `count` and `offset` are not, then these values may be inferred from the state of the element array buffer.
+* `instances` is only applicable if the `ANGLE_instanced_arrays` extension is present.
+* `primitive` can take on the following values
+
+| Value | Description |
+|-------|-------------|
+| `'points'` | `gl.POINTS` |
+| `'lines'` | gl.LINES` |
+| `'line strip'` | `gl.LINE_STRIP` |
+| `'line loop` | `gl.LINE_LOOP` |
+| `'triangles` | `gl.TRIANGLES` |
+| `'triangle strip'` | `gl.TRIANGLE_STRIP` |
+| `'triangle fan'` | `gl.TRIANGLE_FAN` |
+
+##### Depth
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `enable` | Sets `gl.enable(gl.DEPTH_TEST)` | `true` |
+| `mask` | Sets `gl.depthMask` | `true` |
+| `func` | Sets `gl.depthFunc`. See table below for possible values | `'less'` |
+
+`depth.func` can take on the possible values
+
+| Value | Description |
+|-------|-------------|
+| `'never'` | `gl.NEVER` |
+| `'always'` | gl.ALWAYS` |
+| `'<', 'less'` | `gl.LESS` |
+| `'<=', 'lequal'` | gl.LEQUAL |
+| `'>', 'greater'` | `gl.GREATER` |
+| `'>=', 'gequal'` | gl.GEQUAL |
+| `'=', 'equal'` | gl.EQUAL |
+| `'!=', 'notequal'` | gl.NOTEQUAL |
+
+##### Stencil
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `enable` | Sets `gl.enable(gl.STENCIL_TEST)` | `false` |
+| `mask` | Sets `gl.stencilMask` | `0xffffffff` |
+| `func` | Sets `gl.stencilFunc` | `` |
+| `op` | Sets `gl.stencilOpSeparate` | `` |
+
+##### Blending
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `enable` | Sets `gl.enable(gl.BLEND)` | `false` |
+| `func` | Sets `gl.blendFunc` | `''` |
+| `color` | Sets `gl.blendColor` | `[0, 0, 0, 0]` |
+| `equation` | Sets `gl.blendEquation` | `''` |
+
+##### Polygon offset
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `enable` | Sets `gl.enable(gl.POLYGON_OFFSET)` | `false` |
+| `offset` | Sets `gl.polygonOffset` | `{}` |
+
+##### Culling
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `enable` | Sets `gl.enable(gl.CULL_FACE)` | `false` |
+| `face` | Sets `gl.cullFace` | `'back'` |
+
+##### Miscellaneous parameters
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `frontFace` | | `'ccw'` |
+| `dither` | | `false` |
+| `lineWidth` | | `1` |
+| `colorMask` | | `[true, true, true, true]` |
+| `viewport` | | `null` |
 
 ### Invocation
 
-#### Drawing `draw([options])`
+#### One-shot rendering
 
-#### Scope `scope([options,] func)`
+#### Scoped parameters
 
-#### Batch `batch(optionList)`
+#### Batch rendering
 
-### Clear draw buffer
-
-#### `regl.clear(options)`
-
-### Reading pixels
-
-#### `regl.read([options])`
-
-### Render callback
-
-#### `var tick = regl.frame(func)`
-
-#### `tick.cancel()`
-
-### Frame stats
-
-#### `regl.stats`
 
 ## Resources
 
@@ -52,7 +212,21 @@
 
 #### `regl.buffer(options)`
 
+| Property | Description | Default |
+|----------|-------------|---------|
+| `data` | | `null` |
+| `length` | | `0` |
+| `usage` | | `'static'` |
+
 #### `regl.elements(options)`
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `data` | | `null` |
+| `length` | | `0` |
+| `usage` | | `'static'` |
+| `primitive` | | `'triangles'` |
+| `count` | | `0` |
 
 #### `regl.texture(options)`
 
@@ -60,14 +234,83 @@
 
 ### Updates
 
-#### `resource(options)`
-Updates a resource
+```javascript
+resource(options)
+```
 
 ### Destruction
 
-#### `resource.destroy()`
-Destroy resource
+```javascript
+resource.destroy()
+```
 
-## Clean up
+## Other properties
+Other than draw commands and resources, there are a few miscellaneous parts of the WebGL API which REGL wraps for completeness.  These miscellaneous odds and ends are summarized here.
 
-#### `regl.destroy()`
+### Clear the draw buffer
+`regl.clear` combines `gl.clearColor, gl.clearDepth, gl.clearStencil` and `gl.clear` into a single procedure, which has the following usage:
+
+```javascript
+regl.clear({
+  color: [0, 0, 0, 1],
+  depth: 1,
+  stencil: 0xff
+})
+```
+
+| Property | Description |
+|----------|-------------|
+| `color` | Sets the clear color |
+| `depth` | |
+| `stencil` | |
+
+If an option is not present, then the corresponding buffer is not cleared
+
+### Reading pixels
+
+```javascript
+var pixels = regl.read([options])
+```
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `data` | An optional `ArrayBufferView` which gets the result of reading the pixels | `null` |
+| `x` | | `0` |
+| `y` | | `0` |
+| `width` | | viewport.width |
+| `height` | | viewport.height |
+
+### Per-frame callbacks
+`regl` also provides a common wrapper over `requestAnimationFrame` and `cancelAnimationFrame` that integrates gracefully with context loss events.
+
+```javascript
+// Hook a callback to execute each frame
+var tick = regl.frame(function (count) {
+  // ...
+})
+
+// When we are done, we can unsubscribe by calling cancel on the callback
+tick.cancel()
+```
+
+### Frame stats
+`regl` also tracks a few simple performance and timing stats to simplify benchmarks and animations.  These are all accessible via the `regl.stats` object,
+
+| Property | Description |
+|----------|-------------|
+| `width` | Width of the drawing buffer |
+| `height` | Height of the drawing buffer |
+| `count` | Total number frames rendered |
+| `start` | Wall clock time when `regl` was started |
+| `t` | Time of last `frame()` event |
+| `dt` | Time between last two `frame()` events |
+| `renderTime` | Time spent rendering last frame |
+
+### Clean up
+
+```javascript
+regl.destroy()
+```
+
+### Context loss
+`regl` makes a best faith effort to handle context loss by default.  This means that buffers and textures are reinitialized on a context restore with their contents.  Unfortunately, this is not possible for framebuffer objects and

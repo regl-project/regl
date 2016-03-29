@@ -52,7 +52,9 @@ module.exports = function wrapREGL () {
     start: clock(),
     dt: 0,
     t: clock(),
-    renderTime: 0
+    renderTime: 0,
+    width: gl.drawingBufferWidth,
+    height: gl.drawingBufferHeight
   }
   var readPixels = wrapRead(gl, glState)
 
@@ -75,16 +77,14 @@ module.exports = function wrapREGL () {
   // raf stuff
   var rafCallbacks = []
   var activeRAF = 0
-  var prevWidth = 0
-  var prevHeight = 0
   function handleRAF () {
     activeRAF = raf.next(handleRAF)
     frameState.count += 1
 
-    if (prevWidth !== gl.drawingBufferWidth ||
-        prevHeight !== gl.drawingBufferHeight) {
-      prevWidth = gl.drawingBufferWidth
-      prevHeight = gl.drawingBufferHeight
+    if (frameState.width !== gl.drawingBufferWidth ||
+        frameState.height !== gl.drawingBufferHeight) {
+      frameState.width = gl.drawingBufferWidth
+      frameState.height = gl.drawingBufferHeight
       glState.notifyViewportChanged()
     }
 
@@ -170,6 +170,67 @@ module.exports = function wrapREGL () {
 
     var hasDynamic = false
 
+    function flattenNestedOptions (options) {
+      var result = Object.assign({}, options)
+      delete result.uniforms
+      delete result.attributes
+
+      if ('blend' in options) {
+        var blend = result.blend
+        delete result.blend
+        if ('enable' in blend) result['blend.enable'] = blend.enable
+        if ('func' in blend) result['blend.func'] = blend.func
+        if ('equation' in blend) result['blend.equation'] = blend.equation
+      }
+
+      if ('depth' in options) {
+        var depth = result.depth
+        delete result.depth
+        if ('test' in depth) result['depth.test'] = depth.test
+        if ('func' in depth) result['depth.func'] = depth.func
+        if ('mask' in depth) result['depth.mask'] = depth.mask
+        if ('range' in depth) result['depth.range'] = depth.range
+      }
+
+      if ('cull' in options) {
+        var cull = result.cull
+        delete result.cull
+        if ('enable' in cull) result['cull.enable'] = cull.enable
+        if ('face' in cull) result['cull.face'] = cull.face
+      }
+
+      if ('stencil' in options) {
+        var stencil = result.stencil
+        delete result.stencil
+        if ('enable' in stencil) result['stencil.enable'] = stencil.enable
+        if ('mask' in stencil) result['stencil.mask'] = stencil.mask
+        if ('func' in stencil) result['stencil.func'] = stencil.func
+        if ('op' in stencil) result['stencil.op'] = stencil.op
+      }
+
+      if ('polygonOffset' in options) {
+        var polygonOffset = result.polygonOffset
+        delete result.polygonOffset
+        if ('enable' in polygonOffset) {
+          result['polygonOffset.enable'] = polygonOffset.enable
+        }
+        if ('offset' in polygonOffset) {
+          result['polygonOffset.offset'] = polygonOffset.offset
+        }
+      }
+
+      if ('scissor' in options) {
+        var scissor = result.scissor
+        delete result.scissor
+        if ('enable' in scissor) result['scissor.enable'] = scissor.enable
+        if ('shape' in scissor) result['scissor.shape'] = scissor.shape
+      }
+
+      // TODO sampleCoverage
+
+      return result
+    }
+
     // First we separate the options into static and dynamic components
     function separateDynamic (object) {
       var staticItems = {}
@@ -191,14 +252,11 @@ module.exports = function wrapREGL () {
 
     var uniforms = separateDynamic(options.uniforms || {})
     var attributes = separateDynamic(options.attributes || {})
-    var parts = separateDynamic(options)
-    var staticOptions = parts.static
-    delete staticOptions.uniforms
-    delete staticOptions.attributes
+    var opts = separateDynamic(flattenNestedOptions(options))
 
     var compiled = compiler.command(
-      staticOptions, uniforms.static, attributes.static,
-      parts.dynamic, uniforms.dynamic, attributes.dynamic,
+      opts.static, uniforms.static, attributes.static,
+      opts.dynamic, uniforms.dynamic, attributes.dynamic,
       hasDynamic)
 
     var draw = compiled.draw

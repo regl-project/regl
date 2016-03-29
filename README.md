@@ -1,10 +1,24 @@
 # regl
 
-This repo is an attempt at building some new functional abstractions for working with WebGL.  It is still pretty experimental right now, so expect things to change a lot in the near future.  If you want to know more about why I am writing this thing, take a look at the [rationale](RATIONALE.md).
+This repo is an attempt at building new functional abstractions for working with WebGL.  It is still pretty experimental right now, so expect things to change a lot in the near future! If you want to know more about why I am writing this thing and why it looks the way it does, take a look at the [rationale](RATIONALE.md).
+
+`regl` offers the following advantages over raw WebGL code:
+
+* **Less state** Draw commands in regl are self contained, so you don't have to worry about some other weird subroutine breaking your rendering code
+* **No `bind()`** In regl, shaders, buffers, textures and fbos are specified declaratively, so there is no need to ever
+* **Less verbose**
+* **Fewer silent failure** If you pass incorrect parameters to some WebGL method, the default behavior is to set an error code and continue on. Because `regl` commands have more structure, we can do more validation up front without the run time performance cost.
+* **Sane defaults** Many WebGL APIs have redundant or outright broken parameters (for example `border` in `gl.texImage2D` or `transpose` in `gl.uniformMatrix4fv`). `regl` wraps these APIs in such a way that you will never have to see this mess.
+* **More consistent API** 
 
 ## Simple example
 
-In `regl`, the basic unit of functionality is a **command**.  A command is a complete representation of the WebGL state required to perform some draw call.  To define a command you specify a mixture of static and dynamic data for the object. Once this is done, `regl` takes this description and then compiles it into optimized JavaScript code.  For example, here is a simple `regl` program to draw a colored triangle:
+In `regl`, there are two fundamental abstractions, **resources** and **commands**:
+
+* A **resource** is a handle to a GPU resident object, like a texture, FBO or buffer.
+* A **command** is a complete representation of the WebGL state required to perform some draw call.
+
+To define a command you specify a mixture of static and dynamic data for the object. Once this is done, `regl` takes this description and then compiles it into optimized JavaScript code.  For example, here is a simple `regl` program to draw a colored triangle:
 
 ```JavaScript
 const regl = require('regl')()
