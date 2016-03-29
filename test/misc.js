@@ -13,6 +13,7 @@ tape('misc state', function (t) {
   // lineWidth
   // polygonOffset
   // sampleCoverage
+  // depthRange
 
   // static
   // dynamic 1-shot
