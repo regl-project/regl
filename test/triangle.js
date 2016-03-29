@@ -50,5 +50,7 @@ tape('triangle', function (t) {
     }
   }
 
+  regl.destroy()
+
   t.end()
 })

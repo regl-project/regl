@@ -23,5 +23,7 @@ tape('clear color', function (t) {
     }
   }
 
+  regl.destroy()
+
   t.end()
 })

@@ -68,5 +68,7 @@ tape('batch', function (t) {
     }
   }
 
+  regl.destroy()
+
   t.end()
 })

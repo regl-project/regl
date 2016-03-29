@@ -49,5 +49,7 @@ tape('line', function (t) {
     }
   }
 
+  regl.destroy()
+
   t.end()
 })

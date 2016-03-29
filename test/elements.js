@@ -123,6 +123,7 @@ tape('elements', function (t) {
 
   // try destroying elements
   elements.destroy()
+  regl.destroy()
 
   t.end()
 })

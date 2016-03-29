@@ -60,5 +60,7 @@ tape('caps', function (t) {
     })
   })
 
+  regl.destroy()
+
   t.end()
 })
