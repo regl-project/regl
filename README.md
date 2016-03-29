@@ -71,6 +71,10 @@ regl.frame(() => {
 })
 ```
 
+## More examples
+
+TODO create gallery
+
 ## Setup
 
 regl has no dependencies, so setting it up is pretty easy
@@ -97,12 +101,6 @@ You can also use `regl` as a standalone script if you are really stubborn.  The 
 <script src="[some cdn tbd]/regl.min.js"></script>
 ```
 
-## More examples
-
-TODO generate demo gallery
-
-## Demo gallery
-
 ## Comparisons
 
 * vs WebGL
@@ -111,9 +109,8 @@ TODO generate demo gallery
 
 ## Benchmarks
 
-TODO
-
 ## API
+
 * [Initialization](#initialization)
 * [Commands](#commands)
   + [Dynamic properties](#dynamic-properties)
