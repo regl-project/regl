@@ -121,5 +121,8 @@ tape('elements', function (t) {
   drawDynamic({elements: elements})
   testBar()
 
+  // try destroying elements
+  elements.destroy()
+
   t.end()
 })
