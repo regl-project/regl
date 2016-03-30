@@ -8,7 +8,7 @@ This repo is an attempt at building new functional abstractions for working with
 * **Less verbose**
 * **Fewer silent failure** If you pass incorrect parameters to some WebGL method, the default behavior is to set an error code and continue on. Because `regl` commands have more structure, we can do more validation up front without the run time performance cost.
 * **Sane defaults** Many WebGL APIs have redundant or outright broken parameters (for example `border` in `gl.texImage2D` or `transpose` in `gl.uniformMatrix4fv`). `regl` wraps these APIs in such a way that you will never have to see this mess.
-* **Consistent API**
+* **Consistent interface**
 
 ## Simple example
 

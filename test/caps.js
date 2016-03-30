@@ -7,12 +7,12 @@ tape('caps', function (t) {
   var regl = createREGL(gl)
 
   var CAP_LIST = [
-    ['cull', gl.CULL_FACE],
-    ['blend', gl.BLEND],
+    ['cull.enable', gl.CULL_FACE],
+    ['blend.enable', gl.BLEND],
     ['dither', gl.DITHER],
-    ['stencilTest', gl.STENCIL_TEST],
-    ['scissorTest', gl.SCISSOR_TEST],
-    ['polygonOffsetFill', gl.POLYGON_OFFSET_FILL]
+    ['stencil.enable', gl.STENCIL_TEST],
+    ['scissor.enable', gl.SCISSOR_TEST],
+    ['polygonOffset.enable', gl.POLYGON_OFFSET_FILL]
     // FIXME: In WebGL we can't get these parameters
     // ['sampleAlpha', gl.SAMPLE_ALPHA_TO_COVERAGE],
     // ['sampleCoverage', gl.SAMPLE_COVERAGE]
@@ -34,13 +34,13 @@ tape('caps', function (t) {
   var dynOptions = {
     frag: 'void main() {gl_FragColor=vec4(1,0,1,0);}'
   }
-  CAP_LIST.forEach(function (desc) {
-    dynOptions[desc[0]] = regl.prop
+  CAP_LIST.forEach(function (desc, i) {
+    dynOptions[desc[0]] = regl.prop('c' + i)
   })
   var dynCaps = regl(dynOptions)
   CAP_LIST.forEach(function (desc, i) {
     var options = {}
-    options[desc[0]] = true
+    options['c' + i] = true
     dynCaps(options)
 
     CAP_LIST.forEach(function (cap, j) {
@@ -51,7 +51,7 @@ tape('caps', function (t) {
   // Test in batch mode
   CAP_LIST.forEach(function (desc, i) {
     var options = {}
-    options[desc[0]] = true
+    options['c' + i] = true
     dynCaps.batch([options])
 
     CAP_LIST.forEach(function (cap, j) {
