@@ -2,7 +2,8 @@ if (typeof document !== 'undefined') {
   var canvas = document.createElement('canvas')
   var context = canvas.getContext('webgl', {
     antialias: false,
-    stencil: true
+    stencil: true,
+    preserveDrawingBuffer: true
   })
   canvas.style.position = 'absolute'
   canvas.style.top = '0'
