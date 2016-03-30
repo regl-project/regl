@@ -5,10 +5,10 @@ require('../triangle')
 require('../line')
 require('../batch')
 require('../caps')
-*/
 require('../depth')
-/*
+*/
 require('../elements')
+/*
 require('../draw')
 require('../blend')
 require('../stencil')

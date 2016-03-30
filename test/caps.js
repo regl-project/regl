@@ -13,9 +13,6 @@ tape('caps', function (t) {
     ['stencil.enable', gl.STENCIL_TEST],
     ['scissor.enable', gl.SCISSOR_TEST],
     ['polygonOffset.enable', gl.POLYGON_OFFSET_FILL]
-    // FIXME: In WebGL we can't get these parameters
-    // ['sampleAlpha', gl.SAMPLE_ALPHA_TO_COVERAGE],
-    // ['sampleCoverage', gl.SAMPLE_COVERAGE]
   ]
 
   // Test in static mode
