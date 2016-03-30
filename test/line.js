@@ -3,53 +3,80 @@ var createREGL = require('../../regl')
 var tape = require('tape')
 
 tape('line', function (t) {
-  var regl = createREGL(createContext(16, 16))
+  setTimeout(function () {
+    var regl = createREGL(createContext(16, 16))
 
-  regl.clear({
-    color: [1, 0, 0, 1]
-  })
+    regl.clear({
+      color: [1, 0, 0, 1],
+      depth: 1
+    })
 
-  var drawLine = regl({
-    frag: [
-      'void main() {',
-      '  gl_FragColor = vec4(0, 0, 1, 1);',
-      '}'
-    ].join('\n'),
+    var drawLine = regl({
+      frag: [
+        'void main() {',
+        '  gl_FragColor = vec4(0, 0, 1, 1);',
+        '}'
+      ].join('\n'),
 
-    vert: [
-      'attribute vec4 position;',
-      'void main() {',
-      '  gl_Position = position;',
-      '}'
-    ].join('\n'),
+      vert: [
+        'attribute vec4 position;',
+        'void main() {',
+        '  gl_Position = position;',
+        '}'
+      ].join('\n'),
 
-    attributes: {
-      position: regl.buffer([
-        [-2, 0, 0, 1],
-        [2, 0, 0, 1]
-      ])
-    },
+      attributes: {
+        position: regl.buffer([
+          [-2, 0, 0, 1],
+          [2, 0, 0, 1]
+        ])
+      },
 
-    count: 2,
+      count: 2,
 
-    primitive: 'lines'
-  })
+      primitive: 'lines'
+    })
 
-  drawLine()
+    drawLine()
 
-  var pixels = regl.read()
+    var pixels = regl.read()
 
-  for (var i = 0; i < 16; ++i) {
-    for (var j = 0; j < 16; ++j) {
-      var ptr = 4 * (16 * i + j)
-      t.equals(pixels[ptr], i !== 7 ? 255 : 0)
-      t.equals(pixels[ptr + 1], 0)
-      t.equals(pixels[ptr + 2], i !== 7 ? 0 : 255)
-      t.equals(pixels[ptr + 3], 255)
+    var got = []
+    var expect = []
+
+    for (var i = 0; i < 16; ++i) {
+      var rowGot = []
+      var rowExpect = []
+      for (var j = 0; j < 16; ++j) {
+        var ptr = 4 * (16 * i + j)
+        if (i === 7) {
+          rowExpect.push('*')
+        } else {
+          rowExpect.push(' ')
+        }
+        if (pixels[ptr] === 255 &&
+            pixels[ptr + 1] === 0 &&
+            pixels[ptr + 2] === 0 &&
+            pixels[ptr + 3] === 255) {
+          rowGot.push(' ')
+        } else if (
+            pixels[ptr] === 0 &&
+            pixels[ptr + 1] === 0 &&
+            pixels[ptr + 2] === 255 &&
+            pixels[ptr + 3] === 255) {
+          rowGot.push('*')
+        } else {
+          rowGot.push('?')
+        }
+      }
+      got.push(rowGot.join(''))
+      expect.push(rowExpect.join(''))
     }
-  }
 
-  regl.destroy()
+    t.equals(got.join('\n'), expect.join('\n'), 'pixels equal')
 
-  t.end()
+    regl.destroy()
+
+    t.end()
+  }, 120)
 })
