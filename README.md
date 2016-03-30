@@ -4,11 +4,11 @@ This repo is an attempt at building new functional abstractions for working with
 `regl` offers the following advantages over raw WebGL code:
 
 * **Less state** Draw commands in regl are self contained, so you don't have to worry about some other weird subroutine breaking your rendering code
-* **No `bind()`** In regl, shaders, buffers, textures and fbos are specified declaratively, so there is no need to ever
+* **No `bind()`** In regl, shaders, buffers, textures and fbos are specified declaratively, so there is no need to ever `bind()` them or unbind them.
 * **Less verbose**
 * **Fewer silent failure** If you pass incorrect parameters to some WebGL method, the default behavior is to set an error code and continue on. Because `regl` commands have more structure, we can do more validation up front without the run time performance cost.
 * **Sane defaults** Many WebGL APIs have redundant or outright broken parameters (for example `border` in `gl.texImage2D` or `transpose` in `gl.uniformMatrix4fv`). `regl` wraps these APIs in such a way that you will never have to see this mess.
-* **More consistent API**
+* **Consistent API**
 
 ## Simple example
 
@@ -102,9 +102,12 @@ You can also use `regl` as a standalone script if you are really stubborn.  The 
 
 ## Comparisons
 
+TODO implement spinning textured cube in each of the following frameworks
+
 * vs WebGL
 * vs gl-* modules from stack.gl
 * vs TWGL
+* vs THREE.js
 
 ## Benchmarks
 You can run benchmarks locally using `npm run bench` or check them out here:
