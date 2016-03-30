@@ -72,7 +72,7 @@ regl.frame(() => {
 
 ## More examples
 
-TODO create gallery
+[Check out the demo gallery](https://mikolalysenko.github.io/regl/www/gallery.html)
 
 ## Setup
 
