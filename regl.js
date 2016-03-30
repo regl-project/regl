@@ -190,8 +190,7 @@ module.exports = function wrapREGL () {
       merge('stencil')
       merge('polygonOffset')
       merge('scissor')
-
-      // TODO sampleCoverage ?
+      merge('sample')
 
       return result
     }
