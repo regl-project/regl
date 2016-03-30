@@ -8,12 +8,10 @@ tape('misc state', function (t) {
 
   // TODO
 
-  // cullFace
+  // dither
   // frontFace
   // lineWidth
-  // polygonOffset
-  // sampleCoverage
-  // depthRange
+  // depth.range
 
   // static
   // dynamic 1-shot

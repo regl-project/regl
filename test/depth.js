@@ -35,12 +35,14 @@ tape('depth', function (t) {
       color: regl.prop('color'),
       offset: regl.prop('offset'),
       slope: regl.prop('slope'),
-      depth: regl.prop('depth')
+      depth: regl.prop('depths')
     },
 
-    depthTest: regl.prop('flags.depthTest'),
-    depthMask: regl.prop('flags.depthMask'),
-    depthFunc: regl.prop('flags.depthFunc'),
+    depth: {
+      enable: regl.prop('flags.test'),
+      mask: regl.prop('flags.mask'),
+      func: regl.prop('flags.func')
+    },
 
     count: 2,
     lineWidth: 1,
@@ -51,16 +53,16 @@ tape('depth', function (t) {
 
   function testFlags (cdepth, flags, prefix) {
     t.equals(gl.getParameter(gl.DEPTH_CLEAR_VALUE), cdepth, prefix + ' clear depth')
-    t.equals(gl.getParameter(gl.DEPTH_FUNC), depthFuncs[flags.depthFunc], prefix + ' depth func')
-    t.equals(gl.getParameter(gl.DEPTH_TEST), flags.depthTest, prefix + ' depth test')
-    t.equals(gl.getParameter(gl.DEPTH_WRITEMASK), flags.depthMask, prefix + ' depth mask')
+    t.equals(gl.getParameter(gl.DEPTH_FUNC), depthFuncs[flags.func], prefix + ' depth func')
+    t.equals(gl.getParameter(gl.DEPTH_TEST), flags.enable, prefix + ' depth test')
+    t.equals(gl.getParameter(gl.DEPTH_WRITEMASK), flags.mask, prefix + ' depth mask')
   }
 
   function testPixels (cdepth, depths, flags, prefix) {
     var pixels = regl.read()
 
     function depthTest (x, y) {
-      switch (depthFuncs[flags.depthFunc]) {
+      switch (depthFuncs[flags.func]) {
         case gl.NEVER: return false
         case gl.LESS: return x < y
         case gl.LEQUAL: return x <= y
@@ -70,7 +72,7 @@ tape('depth', function (t) {
         case gl.NOTEQUAL: return x !== y
         case gl.ALWAYS: return true
         default:
-          t.fail('invalid depth func: ' + flags.depthFunc)
+          t.fail('invalid depth func: ' + flags.func)
       }
     }
 
@@ -106,9 +108,9 @@ tape('depth', function (t) {
         var dj = depths[1]
 
         if (i === 7 && j === 7) {
-          if (!flags.depthTest) {
+          if (!flags.enable) {
             expect('green')
-          } else if (!flags.depthMask) {
+          } else if (!flags.mask) {
             if (depthTest(dj, cdepth)) {
               expect('green')
             } else if (depthTest(di, cdepth)) {
@@ -130,13 +132,13 @@ tape('depth', function (t) {
             }
           }
         } else if (i === 7) {
-          if (!flags.depthTest || depthTest(di, cdepth)) {
+          if (!flags.enable || depthTest(di, cdepth)) {
             expect('red')
           } else {
             expect('black')
           }
         } else if (j === 7) {
-          if (!flags.depthTest || depthTest(dj, cdepth)) {
+          if (!flags.enable || depthTest(dj, cdepth)) {
             expect('green')
           } else {
             expect('black')
@@ -190,7 +192,7 @@ tape('depth', function (t) {
   }
 
   function testStatic (cdepth, depths, flags) {
-    var drawStatic = regl(Object.assign({}, desc, flags))
+    var drawStatic = regl(Object.assign({}, desc, {depth: flags}))
     regl.clear({
       color: [0, 0, 0, 1],
       depth: cdepth
@@ -217,9 +219,9 @@ tape('depth', function (t) {
     for (var mask = 0; mask <= 1; ++mask) {
       for (var test = 0; test <= 1; ++test) {
         var flags = {
-          depthMask: !!mask,
-          depthTest: !!test,
-          depthFunc: func
+          mask: !!mask,
+          enable: !!test,
+          func: func
         }
         for (var clearDepth = 1; clearDepth <= 1; clearDepth += 1.0) {
           for (var depth0 = 0.25; depth0 <= 1; depth0 += 0.5) {
@@ -245,4 +247,6 @@ tape('depth', function (t) {
       testDynamic(top[0], true, top[1], top[2])
     }
   }, 1)
+
+  // TODO test depth range
 })

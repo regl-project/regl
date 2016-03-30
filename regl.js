@@ -175,58 +175,23 @@ module.exports = function wrapREGL () {
       delete result.uniforms
       delete result.attributes
 
-      if ('blend' in options) {
-        var blend = result.blend
-        delete result.blend
-        if ('enable' in blend) result['blend.enable'] = blend.enable
-        if ('func' in blend) result['blend.func'] = blend.func
-        if ('equation' in blend) result['blend.equation'] = blend.equation
-      }
-
-      if ('depth' in options) {
-        var depth = result.depth
-        delete result.depth
-        if ('test' in depth) result['depth.test'] = depth.test
-        if ('func' in depth) result['depth.func'] = depth.func
-        if ('mask' in depth) result['depth.mask'] = depth.mask
-        if ('range' in depth) result['depth.range'] = depth.range
-      }
-
-      if ('cull' in options) {
-        var cull = result.cull
-        delete result.cull
-        if ('enable' in cull) result['cull.enable'] = cull.enable
-        if ('face' in cull) result['cull.face'] = cull.face
-      }
-
-      if ('stencil' in options) {
-        var stencil = result.stencil
-        delete result.stencil
-        if ('enable' in stencil) result['stencil.enable'] = stencil.enable
-        if ('mask' in stencil) result['stencil.mask'] = stencil.mask
-        if ('func' in stencil) result['stencil.func'] = stencil.func
-        if ('op' in stencil) result['stencil.op'] = stencil.op
-      }
-
-      if ('polygonOffset' in options) {
-        var polygonOffset = result.polygonOffset
-        delete result.polygonOffset
-        if ('enable' in polygonOffset) {
-          result['polygonOffset.enable'] = polygonOffset.enable
-        }
-        if ('offset' in polygonOffset) {
-          result['polygonOffset.offset'] = polygonOffset.offset
+      function merge (name) {
+        if (name in result) {
+          var child = result[name]
+          delete result[name]
+          Object.keys(child).forEach(function (prop) {
+            result[name + '.' + prop] = child[prop]
+          })
         }
       }
+      merge('blend')
+      merge('depth')
+      merge('cull')
+      merge('stencil')
+      merge('polygonOffset')
+      merge('scissor')
 
-      if ('scissor' in options) {
-        var scissor = result.scissor
-        delete result.scissor
-        if ('enable' in scissor) result['scissor.enable'] = scissor.enable
-        if ('shape' in scissor) result['scissor.shape'] = scissor.shape
-      }
-
-      // TODO sampleCoverage
+      // TODO sampleCoverage ?
 
       return result
     }
