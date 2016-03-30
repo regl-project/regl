@@ -9,6 +9,8 @@ tape('elements', function (t) {
     [1, 3]
   ])
 
+  // TODO: test scoped elements and then setting to null
+
   var drawStatic = regl({
     frag: [
       'precision mediump float;',
@@ -132,18 +134,18 @@ tape('elements', function (t) {
       drawStatic.batch([{c: [0, 0, 1, 1]}])
       testPlus('batch - static')
     },
-    */
     function () {
       regl.clear({ color: [1, 0, 0, 1] })
       drawDynamic({elements: elements})
       testPlus('draw - dynamic')
     },
-    /*
+    */
     function () {
       regl.clear({ color: [1, 0, 0, 1] })
       drawDynamic.batch([{elements: elements}])
       testPlus('batch - dynamic')
     },
+    /*
     function () {
       // try updating elements
       elements([
