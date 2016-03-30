@@ -11,6 +11,7 @@ tape('elements', function (t) {
 
   var drawStatic = regl({
     frag: [
+      'precision mediump float;',
       'uniform vec4 color;',
       'void main() {',
       '  gl_FragColor = color;',
@@ -18,9 +19,9 @@ tape('elements', function (t) {
     ].join('\n'),
 
     vert: [
-      'attribute vec4 position;',
+      'attribute vec2 position;',
       'void main() {',
-      '  gl_Position = position;',
+      '  gl_Position = vec4(position, 0, 1);',
       '}'
     ].join('\n'),
 
@@ -32,6 +33,8 @@ tape('elements', function (t) {
         [0, 2]
       ])
     },
+
+    depth: {enable: false},
 
     elements: elements,
 
@@ -42,15 +45,16 @@ tape('elements', function (t) {
 
   var drawDynamic = regl({
     frag: [
+      'precision mediump float;',
       'void main() {',
       '  gl_FragColor = vec4(0, 0, 1, 1);',
       '}'
     ].join('\n'),
 
     vert: [
-      'attribute vec4 position;',
+      'attribute vec2 position;',
       'void main() {',
-      '  gl_Position = position;',
+      '  gl_Position = vec4(position, 0, 1);',
       '}'
     ].join('\n'),
 
@@ -63,67 +67,113 @@ tape('elements', function (t) {
       ])
     },
 
+    depth: {enable: false},
+
     elements: regl.prop('elements')
   })
 
-  function testPlus (msg) {
+  function testImage (cb, msg) {
+    var i
+    var j
     var pixels = regl.read()
-    for (var i = 0; i < 16; ++i) {
-      for (var j = 0; j < 16; ++j) {
-        var ptr = 4 * (16 * i + j)
-        var hit = i === 7 || j === 7
-        t.equals(pixels[ptr], hit ? 0 : 255, msg)
-        t.equals(pixels[ptr + 1], 0, msg)
-        t.equals(pixels[ptr + 2], hit ? 255 : 0, msg)
-        t.equals(pixels[ptr + 3], 255, msg)
+    var expected = []
+
+    function expect (r, g, b, a) {
+      var ptr = 4 * (16 * i + j)
+      var ir = pixels[ptr]
+      var ig = pixels[ptr + 1]
+      var ib = pixels[ptr + 2]
+      var ia = pixels[ptr + 3]
+
+      if (ir !== r || ig !== g || ib !== b || ia !== a) {
+        expected.push(
+          'expected [' + [r, g, b, a] + '], got [' + [ir, ig, ib, ia] + '] @ (' + [i, j] + ')')
       }
     }
+
+    for (i = 0; i < 16; ++i) {
+      for (j = 0; j < 16; ++j) {
+        cb(i, j, expect)
+      }
+    }
+
+    t.equals(expected.join('; '), '', msg)
+  }
+
+  function testPlus (msg) {
+    testImage(function (i, j, expect) {
+      if (i === 7 || j === 7) {
+        expect(0, 0, 255, 255)
+      } else {
+        expect(255, 0, 0, 255)
+      }
+    }, msg + ' (should be +)')
   }
 
   function testBar (msg) {
-    var pixels = regl.read()
-    for (var i = 0; i < 16; ++i) {
-      for (var j = 0; j < 16; ++j) {
-        var ptr = 4 * (16 * i + j)
-        var hit = i === 7
-        t.equals(pixels[ptr], hit ? 0 : 255, msg)
-        t.equals(pixels[ptr + 1], 0, msg)
-        t.equals(pixels[ptr + 2], hit ? 255 : 0, msg)
-        t.equals(pixels[ptr + 3], 255, msg)
+    testImage(function (i, j, expect) {
+      if (i === 7) {
+        expect(0, 0, 255, 255)
+      } else {
+        expect(255, 0, 0, 255)
       }
-    }
+    }, msg + ' (should be -)')
   }
 
-  regl.clear({ color: [1, 0, 0, 1] })
-  drawStatic({c: [0, 0, 1, 1]})
-  testPlus('draw - static')
+  var cases = [
+    /*
+    function () {
+      regl.clear({ color: [1, 0, 0, 1] })
+      drawStatic({c: [0, 0, 1, 1]})
+      testPlus('draw - static')
+    },
+    function () {
+      regl.clear({ color: [1, 0, 0, 1] })
+      drawStatic.batch([{c: [0, 0, 1, 1]}])
+      testPlus('batch - static')
+    },
+    */
+    function () {
+      regl.clear({ color: [1, 0, 0, 1] })
+      drawDynamic({elements: elements})
+      testPlus('draw - dynamic')
+    },
+    /*
+    function () {
+      regl.clear({ color: [1, 0, 0, 1] })
+      drawDynamic.batch([{elements: elements}])
+      testPlus('batch - dynamic')
+    },
+    function () {
+      // try updating elements
+      elements([
+        [0, 2]
+      ])
+      t.ok('updated elements')
+    },
+    function () {
+      drawStatic({c: [0, 0, 1, 1]})
+      testBar('draw - static')
+    },
+    function () {
+      drawDynamic({elements: elements})
+      testBar('draw - dynamic')
+    },
+    function () {
+      // try destroying elements
+      elements.destroy()
+      regl.destroy()
+      t.ok('destroy successful')
+    }
+    */
+  ]
 
-  regl.clear({ color: [1, 0, 0, 1] })
-  drawStatic.batch([{c: [0, 0, 0, 1]}])
-  testPlus('batch - static')
-
-  regl.clear({ color: [1, 0, 0, 1] })
-  drawDynamic({elements: elements})
-  testPlus('draw - dynamic')
-
-  regl.clear({ color: [1, 0, 0, 1] })
-  drawDynamic.batch([{elements: elements}])
-  testPlus('batch - dynamic')
-
-  // try updating elements
-  elements([
-    [0, 2]
-  ])
-
-  drawStatic({c: [0, 0, 1, 1]})
-  testBar()
-
-  drawDynamic({elements: elements})
-  testBar()
-
-  // try destroying elements
-  elements.destroy()
-  regl.destroy()
-
-  t.end()
+  var poll = setInterval(function () {
+    if (cases.length === 0) {
+      clearInterval(poll)
+      t.end()
+    } else {
+      (cases.shift())()
+    }
+  })
 })
