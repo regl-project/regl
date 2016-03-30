@@ -1,12 +1,10 @@
 require('tap-browser-color')()
-/*
 require('../clear')
 require('../triangle')
 require('../line')
 require('../batch')
 require('../caps')
 require('../depth')
-*/
 require('../elements')
 /*
 require('../draw')
