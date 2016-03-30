@@ -35,11 +35,11 @@ tape('depth', function (t) {
       color: regl.prop('color'),
       offset: regl.prop('offset'),
       slope: regl.prop('slope'),
-      depth: regl.prop('depths')
+      depth: regl.prop('depth')
     },
 
     depth: {
-      enable: regl.prop('flags.test'),
+      enable: regl.prop('flags.enable'),
       mask: regl.prop('flags.mask'),
       func: regl.prop('flags.func')
     },
@@ -51,8 +51,15 @@ tape('depth', function (t) {
 
   var drawDynamic = regl(desc)
 
+  // Test clear depth
+  for (var cdepth = 0.0; cdepth <= 1.0; cdepth += 0.25) {
+    regl.clear({
+      depth: cdepth
+    })
+    t.equals(gl.getParameter(gl.DEPTH_CLEAR_VALUE), cdepth, 'clear depth')
+  }
+
   function testFlags (cdepth, flags, prefix) {
-    t.equals(gl.getParameter(gl.DEPTH_CLEAR_VALUE), cdepth, prefix + ' clear depth')
     t.equals(gl.getParameter(gl.DEPTH_FUNC), depthFuncs[flags.func], prefix + ' depth func')
     t.equals(gl.getParameter(gl.DEPTH_TEST), flags.enable, prefix + ' depth test')
     t.equals(gl.getParameter(gl.DEPTH_WRITEMASK), flags.mask, prefix + ' depth mask')
@@ -247,6 +254,4 @@ tape('depth', function (t) {
       testDynamic(top[0], true, top[1], top[2])
     }
   }, 1)
-
-  // TODO test depth range
 })
