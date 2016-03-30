@@ -1,5 +1,5 @@
 # regl
-This repo is an attempt at building new functional abstractions for working with WebGL.  It is still pretty experimental right now, so expect things to change a lot in the near future! If you want to know more about why I am writing this thing and why it looks the way it does, take a look at the [rationale](RATIONALE.md).
+This repo is an attempt at building new functional abstractions for working with WebGL.  It is still **experimental**, so expect things to change a lot in the near future! If you want to know more about why I am writing this thing and why it looks the way it does, take a look at the [rationale](RATIONALE.md).
 
 `regl` offers the following advantages over raw WebGL code:
 
