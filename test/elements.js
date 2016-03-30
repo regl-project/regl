@@ -123,7 +123,6 @@ tape('elements', function (t) {
   }
 
   var cases = [
-    /*
     function () {
       regl.clear({ color: [1, 0, 0, 1] })
       drawStatic({c: [0, 0, 1, 1]})
@@ -139,13 +138,11 @@ tape('elements', function (t) {
       drawDynamic({elements: elements})
       testPlus('draw - dynamic')
     },
-    */
     function () {
       regl.clear({ color: [1, 0, 0, 1] })
       drawDynamic.batch([{elements: elements}])
       testPlus('batch - dynamic')
     },
-    /*
     function () {
       // try updating elements
       elements([
@@ -154,11 +151,18 @@ tape('elements', function (t) {
       t.ok('updated elements')
     },
     function () {
+      regl.clear({ color: [1, 0, 0, 1] })
       drawStatic({c: [0, 0, 1, 1]})
       testBar('draw - static')
     },
     function () {
+      regl.clear({ color: [1, 0, 0, 1] })
       drawDynamic({elements: elements})
+      testBar('draw - dynamic')
+    },
+    function () {
+      regl.clear({ color: [1, 0, 0, 1] })
+      drawDynamic([{elements: elements}])
       testBar('draw - dynamic')
     },
     function () {
@@ -167,7 +171,6 @@ tape('elements', function (t) {
       regl.destroy()
       t.ok('destroy successful')
     }
-    */
   ]
 
   var poll = setInterval(function () {
