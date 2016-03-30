@@ -12,6 +12,7 @@ tape('misc state', function (t) {
   // frontFace
   // lineWidth
   // depth.range
+  // colorMask
 
   // static
   // dynamic 1-shot
