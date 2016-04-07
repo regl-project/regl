@@ -69,28 +69,60 @@ drawTriangle()
 ```
 
 ### Dynamic properties
+Some parts of a command can be made dynamic.  There are two ways to do declare that a parameter is dynamic:
 
+* By initializing it with a `function`
+* Using `regl.prop`
 
 ```javascript
-var command = regl({
-  // ...
+var drawSpinningStretchyTriangle = regl({
+  frag: `
+  void main() {
+    gl_FragColor = vec4(1, 0, 0, 1);
+  }`,
 
-  // You can declare dynamic properties using functions
-  someDynamicProp: function (args) {
+  vert: `
+  attribute vec2 position;
+  uniform float angle, scale;
+  void main() {
+    gl_Position = vec4(
+      scale * (cos(angle) * position.x - sin(angle) * position.y),
+      scale * (sin(angle) * position.x + cos(angle) * position.y),
+      0,
+      1.0);
+  }`,
+
+  attributes: {
+    position: regl.buffer([[0, -1], [-1, 0], [1, 1]])
   },
 
-  // Or using the prop syntax
-  anotherDynamicProp: regl.prop('myProp'),
-  // This is a shortcut for:
-  //
-  //  function (args) { return args['myProp'] }
-  //
+  uniforms: {
+    //
+    // Dynamic properties can be functions.  Each function gets
+    //
+    angle: function (args, batchId, stats) {
+      return args.speed * stats.count + 0.01 * batchId
+    },
 
-  // ...
+    // As a shortcut/optimization we can also just read out a property
+    // from the args.  For example, this
+    //
+    scale: regl.prop('scale')
+    //
+    // is semantically equivalent to
+    //
+    //  scale: function (args) {
+    //    return args.scale
+    //  }
+    //
+  },
+
+  count: 3
 })
 ```
 
 ### Command properties
+The input to a command declaration is a complete description of the WebGL state machine.  As a result, there are a lot of parameters and options which it can take.
 
 #### Shaders
 
@@ -102,6 +134,7 @@ var command = regl({
 **Note**: Dynamic shaders are not supported.
 
 #### Uniforms
+
 
 #### Attributes
 
