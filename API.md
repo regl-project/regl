@@ -1,10 +1,9 @@
 # REGL API
 
 ## Initialization
-There are four ways to initialize `regl`:
 
 ##### As a fullscreen canvas
-By default calling `module.exports` on the `regl` package creates a full screen canvas element and new WebGLRenderingContext.
+By default calling `module.exports` on the `regl` package creates a full screen canvas element and WebGLRenderingContext.
 
 ```javascript
 var regl = require('regl')([options])
@@ -31,7 +30,7 @@ Finally, if the first argument is a WebGLRenderingContext, then `regl` will just
 var regl = require('regl')(gl, [options])
 ```
 
-Note that this form is compatible with `headless-gl` and can be used to do offscreen rendering in node.js. For example,
+Note that this form is compatible with [`headless-gl`](https://github.com/stackgl/headless-gl) and can be used to do offscreen rendering in node.js. For example,
 
 ```javascript
 //Creates a headless 256x256 regl instance
@@ -39,7 +38,8 @@ var regl = require('regl')(require('gl')(256, 256))
 ```
 
 ## Commands
-The fundamental abstraction in REGL is the idea of a draw command.  Each draw command wraps up all of the WebGL state associated with a draw call and packages it into a single reusable procedure. For example, here is a command that draws a triangle,
+
+*Draw commands* are the fundamental abstraction in `regl`.  A draw command wraps up all of the WebGL state associated with a draw call (either `drawArrays` or `drawElements`) and packages it into a single reusable function. For example, here is a command that draws a triangle,
 
 ```javascript
 const drawTriangle = regl({
@@ -62,17 +62,14 @@ const drawTriangle = regl({
 })
 ```
 
-Once a command is declared, you can call it just like you would any function:
+To execute a command you call it just like you would any function,
 
 ```javascript
 drawTriangle()
 ```
 
 ### Dynamic properties
-Some parts of a command can be made dynamic.  There are two ways to do declare that a parameter is dynamic:
-
-* By initializing it with a `function`
-* Using `regl.prop`
+Some parameters can be made dynamic by passing in a function,
 
 ```javascript
 var drawSpinningStretchyTriangle = regl({
@@ -98,7 +95,11 @@ var drawSpinningStretchyTriangle = regl({
 
   uniforms: {
     //
-    // Dynamic properties can be functions.  Each function gets
+    // Dynamic properties can be functions.  Each function gets passed:
+    //
+    //  * args: which is a user specified object
+    //  * batchId: which is the index of the draw command in the batch
+    //  * stats: which are frame stats (see below)
     //
     angle: function (args, batchId, stats) {
       return args.speed * stats.count + 0.01 * batchId
@@ -121,20 +122,63 @@ var drawSpinningStretchyTriangle = regl({
 })
 ```
 
+To execute a draw command with dynamic arguments we pass it a configuration object as the first argument,
+
+```javascript
+// Draws one spinning triangle
+drawSpinningStretchyTriangle({
+  scale: 0.5,
+  speed: 2
+})
+
+// Draws multiple spinning triangles
+drawSpinningStretchyTriangle([
+  { // batchId 0
+    scale: 1,
+    speed: 1,
+  },
+  { // batchId 1
+    scale: 2,
+    speed: 0.1,
+  },
+  { // batchId 2
+    scale: 0.25,
+    speed: 3
+  }
+])
+```
+
+For more info on the frame stats [check out the below section](#frame-stats).
+
 ### Command properties
-The input to a command declaration is a complete description of the WebGL state machine.  These commands are grouped according to the parts of the WebGL state which they affect.
+The input to a command declaration is a complete hierarchical description of the WebGL state machine.
 
 #### Shaders
 
+Each draw command can specify the source code for a vertex and/or fragment shader,
+
 ```javascript
+var command = regl({
+  // ...
+
+  vert: `
+  void main() {
+    gl_Position = vec4(0, 0, 0, 1);
+  }`,
+
+  frag: `
+  void main() {
+    gl_FragColor = vec4(1, 0, 1, 1);
+  }`,
+
+  // ...
+})
 ```
 
 | Property | Description |
 |----------|-------------|
 | `vert` | Source code of vertex shader |
 | `frag` | Source code of fragment shader |
-
-**Note**: Dynamic shaders are not supported.
 
 **Related WebGL APIs**
 
@@ -147,6 +191,19 @@ The input to a command declaration is a complete description of the WebGL state 
 * [`gl.useProgram`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glUseProgram.xml)
 
 #### Uniforms
+
+```javascript
+var command = regl({
+  // ...
+
+  uniforms: {
+    someUniform: [1, 0, 0, 1],
+    anotherUniform: regl.prop('myProp')
+  },
+
+  // ...
+})
+```
 
 **Related WebGL APIs**
 
