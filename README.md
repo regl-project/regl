@@ -1,5 +1,5 @@
 # regl
- [![Circle CI](https://circleci.com/gh/mikolalysenko/regl.svg?style=svg)](https://circleci.com/gh/mikolalysenko/regl) [![Standard style](img/standard-badge.svg)](http://standardjs.com/)
+ [![Circle CI](https://circleci.com/gh/mikolalysenko/regl.svg?style=svg)](https://circleci.com/gh/mikolalysenko/regl) [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com/)
 
 This repo is an attempt at building new functional abstractions for working with WebGL.  It is still **experimental**, so expect things to change a lot in the near future! If you want to know more about why I am writing this thing and why it looks the way it does, take a look at the [rationale](RATIONALE.md).
 
