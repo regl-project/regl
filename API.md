@@ -154,6 +154,7 @@ For more info on the frame stats [check out the below section](#frame-stats).
 There are 3 ways to execute a command,
 
 #### One-shot rendering
+In one shot rendering the command is executed once and immediately,
 
 ```javascript
 // Executes command immediately with no arguments
@@ -164,6 +165,7 @@ command(args)
 ```
 
 #### Batch rendering
+A command can also be executed multiple times by passing a non-negative integer or an array as the first argument.  The `batchId` is initially `0` and incremented for each executed,
 
 ```javascript
 // Executes the command `count`-times
@@ -174,19 +176,20 @@ command([args0, args1, args2, ..., argsn])
 ```
 
 #### Scoped parameters
+Commands can be nested using scoping.  If the argument to the command is a function then the command is evaluated and the state variables are saved as the defaults for all commands executed within its scope,
 
 ```javascript
 command(function () {
-  // ...
+  // ... execute sub commands
 })
 
 command(args, function () {
-  // ...
+  // ... execute sub commands
 })
 ```
 
 ### Command properties
-The input to a command declaration is a complete hierarchical description of the WebGL state machine.
+The input to a command declaration is a complete description of the WebGL state machine.
 
 #### Shaders
 
@@ -228,19 +231,38 @@ var command = regl({
 * [`gl.useProgram`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glUseProgram.xml)
 
 #### Uniforms
+Uniform variables are specified in the `uniforms` block of the command.  For example,
 
 ```javascript
 var command = regl({
   // ...
 
+  vert: `
+  struct SomeStruct {
+    float value;
+  };
+
+  uniform vec4 someUniform;
+  uniform int anotherUniform;
+  uniform SomeStruct nested;
+
+  void main() {
+    gl_Position = vec4(1, 0, 0, 1);
+  }`,
+
   uniforms: {
     someUniform: [1, 0, 0, 1],
-    anotherUniform: regl.prop('myProp')
+    anotherUniform: regl.prop('myProp'),
+    'nested.value', 5.3
   },
 
   // ...
 })
 ```
+
+**Notes**
+* To specify uniforms in nested structs use the fully qualified path with dot notation
+* Matrix uniforms are specified as flat length n^2 arrays without transposing
 
 **Related WebGL APIs**
 
@@ -248,6 +270,34 @@ var command = regl({
 * [`gl.uniform`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glUniform.xml)
 
 #### Attributes
+```javascript
+var command = regl({
+  // ...
+
+  attributes: {
+    position: regl.buffer([
+      0, 1, 2,
+      2, 3, 4,
+      ...
+    ]),
+
+    normals: {
+      buffer: regl.buffer([
+        // ...
+      ]),
+      offset: 0,
+      stride: 12,
+      normalized: false,
+      divisor: 0,
+      size: 0
+    },
+
+    color: [1, 0, 1, 1]
+  },
+
+  // ...
+})
+```
 
 Each attribute can have any of the following optional properties,
 
@@ -259,6 +309,11 @@ Each attribute can have any of the following optional properties,
 | `normalized` | | `false` |
 | `size` | | `0` |
 | `divisor` | | `0` * |
+
+**Notes**
+* Attribute size is inferred from the shader vertex attribute if not specified
+* If a buffer is passed for an attribute then all pointer info is inferred
+* If an array is passed to an attribute, then the vertex attribute is set to a constant
 
 **Related WebGL APIs**
 
