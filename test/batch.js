@@ -38,7 +38,7 @@ tape('batch', function (t) {
       count: 1,
 
       primitive: 'points'
-    }).batch
+    })
 
 
     var drawBatchCount = regl({
@@ -72,7 +72,7 @@ tape('batch', function (t) {
       count: 1,
 
       primitive: 'points'
-    }).batch
+    })
 
 
     var points = [

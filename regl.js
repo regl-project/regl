@@ -237,9 +237,9 @@ module.exports = function wrapREGL () {
 
     function REGLCommand (args, body) {
       if (typeof args === 'number') {
-        return batch(reserve(args|0))
+        return batch(args|0, reserve(args|0))
       } else if (Array.isArray(args)) {
-        return batch(args)
+        return batch(args.length, args)
       } else if (typeof args === 'function') {
         return scope(null, args)
       } else if (typeof body === 'function') {
@@ -247,9 +247,6 @@ module.exports = function wrapREGL () {
       }
       return draw(args)
     }
-    REGLCommand.draw = draw
-    REGLCommand.batch = batch
-    REGLCommand.scope = scope
 
     return REGLCommand
   }
