@@ -367,15 +367,32 @@ var command = regl({
 * [`gl.drawElementsInstancedANGLE`](https://www.opengl.org/sdk/docs/man4/html/glDrawElementsInstanced.xhtml)
 
 #### Depth
+All state relating to the depth buffer is stored in the `depth` field of the command.  For example,
+
+```javascript
+var command = regl({
+  // ...
+
+  depth: {
+    enable: true,
+    mask: true,
+    func: 'less',
+    range: [0, 1]
+  },
+
+  // ..
+})
+```
 
 | Property | Description | Default |
 |----------|-------------|---------|
-| `enable` | Sets `gl.enable(gl.DEPTH_TEST)` | `true` |
+| `enable` | Toggles `gl.enable(gl.DEPTH_TEST)` | `true` |
 | `mask` | Sets `gl.depthMask` | `true` |
 | `range` | Sets `gl.depthRange` | `[0, 1]` |
 | `func` | Sets `gl.depthFunc`. See table below for possible values | `'less'` |
 
-`depth.func` can take on the possible values
+**Notes**
+* `depth.func` can take on the possible values
 
 | Value | Description |
 |-------|-------------|
@@ -395,19 +412,50 @@ var command = regl({
 * [`gl.depthRange`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDepthRangef.xml)
 
 #### Blending
+Blending information is stored in the `blend` field,
+
+```javascript
+var command = regl({
+  // ...
+
+  blend: {
+    enable: true,
+    func: {
+      srcRGB: 'src alpha',
+      srcAlpha: 1,
+      dstRGB: 'one minus src alpha',
+      dstAlpha: 1
+    },
+    equation: {
+      rgb: 'add',
+      alpha: 'add'
+    },
+    color: [0, 0, 0, 0]
+  },
+
+  // ...
+})
+```
 
 | Property | Description | Default |
 |----------|-------------|---------|
-| `enable` | Sets `gl.enable(gl.BLEND)` | `false` |
-| `func` | Sets `gl.blendFunc` (see table) | `{src:'src alpha',dst:'one minus src alpha'}` |
+| `enable` | Toggles `gl.enable(gl.BLEND)` | `false` |
 | `equation` | Sets `gl.blendEquation` (see table) | `'add'` |
+| `func` | Sets `gl.blendFunc` (see table) | `{src:'src alpha',dst:'one minus src alpha'}` |
 | `color` | Sets `gl.blendColor` | `[0, 0, 0, 0]` |
+
+**Notes**
+* `equation` can be either a string or an object with the fields `{rgb, alpha}`.  The former corresponds to `gl.blendEquation` and the latter to `gl.blendEquationSeparate`
+* The fields of `equation` can take on the following values
 
 | Equation | Description |
 |----------|---------------|
 | `'add'` | `gl.FUNC_ADD` |
 | `'subtract'` | `gl.FUNC_SUBTRACT` |
 | `'reverse subtract'` | `gl.FUNC_REVERSE_SUBTRACT` |
+
+* `func` can be an object with the fields `{src, dst}` or `{srcRGB, srcAlpha, dstRGB, dstAlpha}`, with the former corresponding to `gl.blendFunc` and the latter to `gl.blendFuncSeparate`
+* The fields of `func` can take on the following values
 
 | Func | Description |
 |------|-------------|
