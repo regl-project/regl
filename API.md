@@ -150,6 +150,41 @@ drawSpinningStretchyTriangle([
 
 For more info on the frame stats [check out the below section](#frame-stats).
 
+### Executing commands
+There are 3 ways to execute a command,
+
+#### One-shot rendering
+
+```javascript
+// Executes command immediately with no arguments
+command()
+
+// Executes a command using the specified arguments
+command(args)
+```
+
+#### Batch rendering
+
+```javascript
+// Executes the command `count`-times
+command(count)
+
+// Executes the command once for each args
+command([args0, args1, args2, ..., argsn])
+```
+
+#### Scoped parameters
+
+```javascript
+command(function () {
+  // ...
+})
+
+command(args, function () {
+  // ...
+})
+```
+
 ### Command properties
 The input to a command declaration is a complete hierarchical description of the WebGL state machine.
 
@@ -179,6 +214,8 @@ var command = regl({
 |----------|-------------|
 | `vert` | Source code of vertex shader |
 | `frag` | Source code of fragment shader |
+
+**Note** Dynamic shaders are not allowed
 
 **Related WebGL APIs**
 
@@ -374,37 +411,6 @@ var command = regl({
 | `lineWidth` | | `1` |
 | `colorMask` | | `[true, true, true, true]` |
 | `viewport` | | `null` |
-
-### Executing commands
-There are 3 ways to execute a regl command,
-
-#### One-shot rendering
-
-```javascript
-command()
-
-command(args)
-```
-
-#### Scoped parameters
-
-```javascript
-command(function () {
-  // ...
-})
-
-command(args, function () {
-  // ...
-})
-```
-
-#### Batch rendering
-
-```javascript
-command(count)
-
-command([args0, args1, args2, ...])
-```
 
 ## Resources
 
