@@ -304,16 +304,17 @@ Each attribute can have any of the following optional properties,
 | Property | Description | Default |
 |----------|-------------|---------|
 | `buffer` | A `REGLBuffer` wrapping the buffer object | `null` |
-| `offset` | | `0` |
-| `stride` | | `0` |
-| `normalized` | | `false` |
-| `size` | | `0` |
-| `divisor` | | `0` * |
+| `offset` | The offset of the `vertexAttribPointer` in bytes | `0` |
+| `stride` | The stride of the `vertexAttribPointer` in bytes | `0` |
+| `normalized` | Whether the pointer is normalized | `false` |
+| `size` | The size of the vertex attribute | Inferred from shader |
+| `divisor` | Sets `gl.vertexAttribDivisorANGLE` | `0` * |
 
 **Notes**
 * Attribute size is inferred from the shader vertex attribute if not specified
 * If a buffer is passed for an attribute then all pointer info is inferred
 * If an array is passed to an attribute, then the vertex attribute is set to a constant
+* `divisor` is only supported if the `ANGLE_instanced_arrays` extension is available
 
 **Related WebGL APIs**
 
