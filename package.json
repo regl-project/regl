@@ -1,7 +1,7 @@
 {
   "name": "regl",
   "version": "0.0.0",
-  "description": "Dataflow programming for WebGL",
+  "description": "WebGL",
   "main": "regl.js",
   "directories": {
     "example": "example"
@@ -54,5 +54,8 @@
   "bugs": {
     "url": "https://github.com/mikolalysenko/regl/issues"
   },
-  "homepage": "https://github.com/mikolalysenko/regl#readme"
+  "standard": {
+    "ignore": "dist/*"
+  },
+  "homepage": "https://mikolalysenko.github.io/regl"
 }
