@@ -45,6 +45,36 @@ tape('elements', function (t) {
     }
   })
 
+  var drawDynamicWithCount = regl({
+    frag: [
+      'precision mediump float;',
+      'void main() {',
+      '  gl_FragColor = vec4(0, 0, 1, 1);',
+      '}'
+    ].join('\n'),
+
+    vert: [
+      'attribute vec2 position;',
+      'void main() {',
+      '  gl_Position = vec4(position, 0, 1);',
+      '}'
+    ].join('\n'),
+
+    attributes: {
+      position: regl.buffer([
+        [-2, 0],
+        [0, -2],
+        [2, 0],
+        [0, 2]
+      ])
+    },
+
+    depth: {enable: false},
+
+    elements: regl.prop('elements')
+  })
+
+
   var drawDynamic = regl({
     frag: [
       'precision mediump float;',
@@ -73,6 +103,8 @@ tape('elements', function (t) {
 
     elements: regl.prop('elements')
   })
+
+
 
   function testImage (cb, msg) {
     var i

@@ -227,31 +227,31 @@ module.exports = function wrapREGL () {
     var batch = compiled.batch
     var scope = compiled.scope
 
-    function dynamicCommand (args, body) {
-      if (Array.isArray(args)) {
+    var EMPTY_ARRAY = []
+    function reserve(count) {
+      while (EMPTY_ARRAY.length < count) {
+        EMPTY_ARRAY.push(null)
+      }
+      return EMPTY_ARRAY
+    }
+
+    function REGLCommand (args, body) {
+      if (typeof args === 'number') {
+        return batch(reserve(args|0))
+      } else if (Array.isArray(args)) {
         return batch(args)
+      } else if (typeof args === 'function') {
+        return scope(null, args)
       } else if (typeof body === 'function') {
         return scope(args, body)
       }
       return draw(args)
     }
-    dynamicCommand.draw = draw
-    dynamicCommand.batch = batch
-    dynamicCommand.scope = scope
+    REGLCommand.draw = draw
+    REGLCommand.batch = batch
+    REGLCommand.scope = scope
 
-    function staticCommand (body) {
-      if (body) {
-        return scope(body)
-      }
-      return draw()
-    }
-    staticCommand.draw = draw
-    staticCommand.scope = scope
-
-    if (hasDynamic) {
-      return dynamicCommand
-    }
-    return staticCommand
+    return REGLCommand
   }
 
   // Clears the currently bound frame buffer
