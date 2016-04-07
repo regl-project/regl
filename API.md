@@ -122,19 +122,36 @@ var drawSpinningStretchyTriangle = regl({
 ```
 
 ### Command properties
-The input to a command declaration is a complete description of the WebGL state machine.  As a result, there are a lot of parameters and options which it can take.
+The input to a command declaration is a complete description of the WebGL state machine.  These commands are grouped according to the parts of the WebGL state which they affect.
 
 #### Shaders
 
-| Property | Description | Default |
-|----------|-------------|---------|
-| `vert` | Source code of vertex shader | `''`` |
-| `frag` | Source code of fragment shader | `''` |
+```javascript
+```
+
+| Property | Description |
+|----------|-------------|
+| `vert` | Source code of vertex shader |
+| `frag` | Source code of fragment shader |
 
 **Note**: Dynamic shaders are not supported.
 
+**Related WebGL APIs**
+
+* [`gl.createShader`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateShader.xml)
+* [`gl.shaderSource`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glShaderSource.xml)
+* [`gl.compileShader`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompileShader.xml)
+* [`gl.createProgram`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateProgram.xml)
+* [`gl.attachShader`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glAttachShader.xml)
+* [`gl.linkProgram`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glLinkProgram.xml)
+* [`gl.useProgram`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glUseProgram.xml)
+
 #### Uniforms
 
+**Related WebGL APIs**
+
+* [`gl.getUniformLocation`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGetUniformLocation.xml)
+* [`gl.uniform`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glUniform.xml)
 
 #### Attributes
 
@@ -149,7 +166,25 @@ Each attribute can have any of the following optional properties,
 | `size` | | `0` |
 | `divisor` | | `0` * |
 
+**Related WebGL APIs**
+
+* [`gl.vertexAttribPointer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glVertexAttribPointer.xml)
+* [`gl.vertexAttrib`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glVertexAttrib.xml)
+* [`gl.getAttribLocation`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGetAttribLocation.xml)
+* [`gl.vertexAttibDivisor`](https://www.opengl.org/sdk/docs/man4/html/glVertexAttribDivisor.xhtml)
+* [`gl.enableVertexAttribArray`, `gl.disableVertexAttribArray`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDisableVertexAttribArray.xml)
+
 #### Drawing
+
+```javascript
+var command = regl({
+  // ...
+
+  primitive: 'triangles',
+
+  count: 6,
+})
+```
 
 | Property | Description | Default |
 |----------|-------------|---------|
@@ -165,7 +200,7 @@ Each attribute can have any of the following optional properties,
 * `instances` is only applicable if the `ANGLE_instanced_arrays` extension is present.
 * `primitive` can take on the following values
 
-| Value | Description |
+| Primitive type | Description |
 |-------|-------------|
 | `'points'` | `gl.POINTS` |
 | `'lines'` | gl.LINES` |
@@ -175,12 +210,20 @@ Each attribute can have any of the following optional properties,
 | `'triangle strip'` | `gl.TRIANGLE_STRIP` |
 | `'triangle fan'` | `gl.TRIANGLE_FAN` |
 
+**Related WebGL APIs**
+
+* [`gl.drawArrays`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDrawArrays.xml)
+* [`gl.drawElements`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDrawElements.xml)
+* [`gl.drawArraysInstancedANGLE`](https://www.opengl.org/sdk/docs/man4/html/glDrawArraysInstanced.xhtml)
+* [`gl.drawElementsInstancedANGLE`](https://www.opengl.org/sdk/docs/man4/html/glDrawElementsInstanced.xhtml)
+
 #### Depth
 
 | Property | Description | Default |
 |----------|-------------|---------|
 | `enable` | Sets `gl.enable(gl.DEPTH_TEST)` | `true` |
 | `mask` | Sets `gl.depthMask` | `true` |
+| `range` | Sets `gl.depthRange` | `[0, 1]` |
 | `func` | Sets `gl.depthFunc`. See table below for possible values | `'less'` |
 
 `depth.func` can take on the possible values
@@ -196,6 +239,51 @@ Each attribute can have any of the following optional properties,
 | `'=', 'equal'` | gl.EQUAL |
 | `'!=', 'notequal'` | gl.NOTEQUAL |
 
+**Related WebGL APIs**
+
+* [`gl.depthFunc`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDepthFunc.xml)
+* [`gl.depthMask`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDepthMask.xml)
+* [`gl.depthRange`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDepthRangef.xml)
+
+#### Blending
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `enable` | Sets `gl.enable(gl.BLEND)` | `false` |
+| `func` | Sets `gl.blendFunc` (see table) | `{src:'src alpha',dst:'one minus src alpha'}` |
+| `equation` | Sets `gl.blendEquation` (see table) | `'add'` |
+| `color` | Sets `gl.blendColor` | `[0, 0, 0, 0]` |
+
+| Equation | Description |
+|----------|---------------|
+| `'add'` | `gl.FUNC_ADD` |
+| `'subtract'` | `gl.FUNC_SUBTRACT` |
+| `'reverse subtract'` | `gl.FUNC_REVERSE_SUBTRACT` |
+
+| Func | Description |
+|------|-------------|
+| `0, 'zero'` | `gl.ZERO` |
+| `1, 'one'` | `gl.ONE` |
+| `'src color'` | `gl.SRC_COLOR` |
+| `'one minus src color'` | `gl.ONE_MINUS_SRC_COLOR` |
+| `'src alpha'` | `gl.SRC_ALPHA` |
+| `'one minus src alpha'` | `gl.ONE_MINUS_SRC_ALPHA` |
+| `'dst color'` | `gl.DST_COLOR` |
+| `'one minus dst color'` | `gl.ONE_MINUS_DST_COLOR` |
+| `'dst alpha'` | `gl.DST_ALPHA` |
+| `'one minus dst alpha'` | `gl.ONE_MINUS_DST_ALPHA` |
+| `'constant color'` | `gl.CONSTANT_COLOR` |
+| `'one minus constant color'` | `gl.ONE_MINUS_CONSTANT_COLOR` |
+| `'constant alpha'` | `gl.CONSTANT_ALPHA` |
+| `'one minus constant alpha'` | `gl.ONE_MINUS_CONSTANT_ALPHA` |
+| `'src alpha saturate'` | `gl.SRC_ALPHA_SATURATE` |
+
+**Related WebGL APIs**
+
+* [`gl.blendEquationSeparate`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendEquationSeparate.xml)
+* [`gl.blendFuncSeparate`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendFuncSeparate.xml)
+* [`gl.blendColor`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendColor.xml)
+
 #### Stencil
 
 | Property | Description | Default |
@@ -205,14 +293,6 @@ Each attribute can have any of the following optional properties,
 | `func` | Sets `gl.stencilFunc` | `` |
 | `op` | Sets `gl.stencilOpSeparate` | `` |
 
-#### Blending
-
-| Property | Description | Default |
-|----------|-------------|---------|
-| `enable` | Sets `gl.enable(gl.BLEND)` | `false` |
-| `func` | Sets `gl.blendFunc` | `''` |
-| `color` | Sets `gl.blendColor` | `[0, 0, 0, 0]` |
-| `equation` | Sets `gl.blendEquation` | `''` |
 
 #### Polygon offset
 
@@ -264,7 +344,9 @@ command(args, function () {
 #### Batch rendering
 
 ```javascript
-command([arg0, arg1, arg2, ...])
+command(count)
+
+command([args0, args1, args2, ...])
 ```
 
 ## Resources
