@@ -10,11 +10,13 @@
   "devDependencies": {
     "browserify": "^13.0.0",
     "budo": "^8.1.0",
+    "coverify": "^1.4.1",
     "derequire": "^2.0.3",
     "faucet": "0.0.1",
     "gl": "^3.0.3",
     "indexhtmlify": "^1.2.1",
     "runscript": "^1.1.0",
+    "smokestack": "^3.4.1",
     "snazzy": "^3.0.0",
     "standard": "^6.0.7",
     "tap-browser-color": "^0.1.2",
@@ -24,6 +26,7 @@
   "scripts": {
     "test": "standard | snazzy && tape test/*.js | faucet",
     "test-browser": "budo test/util/browser.js --open",
+    "coverage": "browserify test/util/browser.js -t coverify | smokestack | coverify",
     "bench": "budo bench/index.js --open",
     "build": "npm run build-script && npm run build-min && npm run build-bench && npm run build-gallery",
     "build-script": "browserify regl.js -s regl | derequire > dist/regl.js",
