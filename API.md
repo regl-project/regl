@@ -486,11 +486,53 @@ var command = regl({
 
 | Property | Description | Default |
 |----------|-------------|---------|
-| `enable` | Sets `gl.enable(gl.STENCIL_TEST)` | `false` |
-| `mask` | Sets `gl.stencilMask` | `0xffffffff` |
-| `func` | Sets `gl.stencilFunc` | `` |
-| `op` | Sets `gl.stencilOpSeparate` | `` |
+| `enable` | Toggles `gl.enable(gl.STENCIL_TEST)` | `false` |
+| `mask` | Sets `gl.stencilMask` | `-1` |
+| `func` | Sets `gl.stencilFunc` | `{cmp:'always',ref:0,mask:-1}` |
+| `opFront` | Sets `gl.stencilOpSeparate` for front face | `{fail:'keep',zfail:'keep',pass:'keep'}` |
+| `opBack` | Sets `gl.stencilOpSeparate` for back face | `{fail:'keep',zfail:'keep',pass:'keep'}` |
 
+**Notes**
+
+* `func` is an object which configures the stencil test function. It has 3 properties,
+    + `cmp` which is the comparison function
+    + `ref` which is the reference value
+    + `mask` which is the comparison mask
+* `func.cmp` is a comparison operator which takes one of the following values,
+
+| Value | Description |
+|-------|-------------|
+| `'never'` | `gl.NEVER` |
+| `'always'` | gl.ALWAYS` |
+| `'<', 'less'` | `gl.LESS` |
+| `'<=', 'lequal'` | gl.LEQUAL |
+| `'>', 'greater'` | `gl.GREATER` |
+| `'>=', 'gequal'` | gl.GEQUAL |
+| `'=', 'equal'` | gl.EQUAL |
+| `'!=', 'notequal'` | gl.NOTEQUAL |
+
+* `opFront` and `opBack` specify the stencil op.  Each is an object which takes the following parameters:
+    + `fail`, the stencil op which is applied when the stencil test fails
+    + `zfail`, the stencil op which is applied when the stencil test passes and the depth test fails
+    + `pass`, the stencil op which is applied when both stencil and depth tests pass
+* Values for `opFront.fail`, `opFront.zfail`, etc. can come from the following table
+
+| Stencil Op | Description |
+|------------|-------------|
+| `'zero'` | `gl.ZERO` |
+| `'keep'` | `gl.KEEP` |
+| `'replace'` | `gl.REPLACE` |
+| `'invert'` | `gl.INVERT` |
+| `'increment'` | `gl.INCR` |
+| `'decrement'` | `gl.DECR` |
+| `'increment wrap'` | `gl.INCR_WRAP` |
+| `'decrement wrap'` | `gl.DECR_WRAP` |
+
+**Related WebGL APIs**
+
+* [`gl.stencilFunc`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glStencilFunc.xml)
+* [`gl.stencilMask`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glStencilMask.xml)
+* [`gl.stencilOpSeparate`](http://www.khronos.org/opengles/sdk/2.0/docs/man/xhtml/glStencilOpSeparate.xml)
 
 #### Polygon offset
 
