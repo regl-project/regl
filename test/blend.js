@@ -33,22 +33,25 @@ tape('blend', function (t) {
   t.equals(blendFuncs['src alpha saturate'], gl.SRC_ALPHA_SATURATE, 'alpha saturate')
 
   function testFlags (prefix, flags) {
+    // enable
     t.equals(
       gl.getParameter(gl.BLEND),
       flags.enable,
       prefix + ' blend mode')
+    // color
     t.same(
       [].slice.call(gl.getParameter(gl.BLEND_COLOR)),
       flags.color,
       prefix + ' blend color')
+    // equation
     t.same(
-      gl.getParameter(gl.BLEND_DST_RGB),
-      blendFuncs[flags.func.dstRGB || flags.func.dst],
-      prefix + ' blend func dstRGB')
+      gl.getParameter(gl.BLEND_EQUATION_RGB),
+      blendEquations[flags.equation.rgb],
+      prefix + ' blend equation rgb')
     t.same(
-      gl.getParameter(gl.BLEND_DST_ALPHA),
-      blendFuncs[flags.func.dstAlpha || flags.func.dst],
-      prefix + ' blend func dstAlpha')
+      gl.getParameter(gl.BLEND_EQUATION_ALPHA),
+      blendEquations[flags.equation.alpha],
+      prefix + ' blend equation alpha')
     t.same(
       gl.getParameter(gl.BLEND_SRC_RGB),
       blendFuncs[flags.func.srcRGB || flags.func.src],
@@ -58,17 +61,18 @@ tape('blend', function (t) {
       blendFuncs[flags.func.srcAlpha || flags.func.src],
       prefix + ' blend func srcAlpha')
     t.same(
-      gl.getParameter(gl.BLEND_EQUATION_RGB),
-      blendEquations[flags.equation.rgb],
-      prefix + ' blend equation rgb')
+      gl.getParameter(gl.BLEND_DST_RGB),
+      blendFuncs[flags.func.dstRGB || flags.func.dst],
+      prefix + ' blend func dstRGB')
     t.same(
-      gl.getParameter(gl.BLEND_EQUATION_ALPHA),
-      blendEquations[flags.equation.alpha],
-      prefix + ' blend equation alpha')
+      gl.getParameter(gl.BLEND_DST_ALPHA),
+      blendFuncs[flags.func.dstAlpha || flags.func.dst],
+      prefix + ' blend func dstAlpha')
   }
 
   var staticOptions = {
     frag: [
+      'precision mediump float;',
       'uniform vec4 color;',
       'void main() {',
       '  gl_FragColor = vec4(1, 0, 0, 1);',
@@ -76,6 +80,7 @@ tape('blend', function (t) {
     ].join('\n'),
 
     vert: [
+      'precision mediump float;',
       'attribute vec2 position;',
       'void main() {',
       '  gl_Position = vec4(position, 0, 1);',
@@ -114,8 +119,8 @@ tape('blend', function (t) {
         alpha: 'subtract'
       },
       func: {
-        srcRGB: 0,
-        srcAlpha: 1,
+        srcRGB: '0',
+        srcAlpha: '1',
         dstRGB: 'src color',
         dstAlpha: 'one minus src alpha'
       }
@@ -147,9 +152,9 @@ tape('blend', function (t) {
   })
 
   permutations.forEach(function (params) {
-    var staticDraw = Object.assign({
+    var staticDraw = regl(Object.assign({
       blend: params
-    }, staticOptions)
+    }, staticOptions))
     staticDraw()
     testFlags('static - ', params)
   })

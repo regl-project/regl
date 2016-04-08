@@ -228,7 +228,7 @@ module.exports = function wrapREGL () {
     var scope = compiled.scope
 
     var EMPTY_ARRAY = []
-    function reserve(count) {
+    function reserve (count) {
       while (EMPTY_ARRAY.length < count) {
         EMPTY_ARRAY.push(null)
       }
@@ -237,7 +237,7 @@ module.exports = function wrapREGL () {
 
     function REGLCommand (args, body) {
       if (typeof args === 'number') {
-        return batch(args|0, reserve(args|0))
+        return batch(args | 0, reserve(args | 0))
       } else if (Array.isArray(args)) {
         return batch(args.length, args)
       } else if (typeof args === 'function') {
