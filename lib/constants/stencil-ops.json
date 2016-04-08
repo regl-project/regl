@@ -1,0 +1,11 @@
+{
+  "0": 0,
+  "zero": 0,
+  "keep": 7680,
+  "replace": 7681,
+  "increment": 7682,
+  "decrement": 7683,
+  "increment wrap": 34055,
+  "decrement wrap": 34056,
+  "invert": 5386
+}
