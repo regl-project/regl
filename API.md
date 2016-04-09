@@ -771,11 +771,41 @@ var command = regl({
 
 ---------------------------------------
 #### Scissor
+Example,
+
+```javascript
+var command = regl({
+  // ...
+
+  scissor: {
+    enable: true,
+    box: {
+      x: 10,
+      y: 20,
+      w: 100,
+      h: 100
+    }
+  }
+
+  // ...
+})
+```
 
 | Property | Description | Default |
 |----------|-------------|---------|
 | `enable` | Toggles `gl.enable(gl.SCISSOR)` | `false` |
-| `bounds` | Sets `gl.scissor` | `[0,0,0,0]` |
+| `box` | Sets `gl.scissor` | `{x:0,y:0}` |
+
+**Notes**
+* `box` is the shape of the scissor region, it takes the following parameters
+    + `x` is the left coordinate of the box, default `0`
+    + `y` is the top coordiante of the box, default `0`
+    + `w` is the width of the box, default fbo width - `x`
+    + `h` is the height of the box, default fbo height - `y`
+
+**Relevant WebGL APIs**
+
+* [`gl.scissor`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glScissor.xml)
 
 ---------------------------------------
 #### Viewport
