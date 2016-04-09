@@ -7,11 +7,12 @@ This repo is an attempt at building new functional abstractions for working with
 
 `regl` offers the following advantages over raw WebGL code:
 
-* **Just one function**
 * **Less state** Draw commands in regl are self contained, so you don't have to worry about some other weird subroutine breaking your rendering code
 * **No `bind()`** In regl, shaders, buffers, textures and fbos are specified declaratively, so there is no need to ever `bind()` them or unbind them.
-* **Fewer silent failure** If you pass incorrect parameters to some WebGL method, the default behavior is to set an error code and continue on. Because `regl` commands have more structure, we can do more validation up front without the run time performance cost.
+* **Fewer silent failures** If you pass incorrect parameters to some WebGL method, the default behavior is to set an error code and continue on. Because `regl` commands have more structure, we can do more validation up front without the run time performance cost.
 * **Sane defaults** Many WebGL APIs have redundant or outright broken parameters (for example `border` in `gl.texImage2D` or `transpose` in `gl.uniformMatrix4fv`). `regl` wraps these APIs in such a way that you will never have to see this mess.
+* **Low overhead** regl uses caching and code generation to minimize overhead from
+* **Still just WebGL** regl exposes the full power of the WebGL API, no features are removed or hidden.
 
 ## Simple example
 
