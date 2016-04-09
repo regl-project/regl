@@ -8,10 +8,10 @@ require('../caps')
 require('../depth')
 require('../elements')
 require('../draw')
-*/
 require('../blend')
-/*
+*/
 require('../stencil')
+/*
 require('../viewport')
 require('../misc')
 */

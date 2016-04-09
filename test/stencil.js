@@ -2,6 +2,7 @@ var createContext = require('./util/create-context')
 var createREGL = require('../../regl')
 var tape = require('tape')
 
+var compareFuncs = require('../lib/constants/compareFuncs.json')
 var stencilOps = require('../lib/constants/stencil-ops.json')
 
 tape('stencil', function (t) {
@@ -18,18 +19,139 @@ tape('stencil', function (t) {
   t.equals(stencilOps['decrement wrap'], gl.DECR_WRAP, 'decrement wrap')
   t.equals(stencilOps.invert, gl.INVERT, 'invert')
 
-  // TODO
-
   // clearStencil
+  for (var i = 0; i < 256; ++i) {
+    regl.clear({
+      stencil: i
+    })
+    t.equals(gl.getParameter(gl.STENCIL_CLEAR_VALUE), i, 'stencil clear ' + i)
+  }
 
-  // stencilTest
-  // stencilMask
-  // stencilFunc
-  // stencilOp
+  function testFlags (prefix, flags) {
+    function same (pname, value, str) {
+      t.equals(gl.getParameter(pname), value, prefix + ' ' + str)
+    }
 
-  // static
-  // dynamic 1-shot
-  // dynamic batch
+    same(gl.STENCIL_TEST, flags.enable, 'enable')
+
+    same(gl.STENCIL_FUNC, compareFuncs[flags.func.cmp], 'func.cmp')
+    same(gl.STENCIL_REF, flags.func.ref, 'func.ref')
+    same(gl.STENCIL_VALUE_MASK, flags.func.mask, 'func.mask')
+
+    same(gl.STENCIL_WRITEMASK, flags.mask, 'mask')
+
+    function sameOp (pname, name, face) {
+      same(pname, stencilOps[flags[face][name]], face + '.' + name)
+    }
+
+    sameOp(gl.STENCIL_FAIL, 'fail', 'opFront')
+    sameOp(gl.STENCIL_PASS_DEPTH_FAIL, 'zfail', 'opFront')
+    sameOp(gl.STENCIL_PASS_DEPTH_PASS, 'pass', 'opFront')
+
+    sameOp(gl.STENCIL_BACK_FAIL, 'fail', 'opBack')
+    sameOp(gl.STENCIL_BACK_PASS_DEPTH_FAIL, 'zfail', 'opBack')
+    sameOp(gl.STENCIL_BACK_PASS_DEPTH_PASS, 'pass', 'opBack')
+  }
+
+  var permutations = [
+    {
+      enable: true,
+      func: {
+        cmp: 'always',
+        ref: 0,
+        mask: 0xff
+      },
+      mask: 0xff,
+      opFront: {
+        fail: 'keep',
+        zfail: 'keep',
+        pass: 'keep'
+      },
+      opBack: {
+        fail: 'keep',
+        zfail: 'keep',
+        pass: 'keep'
+      }
+    },
+    {
+      enable: false,
+      func: {
+        cmp: '>',
+        ref: 10,
+        mask: 0xff
+      },
+      mask: 0xf0,
+      opFront: {
+        fail: 'invert',
+        zfail: 'increment',
+        pass: 'increment wrap'
+      },
+      opBack: {
+        fail: 'zero',
+        zfail: 'decrement',
+        pass: 'decrement wrap'
+      }
+    }
+  ]
+
+  var staticOptions = {
+    frag: [
+      'precision mediump float;',
+      'uniform vec4 color;',
+      'void main() {',
+      '  gl_FragColor = vec4(1, 0, 0, 1);',
+      '}'
+    ].join('\n'),
+
+    vert: [
+      'precision mediump float;',
+      'attribute vec2 position;',
+      'void main() {',
+      '  gl_Position = vec4(position, 0, 1);',
+      '}'
+    ].join('\n'),
+
+    attributes: {
+      position: regl.buffer([
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [0, 1],
+        [1, 0],
+        [1, 1]
+      ])
+    },
+
+    count: 6
+  }
+
+  var dynamicDraw = regl(Object.assign({
+    stencil: {
+      enable: regl.prop('enable'),
+      func: regl.prop('func'),
+      mask: regl.prop('mask'),
+      opFront: regl.prop('opFront'),
+      opBack: regl.prop('opBack')
+    }
+  }, staticOptions))
+
+  permutations.forEach(function (params) {
+    dynamicDraw(params)
+    testFlags('dynamic 1-shot - ', params)
+  })
+
+  permutations.forEach(function (params) {
+    dynamicDraw([params])
+    testFlags('batch - ', params)
+  })
+
+  permutations.forEach(function (params) {
+    var staticDraw = regl(Object.assign({
+      stencil: params
+    }, staticOptions))
+    staticDraw()
+    testFlags('static - ', params)
+  })
 
   regl.destroy()
   t.end()
