@@ -540,10 +540,32 @@ var command = regl({
 
 #### Polygon offset
 
+Polygon offsetting behavior can be controlled using the `polygonOffset` field,
+
+```javascript
+var command = regl({
+  // ...
+
+  polygonOffset: {
+    enable: true,
+    offset: {
+      factor: 1,
+      units: 0
+    }
+  }
+
+  // ...
+})
+```
+
 | Property | Description | Default |
 |----------|-------------|---------|
-| `enable` | Sets `gl.enable(gl.POLYGON_OFFSET)` | `false` |
-| `offset` | Sets `gl.polygonOffset` | `{}` |
+| `enable` | Toggles `gl.enable(gl.POLYGON_OFFSET_FILL)` | `false` |
+| `offset` | Sets `gl.polygonOffset` | `{factor:0, units:0}` |
+
+**Related WebGL APIs**
+
+* [`gl.polygonOffset`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glPolygonOffset.xml)
 
 #### Culling
 
