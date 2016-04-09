@@ -763,7 +763,25 @@ var command = regl({
 ---------------------------------------
 ## Resources
 
-### Constructors
+### Basic usage
+
+---------------------------------------
+#### Updating a resource
+
+```javascript
+resource(options)
+```
+
+---------------------------------------
+#### Destroying a resource
+
+```javascript
+resource.destroy()
+```
+
+
+---------------------------------------
+### Types
 
 ---------------------------------------
 #### `regl.buffer(options)`
@@ -799,20 +817,6 @@ var command = regl({
 #### `regl.fbo(options)`
 
 **NOT YET IMPLEMENTED**
-
----------------------------------------
-### Updates
-
-```javascript
-resource(options)
-```
-
----------------------------------------
-### Destruction
-
-```javascript
-resource.destroy()
-```
 
 ---------------------------------------
 ## Other properties
