@@ -208,7 +208,7 @@ module.exports = function wrapAttributeState (gl, extensionState, bufferState) {
   }
 }
 
-},{"./constants/dtypes.json":9}],2:[function(_dereq_,module,exports){
+},{"./constants/dtypes.json":11}],2:[function(_dereq_,module,exports){
 // Array and element buffer creation
 var check = _dereq_('./check')
 var isTypedArray = _dereq_('./is-typed-array')
@@ -369,7 +369,7 @@ module.exports = function wrapBufferState (gl) {
   }
 }
 
-},{"./check":3,"./constants/arraytypes.json":7,"./constants/usage.json":11,"./is-typed-array":18}],3:[function(_dereq_,module,exports){
+},{"./check":3,"./constants/arraytypes.json":7,"./constants/usage.json":14,"./is-typed-array":21}],3:[function(_dereq_,module,exports){
 // Error checking and parameter validation
 var isTypedArray = _dereq_('./is-typed-array')
 
@@ -433,7 +433,7 @@ module.exports = Object.assign(check, {
   oneOf: checkOneOf
 })
 
-},{"./is-typed-array":18}],4:[function(_dereq_,module,exports){
+},{"./is-typed-array":21}],4:[function(_dereq_,module,exports){
 /* globals performance */
 module.exports =
   (typeof performance !== 'undefined' && performance.now)
@@ -455,7 +455,7 @@ module.exports = function createEnvironment () {
   var linkedNames = []
   var linkedValues = []
   function link (value) {
-    var name = '_g' + (varCounter++)
+    var name = 'g' + (varCounter++)
     linkedNames.push(name)
     linkedValues.push(value)
     return name
@@ -470,7 +470,7 @@ module.exports = function createEnvironment () {
 
     var vars = []
     function def () {
-      var name = '_v' + (varCounter++)
+      var name = 'v' + (varCounter++)
       vars.push(name)
 
       if (arguments.length > 0) {
@@ -498,7 +498,7 @@ module.exports = function createEnvironment () {
   function proc (name) {
     var args = []
     function arg () {
-      var name = '_a' + (varCounter++)
+      var name = 'a' + (varCounter++)
       args.push(name)
       return name
     }
@@ -542,12 +542,15 @@ module.exports = function createEnvironment () {
 },{}],6:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 var createEnvironment = _dereq_('./codegen')
+
 var primTypes = _dereq_('./constants/primitives.json')
 var glTypes = _dereq_('./constants/dtypes.json')
 var compareFuncs = _dereq_('./constants/comparefuncs.json')
+var blendFuncs = _dereq_('./constants/blendFuncs.json')
+var blendEquations = _dereq_('./constants/blendEquations.json')
+var stencilOps = _dereq_('./constants/stencil-ops.json')
 
-var DEFAULT_FRAG_SHADER = 'void main(){gl_FragColor=vec4(0,0,0,0);}'
-var DEFAULT_VERT_SHADER = 'void main(){gl_Position=vec4(0,0,0,0);}'
+var GL_ELEMENT_ARRAY_BUFFER = 34963
 
 var GL_FLOAT = 5126
 var GL_FLOAT_VEC2 = 35664
@@ -576,6 +579,12 @@ var GL_SCISSOR_TEST = 0x0C11
 var GL_POLYGON_OFFSET_FILL = 0x8037
 var GL_SAMPLE_ALPHA_TO_COVERAGE = 0x809E
 var GL_SAMPLE_COVERAGE = 0x80A0
+
+var GL_FRONT = 1028
+var GL_BACK = 1029
+
+var GL_CW = 0x0900
+var GL_CCW = 0x0901
 
 function typeLength (x) {
   switch (x) {
@@ -772,7 +781,8 @@ module.exports = function reglCompiler (
   // BATCH DRAW OPERATION
   // ===================================================
   // ===================================================
-  function compileBatch (program, options, uniforms, attributes) {
+  function compileBatch (
+    program, options, uniforms, attributes, staticOptions) {
     // -------------------------------
     // code generation helpers
     // -------------------------------
@@ -790,7 +800,6 @@ module.exports = function reglCompiler (
     var PROGRAM = link(program.program)
     var BIND_ATTRIBUTE = link(attributeState.bind)
     var FRAME_STATE = link(frameState)
-    var FRAME_COUNT = def(FRAME_STATE, '.count')
     var DRAW_STATE = {
       count: link(drawState.count),
       offset: link(drawState.offset),
@@ -809,14 +818,15 @@ module.exports = function reglCompiler (
       CUR_INSTANCES = def(stackTop(DRAW_STATE.instances))
       INSTANCE_EXT = link(instancing)
     }
+    var hasDynamicElements = 'elements' in options
 
     // -------------------------------
     // batch/argument vars
     // -------------------------------
+    var NUM_ARGS = arg()
     var ARGS = arg()
     var ARG = def()
     var BATCH_ID = def()
-    var NUM_ARGS = def()
 
     // -------------------------------
     // load a dynamic variable
@@ -830,7 +840,7 @@ module.exports = function reglCompiler (
       }
       if (x.func) {
         result = batch.def(
-          link(x.data), '(', FRAME_COUNT, ',', BATCH_ID, ',', ARG, ')')
+          link(x.data), '(', ARG, ',', BATCH_ID, ',', FRAME_STATE, ')')
       } else {
         result = batch.def(ARG, '.', x.data)
       }
@@ -881,10 +891,21 @@ module.exports = function reglCompiler (
     })
 
     // -------------------------------
+    // set static element buffer
+    // -------------------------------
+    if (!hasDynamicElements) {
+      batch(
+        'if(', CUR_ELEMENTS, '){',
+        GL, '.bindBuffer(', GL_ELEMENT_ARRAY_BUFFER, ',', CUR_ELEMENTS, '.buffer._buffer.buffer);',
+        '}else{',
+        GL, '.bindBuffer(', GL_ELEMENT_ARRAY_BUFFER, ',null);',
+        '}')
+    }
+
+    // -------------------------------
     // loop over all arguments
     // -------------------------------
     batch(
-      NUM_ARGS, '=', ARGS, '.length;',
       'for(', BATCH_ID, '=0;', BATCH_ID, '<', NUM_ARGS, ';++', BATCH_ID, '){',
       ARG, '=', ARGS, '[', BATCH_ID, '];')
 
@@ -903,45 +924,155 @@ module.exports = function reglCompiler (
 
       switch (option) {
         // Caps
-        case 'cull':
+        case 'cull.enable':
           setCap(GL_CULL_FACE)
           break
-        case 'blend':
+        case 'blend.enable':
           setCap(GL_BLEND)
           break
         case 'dither':
           setCap(GL_DITHER)
           break
-        case 'stencilTest':
+        case 'stencil.enable':
           setCap(GL_STENCIL_TEST)
           break
-        case 'depthTest':
+        case 'depth.enable':
           setCap(GL_DEPTH_TEST)
           break
-        case 'scissorTest':
+        case 'scissor.enable':
           setCap(GL_SCISSOR_TEST)
           break
-        case 'polygonOffsetFill':
+        case 'polygonOffset.enable':
           setCap(GL_POLYGON_OFFSET_FILL)
           break
-        case 'sampleAlpha':
+        case 'sample.alpha':
           setCap(GL_SAMPLE_ALPHA_TO_COVERAGE)
           break
-        case 'sampleCoverage':
+        case 'sample.enable':
           setCap(GL_SAMPLE_COVERAGE)
           break
 
-        case 'depthMask':
+        case 'depth.mask':
           batch(GL, '.depthMask(', VALUE, ');')
           break
 
-        case 'depthFunc':
+        case 'depth.func':
           var DEPTH_FUNCS = link(compareFuncs)
           batch(GL, '.depthFunc(', DEPTH_FUNCS, '[', VALUE, ']);')
           break
 
-        case 'depthRange':
+        case 'depth.range':
           batch(GL, '.depthRange(', VALUE, '[0],', VALUE, '[1]);')
+          break
+
+        case 'blend.color':
+          batch(GL, '.blendColor(',
+            VALUE, '[0],',
+            VALUE, '[1],',
+            VALUE, '[2],',
+            VALUE, '[3]);')
+          break
+
+        case 'blend.equation':
+          var BLEND_EQUATIONS = link(blendEquations)
+          batch(
+            'if(typeof ', VALUE, '==="string"){',
+            GL, '.blendEquation(', BLEND_EQUATIONS, '[', VALUE, ']);',
+            '}else{',
+            GL, '.blendEquationSeparate(',
+            BLEND_EQUATIONS, '[', VALUE, '.rgb],',
+            BLEND_EQUATIONS, '[', VALUE, '.alpha]);',
+            '}')
+          break
+
+        case 'blend.func':
+          var BLEND_FUNCS = link(blendFuncs)
+          batch(
+            GL, '.blendFuncSeparate(',
+            BLEND_FUNCS,
+            '["srcRGB" in ', VALUE, '?', VALUE, '.srcRGB:', VALUE, '.src],',
+            BLEND_FUNCS,
+            '["dstRGB" in ', VALUE, '?', VALUE, '.dstRGB:', VALUE, '.dst],',
+            BLEND_FUNCS,
+            '["srcAlpha" in ', VALUE, '?', VALUE, '.srcAlpha:', VALUE, '.src],',
+            BLEND_FUNCS,
+            '["dstAlpha" in ', VALUE, '?', VALUE, '.dstAlpha:', VALUE, '.dst]);')
+          break
+
+        case 'stencil.mask':
+          batch(GL, '.stencilMask(', VALUE, ');')
+          break
+
+        case 'stencil.func':
+          var STENCIL_FUNCS = link(compareFuncs)
+          batch(GL, '.stencilFunc(',
+            STENCIL_FUNCS, '[', VALUE, '.cmp||"always"],',
+            VALUE, '.ref|0,',
+            '"mask" in ', VALUE, '?', VALUE, '.mask:-1);')
+          break
+
+        case 'stencil.opFront':
+        case 'stencil.opBack':
+          var STENCIL_OPS = link(stencilOps)
+          batch(GL, '.stencilOpSeparate(',
+            option === 'stencil.opFront' ? GL_FRONT : GL_BACK, ',',
+            STENCIL_OPS, '[', VALUE, '.fail||"keep"],',
+            STENCIL_OPS, '[', VALUE, '.zfail||"keep"],',
+            STENCIL_OPS, '[', VALUE, '.pass||"keep"]);')
+          break
+
+        case 'polygonOffset.offset':
+          batch(GL, '.polygonOffset(',
+            VALUE, '.factor||0,',
+            VALUE, '.units||0);')
+          break
+
+        case 'cull.face':
+          batch(GL, '.cullFace(',
+            VALUE, '==="front"?', GL_FRONT, ':', GL_BACK, ');')
+          break
+
+        case 'lineWidth':
+          batch(GL, '.lineWidth(', VALUE, ');')
+          break
+
+        case 'frontFace':
+          batch(GL, '.frontFace(',
+            VALUE, '==="cw"?', GL_CW, ':', GL_CCW, ');')
+          break
+
+        case 'colorMask':
+          batch(GL, '.colorMask(',
+            VALUE, '[0],',
+            VALUE, '[1],',
+            VALUE, '[2],',
+            VALUE, '[3]);')
+          break
+
+        case 'sample.coverage':
+          batch(GL, '.sampleCoverage(',
+            VALUE, '.value,',
+            VALUE, '.invert);')
+          break
+
+        case 'scissor.box':
+          var SCISSOR_X = batch.def(VALUE + '.x||0')
+          var SCISSOR_Y = batch.def(VALUE + '.y||0')
+          batch(GL, '.scissor(',
+            SCISSOR_X, ',',
+            SCISSOR_Y, ',',
+            '"w" in ', VALUE, '?', VALUE, '.w:', GL, '.drawingBufferWidth-', SCISSOR_X, ',',
+            '"h" in ', VALUE, '?', VALUE, '.h:', GL, '.drawingBufferHeight-', SCISSOR_Y, ');')
+          break
+
+        case 'viewport':
+          var VIEWPORT_X = batch.def(VALUE + '.x||0')
+          var VIEWPORT_Y = batch.def(VALUE + '.y||0')
+          batch(GL, '.viewport(',
+            VIEWPORT_X, ',',
+            VIEWPORT_Y, ',',
+            '"w" in ', VALUE, '?', VALUE, '.w:', GL, '.drawingBufferWidth-', VIEWPORT_X, ',',
+            '"h" in ', VALUE, '?', VALUE, '.h:', GL, '.drawingBufferHeight-', VIEWPORT_Y, ');')
           break
 
         case 'primitives':
@@ -989,11 +1120,12 @@ module.exports = function reglCompiler (
     // -------------------------------
     // set dynamic attributes
     // -------------------------------
+
     if (options.count) {
       batch(CUR_COUNT, '=', dyn(options.count), ';')
+    } else if (!useElementOption('count')) {
+      batch('if(', CUR_COUNT, '){')
     }
-
-    batch('if(', CUR_COUNT, '){')
     if (options.offset) {
       batch(CUR_OFFSET, '=', dyn(options.offset), ';')
     }
@@ -1001,57 +1133,88 @@ module.exports = function reglCompiler (
       var PRIM_TYPES = link(primTypes)
       batch(CUR_PRIMITIVE, '=', PRIM_TYPES, '[', dyn(options.primitive), '];')
     }
-    if (options.elements) {
-      batch(CUR_ELEMENTS, '=', dyn(options.elements), ';')
+
+    function useElementOption (x) {
+      return hasDynamicElements && !(x in options || x in staticOptions)
+    }
+    if (hasDynamicElements) {
+      var dynElements = dyn(options.elements)
+      batch(CUR_ELEMENTS, '=',
+        dynElements, '?', dynElements, '._elements:null;')
+    }
+    if (useElementOption('offset')) {
+      batch(CUR_OFFSET, '=0;')
+    }
+
+    // Emit draw command
+    batch('if(', CUR_ELEMENTS, '){')
+    if (useElementOption('count')) {
+      batch(CUR_COUNT, '=', CUR_ELEMENTS, '.vertCount;',
+        'if(', CUR_COUNT, '>0){')
+    }
+    if (useElementOption('primitive')) {
+      batch(CUR_PRIMITIVE, '=', CUR_ELEMENTS, '.primType;')
+    }
+    if (hasDynamicElements) {
+      batch(
+        GL,
+        '.bindBuffer(',
+        GL_ELEMENT_ARRAY_BUFFER, ',',
+        CUR_ELEMENTS, '.buffer._buffer.buffer);')
     }
     if (instancing) {
       if (options.instances) {
         batch(CUR_INSTANCES, '=', dyn(options.instances), ';')
       }
       batch(
-        'if(', CUR_ELEMENTS, '){',
-        CUR_ELEMENTS, '.bind();',
         'if(', CUR_INSTANCES, '>0){',
         INSTANCE_EXT, '.drawElementsInstancedANGLE(',
         CUR_PRIMITIVE, ',',
         CUR_COUNT, ',',
         CUR_ELEMENTS, '.type,',
         CUR_OFFSET, ',',
-        CUR_INSTANCES, ');}else{',
-        GL, '.drawElements(',
-        CUR_PRIMITIVE, ',',
-        CUR_COUNT, ',',
-        CUR_ELEMENTS, '.type,',
-        CUR_OFFSET, ');}',
-        '}else if(', CUR_INSTANCES, '>0){',
-        INSTANCE_EXT, '.drawArraysInstancedANGLE(',
-        CUR_PRIMITIVE, ',',
-        CUR_OFFSET, ',',
-        CUR_COUNT, ',',
-        CUR_INSTANCES, ');}else{',
-        GL, '.drawArrays(',
-        CUR_PRIMITIVE, ',',
-        CUR_OFFSET, ',',
-        CUR_COUNT, ');}}')
-    } else {
-      batch(
-        'if(', CUR_ELEMENTS, '){',
-        GL, '.drawElements(',
-        CUR_PRIMITIVE, ',',
-        CUR_COUNT, ',',
-        CUR_ELEMENTS, '.type,',
-        CUR_OFFSET, ');}',
-        '}else{',
-        GL, '.drawArrays(',
-        CUR_PRIMITIVE, ',',
-        CUR_OFFSET, ',',
-        CUR_COUNT, ');}}')
+        CUR_INSTANCES, ');}else{')
     }
+    batch(
+      GL, '.drawElements(',
+      CUR_PRIMITIVE, ',',
+      CUR_COUNT, ',',
+      CUR_ELEMENTS, '.type,',
+      CUR_OFFSET, ');')
+    if (instancing) {
+      batch('}')
+    }
+    if (useElementOption('count')) {
+      batch('}')
+    }
+    batch('}else{')
+    if (!useElementOption('count')) {
+      if (useElementOption('primitive')) {
+        batch(CUR_PRIMITIVE, '=', GL_TRIANGLES, ';')
+      }
+      if (instancing) {
+        batch(
+          'if(', CUR_INSTANCES, '>0){',
+          INSTANCE_EXT, '.drawArraysInstancedANGLE(',
+          CUR_PRIMITIVE, ',',
+          CUR_OFFSET, ',',
+          CUR_COUNT, ',',
+          CUR_INSTANCES, ');}else{')
+      }
+      batch(
+        GL, '.drawArrays(',
+        CUR_PRIMITIVE, ',',
+        CUR_OFFSET, ',',
+        CUR_COUNT, ');}')
+      if (instancing) {
+        batch('}')
+      }
+    }
+    batch('}}', exit)
 
     // -------------------------------
     // compile and return
     // -------------------------------
-    batch('}', exit)
     return env.compile().batch
   }
 
@@ -1076,6 +1239,8 @@ module.exports = function reglCompiler (
     // Common state variables
     // -------------------------------
     var GL_POLL = link(glState.poll)
+    var FRAG_SHADER_STATE = link(shaderState.fragShaders)
+    var VERT_SHADER_STATE = link(shaderState.vertShaders)
     var PROGRAM_STATE = link(shaderState.programs)
     var DRAW_STATE = {
       count: link(drawState.count),
@@ -1086,6 +1251,7 @@ module.exports = function reglCompiler (
     var ELEMENT_STATE = link(elementState.elements)
     var PRIM_TYPES = link(primTypes)
     var COMPARE_FUNCS = link(compareFuncs)
+    var STENCIL_OPS = link(stencilOps)
 
     var CONTEXT_STATE = {}
     function linkContext (x) {
@@ -1118,8 +1284,15 @@ module.exports = function reglCompiler (
       var value = staticOptions[param]
       switch (param) {
         case 'frag':
+          hasShader = true
+          entry(FRAG_SHADER_STATE, '.push(', link(value), ');')
+          exit(FRAG_SHADER_STATE, '.pop();')
+          break
+
         case 'vert':
           hasShader = true
+          entry(VERT_SHADER_STATE, '.push(', link(value), ');')
+          exit(VERT_SHADER_STATE, '.pop();')
           break
 
         // Update draw state
@@ -1175,29 +1348,26 @@ module.exports = function reglCompiler (
           exit(ELEMENT_STATE, '.pop();')
           break
 
-        // Caps
-        case 'cull':
-        case 'blend':
+        case 'cull.enable':
+        case 'blend.enable':
         case 'dither':
-        case 'stencilTest':
-        case 'depthTest':
-        case 'scissorTest':
-        case 'polygonOffsetFill':
-        case 'sampleAlpha':
-        case 'sampleCoverage':
-        case 'stencilMask':
-        case 'depthMask':
+        case 'stencil.enable':
+        case 'depth.enable':
+        case 'scissor.enable':
+        case 'polygonOffset.enable':
+        case 'sample.alpha':
+        case 'sample.enable':
+        case 'depth.mask':
           check.type(value, 'boolean', param)
           handleStaticOption(param, value)
           break
 
-        // Depth func
-        case 'depthFunc':
+        case 'depth.func':
           check.parameter(value, compareFuncs, param)
           handleStaticOption(param, compareFuncs[value])
           break
 
-        case 'depthRange':
+        case 'depth.range':
           check(
             Array.isArray(value) &&
             value.length === 2 &&
@@ -1208,13 +1378,190 @@ module.exports = function reglCompiler (
           exit(DEPTH_RANGE_STACK, '.pop();')
           break
 
-        // Line width
+        case 'blend.func':
+          var BLEND_FUNC_STACK = linkContext(param)
+          check.type(value, 'object', 'blend func must be an object')
+          var srcRGB = ('srcRGB' in value ? value.srcRGB : value.src)
+          var srcAlpha = ('srcAlpha' in value ? value.srcAlpha : value.src)
+          var dstRGB = ('dstRGB' in value ? value.dstRGB : value.dst)
+          var dstAlpha = ('dstAlpha' in value ? value.dstAlpha : value.dst)
+          check.parameter(srcRGB, blendFuncs)
+          check.parameter(srcAlpha, blendFuncs)
+          check.parameter(dstRGB, blendFuncs)
+          check.parameter(dstAlpha, blendFuncs)
+          entry(BLEND_FUNC_STACK, '.push(',
+            blendFuncs[srcRGB], ',',
+            blendFuncs[dstRGB], ',',
+            blendFuncs[srcAlpha], ',',
+            blendFuncs[dstAlpha], ');')
+          exit(BLEND_FUNC_STACK, '.pop();')
+          break
+
+        case 'blend.equation':
+          var BLEND_EQUATION_STACK = linkContext(param)
+          if (typeof value === 'string') {
+            check.parameter(value, blendEquations, 'invalid blend equation')
+            entry(BLEND_EQUATION_STACK,
+              '.push(',
+              blendEquations[value], ',',
+              blendEquations[value], ');')
+          } else if (typeof value === 'object') {
+            check.parameter(
+              value.rgb, blendEquations, 'invalid blend equation rgb')
+            check.parameter(
+              value.alpha, blendEquations, 'invalid blend equation alpha')
+            entry(BLEND_EQUATION_STACK,
+              '.push(',
+              blendEquations[value.rgb], ',',
+              blendEquations[value.alpha], ');')
+          } else {
+            check.raise('invalid blend equation')
+          }
+          exit(BLEND_EQUATION_STACK, '.pop();')
+          break
+
+        case 'blend.color':
+          check(
+            Array.isArray(value) &&
+            value.length === 4,
+            'blend color is a 4d array')
+          var BLEND_COLOR_STACK = linkContext(param)
+          entry(BLEND_COLOR_STACK,
+            '.push(',
+            value[0], ',',
+            value[1], ',',
+            value[2], ',',
+            value[3], ');')
+          exit(BLEND_COLOR_STACK, '.pop();')
+          break
+
+        case 'stencil.mask':
+          check.type(value, 'number', 'stencil mask must be an integer')
+          var STENCIL_MASK_STACK = linkContext(param)
+          entry(STENCIL_MASK_STACK, '.push(', value, ');')
+          exit(STENCIL_MASK_STACK, '.pop();')
+          break
+
+        case 'stencil.func':
+          check.type(value, 'object', 'stencil func must be an object')
+          var cmp = value.cmp || 'keep'
+          var ref = value.ref || 0
+          var mask = 'mask' in value ? value.mask : -1
+          check.parameter(cmp, compareFuncs, 'invalid stencil func cmp')
+          check.type(ref, 'number', 'stencil func ref')
+          check.type(mask, 'number', 'stencil func mask')
+          var STENCIL_FUNC_STACK = linkContext(param)
+          entry(STENCIL_FUNC_STACK, '.push(',
+            compareFuncs[cmp], ',',
+            ref, ',',
+            mask, ');')
+          exit(STENCIL_FUNC_STACK, '.pop();')
+          break
+
+        case 'stencil.opFront':
+        case 'stencil.opBack':
+          check.type(value, 'object', param)
+          var fail = value.fail || 'keep'
+          var zfail = value.zfail || 'keep'
+          var pass = value.pass || 'keep'
+          check.parameter(fail, stencilOps, param)
+          check.parameter(zfail, stencilOps, param)
+          check.parameter(pass, stencilOps, param)
+          var STENCIL_OP_STACK = linkContext(param)
+          entry(STENCIL_OP_STACK, '.push(',
+            stencilOps[fail], ',',
+            stencilOps[zfail], ',',
+            stencilOps[pass], ');')
+          exit(STENCIL_OP_STACK, '.pop();')
+          break
+
+        case 'polygonOffset.offset':
+          check.type(value, 'object', param)
+          var factor = value.factor || 0
+          var units = value.units || 0
+          check.type(factor, 'number', 'offset.factor')
+          check.type(units, 'number', 'offset.units')
+          var POLYGON_OFFSET_STACK = linkContext(param)
+          entry(POLYGON_OFFSET_STACK, '.push(',
+            factor, ',', units, ');')
+          exit(POLYGON_OFFSET_STACK, '.pop();')
+          break
+
+        case 'cull.face':
+          var face = 0
+          if (value === 'front') {
+            face = GL_FRONT
+          } else if (value === 'back') {
+            face = GL_BACK
+          }
+          check(!!face, 'cull.face')
+          var CULL_FACE_STACK = linkContext(param)
+          entry(CULL_FACE_STACK, '.push(', face, ');')
+          exit(CULL_FACE_STACK, '.pop();')
+          break
+
         case 'lineWidth':
-          check(value >= 0 && typeof value === 'number', param)
+          check(value > 0 && typeof value === 'number', param)
           handleStaticOption(param, value)
           break
 
-        // TODO Handle the rest of the state values here
+        case 'frontFace':
+          var orientation = 0
+          if (value === 'cw') {
+            orientation = GL_CW
+          } else if (value === 'ccw') {
+            orientation = GL_CCW
+          }
+          check(!!orientation, 'frontFace')
+          var FRONT_FACE_STACK = linkContext(param)
+          entry(FRONT_FACE_STACK, '.push(', orientation, ');')
+          exit(FRONT_FACE_STACK, '.pop();')
+          break
+
+        case 'colorMask':
+          check(Array.isArray(value) && value.length === 4, 'color mask must be length 4 array')
+          var COLOR_MASK_STACK = linkContext(param)
+          entry(COLOR_MASK_STACK, '.push(',
+            value.map(function (v) { return !!v }).join(),
+            ');')
+          exit(COLOR_MASK_STACK, '.pop();')
+          break
+
+        case 'sample.coverage':
+          check.type(value, 'object', param)
+          var sampleValue = 'value' in value ? value.value : 1
+          var sampleInvert = !!value.invert
+          check(
+            typeof sampleValue === 'number' &&
+            sampleValue >= 0 && sampleValue <= 1,
+            'sample value')
+          var SAMPLE_COVERAGE_STACK = linkContext(param)
+          entry(SAMPLE_COVERAGE_STACK, '.push(',
+            sampleValue, ',', sampleInvert, ');')
+          exit(SAMPLE_COVERAGE_STACK, '.pop();')
+          break
+
+        case 'viewport':
+        case 'scissor.box':
+          check(typeof value === 'object' && value, param + ' is an object')
+          var X = value.x || 0
+          var Y = value.y || 0
+          var W = -1
+          var H = -1
+          check(typeof X === 'number' && X >= 0, param + '.x must be a positive int')
+          check(typeof Y === 'number' && Y >= 0, param + '.y must be a positive int')
+          if ('w' in value) {
+            W = value.w
+            check(typeof W === 'number' && W >= 0, param + '.w must be a positive int')
+          }
+          if ('h' in value) {
+            H = value.h
+            check(typeof H === 'number' && H >= 0, param + '.h must be a positive int')
+          }
+          var BOX_STACK = linkContext(param)
+          entry(BOX_STACK, '.push(', X, ',', Y, ',', W, ',', H, ');')
+          exit(BOX_STACK, '.pop();')
+          break
 
         default:
           // TODO Should this just be a warning instead?
@@ -1226,12 +1573,22 @@ module.exports = function reglCompiler (
     // -------------------------------
     // update shader program
     // -------------------------------
-    var program
     if (hasShader) {
-      var fragSrc = staticOptions.frag || DEFAULT_FRAG_SHADER
-      var vertSrc = staticOptions.vert || DEFAULT_VERT_SHADER
-      program = shaderState.create(vertSrc, fragSrc)
-      entry(PROGRAM_STATE, '.push(', link(program), ');')
+      if (staticOptions.frag && staticOptions.vert) {
+        var fragSrc = staticOptions.frag
+        var vertSrc = staticOptions.vert
+        entry(PROGRAM_STATE, '.push(',
+          link(shaderState.create(vertSrc, fragSrc)), ');')
+      } else {
+        var FRAG_SRC = entry.def(
+          FRAG_SHADER_STATE, '[', FRAG_SHADER_STATE, '.length-1]')
+        var VERT_SRC = entry.def(
+          VERT_SHADER_STATE, '[', VERT_SHADER_STATE, '.length-1]')
+        var LINK_PROG = link(shaderState.create)
+        entry(
+          PROGRAM_STATE, '.push(',
+          LINK_PROG, '(', FRAG_SRC, ',', VERT_SRC, '));')
+      }
       exit(PROGRAM_STATE, '.pop();')
     }
 
@@ -1324,10 +1681,10 @@ module.exports = function reglCompiler (
     var dynamicEntry = env.block()
     var dynamicExit = env.block()
 
-    var FRAMECOUNT
+    var FRAMESTATE
     var DYNARGS
     if (hasDynamic) {
-      FRAMECOUNT = entry.def(link(frameState), '.count')
+      FRAMESTATE = link(frameState)
       DYNARGS = entry.def()
     }
 
@@ -1340,7 +1697,7 @@ module.exports = function reglCompiler (
       }
       if (x.func) {
         result = dynamicEntry.def(
-          link(x.data), '(', FRAMECOUNT, ',0,', DYNARGS, ')')
+          link(x.data), '(', DYNARGS, ',0,', FRAMESTATE, ')')
       } else {
         result = dynamicEntry.def(DYNARGS, '.', x.data)
       }
@@ -1363,9 +1720,9 @@ module.exports = function reglCompiler (
         case 'depth.enable':
         case 'scissor.enable':
         case 'polygonOffset.enable':
-        case 'sampleAlpha':
-        case 'sampleCoverage':
-        case 'stencil.mask':
+        case 'sample.alpha':
+        case 'sample.enable':
+        case 'lineWidth':
         case 'depth.mask':
           var STATE_STACK = linkContext(param)
           dynamicEntry(STATE_STACK, '.push(', variable, ');')
@@ -1384,7 +1741,7 @@ module.exports = function reglCompiler (
         case 'primitive':
           var PRIM_STACK = DRAW_STATE.primitive
           dynamicEntry(PRIM_STACK, '.push(', PRIM_TYPES, '[', variable, ']);')
-          dynamicExit(PRIM_STACK, '.pop()')
+          dynamicExit(PRIM_STACK, '.pop();')
           break
 
         case 'depth.func':
@@ -1393,8 +1750,159 @@ module.exports = function reglCompiler (
           dynamicExit(DEPTH_FUNC_STACK, '.pop();')
           break
 
-        default:
+        case 'blend.func':
+          var BLEND_FUNC_STACK = linkContext(param)
+          var BLEND_FUNCS = link(blendFuncs)
+          dynamicEntry(
+            BLEND_FUNC_STACK, '.push(',
+            BLEND_FUNCS,
+            '["srcRGB" in ', variable, '?', variable, '.srcRGB:', variable, '.src],',
+            BLEND_FUNCS,
+            '["dstRGB" in ', variable, '?', variable, '.dstRGB:', variable, '.dst],',
+            BLEND_FUNCS,
+            '["srcAlpha" in ', variable, '?', variable, '.srcAlpha:', variable, '.src],',
+            BLEND_FUNCS,
+            '["dstAlpha" in ', variable, '?', variable, '.dstAlpha:', variable, '.dst]);')
+          dynamicExit(BLEND_FUNC_STACK, '.pop();')
           break
+
+        case 'blend.equation':
+          var BLEND_EQUATION_STACK = linkContext(param)
+          var BLEND_EQUATIONS = link(blendEquations)
+          dynamicEntry(
+            'if(typeof ', variable, '==="string"){',
+              BLEND_EQUATION_STACK, '.push(',
+              BLEND_EQUATIONS, '[', variable, '],',
+              BLEND_EQUATIONS, '[', variable, ']);',
+            '}else{',
+              BLEND_EQUATION_STACK, '.push(',
+              BLEND_EQUATIONS, '[', variable, '.rgb],',
+              BLEND_EQUATIONS, '[', variable, '.alpha]);',
+            '}')
+          dynamicExit(BLEND_EQUATION_STACK, '.pop();')
+          break
+
+        case 'blend.color':
+          var BLEND_COLOR_STACK = linkContext(param)
+          dynamicEntry(BLEND_COLOR_STACK, '.push(',
+            variable, '[0],',
+            variable, '[1],',
+            variable, '[2],',
+            variable, '[3]);')
+          dynamicExit(BLEND_COLOR_STACK, '.pop();')
+          break
+
+        case 'stencil.mask':
+          var STENCIL_MASK_STACK = linkContext(param)
+          dynamicEntry(STENCIL_MASK_STACK, '.push(', variable, ');')
+          dynamicExit(STENCIL_MASK_STACK, '.pop();')
+          break
+
+        case 'stencil.func':
+          var STENCIL_FUNC_STACK = linkContext(param)
+          dynamicEntry(STENCIL_FUNC_STACK, '.push(',
+            COMPARE_FUNCS, '[', variable, '.cmp],',
+            variable, '.ref|0,',
+            '"mask" in ', variable, '?', variable, '.mask:-1);')
+          dynamicExit(STENCIL_FUNC_STACK, '.pop();')
+          break
+
+        case 'stencil.opFront':
+        case 'stencil.opBack':
+          var STENCIL_OP_STACK = linkContext(param)
+          dynamicEntry(STENCIL_OP_STACK, '.push(',
+            STENCIL_OPS, '[', variable, '.fail||"keep"],',
+            STENCIL_OPS, '[', variable, '.zfail||"keep"],',
+            STENCIL_OPS, '[', variable, '.pass||"keep"]);')
+          dynamicExit(STENCIL_OP_STACK, '.pop();')
+          break
+
+        case 'polygonOffset.offset':
+          var POLYGON_OFFSET_STACK = linkContext(param)
+          dynamicEntry(POLYGON_OFFSET_STACK, '.push(',
+            variable, '.factor||0,',
+            variable, '.units||0);')
+          dynamicExit(POLYGON_OFFSET_STACK, '.pop();')
+          break
+
+        case 'cull.face':
+          var CULL_FACE_STACK = linkContext(param)
+          dynamicEntry(CULL_FACE_STACK, '.push(',
+            variable, '==="front"?', GL_FRONT, ':', GL_BACK, ');')
+          dynamicExit(CULL_FACE_STACK, '.pop();')
+          break
+
+        case 'frontFace':
+          var FRONT_FACE_STACK = linkContext(param)
+          dynamicEntry(FRONT_FACE_STACK, '.push(',
+            variable, '==="cw"?', GL_CW, ':', GL_CCW, ');')
+          dynamicExit(FRONT_FACE_STACK, '.pop();')
+          break
+
+        case 'colorMask':
+          var COLOR_MASK_STACK = linkContext(param)
+          dynamicEntry(COLOR_MASK_STACK, '.push(',
+            variable, '[0],',
+            variable, '[1],',
+            variable, '[2],',
+            variable, '[3]);')
+          dynamicExit(COLOR_MASK_STACK, '.pop();')
+          break
+
+        case 'sample.coverage':
+          var SAMPLE_COVERAGE_STACK = linkContext(param)
+          dynamicEntry(SAMPLE_COVERAGE_STACK, '.push(',
+            variable, '.value,',
+            variable, '.invert);')
+          dynamicExit(SAMPLE_COVERAGE_STACK, '.pop();')
+          break
+
+        case 'scissor.box':
+        case 'viewport':
+          var BOX_STACK = linkContext(param)
+          dynamicEntry(BOX_STACK, '.push(',
+            variable, '.x||0,',
+            variable, '.y||0,',
+            '"w" in ', variable, '?', variable, '.w:-1,',
+            '"h" in ', variable, '?', variable, '.h:-1);')
+          dynamicExit(BOX_STACK, '.pop();')
+          break
+
+        case 'elements':
+          var hasPrimitive =
+            !('primitive' in dynamicOptions) &&
+            !('primitive' in staticOptions)
+          var hasCount =
+            !('count' in dynamicOptions) &&
+            !('count' in staticOptions)
+          var hasOffset =
+            !('offset' in dynamicOptions) &&
+            !('offset' in staticOptions)
+          var ELEMENTS = dynamicEntry.def()
+          dynamicEntry(
+            'if(', variable, '){',
+            ELEMENTS, '=', variable, '._elements;',
+            ELEMENT_STATE, '.push(', ELEMENTS, ');',
+            !hasPrimitive ? ''
+              : DRAW_STATE.primitive + '.push(' + ELEMENTS + '.primType);',
+            !hasCount ? ''
+              : DRAW_STATE.count + '.push(' + ELEMENTS + '.vertCount);',
+            !hasOffset ? ''
+              : DRAW_STATE.offset + '.push(' + ELEMENTS + '.offset);',
+            '}else{',
+            ELEMENT_STATE, '.push(null);',
+            '}')
+          dynamicExit(
+            ELEMENT_STATE, '.pop();',
+            'if(', variable, '){',
+            hasPrimitive ? DRAW_STATE.primitive + '.pop();' : '',
+            hasCount ? DRAW_STATE.count + '.pop();' : '',
+            hasOffset ? DRAW_STATE.offset + '.pop();' : '',
+            '}')
+          break
+
+        default:
+          check.raise('unsupported dynamic option: ' + param)
       }
     })
 
@@ -1424,17 +1932,16 @@ module.exports = function reglCompiler (
     // SCOPE PROCEDURE
     // ==========================================================
     var scope = proc('scope')
-
+    var SCOPE_ARGS = scope.arg()
+    var SCOPE_BODY = scope.arg()
     scope(entry)
-
     if (hasDynamic) {
       scope(
-        DYNARGS, '=', scope.arg(), ';',
+        DYNARGS, '=', SCOPE_ARGS, ';',
         dynamicEntry)
     }
-
     scope(
-      scope.arg(), '();',
+      SCOPE_BODY, '();',
       hasDynamic ? dynamicExit : '',
       exit)
 
@@ -1442,15 +1949,12 @@ module.exports = function reglCompiler (
     // DRAW PROCEDURE
     // ==========================================================
     var draw = proc('draw')
-
     draw(entry)
-
     if (hasDynamic) {
       draw(
         DYNARGS, '=', draw.arg(), ';',
         dynamicEntry)
     }
-
     var CURRENT_SHADER = stackTop(PROGRAM_STATE)
     draw(
       GL_POLL, '();',
@@ -1462,26 +1966,33 @@ module.exports = function reglCompiler (
     // ==========================================================
     // BATCH DRAW
     // ==========================================================
-    if (hasDynamic) {
-      var batch = proc('batch')
-      batch(entry)
-      var CUR_SHADER = batch.def(stackTop(PROGRAM_STATE))
-      var EXEC_BATCH = link(function (program, args) {
-        var proc = program.batchCache[callId]
-        if (!proc) {
-          proc = program.batchCache[callId] = compileBatch(
-            program, dynamicOptions, dynamicUniforms, dynamicAttributes)
-        }
-        return proc(args)
-      })
-      batch(
-        'if(', CUR_SHADER, '){',
-        GL_POLL, '();',
-        EXEC_BATCH, '(',
-        CUR_SHADER, ',',
-        batch.arg(), ');}',
-        exit)
-    }
+    var batch = proc('batch')
+    batch(entry)
+    var CUR_SHADER = batch.def(stackTop(PROGRAM_STATE))
+    var EXEC_BATCH = link(function (program, count, args) {
+      var proc = program.batchCache[callId]
+      if (!proc) {
+        proc = program.batchCache[callId] = compileBatch(
+          program, dynamicOptions, dynamicUniforms, dynamicAttributes,
+          staticOptions)
+      }
+      return proc(count, args)
+    })
+    batch(
+      'if(', CUR_SHADER, '){',
+      GL_POLL, '();',
+      EXEC_BATCH, '(',
+      CUR_SHADER, ',',
+      batch.arg(), ',',
+      batch.arg(), ');')
+    // Set dirty on all dynamic flags
+    Object.keys(dynamicOptions).forEach(function (option) {
+      var STATE = CONTEXT_STATE[option]
+      if (STATE) {
+        batch(STATE, '.setDirty();')
+      }
+    })
+    batch('}', exit)
 
     // -------------------------------
     // eval and bind
@@ -1495,7 +2006,7 @@ module.exports = function reglCompiler (
   }
 }
 
-},{"./check":3,"./codegen":5,"./constants/comparefuncs.json":8,"./constants/dtypes.json":9,"./constants/primitives.json":10}],7:[function(_dereq_,module,exports){
+},{"./check":3,"./codegen":5,"./constants/blendEquations.json":8,"./constants/blendFuncs.json":9,"./constants/comparefuncs.json":10,"./constants/dtypes.json":11,"./constants/primitives.json":12,"./constants/stencil-ops.json":13}],7:[function(_dereq_,module,exports){
 module.exports={
   "[object Int8Array]": 5120
 , "[object Int16Array]": 5122
@@ -1510,6 +2021,34 @@ module.exports={
 }
 
 },{}],8:[function(_dereq_,module,exports){
+module.exports={
+  "add":32774,
+  "subtract":32778,
+  "reverse subtract":32779
+}
+
+},{}],9:[function(_dereq_,module,exports){
+module.exports={
+  "0":0,
+  "1":1,
+  "zero":0,
+  "one":1,
+  "src color": 768,
+  "one minus src color":769,
+  "src alpha":770,
+  "one minus src alpha":771,
+  "dst color":774,
+  "one minus dst color":775,
+  "dst alpha":772,
+  "one minus dst alpha":773,
+  "constant color": 32769,
+  "one minus constant color": 32770,
+  "constant alpha": 32771,
+  "one minus constant alpha": 32772,
+  "src alpha saturate": 776
+}
+
+},{}],10:[function(_dereq_,module,exports){
 module.exports={
   "never": 512,
   "less": 513,
@@ -1530,7 +2069,7 @@ module.exports={
   "always": 519
 }
 
-},{}],9:[function(_dereq_,module,exports){
+},{}],11:[function(_dereq_,module,exports){
 module.exports={
   "int8": 5120
 , "int16": 5122
@@ -1541,7 +2080,7 @@ module.exports={
 , "float": 5126
 }
 
-},{}],10:[function(_dereq_,module,exports){
+},{}],12:[function(_dereq_,module,exports){
 module.exports={
   "points": 0,
   "lines": 1,
@@ -1552,10 +2091,23 @@ module.exports={
   "triangle fan": 6
 }
 
-},{}],11:[function(_dereq_,module,exports){
+},{}],13:[function(_dereq_,module,exports){
+module.exports={
+  "0": 0,
+  "zero": 0,
+  "keep": 7680,
+  "replace": 7681,
+  "increment": 7682,
+  "decrement": 7683,
+  "increment wrap": 34055,
+  "decrement wrap": 34056,
+  "invert": 5386
+}
+
+},{}],14:[function(_dereq_,module,exports){
 module.exports={"static":35044,"dynamic":35048,"stream":35040}
 
-},{}],12:[function(_dereq_,module,exports){
+},{}],15:[function(_dereq_,module,exports){
 // Context and canvas creation helper functions
 /*globals HTMLElement,WebGLRenderingContext*/
 
@@ -1672,7 +2224,7 @@ module.exports = function parseArgs (args) {
   }
 }
 
-},{"./check":3}],13:[function(_dereq_,module,exports){
+},{"./check":3}],16:[function(_dereq_,module,exports){
 var GL_TRIANGLES = 4
 
 module.exports = function wrapDrawState (gl) {
@@ -1689,7 +2241,7 @@ module.exports = function wrapDrawState (gl) {
   }
 }
 
-},{}],14:[function(_dereq_,module,exports){
+},{}],17:[function(_dereq_,module,exports){
 var VARIABLE_COUNTER = 0
 
 function DynamicVariable (isFunc, data) {
@@ -1732,7 +2284,7 @@ module.exports = {
   unbox: unbox
 }
 
-},{}],15:[function(_dereq_,module,exports){
+},{}],18:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 var isTypedArray = _dereq_('./is-typed-array')
 var primTypes = _dereq_('./constants/primitives.json')
@@ -1871,7 +2423,7 @@ module.exports = function wrapElementsState (gl, extensionState, bufferState) {
       GL_ELEMENT_ARRAY_BUFFER)
 
     function updateElements (options) {
-      elements.buffer.udate(parseOptions(elements, options))
+      elements.buffer(parseOptions(elements, options))
       return updateElements
     }
 
@@ -1894,7 +2446,7 @@ module.exports = function wrapElementsState (gl, extensionState, bufferState) {
   }
 }
 
-},{"./check":3,"./constants/primitives.json":10,"./is-typed-array":18}],16:[function(_dereq_,module,exports){
+},{"./check":3,"./constants/primitives.json":12,"./is-typed-array":21}],19:[function(_dereq_,module,exports){
 // Extension wrangling
 
 var check = _dereq_('./check')
@@ -1944,7 +2496,7 @@ module.exports = function createExtensionCache (gl, required) {
   }
 }
 
-},{"./check":3}],17:[function(_dereq_,module,exports){
+},{"./check":3}],20:[function(_dereq_,module,exports){
 // Framebuffer object state management
 
 module.exports = function wrapFBOState (
@@ -1969,13 +2521,13 @@ module.exports = function wrapFBOState (
   }
 }
 
-},{}],18:[function(_dereq_,module,exports){
+},{}],21:[function(_dereq_,module,exports){
 var dtypes = _dereq_('./constants/arraytypes.json')
 module.exports = function (x) {
   return Object.prototype.toString.call(x) in dtypes
 }
 
-},{"./constants/arraytypes.json":7}],19:[function(_dereq_,module,exports){
+},{"./constants/arraytypes.json":7}],22:[function(_dereq_,module,exports){
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
     typeof cancelAnimationFrame === 'function') {
@@ -1992,7 +2544,7 @@ if (typeof requestAnimationFrame === 'function' &&
   }
 }
 
-},{}],20:[function(_dereq_,module,exports){
+},{}],23:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 var isTypedArray = _dereq_('./is-typed-array')
 
@@ -2046,8 +2598,11 @@ module.exports = function wrapReadPixels (gl, glState) {
   return readPixels
 }
 
-},{"./check":3,"./is-typed-array":18}],21:[function(_dereq_,module,exports){
+},{"./check":3,"./is-typed-array":21}],24:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
+
+var DEFAULT_FRAG_SHADER = 'void main(){gl_FragColor=vec4(0,0,0,0);}'
+var DEFAULT_VERT_SHADER = 'void main(){gl_Position=vec4(0,0,0,0);}'
 
 var GL_FRAGMENT_SHADER = 35632
 var GL_VERTEX_SHADER = 35633
@@ -2068,6 +2623,9 @@ module.exports = function wrapShaderState (
   // glsl compilation and linking
   // ===================================================
   var shaders = {}
+
+  var fragShaders = [DEFAULT_FRAG_SHADER]
+  var vertShaders = [DEFAULT_VERT_SHADER]
 
   function getShader (type, source) {
     var cache = shaders[type]
@@ -2247,11 +2805,13 @@ module.exports = function wrapShaderState (
     create: getProgram,
     clear: clear,
     refresh: refresh,
-    programs: programState
+    programs: programState,
+    fragShaders: fragShaders,
+    vertShaders: vertShaders
   }
 }
 
-},{"./check":3}],22:[function(_dereq_,module,exports){
+},{"./check":3}],25:[function(_dereq_,module,exports){
 // A stack for managing the state of a scalar/vector parameter
 
 module.exports = function createStack (init, onChange) {
@@ -2309,8 +2869,9 @@ module.exports = function createStack (init, onChange) {
   }
 }
 
-},{}],23:[function(_dereq_,module,exports){
+},{}],26:[function(_dereq_,module,exports){
 var createStack = _dereq_('./stack')
+var createEnvironment = _dereq_('./codegen')
 
 // WebGL constants
 var GL_CULL_FACE = 0x0B44
@@ -2352,18 +2913,11 @@ module.exports = function wrapContextState (gl, shaderState) {
 
   // Caps, flags and other random WebGL context state
   var contextState = {
-    // Caps
-    'cull.enable': capStack(GL_CULL_FACE),
-    'blend.enable': capStack(GL_BLEND),
+    // Dithering
     'dither': capStack(GL_DITHER),
-    'stencil.enable': capStack(GL_STENCIL_TEST),
-    'depth.enable': capStack(GL_DEPTH_TEST, true),
-    'scissor.enable': capStack(GL_SCISSOR_TEST),
-    'polygonOffset.enable': capStack(GL_POLYGON_OFFSET_FILL),
-    'sampleAlpha': capStack(GL_SAMPLE_ALPHA_TO_COVERAGE),
-    'sampleCoverage': capStack(GL_SAMPLE_COVERAGE),
 
     // Blending
+    'blend.enable': capStack(GL_BLEND),
     'blend.color': createStack([0, 0, 0, 0], function (r, g, b, a) {
       gl.blendColor(r, g, b, a)
     }),
@@ -2377,6 +2931,7 @@ module.exports = function wrapContextState (gl, shaderState) {
     }),
 
     // Depth
+    'depth.enable': capStack(GL_DEPTH_TEST, true),
     'depth.func': createStack([GL_LESS], function (func) {
       gl.depthFunc(func)
     }),
@@ -2388,6 +2943,7 @@ module.exports = function wrapContextState (gl, shaderState) {
     }),
 
     // Face culling
+    'cull.enable': capStack(GL_CULL_FACE),
     'cull.face': createStack([GL_BACK], function (mode) {
       gl.cullFace(mode)
     }),
@@ -2408,54 +2964,62 @@ module.exports = function wrapContextState (gl, shaderState) {
     }),
 
     // Polygon offset
+    'polygonOffset.enable': capStack(GL_POLYGON_OFFSET_FILL),
     'polygonOffset.offset': createStack([0, 0], function (factor, units) {
       gl.polygonOffset(factor, units)
     }),
 
     // Sample coverage
-    'sampleCoverageParams': createStack([1, false], function (value, invert) {
+    'sample.alpha': capStack(GL_SAMPLE_ALPHA_TO_COVERAGE),
+    'sample.enable': capStack(GL_SAMPLE_COVERAGE),
+    'sample.coverage': createStack([1, false], function (value, invert) {
       gl.sampleCoverage(value, invert)
     }),
 
     // Stencil
+    'stencil.enable': capStack(GL_STENCIL_TEST),
+    'stencil.mask': createStack([-1], function (mask) {
+      gl.stencilMask(mask)
+    }),
     'stencil.func': createStack([
-      GL_ALWAYS, 0, -1,
       GL_ALWAYS, 0, -1
-    ], function (frontFunc, frontRef, frontMask,
-                 backFunc, backRef, backMask) {
-      gl.stencilFuncSeparate(GL_FRONT, frontFunc, frontRef, frontMask)
-      gl.stencilFuncSeparate(GL_BACK, backFunc, backRef, backMask)
+    ], function (func, ref, mask) {
+      gl.stencilFunc(func, ref, mask)
     }),
-    'stencil.op': createStack([
-      GL_KEEP, GL_KEEP, GL_KEEP,
+    'stencil.opFront': createStack([
       GL_KEEP, GL_KEEP, GL_KEEP
-    ], function (frontFail, frontDPFail, frontPass,
-                 backFail, backDPFail, backPass) {
-      gl.stencilOpSeparate(GL_FRONT, frontFail, frontDPFail, frontPass)
-      gl.stencilOpSeparate(GL_BACK, backFail, backDPFail, backPass)
+    ], function (fail, zfail, pass) {
+      gl.stencilOpSeparate(GL_FRONT, fail, zfail, pass)
     }),
-    'stencil.mask': createStack([-1, -1], function (front, back) {
-      gl.stencilMask(GL_FRONT, front)
-      gl.stencilMask(GL_BACK, back)
+    'stencil.opBack': createStack([
+      GL_KEEP, GL_KEEP, GL_KEEP
+    ], function (fail, zfail, pass) {
+      gl.stencilOpSeparate(GL_BACK, fail, zfail, pass)
     }),
 
     // Scissor
-    'scissor.shape': createStack([0, 0, -1, -1], function (x, y, w, h) {
-      gl.scissor(
-        x, y,
-        w < 0 ? gl.drawingBufferWidth : w,
-        h < 0 ? gl.drawingBufferHeight : h)
+    'scissor.enable': capStack(GL_SCISSOR_TEST),
+    'scissor.box': createStack([0, 0, -1, -1], function (x, y, w, h) {
+      var w_ = w
+      if (w < 0) {
+        w_ = gl.drawingBufferWidth - x
+      }
+      var h_ = h
+      if (h < 0) {
+        h_ = gl.drawingBufferHeight - y
+      }
+      gl.scissor(x, y, w_, h_)
     }),
 
     // Viewport
     'viewport': createStack([0, 0, -1, -1], function (x, y, w, h) {
       var w_ = w
       if (w < 0) {
-        w_ = gl.drawingBufferWidth
+        w_ = gl.drawingBufferWidth - x
       }
       var h_ = h
       if (h < 0) {
-        h_ = gl.drawingBufferHeight
+        h_ = gl.drawingBufferHeight - y
       }
       gl.viewport(x, y, w_, h_)
       viewportState.width = w_
@@ -2463,23 +3027,21 @@ module.exports = function wrapContextState (gl, shaderState) {
     })
   }
 
-  var contextProps = Object.keys(contextState)
+  var env = createEnvironment()
+  var poll = env.proc('poll')
+  var refresh = env.proc('refresh')
+  Object.keys(contextState).forEach(function (prop) {
+    var STACK = env.link(contextState[prop])
+    poll(STACK, '.poll();')
+    refresh(STACK, '.setDirty();')
+  })
+  var procs = env.compile()
 
   return {
     contextState: contextState,
     viewport: viewportState,
-
-    poll: function () {
-      contextProps.forEach(function (state) {
-        contextState[state].poll()
-      })
-    },
-
-    refresh: function () {
-      contextProps.forEach(function (state) {
-        contextState[state].setDirty()
-      })
-    },
+    poll: procs.poll,
+    refresh: procs.refresh,
 
     notifyViewportChanged: function () {
       contextState.viewport.setDirty()
@@ -2488,7 +3050,7 @@ module.exports = function wrapContextState (gl, shaderState) {
   }
 }
 
-},{"./stack":22}],24:[function(_dereq_,module,exports){
+},{"./codegen":5,"./stack":25}],27:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 
 var GL_TEXTURE_2D = 0x0DE1
@@ -2684,7 +3246,7 @@ module.exports = function createTextureSet (gl, extensionState) {
   }
 }
 
-},{"./check":3}],25:[function(_dereq_,module,exports){
+},{"./check":3}],28:[function(_dereq_,module,exports){
 module.exports = function wrapUniformState () {
   var uniformState = {}
 
@@ -2701,7 +3263,7 @@ module.exports = function wrapUniformState () {
   }
 }
 
-},{}],26:[function(_dereq_,module,exports){
+},{}],29:[function(_dereq_,module,exports){
 var check = _dereq_('./lib/check')
 var getContext = _dereq_('./lib/context')
 var wrapExtensions = _dereq_('./lib/extension')
@@ -2879,58 +3441,22 @@ module.exports = function wrapREGL () {
       delete result.uniforms
       delete result.attributes
 
-      if ('blend' in options) {
-        var blend = result.blend
-        delete result.blend
-        if ('enable' in blend) result['blend.enable'] = blend.enable
-        if ('func' in blend) result['blend.func'] = blend.func
-        if ('equation' in blend) result['blend.equation'] = blend.equation
-      }
-
-      if ('depth' in options) {
-        var depth = result.depth
-        delete result.depth
-        if ('test' in depth) result['depth.test'] = depth.test
-        if ('func' in depth) result['depth.func'] = depth.func
-        if ('mask' in depth) result['depth.mask'] = depth.mask
-        if ('range' in depth) result['depth.range'] = depth.range
-      }
-
-      if ('cull' in options) {
-        var cull = result.cull
-        delete result.cull
-        if ('enable' in cull) result['cull.enable'] = cull.enable
-        if ('face' in cull) result['cull.face'] = cull.face
-      }
-
-      if ('stencil' in options) {
-        var stencil = result.stencil
-        delete result.stencil
-        if ('enable' in stencil) result['stencil.enable'] = stencil.enable
-        if ('mask' in stencil) result['stencil.mask'] = stencil.mask
-        if ('func' in stencil) result['stencil.func'] = stencil.func
-        if ('op' in stencil) result['stencil.op'] = stencil.op
-      }
-
-      if ('polygonOffset' in options) {
-        var polygonOffset = result.polygonOffset
-        delete result.polygonOffset
-        if ('enable' in polygonOffset) {
-          result['polygonOffset.enable'] = polygonOffset.enable
-        }
-        if ('offset' in polygonOffset) {
-          result['polygonOffset.offset'] = polygonOffset.offset
+      function merge (name) {
+        if (name in result) {
+          var child = result[name]
+          delete result[name]
+          Object.keys(child).forEach(function (prop) {
+            result[name + '.' + prop] = child[prop]
+          })
         }
       }
-
-      if ('scissor' in options) {
-        var scissor = result.scissor
-        delete result.scissor
-        if ('enable' in scissor) result['scissor.enable'] = scissor.enable
-        if ('shape' in scissor) result['scissor.shape'] = scissor.shape
-      }
-
-      // TODO sampleCoverage
+      merge('blend')
+      merge('depth')
+      merge('cull')
+      merge('stencil')
+      merge('polygonOffset')
+      merge('scissor')
+      merge('sample')
 
       return result
     }
@@ -2967,31 +3493,28 @@ module.exports = function wrapREGL () {
     var batch = compiled.batch
     var scope = compiled.scope
 
-    function dynamicCommand (args, body) {
-      if (Array.isArray(args)) {
-        return batch(args)
+    var EMPTY_ARRAY = []
+    function reserve (count) {
+      while (EMPTY_ARRAY.length < count) {
+        EMPTY_ARRAY.push(null)
+      }
+      return EMPTY_ARRAY
+    }
+
+    function REGLCommand (args, body) {
+      if (typeof args === 'number') {
+        return batch(args | 0, reserve(args | 0))
+      } else if (Array.isArray(args)) {
+        return batch(args.length, args)
+      } else if (typeof args === 'function') {
+        return scope(null, args)
       } else if (typeof body === 'function') {
         return scope(args, body)
       }
       return draw(args)
     }
-    dynamicCommand.draw = draw
-    dynamicCommand.batch = batch
-    dynamicCommand.scope = scope
 
-    function staticCommand (body) {
-      if (body) {
-        return scope(body)
-      }
-      return draw()
-    }
-    staticCommand.draw = draw
-    staticCommand.scope = scope
-
-    if (hasDynamic) {
-      return dynamicCommand
-    }
-    return staticCommand
+    return REGLCommand
   }
 
   // Clears the currently bound frame buffer
@@ -3072,5 +3595,5 @@ module.exports = function wrapREGL () {
   })
 }
 
-},{"./lib/attribute":1,"./lib/buffer":2,"./lib/check":3,"./lib/clock":4,"./lib/compile":6,"./lib/context":12,"./lib/draw":13,"./lib/dynamic":14,"./lib/elements":15,"./lib/extension":16,"./lib/fbo":17,"./lib/raf":19,"./lib/read":20,"./lib/shader":21,"./lib/state":23,"./lib/texture":24,"./lib/uniform":25}]},{},[26])(26)
+},{"./lib/attribute":1,"./lib/buffer":2,"./lib/check":3,"./lib/clock":4,"./lib/compile":6,"./lib/context":15,"./lib/draw":16,"./lib/dynamic":17,"./lib/elements":18,"./lib/extension":19,"./lib/fbo":20,"./lib/raf":22,"./lib/read":23,"./lib/shader":24,"./lib/state":26,"./lib/texture":27,"./lib/uniform":28}]},{},[29])(29)
 });

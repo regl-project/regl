@@ -888,6 +888,7 @@ var command = regl({
 
 ---------------------------------------
 ## Resources
+Besides commands, the other major component of regl are resources.  Resources are GPU resident objects which are managed explicitly by the programmer.  Each resource follows a the same life cycle of create/read/update/delete.
 
 ### Basic usage
 
@@ -910,7 +911,7 @@ resource.destroy()
 ### Types
 
 ---------------------------------------
-#### `regl.buffer(options)`
+#### Buffers
 
 | Property | Description | Default |
 |----------|-------------|---------|
@@ -919,7 +920,7 @@ resource.destroy()
 | `usage` | | `'static'` |
 
 ---------------------------------------
-#### `regl.elements(options)`
+#### Elements
 
 | Property | Description | Default |
 |----------|-------------|---------|
@@ -930,23 +931,23 @@ resource.destroy()
 | `count` | | `0` |
 
 ---------------------------------------
-#### `regl.texture(options)`
+#### Textures
 
 **NOT YET IMPLEMENTED**
 
 ---------------------------------------
-#### `regl.rbo(options)`
+#### Render buffers
 
 **NOT YET IMPLEMENTED**
 
 ---------------------------------------
-#### `regl.fbo(options)`
+#### Frame buffers
 
 **NOT YET IMPLEMENTED**
 
 ---------------------------------------
-## Other properties
-Other than draw commands and resources, there are a few miscellaneous parts of the WebGL API which REGL wraps for completeness.  These miscellaneous odds and ends are summarized here.
+## Other features
+Other than draw commands and resources, there are a few miscellaneous parts of the WebGL API which REGL wraps for completeness.
 
 ---------------------------------------
 ### Clear the draw buffer

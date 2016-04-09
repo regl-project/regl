@@ -23,11 +23,15 @@ In `regl`, there are two fundamental abstractions, **resources** and **commands*
 To define a command you specify a mixture of static and dynamic data for the object. Once this is done, `regl` takes this description and then compiles it into optimized JavaScript code.  For example, here is a simple `regl` program to draw a colored triangle:
 
 ```JavaScript
+// Calling the regl module with no arguments creates a full screen canvas and
+// WebGL context, and then uses this context to initialize a new REGL instance
 const regl = require('regl')()
 
-// This creates a new partially evaluated draw call.  We flag the dynamic
-// parts of the draw call using the special `regl.dynamic` variable
+// Calling regl() creates a new partially evaluated draw command
 const drawTriangle = regl({
+
+  // Shaders in regl are just strings.  You can use glslify or whatever you want
+  // to define them.  No need to manually create shader objects.
   frag: `
     precision mediump float;
     uniform vec4 color;
@@ -42,8 +46,15 @@ const drawTriangle = regl({
       gl_Position = vec4(position, 0, 1);
     }`,
 
+  // Here we define the vertex attributes for the above shader
   attributes: {
-    position: regl.buffer([[-2, -2], [4, -2], [4,  4]]))
+    // regl.buffer creates a new array buffer object
+    position: regl.buffer([
+      [-2, -2],   // no need to flatten nested arrays, regl automatically
+      [4, -2],    // unrolls them into a typedarray (default Float32)
+      [4,  4]
+    ]))
+    // regl automatically infers sane defaults for the vertex attribute pointers
   },
 
   uniforms: {
@@ -51,6 +62,7 @@ const drawTriangle = regl({
     color: regl.prop('color')
   },
 
+  // This tells regl the number of vertices to draw in this command
   count: 3
 })
 
@@ -61,7 +73,7 @@ regl.frame(() => {
     depth: 1
   })
 
-  // draw a triangle
+  // draw a triangle using the command defined above
   drawTriangle({
     color: [
       Math.cos(Date.now() * 0.001),
