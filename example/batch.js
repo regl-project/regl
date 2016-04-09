@@ -29,7 +29,8 @@ var draw = regl({
   },
 
   uniforms: {
-    color: function (frame, batchId) {
+    color: function (args, batchId, stats) {
+      var frame = stats.count
       return [
         Math.sin((0.1 + Math.sin(batchId)) * frame + 3.0 * batchId),
         Math.cos(0.02 * frame + 0.1 * batchId),
@@ -37,8 +38,8 @@ var draw = regl({
         1
       ]
     },
-    angle: function (frame) {
-      return 0.01 * frame
+    angle: function (args, batchId, stats) {
+      return 0.01 * stats.count
     },
     offset: regl.prop('offset')
   },

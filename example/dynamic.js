@@ -29,12 +29,14 @@ var draw = regl({
 
   uniforms: {
     color: regl.prop('color'),
-    angle: function (count) {
-      return 0.01 * count
+    angle: function (args, batchId, stats) {
+      return 0.01 * stats.count
     }
   },
 
-  depthTest: false,
+  depth: {
+    enable: false
+  },
 
   count: 3
 })
