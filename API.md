@@ -188,7 +188,7 @@ command(args, function () {
 })
 ```
 
-### Command properties
+### Parameters
 The input to a command declaration is a complete description of the WebGL state machine.
 
 #### Shaders
@@ -366,6 +366,10 @@ var command = regl({
 * [`gl.drawElements`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDrawElements.xml)
 * [`gl.drawArraysInstancedANGLE`](https://www.opengl.org/sdk/docs/man4/html/glDrawArraysInstanced.xhtml)
 * [`gl.drawElementsInstancedANGLE`](https://www.opengl.org/sdk/docs/man4/html/glDrawElementsInstanced.xhtml)
+
+#### Framebuffer
+
+TODO
 
 #### Depth
 All state relating to the depth buffer is stored in the `depth` field of the command.  For example,
@@ -548,14 +552,47 @@ var command = regl({
 | `enable` | Sets `gl.enable(gl.CULL_FACE)` | `false` |
 | `face` | Sets `gl.cullFace` | `'back'` |
 
-#### Miscellaneous parameters
+#### Scissor
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `enable` | Toggles `gl.enable(gl.SCISSOR)` | `false` |
+| `bounds` | Sets `gl.scissor` | `[0,0,0,0]` |
+
+#### Sample coverage
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| | | |
+
+#### Front face
 
 | Property | Description | Default |
 |----------|-------------|---------|
 | `frontFace` | | `'ccw'` |
+
+#### Dithering
+
+| Property | Description | Default |
+|----------|-------------|---------|
 | `dither` | | `false` |
-| `lineWidth` | | `1` |
+
+#### Line width
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `lineWidth` | | |
+
+#### Color mask
+
+| Property | Description | Default |
+|----------|-------------|---------|
 | `colorMask` | | `[true, true, true, true]` |
+
+#### Viewport
+
+| Property | Description | Default |
+|----------|-------------|---------|
 | `viewport` | | `null` |
 
 ## Resources
