@@ -8,6 +8,8 @@ tape('depth', function (t) {
   var gl = createContext(16, 16)
   var regl = createREGL(gl)
 
+  // TODO: test depth range
+
   var desc = {
     frag: [
       'precision mediump float;',
