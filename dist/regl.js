@@ -3045,7 +3045,7 @@ module.exports = function wrapContextState (gl, shaderState) {
 
     notifyViewportChanged: function () {
       contextState.viewport.setDirty()
-      contextState.scissor.setDirty()
+      contextState['scissor.box'].setDirty()
     }
   }
 }
