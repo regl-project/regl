@@ -12,7 +12,8 @@ require('../polygon-offset')
 require('../culling')
 require('../misc')
 require('../sample.js')
-/*
 require('../scissor.js')
+
+/*
 require('../viewport')
 */
