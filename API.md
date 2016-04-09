@@ -521,7 +521,10 @@ var command = regl({
 | `'add'` | `gl.FUNC_ADD` |
 | `'subtract'` | `gl.FUNC_SUBTRACT` |
 | `'reverse subtract'` | `gl.FUNC_REVERSE_SUBTRACT` |
+| `'min'` | `gl.MIN_EXT` |
+| `'max'` | `gl.MAX_EXT` |
 
+* `'min'` and `'max'` are only available if the `EXT_blend_minmax` extension is supported
 * `func` can be an object with the fields `{src, dst}` or `{srcRGB, srcAlpha, dstRGB, dstAlpha}`, with the former corresponding to `gl.blendFunc` and the latter to `gl.blendFuncSeparate`
 * The fields of `func` can take on the following values
 
