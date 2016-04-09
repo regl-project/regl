@@ -1,6 +1,7 @@
 var check = require('./lib/check')
 var getContext = require('./lib/context')
 var wrapExtensions = require('./lib/extension')
+var wrapLimits = require('./lib/limits')
 var wrapBuffers = require('./lib/buffer')
 var wrapElements = require('./lib/elements')
 var wrapTextures = require('./lib/texture')
@@ -30,7 +31,8 @@ module.exports = function wrapREGL () {
   var gl = args.gl
   var options = args.options
 
-  var extensionState = wrapExtensions(gl, options.requiredExtensions || [])
+  var extensionState = wrapExtensions(gl)
+  var limits = wrapLimits(gl, extensionState)
   var bufferState = wrapBuffers(gl)
   var elementState = wrapElements(gl, extensionState, bufferState)
   var textureState = wrapTextures(gl, extensionState)
@@ -320,6 +322,9 @@ module.exports = function wrapREGL () {
     // Frame rendering
     frame: frame,
     stats: frameState,
+
+    // System limits
+    limits: limits,
 
     // Read pixels
     read: readPixels,

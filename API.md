@@ -86,6 +86,10 @@ Note that this form is compatible with [`headless-gl`](https://github.com/stackg
 var regl = require('regl')(require('gl')(256, 256))
 ```
 
+### Initialization options
+
+**TODO**
+
 ---------------------------------------
 ## Commands
 
@@ -957,17 +961,24 @@ Other than draw commands and resources, there are a few miscellaneous parts of t
 regl.clear({
   color: [0, 0, 0, 1],
   depth: 1,
-  stencil: 0xff
+  stencil: 0
 })
 ```
 
 | Property | Description |
 |----------|-------------|
 | `color` | Sets the clear color |
-| `depth` | |
-| `stencil` | |
+| `depth` | Sets the clear depth value |
+| `stencil` | Sets the clear stencil value |
 
 If an option is not present, then the corresponding buffer is not cleared
+
+**Relevant WebGL APIs**
+
+* [`gl.clearColor`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glClearColor.xml)
+* [`gl.clearDepth`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glClearDepth.xml)
+* [`gl.clearStencil`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glClearStencil.xml)
+* [`gl.clear`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glClear.xml)
 
 ---------------------------------------
 ### Reading pixels
@@ -983,6 +994,11 @@ var pixels = regl.read([options])
 | `y` | | `0` |
 | `width` | | viewport.width |
 | `height` | | viewport.height |
+
+**Relevant WebGL APIs**
+
+* [`gl.pixelStorei`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glPixelStorei.xml)
+* [`gl.readPixels`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glReadPixels.xml)
 
 ---------------------------------------
 ### Per-frame callbacks
@@ -1013,7 +1029,37 @@ tick.cancel()
 | `renderTime` | Time spent rendering last frame |
 
 ---------------------------------------
-### WebGL capabilities
+### Limits
+regl exposes info about the WebGL context limits and capabilities via the `regl.limits` object.  The following properties are supported,
+
+| Property | Description |
+|----------|-------------|
+| `colorBits` | An array of bits depths for the red, green, blue and alpha channels |
+| `depthBits` | Bit depth of drawing buffer |
+| `stencilBits` | Bit depth of stencil buffer |
+| `subpixelBits` | `gl.SUBPIXEL_BITS` |
+| `extensions` | A list of all supported extensions |
+| `pointSizeRange` | `gl.ALIASED_POINT_SIZE_RANGE` |
+| `lineWidthRange` | `gl.ALIASED_LINE_WIDTH_RANGE` |
+| `viewport` | `gl.MAX_VIEWPORT_DIMS` |
+| `combinedTextureUnits` | `gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS` |
+| `cubeMapSize` | `gl.MAX_CUBE_MAP_TEXTURE_SIZE` |
+| `renderbufferSize` | `gl.MAX_RENDERBUFFER_SIZE` |
+| `texUnits` | `gl.MAX_TEXTURE_IMAGE_UNITS` |
+| `textureSize` | `gl.MAX_TEXTURE_SIZE` |
+| `attributes` | `gl.MAX_VERTEX_ATTRIBS` |
+| `vertexUniforms` | `gl.MAX_VERTEX_UNIFORM_VECTORS` |
+| `vertexTextureUnits` | `gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS` |
+| `varyingVectors` | `gl.MAX_VARYING_VECTORS` |
+| `fragmentUniforms` | `gl.MAX_FRAGMENT_UNIFORM_VECTORS` |
+| `glsl` | `gl.SHADING_LANGUAGE_VERSION` |
+| `renderer` | `gl.RENDERER` |
+| `vendor` | `gl.VENDOR` |
+| `version` | `gl.VERSION` |
+
+**Relevant WebGL APIs**
+
+* [`gl.getParameter`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGetParameter.xml)
 
 ---------------------------------------
 ### Clean up
