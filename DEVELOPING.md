@@ -27,6 +27,12 @@ npm run test-browser
 
 ### Adding tests
 
+### Test coverage
+
+```
+npm run coverage
+```
+
 ## Benchmarks
 
 ### Running benchmarks
