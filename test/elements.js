@@ -74,7 +74,6 @@ tape('elements', function (t) {
     elements: regl.prop('elements')
   })
 
-
   var drawDynamic = regl({
     frag: [
       'precision mediump float;',
@@ -103,8 +102,6 @@ tape('elements', function (t) {
 
     elements: regl.prop('elements')
   })
-
-
 
   function testImage (cb, msg) {
     var i
@@ -162,7 +159,7 @@ tape('elements', function (t) {
     },
     function () {
       regl.clear({ color: [1, 0, 0, 1] })
-      drawStatic.batch([{c: [0, 0, 1, 1]}])
+      drawStatic([{c: [0, 0, 1, 1]}])
       testPlus('batch - static')
     },
     function () {
@@ -172,7 +169,7 @@ tape('elements', function (t) {
     },
     function () {
       regl.clear({ color: [1, 0, 0, 1] })
-      drawDynamic.batch([{elements: elements}])
+      drawDynamic([{elements: elements}])
       testPlus('batch - dynamic')
     },
     function () {
