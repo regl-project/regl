@@ -612,11 +612,38 @@ var command = regl({
 
 ---------------------------------------
 #### Culling
+Example,
+
+```javascript
+var command = regl({
+  // ...
+
+  cull: {
+    enable: true,
+    face: 'back'
+  },
+
+  // ...
+})
+```
 
 | Property | Description | Default |
 |----------|-------------|---------|
-| `enable` | Sets `gl.enable(gl.CULL_FACE)` | `false` |
+| `enable` | Toggles `gl.enable(gl.CULL_FACE)` | `false` |
 | `face` | Sets `gl.cullFace` | `'back'` |
+
+**Notes**
+
+* `face` sets the cull face mode and must be one of the following values,
+
+| Face | Description |
+|------|-------------|
+| `'front'` | `gl.FRONT` |
+| `'back'` | `gl.BACK` |
+
+**Relevant WebGL APIs**
+
+* [`gl.cullFace`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCullFace.xml)
 
 ---------------------------------------
 #### Scissor
@@ -626,36 +653,42 @@ var command = regl({
 | `enable` | Toggles `gl.enable(gl.SCISSOR)` | `false` |
 | `bounds` | Sets `gl.scissor` | `[0,0,0,0]` |
 
+---------------------------------------
 #### Sample coverage
 
 | Property | Description | Default |
 |----------|-------------|---------|
 | | | |
 
+---------------------------------------
 #### Front face
 
 | Property | Description | Default |
 |----------|-------------|---------|
 | `frontFace` | | `'ccw'` |
 
+---------------------------------------
 #### Dithering
 
 | Property | Description | Default |
 |----------|-------------|---------|
 | `dither` | | `false` |
 
+---------------------------------------
 #### Line width
 
 | Property | Description | Default |
 |----------|-------------|---------|
 | `lineWidth` | | |
 
+---------------------------------------
 #### Color mask
 
 | Property | Description | Default |
 |----------|-------------|---------|
 | `colorMask` | | `[true, true, true, true]` |
 
+---------------------------------------
 #### Viewport
 
 | Property | Description | Default |
