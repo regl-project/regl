@@ -191,6 +191,7 @@ command(args, function () {
 ### Parameters
 The input to a command declaration is a complete description of the WebGL state machine.
 
+---------------------------------------
 #### Shaders
 
 Each draw command can specify the source code for a vertex and/or fragment shader,
@@ -230,6 +231,7 @@ var command = regl({
 * [`gl.linkProgram`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glLinkProgram.xml)
 * [`gl.useProgram`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glUseProgram.xml)
 
+---------------------------------------
 #### Uniforms
 Uniform variables are specified in the `uniforms` block of the command.  For example,
 
@@ -269,6 +271,7 @@ var command = regl({
 * [`gl.getUniformLocation`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGetUniformLocation.xml)
 * [`gl.uniform`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glUniform.xml)
 
+---------------------------------------
 #### Attributes
 ```javascript
 var command = regl({
@@ -324,6 +327,7 @@ Each attribute can have any of the following optional properties,
 * [`gl.vertexAttibDivisor`](https://www.opengl.org/sdk/docs/man4/html/glVertexAttribDivisor.xhtml)
 * [`gl.enableVertexAttribArray`, `gl.disableVertexAttribArray`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDisableVertexAttribArray.xml)
 
+---------------------------------------
 #### Drawing
 
 ```javascript
@@ -367,11 +371,13 @@ var command = regl({
 * [`gl.drawArraysInstancedANGLE`](https://www.opengl.org/sdk/docs/man4/html/glDrawArraysInstanced.xhtml)
 * [`gl.drawElementsInstancedANGLE`](https://www.opengl.org/sdk/docs/man4/html/glDrawElementsInstanced.xhtml)
 
+---------------------------------------
 #### Framebuffer
 
 TODO
 
-#### Depth
+---------------------------------------
+#### Depth buffer
 All state relating to the depth buffer is stored in the `depth` field of the command.  For example,
 
 ```javascript
@@ -416,6 +422,7 @@ var command = regl({
 * [`gl.depthMask`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDepthMask.xml)
 * [`gl.depthRange`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDepthRangef.xml)
 
+---------------------------------------
 #### Blending
 Blending information is stored in the `blend` field,
 
@@ -486,7 +493,38 @@ var command = regl({
 * [`gl.blendFuncSeparate`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendFuncSeparate.xml)
 * [`gl.blendColor`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendColor.xml)
 
+---------------------------------------
 #### Stencil
+
+Example:
+
+```javascript
+var command = regl({
+  // ...
+
+  stencil: {
+    enable: true,
+    mask: 0xff,
+    func: {
+      cmp: '<',
+      ref: 0,
+      mask: 0xff
+    },
+    opFront: {
+      fail: 'keep',
+      zfail: 'keep',
+      pass: 'keep'
+    },
+    opBack: {
+      fail: 'keep',
+      zfail: 'keep',
+      pass: 'keep'
+    }
+  },
+
+  // ...
+})
+```
 
 | Property | Description | Default |
 |----------|-------------|---------|
@@ -538,6 +576,7 @@ var command = regl({
 * [`gl.stencilMask`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glStencilMask.xml)
 * [`gl.stencilOpSeparate`](http://www.khronos.org/opengles/sdk/2.0/docs/man/xhtml/glStencilOpSeparate.xml)
 
+---------------------------------------
 #### Polygon offset
 
 Polygon offsetting behavior can be controlled using the `polygonOffset` field,
@@ -567,6 +606,7 @@ var command = regl({
 
 * [`gl.polygonOffset`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glPolygonOffset.xml)
 
+---------------------------------------
 #### Culling
 
 | Property | Description | Default |
@@ -574,6 +614,7 @@ var command = regl({
 | `enable` | Sets `gl.enable(gl.CULL_FACE)` | `false` |
 | `face` | Sets `gl.cullFace` | `'back'` |
 
+---------------------------------------
 #### Scissor
 
 | Property | Description | Default |
