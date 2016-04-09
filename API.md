@@ -739,19 +739,43 @@ var command = regl({
 * [`gl.colorMask`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glColorMask.xml)
 
 ---------------------------------------
+#### Sample coverage
+Example,
+
+```javascript
+var command = regl({
+  // ...
+
+  sample: {
+    enable: true,
+    alpha: false,
+    coverage: {
+      value: 1,
+      invert: false
+    }
+  },
+
+  // ...
+})
+```
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `enable` | Toggles `gl.enable(gl.SAMPLE_COVERAGE)` | `false` |
+| `alpha` | Toggles `gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE)` | `false` |
+| `coverage` | Sets `gl.sampleCoverage` | `{value:1,invert:false}` |
+
+**Relevant WebGL APIs**
+
+* [`gl.sampleCoverage`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glColorMask.xml)
+
+---------------------------------------
 #### Scissor
 
 | Property | Description | Default |
 |----------|-------------|---------|
 | `enable` | Toggles `gl.enable(gl.SCISSOR)` | `false` |
 | `bounds` | Sets `gl.scissor` | `[0,0,0,0]` |
-
----------------------------------------
-#### Sample coverage
-
-| Property | Description | Default |
-|----------|-------------|---------|
-| | | |
 
 ---------------------------------------
 #### Viewport
@@ -884,6 +908,9 @@ tick.cancel()
 | `t` | Time of last `frame()` event |
 | `dt` | Time between last two `frame()` events |
 | `renderTime` | Time spent rendering last frame |
+
+---------------------------------------
+### WebGL capabilities
 
 ---------------------------------------
 ### Clean up
