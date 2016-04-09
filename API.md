@@ -1,5 +1,6 @@
 # REGL API
 
+---------------------------------------
 ## Initialization
 
 ##### As a fullscreen canvas
@@ -37,6 +38,7 @@ Note that this form is compatible with [`headless-gl`](https://github.com/stackg
 var regl = require('regl')(require('gl')(256, 256))
 ```
 
+---------------------------------------
 ## Commands
 
 *Draw commands* are the fundamental abstraction in `regl`.  A draw command wraps up all of the WebGL state associated with a draw call (either `drawArrays` or `drawElements`) and packages it into a single reusable function. For example, here is a command that draws a triangle,
@@ -67,7 +69,7 @@ To execute a command you call it just like you would any function,
 ```javascript
 drawTriangle()
 ```
-
+---------------------------------------
 ### Dynamic properties
 Some parameters can be made dynamic by passing in a function,
 
@@ -150,6 +152,7 @@ drawSpinningStretchyTriangle([
 
 For more info on the frame stats [check out the below section](#frame-stats).
 
+---------------------------------------
 ### Executing commands
 There are 3 ways to execute a command,
 
@@ -188,6 +191,7 @@ command(args, function () {
 })
 ```
 
+---------------------------------------
 ### Parameters
 The input to a command declaration is a complete description of the WebGL state machine.
 
