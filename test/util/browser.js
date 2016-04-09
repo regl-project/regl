@@ -12,8 +12,9 @@ require('../blend')
 require('../stencil')
 require('../polygon-offset')
 require('../culling')
-*/
 require('../misc')
+*/
+require('../sample.js')
 /*
 require('../viewport')
 */
