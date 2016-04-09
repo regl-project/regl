@@ -412,13 +412,13 @@ var command = regl({
 | Value | Description |
 |-------|-------------|
 | `'never'` | `gl.NEVER` |
-| `'always'` | gl.ALWAYS` |
+| `'always'` | `gl.ALWAYS` |
 | `'<', 'less'` | `gl.LESS` |
-| `'<=', 'lequal'` | gl.LEQUAL |
+| `'<=', 'lequal'` | `gl.LEQUAL` |
 | `'>', 'greater'` | `gl.GREATER` |
-| `'>=', 'gequal'` | gl.GEQUAL |
-| `'=', 'equal'` | gl.EQUAL |
-| `'!=', 'notequal'` | gl.NOTEQUAL |
+| `'>=', 'gequal'` | `gl.GEQUAL` |
+| `'=', 'equal'` | `gl.EQUAL` |
+| `'!=', 'notequal'` | `gl.NOTEQUAL` |
 
 **Related WebGL APIs**
 
@@ -549,13 +549,13 @@ var command = regl({
 | Value | Description |
 |-------|-------------|
 | `'never'` | `gl.NEVER` |
-| `'always'` | gl.ALWAYS` |
+| `'always'` | `gl.ALWAYS` |
 | `'<', 'less'` | `gl.LESS` |
-| `'<=', 'lequal'` | gl.LEQUAL |
+| `'<=', 'lequal'` | `gl.LEQUAL` |
 | `'>', 'greater'` | `gl.GREATER` |
-| `'>=', 'gequal'` | gl.GEQUAL |
-| `'=', 'equal'` | gl.EQUAL |
-| `'!=', 'notequal'` | gl.NOTEQUAL |
+| `'>=', 'gequal'` | `gl.GEQUAL` |
+| `'=', 'equal'` | `gl.EQUAL` |
+| `'!=', 'notequal'` | `gl.NOTEQUAL` |
 
 * `opFront` and `opBack` specify the stencil op.  Each is an object which takes the following parameters:
     + `fail`, the stencil op which is applied when the stencil test fails
@@ -634,7 +634,7 @@ var command = regl({
 
 **Notes**
 
-* `face` sets the cull face mode and must be one of the following values,
+* `face` must be one of the following values,
 
 | Face | Description |
 |------|-------------|
@@ -644,6 +644,99 @@ var command = regl({
 **Relevant WebGL APIs**
 
 * [`gl.cullFace`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCullFace.xml)
+
+---------------------------------------
+#### Front face
+Example,
+
+```javascript
+var command = regl({
+  // ...
+
+  frontFace: 'cw',
+
+  // ...
+})
+```
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `frontFace` | Sets `gl.frontFace` | `'ccw'` |
+
+**Notes**
+
+* The value for front face must be one of the following,
+
+| Orientation | Description |
+|------|-------------|
+| `'cw'` | `gl.CW` |
+| `'ccw'` | `gl.CCW` |
+
+**Relevant WebGL APIs**
+
+* [`gl.frontFace`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glFrontFace.xml)
+
+---------------------------------------
+#### Dithering
+Example,
+
+```javascript
+var command = regl({
+  // ...
+
+  dither: true,
+
+  // ...
+})
+```
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `dither` | Toggles `gl.DITHER` | `false` |
+
+---------------------------------------
+#### Line width
+Example,
+
+```javascript
+var command = regl({
+  // ...
+
+  lineWidth: 4,
+
+  // ...
+})
+```
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `lineWidth` | Sets `gl.lineWidth` | `1` |
+
+**Relevant WebGL APIs**
+
+* [`gl.lineWidth`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glLineWidth.xml)
+
+---------------------------------------
+#### Color mask
+Example,
+
+```javascript
+var command = regl({
+  // ...
+
+  colorMask: [true, false, true, false],
+
+  // ...
+})
+```
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `colorMask` | Sets `gl.colorMask` | `[true, true, true, true]` |
+
+**Relevant WebGL APIs**
+
+* [`gl.colorMask`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glColorMask.xml)
 
 ---------------------------------------
 #### Scissor
@@ -659,34 +752,6 @@ var command = regl({
 | Property | Description | Default |
 |----------|-------------|---------|
 | | | |
-
----------------------------------------
-#### Front face
-
-| Property | Description | Default |
-|----------|-------------|---------|
-| `frontFace` | | `'ccw'` |
-
----------------------------------------
-#### Dithering
-
-| Property | Description | Default |
-|----------|-------------|---------|
-| `dither` | | `false` |
-
----------------------------------------
-#### Line width
-
-| Property | Description | Default |
-|----------|-------------|---------|
-| `lineWidth` | | |
-
----------------------------------------
-#### Color mask
-
-| Property | Description | Default |
-|----------|-------------|---------|
-| `colorMask` | | `[true, true, true, true]` |
 
 ---------------------------------------
 #### Viewport
