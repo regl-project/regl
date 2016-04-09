@@ -10,10 +10,12 @@
   "devDependencies": {
     "browserify": "^13.0.0",
     "budo": "^8.1.0",
+    "bunny": "^1.0.1",
     "coverify": "^1.4.1",
     "derequire": "^2.0.3",
     "faucet": "0.0.1",
     "gl": "^3.0.3",
+    "gl-mat4": "^1.1.4",
     "indexhtmlify": "^1.2.1",
     "runscript": "^1.1.0",
     "smokestack": "^3.4.1",
