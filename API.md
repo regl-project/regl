@@ -760,10 +760,12 @@ var command = regl({
 |----------|-------------|---------|
 | `viewport` | | `null` |
 
+---------------------------------------
 ## Resources
 
 ### Constructors
 
+---------------------------------------
 #### `regl.buffer(options)`
 
 | Property | Description | Default |
@@ -772,6 +774,7 @@ var command = regl({
 | `length` | | `0` |
 | `usage` | | `'static'` |
 
+---------------------------------------
 #### `regl.elements(options)`
 
 | Property | Description | Default |
@@ -782,25 +785,40 @@ var command = regl({
 | `primitive` | | `'triangles'` |
 | `count` | | `0` |
 
+---------------------------------------
 #### `regl.texture(options)`
 
+**NOT YET IMPLEMENTED**
+
+---------------------------------------
+#### `regl.rbo(options)`
+
+**NOT YET IMPLEMENTED**
+
+---------------------------------------
 #### `regl.fbo(options)`
 
+**NOT YET IMPLEMENTED**
+
+---------------------------------------
 ### Updates
 
 ```javascript
 resource(options)
 ```
 
+---------------------------------------
 ### Destruction
 
 ```javascript
 resource.destroy()
 ```
 
+---------------------------------------
 ## Other properties
 Other than draw commands and resources, there are a few miscellaneous parts of the WebGL API which REGL wraps for completeness.  These miscellaneous odds and ends are summarized here.
 
+---------------------------------------
 ### Clear the draw buffer
 `regl.clear` combines `gl.clearColor, gl.clearDepth, gl.clearStencil` and `gl.clear` into a single procedure, which has the following usage:
 
@@ -820,6 +838,7 @@ regl.clear({
 
 If an option is not present, then the corresponding buffer is not cleared
 
+---------------------------------------
 ### Reading pixels
 
 ```javascript
@@ -834,6 +853,7 @@ var pixels = regl.read([options])
 | `width` | | viewport.width |
 | `height` | | viewport.height |
 
+---------------------------------------
 ### Per-frame callbacks
 `regl` also provides a common wrapper over `requestAnimationFrame` and `cancelAnimationFrame` that integrates gracefully with context loss events.
 
@@ -847,6 +867,7 @@ var tick = regl.frame(function (count) {
 tick.cancel()
 ```
 
+---------------------------------------
 ### Frame stats
 `regl` also tracks a few simple performance and timing stats to simplify benchmarks and animations.  These are all accessible via the `regl.stats` object,
 
@@ -860,11 +881,13 @@ tick.cancel()
 | `dt` | Time between last two `frame()` events |
 | `renderTime` | Time spent rendering last frame |
 
+---------------------------------------
 ### Clean up
 
 ```javascript
 regl.destroy()
 ```
 
+---------------------------------------
 ### Context loss
-`regl` makes a best faith effort to handle context loss by default.  This means that buffers and textures are reinitialized on a context restore with their contents.  Unfortunately, this is not possible for framebuffer objects and
+`regl` makes a best faith effort to handle context loss by default.  This means that buffers and textures are reinitialized on a context restore with their contents.
