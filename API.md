@@ -809,10 +809,34 @@ var command = regl({
 
 ---------------------------------------
 #### Viewport
+Example,
+
+```javascript
+var command = regl({
+  // ...
+
+  viewport: {
+    x: 5,
+    y: 10,
+    w: 100,
+    h: 50
+  }
+
+  // ...
+})
+```
 
 | Property | Description | Default |
 |----------|-------------|---------|
-| `viewport` | | `null` |
+| `viewport` | The shape of viewport | `{}` |
+
+**Notes**
+
+* Like `scissor.box`, `viewport` is a bounding box with properties `x,y,w,h`
+
+**Relevant WebGL APIs**
+
+* [`gl.viewport`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glViewport.xml)
 
 ---------------------------------------
 ## Resources

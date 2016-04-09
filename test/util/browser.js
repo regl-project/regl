@@ -1,4 +1,5 @@
 require('tap-browser-color')()
+/*
 require('../clear')
 require('../triangle')
 require('../line')
@@ -13,7 +14,5 @@ require('../culling')
 require('../misc')
 require('../sample.js')
 require('../scissor.js')
-
-/*
-require('../viewport')
 */
+require('../viewport')
