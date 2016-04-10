@@ -17,6 +17,7 @@
     "faucet": "0.0.1",
     "gl": "^3.0.3",
     "gl-mat4": "^1.1.4",
+    "hsv2rgb": "^1.1.0",
     "indexhtmlify": "^1.2.1",
     "runscript": "^1.1.0",
     "smokestack": "^3.4.1",
