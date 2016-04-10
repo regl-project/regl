@@ -363,14 +363,14 @@ function AttributeRecord () {
 
 Object.assign(AttributeRecord.prototype, {
   equals: function (other, size) {
-    if (this.pointer) {
-      return other.pointer &&
+    if (!this.pointer) {
+      return !other.pointer &&
         this.x === other.x &&
         this.y === other.y &&
         this.z === other.z &&
         this.w === other.w
     } else {
-      return !other.pointer &&
+      return other.pointer &&
         this.buffer === other.buffer &&
         this.size === size &&
         this.normalized === other.normalized &&
@@ -674,16 +674,16 @@ module.exports = function wrapBufferState (gl) {
     buffer.update(options)
     bufferSet[buffer.id] = buffer
 
-    function updateBuffer (options) {
+    function reglBuffer (options) {
       buffer.update(options || {})
-      return updateBuffer
+      return reglBuffer
     }
 
-    updateBuffer._reglType = 'buffer'
-    updateBuffer._buffer = buffer
-    updateBuffer.destroy = function () { buffer.destroy() }
+    reglBuffer._reglType = 'buffer'
+    reglBuffer._buffer = buffer
+    reglBuffer.destroy = function () { buffer.destroy() }
 
-    return updateBuffer
+    return reglBuffer
   }
 
   return {

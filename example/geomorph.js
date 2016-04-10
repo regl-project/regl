@@ -3,7 +3,7 @@ const mat4 = require('gl-mat4')
 const bunny = require('bunny')
 
 // We'll generate 4 refined levels of detail for the bunny mesh
-var NUM_LODS = 4
+const NUM_LODS = 4
 
 // First we extract the edges from the bunny mesh
 const lodCells = bunny.cells.reduce((edges, cell) => {
@@ -123,7 +123,7 @@ const drawBunnyWithLOD = regl({
 
     // We slowly rotate the camera around the center of the bunny
     view: (args, batchId, stats) => {
-      var t = 0.004 * stats.count
+      const t = 0.004 * stats.count
       return mat4.lookAt([],
         [20 * Math.cos(t), 10, 20 * Math.sin(t)],
         [0, 2.5, 0],
