@@ -1,5 +1,9 @@
 # Release notes
 
+## Next
+
+* Fix attribute binding bug
+
 ## 0.1.0
 
 * Actually kind of works now!
