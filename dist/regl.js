@@ -547,7 +547,7 @@ var primTypes = _dereq_('./constants/primitives.json')
 var glTypes = _dereq_('./constants/dtypes.json')
 var compareFuncs = _dereq_('./constants/comparefuncs.json')
 var blendFuncs = _dereq_('./constants/blendFuncs.json')
-var blendEquations = _dereq_('./constants/blendEquations.json')
+var blendEquations_base = _dereq_('./constants/blendEquations.json')
 var stencilOps = _dereq_('./constants/stencil-ops.json')
 
 var GL_ELEMENT_ARRAY_BUFFER = 34963
@@ -585,6 +585,9 @@ var GL_BACK = 1029
 
 var GL_CW = 0x0900
 var GL_CCW = 0x0901
+
+var GL_MIN_EXT = 0x8007
+var GL_MAX_EXT = 0x8008
 
 function typeLength (x) {
   switch (x) {
@@ -674,6 +677,12 @@ module.exports = function reglCompiler (
   frameState) {
   var extensions = extensionState.extensions
   var contextState = glState.contextState
+
+  var blendEquations = Object.create(blendEquations_base)
+  if (extensions.ext_blend_minmax) {
+    blendEquations.min = GL_MIN_EXT
+    blendEquations.max = GL_MAX_EXT
+  }
 
   var drawCallCounter = 0
 
@@ -2451,7 +2460,7 @@ module.exports = function wrapElementsState (gl, extensionState, bufferState) {
 
 var check = _dereq_('./check')
 
-module.exports = function createExtensionCache (gl, required) {
+module.exports = function createExtensionCache (gl) {
   var extensions = {}
 
   function refreshExtensions () {
@@ -2480,11 +2489,6 @@ module.exports = function createExtensionCache (gl, required) {
       try {
         extensions[ext] = gl.getExtension(ext)
       } catch (e) {}
-    })
-
-    required.forEach(function (ext) {
-      check(extensions[ext.toLowerCase()],
-        'required extension "' + ext + '" is unsupported')
     })
   }
 
@@ -2528,6 +2532,76 @@ module.exports = function (x) {
 }
 
 },{"./constants/arraytypes.json":7}],22:[function(_dereq_,module,exports){
+var GL_SUBPIXEL_BITS = 0x0D50
+var GL_RED_BITS = 0x0D52
+var GL_GREEN_BITS = 0x0D53
+var GL_BLUE_BITS = 0x0D54
+var GL_ALPHA_BITS = 0x0D55
+var GL_DEPTH_BITS = 0x0D56
+var GL_STENCIL_BITS = 0x0D57
+
+var GL_ALIASED_POINT_SIZE_RANGE = 0x846D
+var GL_ALIASED_LINE_WIDTH_RANGE = 0x846E
+
+var GL_MAX_TEXTURE_SIZE = 0x0D33
+var GL_MAX_VIEWPORT_DIMS = 0x0D3A
+var GL_MAX_VERTEX_ATTRIBS = 0x8869
+var GL_MAX_VERTEX_UNIFORM_VECTORS = 0x8DFB
+var GL_MAX_VARYING_VECTORS = 0x8DFC
+var GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS = 0x8B4D
+var GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS = 0x8B4C
+var GL_MAX_TEXTURE_IMAGE_UNITS = 0x8872
+var GL_MAX_FRAGMENT_UNIFORM_VECTORS = 0x8DFD
+var GL_MAX_CUBE_MAP_TEXTURE_SIZE = 0x851C
+var GL_MAX_RENDERBUFFER_SIZE = 0x84E8
+
+var GL_VENDOR = 0x1F00
+var GL_RENDERER = 0x1F01
+var GL_VERSION = 0x1F02
+var GL_SHADING_LANGUAGE_VERSION = 0x8B8C
+
+module.exports = function (gl, extensions) {
+  return {
+    // drawing buffer bit depth
+    colorBits: [
+      gl.getParameter(GL_RED_BITS),
+      gl.getParameter(GL_GREEN_BITS),
+      gl.getParameter(GL_BLUE_BITS),
+      gl.getParameter(GL_ALPHA_BITS)
+    ],
+    depthBits: gl.getParameter(GL_DEPTH_BITS),
+    stencilBits: gl.getParameter(GL_STENCIL_BITS),
+    subpixelBits: gl.getParameter(GL_SUBPIXEL_BITS),
+
+    // supported extensions
+    extensions: Object.keys(extensions.extensions),
+
+    // TODO compressed texture formats
+
+    // point and line size ranges
+    pointSize: gl.getParameter(GL_ALIASED_POINT_SIZE_RANGE),
+    lineWidth: gl.getParameter(GL_ALIASED_LINE_WIDTH_RANGE),
+    viewport: gl.getParameter(GL_MAX_VIEWPORT_DIMS),
+    combinedTextureUnits: gl.getParameter(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS),
+    cubeMapSize: gl.getParameter(GL_MAX_CUBE_MAP_TEXTURE_SIZE),
+    renderbufferSize: gl.getParameter(GL_MAX_RENDERBUFFER_SIZE),
+    texUnits: gl.getParameter(GL_MAX_TEXTURE_IMAGE_UNITS),
+    textureSize: gl.getParameter(GL_MAX_TEXTURE_SIZE),
+    attributes: gl.getParameter(GL_MAX_VERTEX_ATTRIBS),
+    vertexUniforms: gl.getParameter(GL_MAX_VERTEX_UNIFORM_VECTORS),
+    vertexTextureUnits: gl.getParameter(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS),
+    varyingVectors: gl.getParameter(GL_MAX_VARYING_VECTORS),
+    fragmentUniforms: gl.getParameter(GL_MAX_FRAGMENT_UNIFORM_VECTORS),
+
+    // vendor info
+    glsl: gl.getParameter(GL_SHADING_LANGUAGE_VERSION),
+    renderer: gl.getParameter(GL_RENDERER),
+    vendor: gl.getParameter(GL_VENDOR),
+    version: gl.getParameter(GL_VERSION)
+  }
+}
+
+},{}],23:[function(_dereq_,module,exports){
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
     typeof cancelAnimationFrame === 'function') {
@@ -2544,7 +2618,7 @@ if (typeof requestAnimationFrame === 'function' &&
   }
 }
 
-},{}],23:[function(_dereq_,module,exports){
+},{}],24:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 var isTypedArray = _dereq_('./is-typed-array')
 
@@ -2598,7 +2672,7 @@ module.exports = function wrapReadPixels (gl, glState) {
   return readPixels
 }
 
-},{"./check":3,"./is-typed-array":21}],24:[function(_dereq_,module,exports){
+},{"./check":3,"./is-typed-array":21}],25:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 
 var DEFAULT_FRAG_SHADER = 'void main(){gl_FragColor=vec4(0,0,0,0);}'
@@ -2811,7 +2885,7 @@ module.exports = function wrapShaderState (
   }
 }
 
-},{"./check":3}],25:[function(_dereq_,module,exports){
+},{"./check":3}],26:[function(_dereq_,module,exports){
 // A stack for managing the state of a scalar/vector parameter
 
 module.exports = function createStack (init, onChange) {
@@ -2869,7 +2943,7 @@ module.exports = function createStack (init, onChange) {
   }
 }
 
-},{}],26:[function(_dereq_,module,exports){
+},{}],27:[function(_dereq_,module,exports){
 var createStack = _dereq_('./stack')
 var createEnvironment = _dereq_('./codegen')
 
@@ -3050,10 +3124,20 @@ module.exports = function wrapContextState (gl, shaderState) {
   }
 }
 
-},{"./codegen":5,"./stack":25}],27:[function(_dereq_,module,exports){
+},{"./codegen":5,"./stack":26}],28:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
+var isTypedArray = _dereq_('./is-typed-array')
 
 var GL_TEXTURE_2D = 0x0DE1
+
+var GL_TEXTURE_CUBE_MAP = 0x8513
+var GL_TEXTURE_BINDING_CUBE_MAP = 0x8514
+var GL_TEXTURE_CUBE_MAP_POSITIVE_X = 0x8515
+var GL_TEXTURE_CUBE_MAP_NEGATIVE_X = 0x8516
+var GL_TEXTURE_CUBE_MAP_POSITIVE_Y = 0x8517
+var GL_TEXTURE_CUBE_MAP_NEGATIVE_Y = 0x8518
+var GL_TEXTURE_CUBE_MAP_POSITIVE_Z = 0x8519
+var GL_TEXTURE_CUBE_MAP_NEGATIVE_Z = 0x851A
 
 var GL_DEPTH_COMPONENT = 0x1902
 var GL_ALPHA = 0x1906
@@ -3088,6 +3172,11 @@ var GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL = 0x9241
 var GL_UNPACK_COLORSPACE_CONVERSION_WEBGL = 0x9243
 var GL_BROWSER_DEFAULT_WEBGL = 0x9244
 
+var texTargets = {
+  '2d': GL_TEXTURE_2D,
+  'cube': GL_TEXTURE_CUBE_MAP
+}
+
 var wrapModes = {
   'repeat': GL_REPEAT,
   'clamp': GL_CLAMP_TO_EDGE,
@@ -3107,7 +3196,12 @@ var minFilters = Object.assign({
   'mipmap': GL_LINEAR_MIPMAP_LINEAR
 }, magFilters)
 
-module.exports = function createTextureSet (gl, extensionState) {
+var colorSpace = {
+  'none': 0,
+  'default': GL_BROWSER_DEFAULT_WEBGL
+}
+
+module.exports = function createTextureSet (gl, extensionState, limits) {
   var extensions = extensionState.extensions
 
   var textureCount = 0
@@ -3143,6 +3237,7 @@ module.exports = function createTextureSet (gl, extensionState) {
     // Storage flags
     this.flipY = false
     this.premultiplyAlpha = false
+    this.unpackAlignment = 1
     this.colorSpace = GL_BROWSER_DEFAULT_WEBGL
   }
 
@@ -3162,28 +3257,82 @@ module.exports = function createTextureSet (gl, extensionState) {
         }
       }
 
-      var data = options.data || null
-      var width = options.width || 0
-      var height = options.height || 0
-      var format = options.format || 'rgba'
+      // tex target
+      this.target = GL_TEXTURE_2D
+      if ('target' in options) {
+        check.param(options.target, texTargets, 'invalid texture target')
+        this.target = texTargets[options.target]
+      }
 
+      // min filter
       this.minFilter = GL_NEAREST
       if ('min' in options) {
         check.param(options.min, minFilters)
         this.minFilter = minFilters[options.min]
       }
 
+      // mag filter
       this.magFilter = GL_NEAREST
       if ('mag' in options) {
         check.param(options.mag, magFilters)
         this.magFilter = magFilters(options.mag)
       }
 
+      // wrap modes
+      this.wrapS = GL_REPEAT
+      this.wrapT = GL_REPEAT
+      if ('wrap' in options) {
+        var wrap = options.wrap
+        if (typeof wrap === 'string') {
+          check.param(wrap, wrapModes)
+          this.wrapS = this.wrapT = wrapModes[wrap]
+        } else if (Array.isArray(wrap)) {
+          check.param(wrap[0], wrapModes)
+          check.param(wrap[1], wrapModes)
+          this.wrapS = wrapModes[wrap[0]]
+          this.wrapT = wrapModes[wrap[1]]
+        }
+      } else {
+        if ('wrapS' in options) {
+          check.param(options.wrapS, wrapModes)
+          this.wrapS = wrapModes[options.wrapS]
+        }
+        if ('wrapT' in options) {
+          check.param(options.wrapT, wrapModes)
+          this.wrapT = wrapModes[options.wrapT]
+        }
+      }
+
+      // easy pixelStorei flags
+      this.premultiplyAlpha = !!options.premultiplyAlpha
+      this.flipY = !!options.flipY
+
+      // unpack alignment
+      this.unpackAlignment = 1
+      if ('alignment' in options) {
+        check.oneOf(
+          options.alignment,
+          [1, 2, 4, 8],
+          'invalid texture unpack alignment')
+        this.unpackAlignment = options.alignment
+      }
+
+      // colorspace
+      this.colorSpace = GL_BROWSER_DEFAULT_WEBGL
+      if ('colorSpace' in options) {
+        check.param(options.colorSpace, colorSpace, 'invalid colorSpace')
+        this.colorSpace = colorSpace[options.colorSpace]
+      }
+
+      // parse out data
+      var data = options.data || null
       if (Array.isArray(data)) {
 
       } else if (isTypedArray(data)) {
 
       } else if (isHTMLElement(data)) {
+
+      } else {
 
       }
 
@@ -3246,7 +3395,7 @@ module.exports = function createTextureSet (gl, extensionState) {
   }
 }
 
-},{"./check":3}],28:[function(_dereq_,module,exports){
+},{"./check":3,"./is-typed-array":21}],29:[function(_dereq_,module,exports){
 module.exports = function wrapUniformState () {
   var uniformState = {}
 
@@ -3263,10 +3412,11 @@ module.exports = function wrapUniformState () {
   }
 }
 
-},{}],29:[function(_dereq_,module,exports){
+},{}],30:[function(_dereq_,module,exports){
 var check = _dereq_('./lib/check')
 var getContext = _dereq_('./lib/context')
 var wrapExtensions = _dereq_('./lib/extension')
+var wrapLimits = _dereq_('./lib/limits')
 var wrapBuffers = _dereq_('./lib/buffer')
 var wrapElements = _dereq_('./lib/elements')
 var wrapTextures = _dereq_('./lib/texture')
@@ -3296,10 +3446,11 @@ module.exports = function wrapREGL () {
   var gl = args.gl
   var options = args.options
 
-  var extensionState = wrapExtensions(gl, options.requiredExtensions || [])
+  var extensionState = wrapExtensions(gl)
+  var limits = wrapLimits(gl, extensionState)
   var bufferState = wrapBuffers(gl)
   var elementState = wrapElements(gl, extensionState, bufferState)
-  var textureState = wrapTextures(gl, extensionState)
+  var textureState = wrapTextures(gl, extensionState, limits)
   var fboState = wrapFBOs(gl, extensionState, textureState)
   var uniformState = wrapUniforms()
   var attributeState = wrapAttributes(gl, extensionState, bufferState)
@@ -3587,6 +3738,9 @@ module.exports = function wrapREGL () {
     frame: frame,
     stats: frameState,
 
+    // System limits
+    limits: limits,
+
     // Read pixels
     read: readPixels,
 
@@ -3595,5 +3749,5 @@ module.exports = function wrapREGL () {
   })
 }
 
-},{"./lib/attribute":1,"./lib/buffer":2,"./lib/check":3,"./lib/clock":4,"./lib/compile":6,"./lib/context":15,"./lib/draw":16,"./lib/dynamic":17,"./lib/elements":18,"./lib/extension":19,"./lib/fbo":20,"./lib/raf":22,"./lib/read":23,"./lib/shader":24,"./lib/state":26,"./lib/texture":27,"./lib/uniform":28}]},{},[29])(29)
+},{"./lib/attribute":1,"./lib/buffer":2,"./lib/check":3,"./lib/clock":4,"./lib/compile":6,"./lib/context":15,"./lib/draw":16,"./lib/dynamic":17,"./lib/elements":18,"./lib/extension":19,"./lib/fbo":20,"./lib/limits":22,"./lib/raf":23,"./lib/read":24,"./lib/shader":25,"./lib/state":27,"./lib/texture":28,"./lib/uniform":29}]},{},[30])(30)
 });
