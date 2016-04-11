@@ -83,21 +83,22 @@ const drawBunnyWithLOD = regl({
 
   // p0 and p1 are the two LOD arrays for this command
   attribute vec3 p0, p1;
-
-  // We use a simplified camera model here without a model matrix
-  uniform mat4 view, projection;
-
-  // This parameter is the fractional level
   uniform float lod;
 
+  uniform mat4 view, projection;
+
+  varying vec3 fragColor;
   void main () {
     vec3 position = mix(p0, p1, lod);
+    fragColor = 0.5 + (0.2 * position);
     gl_Position = projection * view * vec4(position, 1);
   }`,
 
   frag: `
+  precision mediump float;
+  varying vec3 fragColor;
   void main() {
-    gl_FragColor = vec4(1, 1, 1, 1);
+    gl_FragColor = vec4(fragColor, 1);
   }`,
 
   // We take the two LOD attributes directly above and below the current
