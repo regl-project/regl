@@ -315,10 +315,10 @@ module.exports = function wrapREGL () {
       return bufferState.create(options, GL_ARRAY_BUFFER)
     },
     texture: function (options) {
-      return textureState.createTexture(options, GL_TEXTURE_2D)
+      return textureState.create(options, GL_TEXTURE_2D)
     },
     cube: function (options) {
-      return textureState.createTexture(options, GL_TEXTURE_CUBE_MAP)
+      return textureState.create(options, GL_TEXTURE_CUBE_MAP)
     },
     // fbo: create(fboState),
 
