@@ -939,8 +939,119 @@ resource.destroy()
 
 ---------------------------------------
 #### Textures
+There are many ways to upload data to a texture in WebGL.  As with drawing commands, regl consolidates all of these crazy configuration parameters into one function.  Here are some examples of how to create a texture,
 
-**NOT YET IMPLEMENTED**
+```javascript
+// Just reserving space
+var emptyTexture = regl.texture({
+  shape: [16, 16]
+})
+
+// From a flat array
+var typedArrayTexture = regl.texture({
+  width: 2,
+  height: 2,
+  data: [
+    255, 255, 255, 255, 0, 0, 0, 0,
+    255, 0, 255, 255, 0, 0, 255, 255
+  ]
+})
+
+// From a square array
+var nestedArrayTexture = regl.texture([
+  [ [0, 255, 0],  [255, 0, 0] ],
+  [ [0, 0, 255], [255, 255, 255] ]
+])
+
+// From an ndarray-like object
+var ndarrayTexture = regl.texture(require('baboon-image'))
+
+// From an image element
+var image = new Image()
+image.src = 'http://mydomain.com/myimage.png'
+var imageTexture = regl.texture(image)
+
+// From a canvas
+var canvas = document.createElement(canvas)
+var context2D = canvas.getContext('2d')
+var canvasTexture = regl.texture(canvas)
+var otherCanvasTexture = regl.texture(context2D)
+
+// From a video element
+var video = document.querySelector('video')
+var videoTexture = regl.texture(video)
+
+// From the pixels in the current frame buffer
+var copyPixels = regl.texture({
+  x: 5,
+  y: 1,
+  width: 10,
+  height: 10,
+  copy: true
+})
+```
+
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `mag` | Sets magnification filter | `'nearest'` |
+| `min` | Sets minification filter | `'nearest'` |
+| `wrap` | Sets wrap mode | `['repeat', 'repeat']` |
+| `aniso` | Sets number of anisotropic samples | `0` |
+
+
+| Mag filter | Description |
+|------------|-------------|
+| `'nearest'` | `gl.NEAREST` |
+| `'linear'` | `gl.LINEAR` |
+
+| Min filter | Description |
+|------------|-------------|
+| `'nearest'` | `gl.NEAREST` |
+| `'linear'` | `gl.LINEAR` |
+| `'mipmap', 'linear mipmap linear'` | `gl.LINEAR_MIPMAP_LINEAR` |
+| `'nearest mipmap linear'` | `gl.NEAREST_MIPMAP_LINEAR` |
+| `'linear mipmap nearest'` | `gl.LINEAR_MIPMAP_NEAREST` |
+| `'nearest mipmap nearest'` | `gl.NEAREST_MIPMAP_NEAREST` |
+
+| Wrap mode | Description |
+|-----------|-------------|
+| `'repeat'` | `gl.REPEAT` |
+| `'clamp'` | `gl.CLAMP_TO_EDGE` |
+| `'mirror'` | `gl.MIRRORED_REPEAT` |
+
+| Format | Description | Channels | Compressed? | Extension? |
+|--------|-------------|----------|-------------|------------|
+| `'alpha'` | `gl.ALPHA` | 1 | ✖ | |
+| `'luminance'` | `gl.LUMINANCE` | 1 | ✖ | |
+| `'luminance alpha'` | `gl.LUMINANCE_ALPHA` | 2 | ✖ | |
+| `'rgb'` | `gl.RGB` | 3 | ✖ | |
+| `'rgba'` | `gl.RGBA` | 4 | ✖ | |
+| `'rgba4'` | `gl.RGBA4` | 4 | ✖ | |
+| `'rgb5 a1'` | `gl.RGB5_A1` | 4 | ✖ | |
+| `'rgb5'` | `gl.RGB5` | 3 | ✖ | |
+| `'rgba'` | `gl.RGBA` | 4 | ✖ | |
+| `'depth'` | `gl.DEPTH_COMPONENT` | 1 | ✖ | [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) |
+| `'depth stencil'` | `gl.DEPTH_STENCIL` | 2 | ✖ | [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) |
+| `'rgb s3tc dxt1'` | `ext.COMPRESSED_RGB_S3TC_DXT1_EXT` | 3 | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
+| `'rgba s3tc dxt1'` | `ext.COMPRESSED_RGBA_S3TC_DXT1_EXT` | 4 | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
+| `'rgba s3tc dxt3'` | `ext.COMPRESSED_RGBA_S3TC_DXT3_EXT` | 4 | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
+| `'rgba s3tc dxt5'` | `ext.COMPRESSED_RGBA_S3TC_DXT5_EXT` | 4 | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
+| `'rgb arc'` | `ext.COMPRESSED_RGB_ATC_WEBGL` | 3 | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
+| `'rgba arc explicit alpha'` | `ext.COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL` | 4 | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
+| `'rgba arc interpolated alpha'` | `ext.COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL` | 4 | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
+
+**Relevant WebGL APIs**
+
+* [`gl.createTexture`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateTexture.xml)
+*  [`gl.deleteTexture`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteTexture.xml)
+* [`gl.texParameter`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexParameter.xml)
+*  [`gl.pixelStorei`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glPixelStorei.xml)
+* [`gl.texImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexImage2D.xml)
+* [`gl.texImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexImage2D.xml)
+* [`gl.compressedTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexImage2D.xml)
+* [`gl.copyTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexImage2D.xml)
+* [`gl.generateMipmap`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGenerateMipmap.xml)
 
 ---------------------------------------
 #### Render buffers

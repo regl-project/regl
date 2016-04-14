@@ -78,6 +78,34 @@ tape('texture arg parsing', function (t) {
 
   checkProperties(
     regl.texture({
+      mipmap: [
+        [ [1, 2],
+          [3, 4] ],
+        [1]
+      ]
+    }),
+    {
+      params: {
+        width: 2,
+        height: 2,
+        channels: 1,
+        type: gl.UNSIGNED_BYTE
+      },
+      image: {
+        mipmap: [
+          {
+            data: new Uint8Array([1, 2, 3, 4])
+          },
+          {
+            data: new Uint8Array([1])
+          }
+        ]
+      }
+    },
+    'mipmap with square arrays')
+
+  checkProperties(
+    regl.texture({
       width: 5,
       height: 1,
       channels: 3,
@@ -244,6 +272,8 @@ tape('texture arg parsing', function (t) {
   // test half float
 
   // test depth textures
+
+  // test html elements
 
   // test image
 
