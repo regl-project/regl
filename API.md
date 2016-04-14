@@ -1022,13 +1022,13 @@ var copyPixels = regl.texture({
 
 | Format | Description | Channels | Types | Compressed? | Extension? |
 |--------|-------------|----------|-------|------|------------|
-| `'alpha'` | `gl.ALPHA` | 1 | `'uint8','float'` | ✖ | |
-| `'luminance'` | `gl.LUMINANCE` | 1 | `'uint8','float'` | ✖ | |
-| `'luminance alpha'` | `gl.LUMINANCE_ALPHA` | `'uint8','float'` | 2 | ✖ | |
-| `'rgb'` | `gl.RGB` | 3 | `'uint8','float'` | ✖ | |
-| `'rgba'` | `gl.RGBA` | 4  | `'uint8','float'`| ✖ | |
+| `'alpha'` | `gl.ALPHA` | 1 | `'uint8','half float','float'` | ✖ | |
+| `'luminance'` | `gl.LUMINANCE` | 1 | `'uint8','half float','float'` | ✖ | |
+| `'luminance alpha'` | `gl.LUMINANCE_ALPHA` | 2 | `'uint8','half float','float'` | ✖ | |
+| `'rgb'` | `gl.RGB` | 3 | `'uint8','half float','float'` | ✖ | |
+| `'rgba'` | `gl.RGBA` | 4  | `'uint8','half float','float'`| ✖ | |
 | `'rgba4'` | `gl.RGBA4` | 4 | `'rgba4'` | ✖ | |
-| `'rgb5 a1'` | `gl.RGB5_A1` | `'rgb5 a1'` | 4 | ✖ | |
+| `'rgb5 a1'` | `gl.RGB5_A1` | 4 | `'rgb5 a1'` | ✖ | |
 | `'rgb5'` | `gl.RGB5` | 3 | `'rgb5'` | ✖ | |
 | `'depth'` | `gl.DEPTH_COMPONENT` | 1 | `'uint16','uint32'`  | ✖ | [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) |
 | `'depth stencil'` | `gl.DEPTH_STENCIL` | 2 | `'depth stencil'` | ✖ | [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) |
@@ -1039,6 +1039,14 @@ var copyPixels = regl.texture({
 | `'rgb arc'` | `ext.COMPRESSED_RGB_ATC_WEBGL` | 3 | 'uint8' | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
 | `'rgba arc explicit alpha'` | `ext.COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL` | 4 | 'uint8' | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
 | `'rgba arc interpolated alpha'` | `ext.COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL` | 4 | 'uint8' | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
+
+| Type | Description |
+|------|-------------|
+| `'uint8'` | `gl.UNSIGNED_BYTE` |
+| `'uint16'` | `gl.UNSIGNED_SHORT` |
+| `'uint32'` | `gl.UNSIGNED_INT` |
+| `'float'` | `gl.FLOAT` |
+| `'half float'` | `ext.HALF_FLOAT_OES` |
 
 **Relevant WebGL APIs**
 
