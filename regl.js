@@ -22,6 +22,8 @@ var GL_DEPTH_BUFFER_BIT = 256
 var GL_STENCIL_BUFFER_BIT = 1024
 
 var GL_ARRAY_BUFFER = 34962
+var GL_TEXTURE_2D = 0x0DE1
+var GL_TEXTURE_CUBE_MAP = 0x8513
 
 var CONTEXT_LOST_EVENT = 'webglcontextlost'
 var CONTEXT_RESTORED_EVENT = 'webglcontextrestored'
@@ -156,12 +158,6 @@ module.exports = function wrapREGL () {
 
     if (options.onDestroy) {
       options.onDestroy()
-    }
-  }
-
-  function create (cache) {
-    return function (options) {
-      return cache.create(options)
     }
   }
 
@@ -312,12 +308,19 @@ module.exports = function wrapREGL () {
     prop: dynamic.define,
 
     // Object constructors
-    elements: create(elementState),
+    elements: function (options) {
+      return elementState.create(options)
+    },
     buffer: function (options) {
       return bufferState.create(options, GL_ARRAY_BUFFER)
     },
-    texture: create(textureState),
-    fbo: create(fboState),
+    texture: function (options) {
+      return textureState.createTexture(options, GL_TEXTURE_2D)
+    },
+    cube: function (options) {
+      return textureState.createTexture(options, GL_TEXTURE_CUBE_MAP)
+    },
+    // fbo: create(fboState),
 
     // Frame rendering
     frame: frame,
