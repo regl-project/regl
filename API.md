@@ -1020,26 +1020,25 @@ var copyPixels = regl.texture({
 | `'clamp'` | `gl.CLAMP_TO_EDGE` |
 | `'mirror'` | `gl.MIRRORED_REPEAT` |
 
-| Format | Description | Channels | Compressed? | Extension? |
-|--------|-------------|----------|-------------|------------|
-| `'alpha'` | `gl.ALPHA` | 1 | ✖ | |
-| `'luminance'` | `gl.LUMINANCE` | 1 | ✖ | |
-| `'luminance alpha'` | `gl.LUMINANCE_ALPHA` | 2 | ✖ | |
-| `'rgb'` | `gl.RGB` | 3 | ✖ | |
-| `'rgba'` | `gl.RGBA` | 4 | ✖ | |
-| `'rgba4'` | `gl.RGBA4` | 4 | ✖ | |
-| `'rgb5 a1'` | `gl.RGB5_A1` | 4 | ✖ | |
-| `'rgb5'` | `gl.RGB5` | 3 | ✖ | |
-| `'rgba'` | `gl.RGBA` | 4 | ✖ | |
-| `'depth'` | `gl.DEPTH_COMPONENT` | 1 | ✖ | [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) |
-| `'depth stencil'` | `gl.DEPTH_STENCIL` | 2 | ✖ | [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) |
-| `'rgb s3tc dxt1'` | `ext.COMPRESSED_RGB_S3TC_DXT1_EXT` | 3 | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
-| `'rgba s3tc dxt1'` | `ext.COMPRESSED_RGBA_S3TC_DXT1_EXT` | 4 | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
-| `'rgba s3tc dxt3'` | `ext.COMPRESSED_RGBA_S3TC_DXT3_EXT` | 4 | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
-| `'rgba s3tc dxt5'` | `ext.COMPRESSED_RGBA_S3TC_DXT5_EXT` | 4 | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
-| `'rgb arc'` | `ext.COMPRESSED_RGB_ATC_WEBGL` | 3 | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
-| `'rgba arc explicit alpha'` | `ext.COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL` | 4 | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
-| `'rgba arc interpolated alpha'` | `ext.COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL` | 4 | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
+| Format | Description | Channels | Types | Compressed? | Extension? |
+|--------|-------------|----------|-------|------|------------|
+| `'alpha'` | `gl.ALPHA` | 1 | `'uint8','float'` | ✖ | |
+| `'luminance'` | `gl.LUMINANCE` | 1 | `'uint8','float'` | ✖ | |
+| `'luminance alpha'` | `gl.LUMINANCE_ALPHA` | `'uint8','float'` | 2 | ✖ | |
+| `'rgb'` | `gl.RGB` | 3 | `'uint8','float'` | ✖ | |
+| `'rgba'` | `gl.RGBA` | 4  | `'uint8','float'`| ✖ | |
+| `'rgba4'` | `gl.RGBA4` | 4 | `'rgba4'` | ✖ | |
+| `'rgb5 a1'` | `gl.RGB5_A1` | `'rgb5 a1'` | 4 | ✖ | |
+| `'rgb5'` | `gl.RGB5` | 3 | `'rgb5'` | ✖ | |
+| `'depth'` | `gl.DEPTH_COMPONENT` | 1 | `'uint16','uint32'`  | ✖ | [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) |
+| `'depth stencil'` | `gl.DEPTH_STENCIL` | 2 | `'depth stencil'` | ✖ | [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) |
+| `'rgb s3tc dxt1'` | `ext.COMPRESSED_RGB_S3TC_DXT1_EXT` | 3 | 'uint8' | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
+| `'rgba s3tc dxt1'` | `ext.COMPRESSED_RGBA_S3TC_DXT1_EXT` | 4 | 'uint8' | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
+| `'rgba s3tc dxt3'` | `ext.COMPRESSED_RGBA_S3TC_DXT3_EXT` | 4 | 'uint8' | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
+| `'rgba s3tc dxt5'` | `ext.COMPRESSED_RGBA_S3TC_DXT5_EXT` | 4 | 'uint8' | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
+| `'rgb arc'` | `ext.COMPRESSED_RGB_ATC_WEBGL` | 3 | 'uint8' | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
+| `'rgba arc explicit alpha'` | `ext.COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL` | 4 | 'uint8' | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
+| `'rgba arc interpolated alpha'` | `ext.COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL` | 4 | 'uint8' | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
 
 **Relevant WebGL APIs**
 
