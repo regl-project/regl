@@ -942,7 +942,7 @@ resource.destroy()
 There are many ways to upload data to a texture in WebGL.  As with drawing commands, regl consolidates all of these crazy configuration parameters into one function.  Here are some examples of how to create a texture,
 
 ```javascript
-// Just reserving space
+// From size parameters
 var emptyTexture = regl.texture({
   shape: [16, 16]
 })
@@ -965,6 +965,11 @@ var nestedArrayTexture = regl.texture([
 
 // From an ndarray-like object
 var ndarrayTexture = regl.texture(require('baboon-image'))
+
+// Manual mipmap specification
+var mipmapTexture = regl.texture({
+  minFilter: 'mipmap'
+})
 
 // From an image element
 var image = new Image()
@@ -991,14 +996,23 @@ var copyPixels = regl.texture({
 })
 ```
 
-
 | Property | Description | Default |
 |----------|-------------|---------|
+| `width` | Width of texture | `0` |
+| `height` | Height of texture | `0`
 | `mag` | Sets magnification filter | `'nearest'` |
 | `min` | Sets minification filter | `'nearest'` |
-| `wrap` | Sets wrap mode | `['repeat', 'repeat']` |
+| `wrapS` | Sets wrap mode on S axis | `'repeat'` |
+| `wrapT` | Sets wrap mode on T axis | `'repeat'` |
 | `aniso` | Sets number of anisotropic samples | `0` |
-
+| `format` | Texture format | `'rgba'` |
+| `type` | Texture type | `'uint8'` |
+| `data` | Input data (see below) | |
+| `mipmap` | If set, regenerate mipmaps | `false` |
+| `flipY` | Flips textures vertically when uploading | `false` |
+| `unpackAlignment` | Sets unpack alignment per pixel | `1` |
+| `premultiplyAlpha` | Premultiply alpha when unpacking | `false` |
+| `colorspace` | Sets colorspace conversion | `'none'` |
 
 | Mag filter | Description |
 |------------|-------------|
@@ -1030,6 +1044,8 @@ var copyPixels = regl.texture({
 | `'rgba4'` | `gl.RGBA4` | 4 | `'rgba4'` | ✖ | |
 | `'rgb5 a1'` | `gl.RGB5_A1` | 4 | `'rgb5 a1'` | ✖ | |
 | `'rgb5'` | `gl.RGB5` | 3 | `'rgb5'` | ✖ | |
+| `'srgb'` | `ext.SRGB` | 3 | `'uint8','half float','float'` | ✖ | [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) |
+| `'srgba'` | `ext.RGBA` | 4  | `'uint8','half float','float'`| ✖ | [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) |
 | `'depth'` | `gl.DEPTH_COMPONENT` | 1 | `'uint16','uint32'`  | ✖ | [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) |
 | `'depth stencil'` | `gl.DEPTH_STENCIL` | 2 | `'depth stencil'` | ✖ | [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) |
 | `'rgb s3tc dxt1'` | `ext.COMPRESSED_RGB_S3TC_DXT1_EXT` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
@@ -1039,6 +1055,11 @@ var copyPixels = regl.texture({
 | `'rgb arc'` | `ext.COMPRESSED_RGB_ATC_WEBGL` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
 | `'rgba arc explicit alpha'` | `ext.COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
 | `'rgba arc interpolated alpha'` | `ext.COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
+| 'rgb pvrtc 4bppv1' | `ext.COMPRESSED_RGB_PVRTC_4BPPV1_IMG` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
+| 'rgb pvrtc 2bppv1' | `ext.COMPRESSED_RGB_PVRTC_2BPPV1_IMG` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
+| 'rgba pvrtc 4bppv1' | `ext.COMPRESSED_RGBA_PVRTC_4BPPV1_IMG` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
+| 'rgba pvrtc 2bppv1' | `ext.COMPRESSED_RGBA_PVRTC_2BPPV1_IMG` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
+| `'rgb etc1'` | `ext.COMPRESSED_RGB_ETC1_WEBGL` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_etc1](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_etc1/) |
 
 | Type | Description |
 |------|-------------|
@@ -1047,6 +1068,11 @@ var copyPixels = regl.texture({
 | `'uint32'` | `gl.UNSIGNED_INT` |
 | `'float'` | `gl.FLOAT` |
 | `'half float'` | `ext.HALF_FLOAT_OES` |
+
+| Colorspace | Description |
+|------------|-------------|
+| `'none'` | `gl.NONE` |
+| `'browser'` | `gl.BROWSER_DEFAULT_WEBGL` |
 
 **Relevant WebGL APIs**
 
