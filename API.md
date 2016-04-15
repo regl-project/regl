@@ -5,6 +5,7 @@
       * [From a container div](#from-a-container-div)
       * [From a canvas](#from-a-canvas)
       * [From a WebGL context](#from-a-webgl-context)
+  + [Initialization options](#initialization-options)
 * [Commands](#commands)
   + [Dynamic properties](#dynamic-properties)
   + [Executing commands](#executing-commands)
@@ -16,7 +17,7 @@
     - [Uniforms](#uniforms)
     - [Attributes](#attributes)
     - [Drawing](#drawing)
-    - [Framebuffer](#framebuffer)
+    - [Render target](#render-target)
     - [Depth buffer](#depth-buffer)
     - [Blending](#blending)
     - [Stencil](#stencil)
@@ -34,20 +35,20 @@
     - [Updating a resource](#updating-a-resource)
     - [Destroying a resource](#destroying-a-resource)
   + [Types](#types)
-    - [`regl.buffer(options)`](#-reglbuffer-options--)
-    - [`regl.elements(options)`](#-reglelements-options--)
-    - [`regl.texture(options)`](#-regltexture-options--)
-    - [`regl.rbo(options)`](#-reglrbo-options--)
-    - [`regl.fbo(options)`](#-reglfbo-options--)
-* [Other properties](#other-properties)
+    - [Buffers](#buffers)
+    - [Elements](#elements)
+    - [Textures](#textures)
+    - [Render buffers](#render-buffers)
+    - [Frame buffers](#frame-buffers)
+* [Other features](#other-features)
   + [Clear the draw buffer](#clear-the-draw-buffer)
   + [Reading pixels](#reading-pixels)
   + [Per-frame callbacks](#per-frame-callbacks)
   + [Frame stats](#frame-stats)
-  + [WebGL capabilities](#webgl-capabilities)
+  + [Limits](#limits)
   + [Clean up](#clean-up)
   + [Context loss](#context-loss)
-
+  
 ---------------------------------------
 ## Initialization
 
@@ -428,7 +429,7 @@ var command = regl({
 * [`gl.drawElementsInstancedANGLE`](https://www.opengl.org/sdk/docs/man4/html/glDrawElementsInstanced.xhtml)
 
 ---------------------------------------
-#### Framebuffer
+#### Render target
 
 TODO
 
