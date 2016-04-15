@@ -64,7 +64,10 @@ tape('texture arg parsing', function (t) {
         pixels: {
           data: new Uint8Array([ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]),
           type: gl.UNSIGNED_BYTE,
-          unpackAlignment: 1
+          flipY: false,
+          premultiplyAlpha: false,
+          unpackAlignment: 1,
+          colorSpace: gl.BROWSER_DEFAULT_WEBGL
         }
       },
       params: {
@@ -76,33 +79,48 @@ tape('texture arg parsing', function (t) {
     },
     'nested array')
 
+  // test mipmaps
   checkProperties(
     regl.texture({
+      shape: [4, 4, 1],
       mipmap: [
-        [ [1, 2],
-          [3, 4] ],
-        [1]
+        [ 0, 1, 2, 3,
+          4, 5, 6, 7,
+          8, 9, 10, 11,
+          12, 13, 14, 15 ],
+        [ 0, 1,
+          2, 3 ],
+        [ 0 ]
       ]
     }),
     {
       params: {
-        width: 2,
-        height: 2,
+        width: 4,
+        height: 4,
         channels: 1,
+        format: gl.LUMINANCE,
         type: gl.UNSIGNED_BYTE
       },
       image: {
         mipmap: [
           {
-            data: new Uint8Array([1, 2, 3, 4])
+            data: new Uint8Array([
+              0, 1, 2, 3,
+              4, 5, 6, 7,
+              8, 9, 10, 11,
+              12, 13, 14, 15
+            ])
           },
           {
-            data: new Uint8Array([1])
+            data: new Uint8Array([0, 1, 2, 3])
+          },
+          {
+            data: new Uint8Array([0])
           }
         ]
       }
     },
-    'mipmap with square arrays')
+    'simple mipmaps')
 
   checkProperties(
     regl.texture({
@@ -266,63 +284,221 @@ tape('texture arg parsing', function (t) {
     'rgb565')
 
   // test storage flags basic
-
-  // test ndarray-like inputs
-
-  // test half float
-
-  // test depth textures
-
-  // test html elements
-
-  // test image
-
-  // test video
-
-  // test canvas
-
-  // test mipmaps
   checkProperties(
     regl.texture({
-      shape: [4, 4, 1],
+      shape: [2, 2, 1],
+      flipY: true,
+      alignment: 2,
+      premultiplyAlpha: true,
+      colorSpace: 'none',
+      data: [1, 0, 2, 0, 3, 0, 4, 0]
+    }),
+    {
+      params: {
+        width: 2,
+        height: 2,
+        channels: 1
+      },
+      image: {
+        pixels: {
+          flipY: true,
+          unpackAlignment: 2,
+          premultiplyAlpha: true,
+          colorSpace: gl.NONE,
+          data: new Uint8Array([1, 0, 2, 0, 3, 0, 4, 0])
+        }
+      }
+    },
+    'unpack parameters simple')
+
+  checkProperties(
+    regl.texture({
+      shape: [2, 2, 1],
+      flipY: true,
+      alignment: 2,
+      premultiplyAlpha: true,
+      colorSpace: 'browser',
       mipmap: [
-        [ 0, 1, 2, 3,
-          4, 5, 6, 7,
-          8, 9, 10, 11,
-          12, 13, 14, 15 ],
-        [ 0, 1,
-          2, 3 ],
-        [ 0 ]
+        {
+          flipY: false,
+          colorSpace: 'none',
+          data: [1, 0, 2, 0, 3, 0, 4, 0]
+        },
+        {
+          alignment: 1,
+          premultiplyAlpha: false,
+          data: [1]
+        }
       ]
     }),
     {
       params: {
-        width: 4,
-        height: 4,
-        channels: 1,
-        format: gl.LUMINANCE,
-        type: gl.UNSIGNED_BYTE
+        width: 2,
+        height: 2,
+        channels: 1
       },
       image: {
         mipmap: [
           {
-            data: new Uint8Array([
-              0, 1, 2, 3,
-              4, 5, 6, 7,
-              8, 9, 10, 11,
-              12, 13, 14, 15
-            ])
+            flipY: false,
+            unpackAlignment: 2,
+            premultiplyAlpha: true,
+            colorSpace: gl.NONE,
+            data: new Uint8Array([1, 0, 2, 0, 3, 0, 4, 0])
           },
           {
-            data: new Uint8Array([0, 1, 2, 3])
-          },
-          {
-            data: new Uint8Array([0])
+            flipY: true,
+            unpackAlignment: 1,
+            premultiplyAlpha: false,
+            colorSpace: gl.BROWSER_DEFAULT_WEBGL,
+            data: new Uint8Array([1])
           }
         ]
       }
     },
-    'simple mipmaps')
+    'unpack parameters mipmap')
+
+  // test ndarray-like inputs
+  checkProperties(
+    regl.texture({
+      shape: [2, 2, 2],
+      stride: [4, 2, 1],
+      offset: 3,
+      data: [
+        100, 101, 102,
+        1, 2, 3, 4,
+        5, 6, 7, 8
+      ]
+    }),
+    {
+      params: {
+        width: 2,
+        height: 2,
+        channels: 2,
+        type: gl.UNSIGNED_BYTE
+      },
+      image: {
+        pixels: {
+          data: new Uint8Array([
+            1, 2, 5, 6,
+            3, 4, 7, 8
+          ])
+        }
+      }
+    },
+    'ndarray-like input')
+
+  // test half float
+  if (regl.limits.extensions.indexOf('oes_texture_half_float')) {
+    checkProperties(
+      regl.texture({
+        type: 'half float',
+        width: 15,
+        height: 1,
+        channels: 1,
+        data: [
+          1,
+          1.0009765625,
+          -2,
+          65504,
+          Math.pow(2, -14),
+          Math.pow(2, -14) - Math.pow(2, -24),
+          Math.pow(2, -24),
+          0,
+          -0,
+          Infinity,
+          1e7,
+          -Infinity,
+          -1e7,
+          1e-8,
+          -1e-8,
+          1.0 / 3.0,
+          NaN
+        ]
+      }),
+      {
+        params: {
+          type: gl.getExtension('OES_texture_half_float').HALF_FLOAT_OES
+        },
+        image: {
+          pixels: {
+            data: new Uint16Array([
+              '0 01111 0000000000',
+              '0 01111 0000000001',
+              '1 10000 0000000000',
+              '0 11110 1111111111',
+              '0 00001 0000000000',
+              '0 00000 1111111111',
+              '0 00000 0000000001',
+              '0 00000 0000000000',
+              '1 00000 0000000000',
+              '0 11111 0000000000',
+              '0 11111 0000000000',
+              '1 11111 0000000000',
+              '1 11111 0000000000',
+              '0 00000 0000000000',
+              '1 00000 0000000000',
+              '0 01101 0101010101',
+              '1 11111 1111111111'
+            ].map(function (str) {
+              return parseInt(str.replace(/\s/g, ''), 2)
+            }))
+          }
+        }
+      },
+      'half float')
+  }
+
+  // test depth textures
+  if (regl.limits.extensions.indexOf('webgl_depth_texture') >= 0) {
+    // depth
+    checkProperties(
+      regl.texture({
+        shape: [1, 1],
+        format: 'depth',
+        data: new Uint16Array([1])
+      }),
+      {
+        params: {
+          format: gl.DEPTH_COMPONENT,
+          width: 1,
+          height: 1,
+          channels: 1,
+          type: gl.UNSIGNED_SHORT
+        },
+        image: {
+          pixels: {
+            data: new Uint16Array([1])
+          }
+        }
+      },
+      'depth texture')
+
+    // stencil
+    checkProperties(
+      regl.texture({
+        shape: [1, 1],
+        format: 'depth stencil'
+      }),
+      {
+        params: {
+          format: gl.DEPTH_STENCIL,
+          channels: 2,
+          type: gl.getExtension('WEBGL_depth_texture').UNSIGNED_INT_24_8_WEBGL
+        }
+      },
+      'depth stencil')
+  }
+
+  // test html elements
+  if (typeof document !== 'undefined') {
+
+    // test image
+
+    // test video
+
+    // test canvas
+  }
 
   // test cubemap format inference
 

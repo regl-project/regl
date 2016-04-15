@@ -1010,9 +1010,9 @@ var copyPixels = regl.texture({
 | `data` | Input data (see below) | |
 | `mipmap` | If set, regenerate mipmaps | `false` |
 | `flipY` | Flips textures vertically when uploading | `false` |
-| `unpackAlignment` | Sets unpack alignment per pixel | `1` |
+| `alignment` | Sets unpack alignment per pixel | `1` |
 | `premultiplyAlpha` | Premultiply alpha when unpacking | `false` |
-| `colorspace` | Sets colorspace conversion | `'none'` |
+| `colorSpace` | Sets colorspace conversion | `'browser'` |
 
 * `shape` can be used as an array shortcut for `[width, height, channels]` of image
 * `radius` can be specified for square images and sets both `width` and `height`
