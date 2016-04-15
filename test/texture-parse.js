@@ -567,8 +567,77 @@ tape('texture arg parsing', function (t) {
   }
 
   // compressed textures
+  if (regl.limits.extensions.indexOf('webgl_compressed_texture_s3tc') >= 0) {
+    // TODO
+  }
+
+  if (regl.limits.extensions.indexOf('webgl_compressed_texture_atc') >= 0) {
+    // TODO
+  }
+
+  if (regl.limits.extensions.indexOf('webgl_compressed_texture_pvrtc') >= 0) {
+    // TODO
+  }
+
+  if (regl.limits.extensions.indexOf('webgl_compressed_texture_etc1') >= 0) {
+    // TODO
+  }
 
   // cube maps
+
+  checkProperties(
+    regl.cube([
+      [[1]],
+      [[2]],
+      [[3]],
+      [[4]],
+      [[5]],
+      [[6]]
+    ]),
+    {
+      params: {
+        width: 1,
+        height: 1,
+        channels: 1
+      },
+      faces: [
+        {
+          pixels: {
+            data: new Uint8Array([1])
+          }
+        },
+        {
+          pixels: {
+            data: new Uint8Array([2])
+          }
+        },
+        {
+          pixels: {
+            data: new Uint8Array([3])
+          }
+        },
+        {
+          pixels: {
+            data: new Uint8Array([4])
+          }
+        },
+        {
+          pixels: {
+            data: new Uint8Array([5])
+          }
+        },
+        {
+          pixels: {
+            data: new Uint8Array([6])
+          }
+        }
+      ]
+    },
+    'cube simple')
+
+  // cube map pixel storage
+
+  // cube map mipmaps
 
   regl.destroy()
   t.end()
