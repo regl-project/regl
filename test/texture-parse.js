@@ -39,7 +39,7 @@ tape('texture arg parsing', function (t) {
     regl.texture({}),
     {
       params: {
-        anisoSamples: 0,
+        anisoSamples: 1,
         format: gl.RGBA,
         internalformat: gl.RGBA,
         type: gl.UNSIGNED_BYTE,
@@ -125,8 +125,8 @@ tape('texture arg parsing', function (t) {
 
   checkProperties(
     regl.texture({
-      width: 5,
-      height: 1,
+      width: 4,
+      height: 4,
       channels: 3,
       wrap: 'clamp',
       mag: 'linear',
@@ -134,8 +134,8 @@ tape('texture arg parsing', function (t) {
     }),
     {
       params: {
-        width: 5,
-        height: 1,
+        width: 4,
+        height: 4,
         format: gl.RGB,
         wrapS: gl.CLAMP_TO_EDGE,
         wrapT: gl.CLAMP_TO_EDGE,
