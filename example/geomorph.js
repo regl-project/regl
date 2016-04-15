@@ -30,7 +30,7 @@ for (let lod = 1; lod <= NUM_LODS; ++lod) {
   // For the first phase of clustering, we map each vertex into a bin
   const grid = {}
   points.forEach((p, i) => {
-    const binId = p.map(x => Math.floor(x / binSize)).join()
+    const binId = p.map((x) => Math.floor(x / binSize)).join()
     if (binId in grid) {
       grid[binId].push(i)
     } else {
@@ -41,7 +41,7 @@ for (let lod = 1; lod <= NUM_LODS; ++lod) {
   // Next we iterate over the bins and snap each vertex to the centroid of
   // all vertices in its bin
   const snapped = Array(points.length)
-  Object.keys(grid).forEach(binId => {
+  Object.keys(grid).forEach((binId) => {
     const bin = grid[binId]
     const centroid = [0, 0, 0]
     bin.forEach(function (idx) {
@@ -139,7 +139,7 @@ const drawBunnyWithLOD = regl({
   count: ({lod}) => 2 * lodOffsets[Math.floor(lod)]
 })
 
-regl.frame(count => {
+regl.frame((count) => {
   regl.clear({
     depth: 1,
     color: [0, 0, 0, 1]

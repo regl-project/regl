@@ -1,5 +1,7 @@
 require('tap-browser-color')()
 require('../clear')
+require('../buffer-parse')
+require('../element-parse')
 require('../triangle')
 require('../line')
 require('../batch')

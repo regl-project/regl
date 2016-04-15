@@ -566,6 +566,8 @@ tape('texture arg parsing', function (t) {
       'video')
   }
 
+  // compressed textures
+
   // cube maps
 
   regl.destroy()

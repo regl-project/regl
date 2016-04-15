@@ -33,7 +33,7 @@ var cube = regl({
   },
   elements: regl.elements(bunny.cells),
   uniforms: {
-    proj: mat4.perspective([], Math.PI/2, window.innerWidth / window.innerHeight, 0.01, 1000),
+    proj: mat4.perspective([], Math.PI / 2, window.innerWidth / window.innerHeight, 0.01, 1000),
     model: mat4.identity([]),
     view: regl.prop('view')
   }
@@ -48,4 +48,3 @@ regl.frame(function (count) {
     view: camera.view()
   })
 })
-
