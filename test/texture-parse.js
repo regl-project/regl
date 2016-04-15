@@ -11,12 +11,13 @@ tape('texture arg parsing', function (t) {
 
     function diff (actual, expected, prefix) {
       if (typeof expected === 'object') {
-        t.equals(typeof actual, 'object', prefix)
         if (expected instanceof Uint8Array ||
             expected instanceof Uint16Array ||
             expected instanceof Uint32Array ||
             expected instanceof Float32Array) {
           t.same(actual, expected, prefix)
+        } else if (expected.nodeName) {
+          t.equals(actual, expected, prefix)
         } else if (Array.isArray(expected)) {
           for (var i = 0; i < expected.length; ++i) {
             diff(actual[i], expected[i], prefix + '[' + i + ']')
@@ -492,17 +493,78 @@ tape('texture arg parsing', function (t) {
 
   // test html elements
   if (typeof document !== 'undefined') {
+    // test canvas
+    var canvas = document.createElement('canvas')
+    canvas.width = canvas.height = 2
+    var context = canvas.getContext('2d')
+    context.fillStyle = '#000'
+    context.fillRect(0, 0, 2, 2)
+    context.fillStyle = '#fff'
+    context.fillRect(0, 0, 1, 1)
+
+    checkProperties(
+      regl.texture(canvas),
+      {
+        params: {
+          width: 2,
+          height: 2,
+          channels: 4,
+          format: gl.RGBA,
+          type: gl.UNSIGNED_BYTE
+        },
+        image: {
+          pixels: {
+            canvas: canvas
+          }
+        }
+      },
+      'canvas')
+
+    checkProperties(
+      regl.texture(context),
+      {
+        params: {
+          width: 2,
+          height: 2,
+          channels: 4,
+          format: gl.RGBA,
+          type: gl.UNSIGNED_BYTE
+        },
+        image: {
+          pixels: {
+            canvas: canvas
+          }
+        }
+      },
+      'context 2d')
 
     // test image
+    var image = document.createElement('img')
+    image.src = canvas.toDataURL()
+    checkProperties(
+      regl.texture(image),
+      {
+        image: {
+          pixels: {
+            image: image
+          }
+        }
+      },
+      'image')
 
     // test video
-
-    // test canvas
+    var video = document.createElement('video')
+    checkProperties(
+      regl.texture(video),
+      {
+        image: {
+          pixels: {
+            video: video
+          }
+        }
+      },
+      'video')
   }
-
-  // test cubemap format inference
-
-  // storage flags & mipmaps (global flags & per level flags)
 
   // cube maps
 

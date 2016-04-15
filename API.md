@@ -1013,10 +1013,11 @@ var copyPixels = regl.texture({
 | `alignment` | Sets unpack alignment per pixel | `1` |
 | `premultiplyAlpha` | Premultiply alpha when unpacking | `false` |
 | `colorSpace` | Sets colorspace conversion | `'browser'` |
+| `poll` | If set, then each frame check if this texture needs to be reuploaded | Depends on the element type |
 
 * `shape` can be used as an array shortcut for `[width, height, channels]` of image
 * `radius` can be specified for square images and sets both `width` and `height`
-* `wrap` can be used as an array shortcut for `[wrapS, wrapT]`
+* `data` can take one of the following values,
 
 | Data type | Description |
 |-----------|-------------|
@@ -1024,15 +1025,21 @@ var copyPixels = regl.texture({
 | Rectangular array of arrays | Interpreted as 2D array of arrays |
 | Typed array | A binary array of pixel values |
 | `ndarray` | Any object with a `shape, stride, offset, data` |
-| Image | |
-| Video | |
-| Canvas | |
-| Context 2D | |
+| Image | An HTML image element |
+| Video | An HTML video element |
+| Canvas | A canvas element |
+| Context 2D | A canvas 2D context |
+
+* If an image element is specified and not yet loaded, then regl will upload a temporary image and hook a callback on the image
+* If a video element is specified, then regl will reupload a frame of the video element each tick unless `poll` is set to false
+* `mag` sets `gl.MAG_FILTER` for the texture and can have one of the following values
 
 | Mag filter | Description |
 |------------|-------------|
 | `'nearest'` | `gl.NEAREST` |
 | `'linear'` | `gl.LINEAR` |
+
+* `min` sets `gl.MIN_FILTER` for the texture, and can take on one of the following values,
 
 | Min filter | Description |
 |------------|-------------|
@@ -1043,11 +1050,16 @@ var copyPixels = regl.texture({
 | `'linear mipmap nearest'` | `gl.LINEAR_MIPMAP_NEAREST` |
 | `'nearest mipmap nearest'` | `gl.NEAREST_MIPMAP_NEAREST` |
 
+* `wrap` can be used as an array shortcut for `[wrapS, wrapT]`
+* `wrapS` and `wrapT` can have any of the following values,
+
 | Wrap mode | Description |
 |-----------|-------------|
 | `'repeat'` | `gl.REPEAT` |
 | `'clamp'` | `gl.CLAMP_TO_EDGE` |
 | `'mirror'` | `gl.MIRRORED_REPEAT` |
+
+* `format` determines the format of the texture and possibly the type.  Possible values for `format` include,
 
 | Format | Description | Channels | Types | Compressed? | Extension? |
 |--------|-------------|----------|-------|------|------------|
@@ -1076,6 +1088,8 @@ var copyPixels = regl.texture({
 | 'rgba pvrtc 2bppv1' | `ext.COMPRESSED_RGBA_PVRTC_2BPPV1_IMG` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
 | `'rgb etc1'` | `ext.COMPRESSED_RGB_ETC1_WEBGL` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_etc1](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_etc1/) |
 
+* In many cases `type` can be inferred from the format and other information in the texture.  However, in some situations it may still be necessary to set it manually.  In such an event, the following values are possible,
+
 | Type | Description |
 |------|-------------|
 | `'uint8'` | `gl.UNSIGNED_BYTE` |
@@ -1084,10 +1098,14 @@ var copyPixels = regl.texture({
 | `'float'` | `gl.FLOAT` |
 | `'half float'` | `ext.HALF_FLOAT_OES` |
 
-| Colorspace | Description |
+* `colorSpace` sets the WebGL color space flag for pixel unpacking
+
+| Color space | Description |
 |------------|-------------|
 | `'none'` | `gl.NONE` |
 | `'browser'` | `gl.BROWSER_DEFAULT_WEBGL` |
+
+* `unpackAlignment` sets the pixel unpack alignment and must be one of `[1, 2, 4, 8]`
 
 **Relevant WebGL APIs**
 
