@@ -919,15 +919,63 @@ resource.destroy()
 
 ---------------------------------------
 #### Buffers
+Examples,
+
+```javascript
+// Creates an empty length 100 buffer
+var zeroBuffer = regl.buffer(100)
+
+// A buffer with float data
+var floatBuffer = regl.buffer(new Float32Array([1, 2, 3, 4]))
+
+// A streaming buffer of bytes
+var streamBuffer = regl.buffer({
+  usage: 'stream',
+  data: new Uint8Array([2, 4, 6, 8, 10])
+})
+
+// An unpacked buffer of position data
+var positionBuffer = regl.buffer([
+  [1, 2, 3],
+  [4, 5, 6],
+  [2, 1, -2]
+])
+```
 
 | Property | Description | Default |
 |----------|-------------|---------|
-| `data` | | `null` |
-| `length` | | `0` |
-| `usage` | | `'static'` |
+| `data` | The data for the vertex buffer (see below) | `null` |
+| `length` | If `data` is `null` or not present reserves space for the buffer | `0` |
+| `usage` | Sets array buffer usage hint | `'static'` |
+
+| Usage Hint | Description |
+|------------|-------------|
+| `'static'` | `gl.DRAW_STATIC` |
+| `'dynamic'` | `gl.DYNAMIC_DRAW` |
+| `'stream'` | `gl.STREAM_DRAW` |
+
+**Relevant WebGL APIs**
+
+* [`gl.createBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateBuffer.xml)
+* [`gl.deleteBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteBuffer.xml)
+* [`gl.bufferData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferData.xml)
 
 ---------------------------------------
 #### Elements
+Examples,
+
+```javascript
+var triElements = regl.elements([
+  [1, 2, 3],
+  [0, 2, 5]
+])
+
+var starElements = regl.elements({
+  primitive: 'line loop',
+  count: 5,
+  data: new Uint8Array([0, 2, 4, 1, 3])
+})
+```
 
 | Property | Description | Default |
 |----------|-------------|---------|
@@ -936,6 +984,33 @@ resource.destroy()
 | `usage` | | `'static'` |
 | `primitive` | | `'triangles'` |
 | `count` | | `0` |
+
+* `usage` must take on one of the following values
+
+| Usage Hint | Description |
+|------------|-------------|
+| `'static'` | `gl.DRAW_STATIC` |
+| `'dynamic'` | `gl.DYNAMIC_DRAW` |
+| `'stream'` | `gl.STREAM_DRAW` |
+
+* `primitive` can be one of the following primitive types
+
+| Primitive type | Description |
+|-------|-------------|
+| `'points'` | `gl.POINTS` |
+| `'lines'` | gl.LINES` |
+| `'line strip'` | `gl.LINE_STRIP` |
+| `'line loop` | `gl.LINE_LOOP` |
+| `'triangles` | `gl.TRIANGLES` |
+| `'triangle strip'` | `gl.TRIANGLE_STRIP` |
+| `'triangle fan'` | `gl.TRIANGLE_FAN` |
+
+**Relevant WebGL APIs**
+
+* [`gl.createBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateBuffer.xml)
+* [`gl.deleteBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteBuffer.xml)
+* [`gl.bufferData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferData.xml)
+* [`gl.drawElements`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDrawElements.xml)
 
 ---------------------------------------
 #### Textures
