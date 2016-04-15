@@ -1000,19 +1000,34 @@ var copyPixels = regl.texture({
 |----------|-------------|---------|
 | `width` | Width of texture | `0` |
 | `height` | Height of texture | `0`
-| `mag` | Sets magnification filter | `'nearest'` |
-| `min` | Sets minification filter | `'nearest'` |
-| `wrapS` | Sets wrap mode on S axis | `'repeat'` |
-| `wrapT` | Sets wrap mode on T axis | `'repeat'` |
-| `aniso` | Sets number of anisotropic samples | `0` |
-| `format` | Texture format | `'rgba'` |
-| `type` | Texture type | `'uint8'` |
+| `mag` | Sets magnification filter (see table) | `'nearest'` |
+| `min` | Sets minification filter (see table) | `'nearest'` |
+| `wrapS` | Sets wrap mode on S axis (see table) | `'repeat'` |
+| `wrapT` | Sets wrap mode on T axis (see table) | `'repeat'` |
+| `aniso` | Sets number of anisotropic samples, requires [EXT_texture_filter_anisotropic](https://www.khronos.org/registry/webgl/extensions/EXT_texture_filter_anisotropic/) | `0` |
+| `format` | Texture format (see table) | `'rgba'` |
+| `type` | Texture type (see table) | `'uint8'` |
 | `data` | Input data (see below) | |
 | `mipmap` | If set, regenerate mipmaps | `false` |
 | `flipY` | Flips textures vertically when uploading | `false` |
 | `unpackAlignment` | Sets unpack alignment per pixel | `1` |
 | `premultiplyAlpha` | Premultiply alpha when unpacking | `false` |
 | `colorspace` | Sets colorspace conversion | `'none'` |
+
+* `shape` can be used as an array shortcut for `[width, height, channels]` of image
+* `radius` can be specified for square images and sets both `width` and `height`
+* `wrap` can be used as an array shortcut for `[wrapS, wrapT]`
+
+| Data type | Description |
+|-----------|-------------|
+| Array | Interpreted as array of pixel values with type based on the input type |
+| Rectangular array of arrays | Interpreted as 2D array of arrays |
+| Typed array | A binary array of pixel values |
+| `ndarray` | Any object with a `shape, stride, offset, data` |
+| Image | |
+| Video | |
+| Canvas | |
+| Context 2D | |
 
 | Mag filter | Description |
 |------------|-------------|
