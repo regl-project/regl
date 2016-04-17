@@ -37,10 +37,10 @@ module.exports = function wrapREGL () {
   var limits = wrapLimits(gl, extensionState)
   var bufferState = wrapBuffers(gl)
   var elementState = wrapElements(gl, extensionState, bufferState)
-  var textureState = wrapTextures(gl, extensionState, limits)
-  var fboState = wrapFBOs(gl, extensionState, textureState)
   var uniformState = wrapUniforms()
   var attributeState = wrapAttributes(gl, extensionState, bufferState)
+  var textureState = wrapTextures(gl, extensionState, limits, poll)
+  var fboState = wrapFBOs(gl, extensionState, textureState)
   var shaderState = wrapShaders(
     gl,
     extensionState,
@@ -95,6 +95,9 @@ module.exports = function wrapREGL () {
     var now = clock()
     frameState.dt = now - frameState.t
     frameState.t = now
+
+    // update textures
+
     for (var i = 0; i < rafCallbacks.length; ++i) {
       var cb = rafCallbacks[i]
       cb(frameState.count, frameState.t, frameState.dt)
@@ -247,6 +250,10 @@ module.exports = function wrapREGL () {
     }
 
     return REGLCommand
+  }
+
+  function poll () {
+    glState.poll()
   }
 
   // Clears the currently bound frame buffer
