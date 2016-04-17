@@ -212,12 +212,17 @@ module.exports = function wrapAttributeState (gl, extensionState, bufferState) {
 // Array and element buffer creation
 var check = _dereq_('./check')
 var isTypedArray = _dereq_('./is-typed-array')
-var usageTypes = _dereq_('./constants/usage.json')
 var arrayTypes = _dereq_('./constants/arraytypes.json')
 
 var GL_UNSIGNED_BYTE = 5121
 var GL_STATIC_DRAW = 35044
 var GL_FLOAT = 5126
+
+var usageTypes = {
+  'static': 35044,
+  'dynamic': 35048,
+  'stream': 35040
+}
 
 function flatten (data, dimension) {
   var result = new Float32Array(data.length * dimension)
@@ -369,7 +374,7 @@ module.exports = function wrapBufferState (gl) {
   }
 }
 
-},{"./check":3,"./constants/arraytypes.json":7,"./constants/usage.json":14,"./is-typed-array":21}],3:[function(_dereq_,module,exports){
+},{"./check":3,"./constants/arraytypes.json":7,"./is-typed-array":20}],3:[function(_dereq_,module,exports){
 // Error checking and parameter validation
 var isTypedArray = _dereq_('./is-typed-array')
 
@@ -433,7 +438,7 @@ module.exports = Object.assign(check, {
   oneOf: checkOneOf
 })
 
-},{"./is-typed-array":21}],4:[function(_dereq_,module,exports){
+},{"./is-typed-array":20}],4:[function(_dereq_,module,exports){
 /* globals performance */
 module.exports =
   (typeof performance !== 'undefined' && performance.now)
@@ -546,8 +551,8 @@ var createEnvironment = _dereq_('./codegen')
 var primTypes = _dereq_('./constants/primitives.json')
 var glTypes = _dereq_('./constants/dtypes.json')
 var compareFuncs = _dereq_('./constants/comparefuncs.json')
-var blendFuncs = _dereq_('./constants/blendFuncs.json')
-var blendEquations_base = _dereq_('./constants/blendEquations.json')
+var blendFuncs = _dereq_('./constants/blendfuncs.json')
+var blendEquations_base = _dereq_('./constants/blendequations.json')
 var stencilOps = _dereq_('./constants/stencil-ops.json')
 
 var GL_ELEMENT_ARRAY_BUFFER = 34963
@@ -567,6 +572,8 @@ var GL_BOOL_VEC4 = 35673
 var GL_FLOAT_MAT2 = 35674
 var GL_FLOAT_MAT3 = 35675
 var GL_FLOAT_MAT4 = 35676
+var GL_SAMPLER_2D = 35678
+var GL_SAMPLER_CUBE = 35680
 
 var GL_TRIANGLES = 4
 
@@ -707,6 +714,7 @@ module.exports = function reglCompiler (
       primitive: link(drawState.primitive)
     }
     var ELEMENT_STATE = link(elementState.elements)
+    var TEXTURE_UNIFORMS = []
 
     // bind the program
     draw(GL, '.useProgram(', PROGRAM, ');')
@@ -726,7 +734,19 @@ module.exports = function reglCompiler (
       var LOCATION = link(uniform.location)
       var STACK = link(uniformState.uniforms[uniform.name])
       var TOP = STACK + '[' + STACK + '.length-1]'
-      draw(setUniformString(GL, uniform.info.type, LOCATION, TOP))
+      if (uniform.info.type === GL_SAMPLER_2D ||
+          uniform.info.type === GL_SAMPLER_CUBE) {
+        var TEX_VALUE = def(TOP + '._texture')
+        TEXTURE_UNIFORMS.push(TEX_VALUE)
+        draw(setUniformString(GL, GL_INT, LOCATION, TEX_VALUE + '.bind()'))
+      } else {
+        draw(setUniformString(GL, uniform.info.type, LOCATION, TOP))
+      }
+    })
+
+    // unbind textures immediately
+    TEXTURE_UNIFORMS.forEach(function (TEX_VALUE) {
+      draw(TEX_VALUE, '.unbind();')
     })
 
     // Execute draw command
@@ -881,7 +901,14 @@ module.exports = function reglCompiler (
       var LOCATION = link(uniform.location)
       var STACK = link(uniformState.uniforms[uniform.name])
       var TOP = STACK + '[' + STACK + '.length-1]'
-      batch(setUniformString(GL, uniform.info.type, LOCATION, TOP))
+      if (uniform.info.type === GL_SAMPLER_2D ||
+          uniform.info.type === GL_SAMPLER_CUBE) {
+        var TEX_VALUE = def(TOP + '._texture')
+        batch(setUniformString(GL, GL_INT, LOCATION, TEX_VALUE + '.bind()'))
+        exit(TEX_VALUE, '.unbind();')
+      } else {
+        batch(setUniformString(GL, uniform.info.type, LOCATION, TOP))
+      }
     })
 
     // -------------------------------
@@ -1099,6 +1126,7 @@ module.exports = function reglCompiler (
     // set dynamic uniforms
     // -------------------------------
     var programUniforms = program.uniforms
+    var DYNAMIC_TEXTURES = []
     Object.keys(uniforms).forEach(function (uniform) {
       var data = findInfo(programUniforms, uniform)
       if (!data) {
@@ -1107,7 +1135,17 @@ module.exports = function reglCompiler (
       var TYPE = data.info.type
       var LOCATION = link(data.location)
       var VALUE = dyn(uniforms[uniform])
-      batch(setUniformString(GL, TYPE, LOCATION, VALUE))
+      if (uniform.info.type === GL_SAMPLER_2D ||
+          uniform.info.type === GL_SAMPLER_CUBE) {
+        var TEX_VALUE = def(VALUE + '._texture')
+        DYNAMIC_TEXTURES.push(TEX_VALUE)
+        batch(setUniformString(GL, GL_INT, LOCATION, TEX_VALUE + '.bind()'))
+      } else {
+        batch(setUniformString(GL, TYPE, LOCATION, VALUE))
+      }
+    })
+    DYNAMIC_TEXTURES.forEach(function (VALUE) {
+      batch(VALUE, '.unbind();')
     })
 
     // -------------------------------
@@ -1609,7 +1647,9 @@ module.exports = function reglCompiler (
       var STACK = link(uniformState.uniforms[uniform])
       var VALUE
       var value = staticUniforms[uniform]
-      if (Array.isArray(value)) {
+      if (typeof value === 'function' && value._reglType) {
+        VALUE = link(value)
+      } else if (Array.isArray(value)) {
         VALUE = link(value.slice())
       } else {
         VALUE = +value
@@ -2015,7 +2055,7 @@ module.exports = function reglCompiler (
   }
 }
 
-},{"./check":3,"./codegen":5,"./constants/blendEquations.json":8,"./constants/blendFuncs.json":9,"./constants/comparefuncs.json":10,"./constants/dtypes.json":11,"./constants/primitives.json":12,"./constants/stencil-ops.json":13}],7:[function(_dereq_,module,exports){
+},{"./check":3,"./codegen":5,"./constants/blendequations.json":8,"./constants/blendfuncs.json":9,"./constants/comparefuncs.json":10,"./constants/dtypes.json":11,"./constants/primitives.json":12,"./constants/stencil-ops.json":13}],7:[function(_dereq_,module,exports){
 module.exports={
   "[object Int8Array]": 5120
 , "[object Int16Array]": 5122
@@ -2114,9 +2154,6 @@ module.exports={
 }
 
 },{}],14:[function(_dereq_,module,exports){
-module.exports={"static":35044,"dynamic":35048,"stream":35040}
-
-},{}],15:[function(_dereq_,module,exports){
 // Context and canvas creation helper functions
 /*globals HTMLElement,WebGLRenderingContext*/
 
@@ -2233,7 +2270,7 @@ module.exports = function parseArgs (args) {
   }
 }
 
-},{"./check":3}],16:[function(_dereq_,module,exports){
+},{"./check":3}],15:[function(_dereq_,module,exports){
 var GL_TRIANGLES = 4
 
 module.exports = function wrapDrawState (gl) {
@@ -2250,7 +2287,7 @@ module.exports = function wrapDrawState (gl) {
   }
 }
 
-},{}],17:[function(_dereq_,module,exports){
+},{}],16:[function(_dereq_,module,exports){
 var VARIABLE_COUNTER = 0
 
 function DynamicVariable (isFunc, data) {
@@ -2293,7 +2330,7 @@ module.exports = {
   unbox: unbox
 }
 
-},{}],18:[function(_dereq_,module,exports){
+},{}],17:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 var isTypedArray = _dereq_('./is-typed-array')
 var primTypes = _dereq_('./constants/primitives.json')
@@ -2455,11 +2492,7 @@ module.exports = function wrapElementsState (gl, extensionState, bufferState) {
   }
 }
 
-},{"./check":3,"./constants/primitives.json":12,"./is-typed-array":21}],19:[function(_dereq_,module,exports){
-// Extension wrangling
-
-var check = _dereq_('./check')
-
+},{"./check":3,"./constants/primitives.json":12,"./is-typed-array":20}],18:[function(_dereq_,module,exports){
 module.exports = function createExtensionCache (gl) {
   var extensions = {}
 
@@ -2484,7 +2517,12 @@ module.exports = function createExtensionCache (gl) {
       'ext_color_buffer_half_float',
       'ext_srgb',
 
-      'angle_instanced_arrays'
+      'angle_instanced_arrays',
+
+      'webgl_compressed_texture_s3tc',
+      'webgl_compressed_texture_atc',
+      'webgl_compressed_texture_pvrtc',
+      'webgl_compressed_texture_etc1'
     ].forEach(function (ext) {
       try {
         extensions[ext] = gl.getExtension(ext)
@@ -2500,7 +2538,7 @@ module.exports = function createExtensionCache (gl) {
   }
 }
 
-},{"./check":3}],20:[function(_dereq_,module,exports){
+},{}],19:[function(_dereq_,module,exports){
 // Framebuffer object state management
 
 module.exports = function wrapFBOState (
@@ -2525,13 +2563,13 @@ module.exports = function wrapFBOState (
   }
 }
 
-},{}],21:[function(_dereq_,module,exports){
+},{}],20:[function(_dereq_,module,exports){
 var dtypes = _dereq_('./constants/arraytypes.json')
 module.exports = function (x) {
   return Object.prototype.toString.call(x) in dtypes
 }
 
-},{"./constants/arraytypes.json":7}],22:[function(_dereq_,module,exports){
+},{"./constants/arraytypes.json":7}],21:[function(_dereq_,module,exports){
 var GL_SUBPIXEL_BITS = 0x0D50
 var GL_RED_BITS = 0x0D52
 var GL_GREEN_BITS = 0x0D53
@@ -2578,6 +2616,8 @@ module.exports = function (gl, extensions) {
 
     // TODO compressed texture formats
 
+    // TODO max aniso samples
+
     // point and line size ranges
     pointSize: gl.getParameter(GL_ALIASED_POINT_SIZE_RANGE),
     lineWidth: gl.getParameter(GL_ALIASED_LINE_WIDTH_RANGE),
@@ -2585,7 +2625,7 @@ module.exports = function (gl, extensions) {
     combinedTextureUnits: gl.getParameter(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS),
     cubeMapSize: gl.getParameter(GL_MAX_CUBE_MAP_TEXTURE_SIZE),
     renderbufferSize: gl.getParameter(GL_MAX_RENDERBUFFER_SIZE),
-    texUnits: gl.getParameter(GL_MAX_TEXTURE_IMAGE_UNITS),
+    textureUnits: gl.getParameter(GL_MAX_TEXTURE_IMAGE_UNITS),
     textureSize: gl.getParameter(GL_MAX_TEXTURE_SIZE),
     attributes: gl.getParameter(GL_MAX_VERTEX_ATTRIBS),
     vertexUniforms: gl.getParameter(GL_MAX_VERTEX_UNIFORM_VECTORS),
@@ -2601,7 +2641,7 @@ module.exports = function (gl, extensions) {
   }
 }
 
-},{}],23:[function(_dereq_,module,exports){
+},{}],22:[function(_dereq_,module,exports){
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
     typeof cancelAnimationFrame === 'function') {
@@ -2618,7 +2658,7 @@ if (typeof requestAnimationFrame === 'function' &&
   }
 }
 
-},{}],24:[function(_dereq_,module,exports){
+},{}],23:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 var isTypedArray = _dereq_('./is-typed-array')
 
@@ -2672,7 +2712,7 @@ module.exports = function wrapReadPixels (gl, glState) {
   return readPixels
 }
 
-},{"./check":3,"./is-typed-array":21}],25:[function(_dereq_,module,exports){
+},{"./check":3,"./is-typed-array":20}],24:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 
 var DEFAULT_FRAG_SHADER = 'void main(){gl_FragColor=vec4(0,0,0,0);}'
@@ -2885,7 +2925,7 @@ module.exports = function wrapShaderState (
   }
 }
 
-},{"./check":3}],26:[function(_dereq_,module,exports){
+},{"./check":3}],25:[function(_dereq_,module,exports){
 // A stack for managing the state of a scalar/vector parameter
 
 module.exports = function createStack (init, onChange) {
@@ -2943,7 +2983,7 @@ module.exports = function createStack (init, onChange) {
   }
 }
 
-},{}],27:[function(_dereq_,module,exports){
+},{}],26:[function(_dereq_,module,exports){
 var createStack = _dereq_('./stack')
 var createEnvironment = _dereq_('./codegen')
 
@@ -3124,30 +3164,55 @@ module.exports = function wrapContextState (gl, shaderState) {
   }
 }
 
-},{"./codegen":5,"./stack":26}],28:[function(_dereq_,module,exports){
+},{"./codegen":5,"./stack":25}],27:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 var isTypedArray = _dereq_('./is-typed-array')
 
 var GL_TEXTURE_2D = 0x0DE1
-
-var GL_TEXTURE_CUBE_MAP = 0x8513
-var GL_TEXTURE_BINDING_CUBE_MAP = 0x8514
 var GL_TEXTURE_CUBE_MAP_POSITIVE_X = 0x8515
-var GL_TEXTURE_CUBE_MAP_NEGATIVE_X = 0x8516
-var GL_TEXTURE_CUBE_MAP_POSITIVE_Y = 0x8517
-var GL_TEXTURE_CUBE_MAP_NEGATIVE_Y = 0x8518
-var GL_TEXTURE_CUBE_MAP_POSITIVE_Z = 0x8519
-var GL_TEXTURE_CUBE_MAP_NEGATIVE_Z = 0x851A
 
-var GL_DEPTH_COMPONENT = 0x1902
+var GL_RGBA = 0x1908
 var GL_ALPHA = 0x1906
 var GL_RGB = 0x1907
-var GL_RGBA = 0x1908
 var GL_LUMINANCE = 0x1909
 var GL_LUMINANCE_ALPHA = 0x190A
 
+var GL_RGBA4 = 0x8056
+var GL_RGB5_A1 = 0x8057
+var GL_RGB565 = 0x8D62
+
+var GL_UNSIGNED_SHORT_4_4_4_4 = 0x8033
+var GL_UNSIGNED_SHORT_5_5_5_1 = 0x8034
+var GL_UNSIGNED_SHORT_5_6_5 = 0x8363
+var GL_UNSIGNED_INT_24_8_WEBGL = 0x84FA
+
+var GL_DEPTH_COMPONENT = 0x1902
+var GL_DEPTH_STENCIL = 0x84F9
+
+var GL_SRGB_EXT = 0x8C40
+var GL_SRGB_ALPHA_EXT = 0x8C42
+
+var GL_HALF_FLOAT_OES = 0x8D61
+
+var GL_COMPRESSED_RGB_S3TC_DXT1_EXT = 0x83F0
+var GL_COMPRESSED_RGBA_S3TC_DXT1_EXT = 0x83F1
+var GL_COMPRESSED_RGBA_S3TC_DXT3_EXT = 0x83F2
+var GL_COMPRESSED_RGBA_S3TC_DXT5_EXT = 0x83F3
+
+var GL_COMPRESSED_RGB_ATC_WEBGL = 0x8C92
+var GL_COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL = 0x8C93
+var GL_COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL = 0x87EE
+
+var GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG = 0x8C00
+var GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG = 0x8C01
+var GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG = 0x8C02
+var GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG = 0x8C03
+
+var GL_COMPRESSED_RGB_ETC1_WEBGL = 0x8D64
+
 var GL_UNSIGNED_BYTE = 0x1401
 var GL_UNSIGNED_SHORT = 0x1403
+var GL_UNSIGNED_INT = 0x1405
 var GL_FLOAT = 0x1406
 
 var GL_TEXTURE_WRAP_S = 0x2802
@@ -3167,15 +3232,16 @@ var GL_LINEAR_MIPMAP_NEAREST = 0x2701
 var GL_NEAREST_MIPMAP_LINEAR = 0x2702
 var GL_LINEAR_MIPMAP_LINEAR = 0x2703
 
+var GL_TEXTURE_MAX_ANISOTROPY_EXT = 0x84FE
+
+var GL_UNPACK_ALIGNMENT = 0x0CF5
 var GL_UNPACK_FLIP_Y_WEBGL = 0x9240
 var GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL = 0x9241
 var GL_UNPACK_COLORSPACE_CONVERSION_WEBGL = 0x9243
+
 var GL_BROWSER_DEFAULT_WEBGL = 0x9244
 
-var texTargets = {
-  '2d': GL_TEXTURE_2D,
-  'cube': GL_TEXTURE_CUBE_MAP
-}
+var GL_TEXTURE0 = 0x84C0
 
 var wrapModes = {
   'repeat': GL_REPEAT,
@@ -3196,190 +3262,1107 @@ var minFilters = Object.assign({
   'mipmap': GL_LINEAR_MIPMAP_LINEAR
 }, magFilters)
 
-var colorSpace = {
-  'none': 0,
-  'default': GL_BROWSER_DEFAULT_WEBGL
+function isPow2 (v) {
+  return !(v & (v - 1)) && (!!v)
 }
 
-module.exports = function createTextureSet (gl, extensionState, limits) {
+function isNumericArray (arr) {
+  return (
+    Array.isArray(arr) &&
+    (arr.length === 0 ||
+    typeof arr[0] === 'number'))
+}
+
+function isRectArray (arr) {
+  if (!Array.isArray(arr)) {
+    return false
+  }
+
+  var width = arr.length
+  if (width === 0 || !Array.isArray(arr[0])) {
+    return false
+  }
+
+  var height = arr[0].length
+  for (var i = 1; i < width; ++i) {
+    if (!Array.isArray(arr[i]) || arr[i].length !== height) {
+      return false
+    }
+  }
+  return true
+}
+
+function classString (x) {
+  return Object.prototype.toString.call(x)
+}
+
+function isCanvasElement (object) {
+  return classString(object) === '[object HTMLCanvasElement]'
+}
+
+function isContext2D (object) {
+  return classString(object) === '[object CanvasRenderingContext2D]'
+}
+
+function isImageElement (object) {
+  return classString(object) === '[object HTMLImageElement]'
+}
+
+function isVideoElement (object) {
+  return classString(object) === '[object HTMLVideoElement]'
+}
+
+function isPixelData (object) {
+  return (
+    isTypedArray(object) ||
+    isNumericArray(object) ||
+    isCanvasElement(object) ||
+    isContext2D(object) ||
+    isImageElement(object) ||
+    isVideoElement(object) ||
+    isRectArray(object))
+}
+
+// This converts an array of numbers into 16 bit half precision floats
+function convertToHalfFloat (array) {
+  var floats = new Float32Array(array)
+  var uints = new Uint32Array(floats.buffer)
+  var ushorts = new Uint16Array(array.length)
+
+  for (var i = 0; i < array.length; ++i) {
+    if (isNaN(array[i])) {
+      ushorts[i] = 0xffff
+    } else if (array[i] === Infinity) {
+      ushorts[i] = 0x7c00
+    } else if (array[i] === -Infinity) {
+      ushorts[i] = 0xfc00
+    } else {
+      var x = uints[i]
+
+      var sgn = (x >>> 31) << 15
+      var exp = ((x << 1) >>> 24) - 127
+      var frac = (x >> 13) & ((1 << 10) - 1)
+
+      if (exp < -24) {
+        // round non-representable denormals to 0
+        ushorts[i] = sgn
+      } else if (exp < -14) {
+        // handle denormals
+        var s = -14 - exp
+        ushorts[i] = sgn + ((frac + (1 << 10)) >> s)
+      } else if (exp > 15) {
+        // round overflow to +/- Infinity
+        ushorts[i] = sgn + 0x7c00
+      } else {
+        // otherwise convert directly
+        ushorts[i] = sgn + ((exp + 15) << 10) + frac
+      }
+    }
+  }
+
+  return ushorts
+}
+
+// Transpose an array of pixels
+function transposePixels (data, nx, ny, nc, sx, sy, sc, off) {
+  var result = new data.constructor(nx * ny * nc)
+  var ptr = 0
+  for (var i = 0; i < ny; ++i) {
+    for (var j = 0; j < nx; ++j) {
+      for (var k = 0; k < nc; ++k) {
+        result[ptr++] = data[sy * i + sx * j + sc * k + off]
+      }
+    }
+  }
+  return result
+}
+
+module.exports = function createTextureSet (gl, extensionState, limits, reglPoll) {
   var extensions = extensionState.extensions
 
+  var colorSpace = {
+    'none': 0,
+    'browser': GL_BROWSER_DEFAULT_WEBGL
+  }
+
+  var textureTypes = {
+    'uint8': GL_UNSIGNED_BYTE,
+    'rgba4': GL_UNSIGNED_SHORT_4_4_4_4,
+    'rgb565': GL_UNSIGNED_SHORT_5_6_5,
+    'rgb5 a1': GL_UNSIGNED_SHORT_5_5_5_1
+  }
+
+  var textureFormats = {
+    'alpha': GL_ALPHA,
+    'luminance': GL_LUMINANCE,
+    'luminance alpha': GL_LUMINANCE_ALPHA,
+    'rgb': GL_RGB,
+    'rgba': GL_RGBA,
+    'rgba4': GL_RGBA4,
+    'rgb5 a1': GL_RGB5_A1,
+    'rgb565': GL_RGB565
+  }
+
+  var compressedTextureFormats = {}
+
+  if (extensions.ext_srgb) {
+    textureFormats.srgb = GL_SRGB_EXT
+    textureFormats.srgba = GL_SRGB_ALPHA_EXT
+  }
+
+  if (extensions.oes_texture_float) {
+    textureTypes.float = GL_FLOAT
+  }
+
+  if (extensions.oes_texture_half_float) {
+    textureTypes['half float'] = GL_HALF_FLOAT_OES
+  }
+
+  if (extensions.webgl_depth_texture) {
+    Object.assign(textureFormats, {
+      'depth': GL_DEPTH_COMPONENT,
+      'depth stencil': GL_DEPTH_STENCIL
+    })
+
+    Object.assign(textureTypes, {
+      'uint16': GL_UNSIGNED_SHORT,
+      'uint32': GL_UNSIGNED_INT,
+      'depth stencil': GL_UNSIGNED_INT_24_8_WEBGL
+    })
+  }
+
+  if (extensions.webgl_compressed_texture_s3tc) {
+    Object.assign(compressedTextureFormats, {
+      'rgb s3tc dxt1': GL_COMPRESSED_RGB_S3TC_DXT1_EXT,
+      'rgba s3tc dxt1': GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
+      'rgba s3tc dxt3': GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,
+      'rgba s3tc dxt5': GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+    })
+  }
+
+  if (extensions.webgl_compressed_texture_atc) {
+    Object.assign(compressedTextureFormats, {
+      'rgb arc': GL_COMPRESSED_RGB_ATC_WEBGL,
+      'rgba atc explicit alpha': GL_COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL,
+      'rgba atc interpolated alpha': GL_COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL
+    })
+  }
+
+  if (extensions.webgl_compressed_texture_pvrtc) {
+    Object.assign(compressedTextureFormats, {
+      'rgb pvrtc 4bppv1': GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG,
+      'rgb pvrtc 2bppv1': GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG,
+      'rgba pvrtc 4bppv1': GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG,
+      'rgba pvrtc 2bppv1': GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG
+    })
+  }
+
+  if (extensions.webgl_compressed_texture_etc1) {
+    compressedTextureFormats['rgb etc1'] = GL_COMPRESSED_RGB_ETC1_WEBGL
+  }
+
+  Object.assign(textureFormats, compressedTextureFormats)
+
+  var supportedFormats = Object.keys(textureFormats)
+  limits.textureFormats = supportedFormats
+
+  var colorFormats = supportedFormats.reduce(function (color, key) {
+    var glenum = textureFormats[key]
+    if (glenum === GL_LUMINANCE ||
+        glenum === GL_ALPHA ||
+        glenum === GL_LUMINANCE ||
+        glenum === GL_LUMINANCE_ALPHA ||
+        glenum === GL_DEPTH_COMPONENT ||
+        glenum === GL_DEPTH_STENCIL) {
+      color[glenum] = glenum
+    } else if (glenum === GL_RGB5_A1 || key.indexOf('rgba') >= 0) {
+      color[glenum] = GL_RGBA
+    } else {
+      color[glenum] = GL_RGB
+    }
+    return color
+  }, {})
+
+  var compressedFormatEnums = Object.keys(compressedTextureFormats).map(
+    function (key) {
+      return compressedTextureFormats[key]
+    })
+
+  function parsePixelStorage (options, defaults, result) {
+    if (defaults) {
+      result.flipY = defaults.flipY
+      result.premultiplyAlpha = defaults.premultiplyAlpha
+      result.unpackAlignment = defaults.unpackAlignment
+      result.colorSpace = defaults.colorSpace
+    }
+
+    if ('premultiplyAlpha' in options) {
+      check.type(options.premultiplyAlpha, 'boolean', 'invalid premultiplyAlpha')
+      result.premultiplyAlpha = options.premultiplyAlpha
+    }
+
+    if ('flipY' in options) {
+      check.type(options.flipY, 'boolean', 'invalid texture flip')
+      result.flipY = options.flipY
+    }
+
+    if ('alignment' in options) {
+      check.oneOf(
+        options.alignment,
+        [1, 2, 4, 8],
+        'invalid texture unpack alignment')
+      result.unpackAlignment = options.alignment
+    }
+
+    if ('colorSpace' in options) {
+      check.parameter(options.colorSpace, colorSpace, 'invalid colorSpace')
+      result.colorSpace = colorSpace[options.colorSpace]
+    }
+
+    return result
+  }
+
+  function parseMipImage (image, texParams) {
+    var defaults = texParams
+
+    if (image) {
+      if (Array.isArray(image.mipmap)) {
+        defaults = parseTexParams(image, texParams)
+        return {
+          mipmap: image.mipmap.map(function (level, i) {
+            return parsePixelData(
+              level,
+              texParams.width >> i,
+              texParams.height >> i,
+              i)
+          })
+        }
+      } else {
+        return {
+          pixels: parsePixelData(image, texParams.width, texParams.height, 0)
+        }
+      }
+    } else {
+      return {}
+    }
+
+    function parsePixelData (pixelData, width, height, miplevel) {
+      var result = parsePixelStorage(pixelData, defaults, {
+        width: 0,
+        height: 0,
+        channels: defaults.channels,
+        format: defaults.format,
+        internalformat: 0,
+        type: defaults.type,
+        copy: false,
+        x: 0,
+        y: 0,
+        image: null,
+        canvas: null,
+        video: null,
+        data: null,
+        array: null,
+        needsConvert: false,
+        needsTranspose: false,
+        strideX: 0,
+        strideY: 0,
+        strideC: 0,
+        offset: 0,
+        flipY: defaults.flipY,
+        premultiplyAlpha: defaults.premultiplyAlpha,
+        unpackAlignment: defaults.unpackAlignment,
+        colorSpace: defaults.colorSpace
+      })
+
+      if (!pixelData) {
+        return result
+      }
+
+      check.type(pixelData, 'object', 'invalid pixel data')
+
+      function setObjectProps () {
+        if ('shape' in pixelData) {
+          var shape = pixelData.shape
+          check(
+            Array.isArray(shape) && shape.length >= 2,
+            'image shape must be an array')
+          result.width = shape[0] | 0
+          result.height = shape[1] | 0
+          if (shape.length === 3) {
+            result.channels = shape[2] | 0
+          }
+        } else {
+          if ('width' in pixelData) {
+            result.width = pixelData.width
+          } else {
+            result.width = width
+          }
+          if ('height' in pixelData) {
+            result.height = pixelData.height
+          } else {
+            result.height = height
+          }
+          if ('channels' in pixelData) {
+            result.channels = pixelData.channels
+          }
+        }
+
+        if ('stride' in pixelData) {
+          var stride = pixelData.stride
+          check(Array.isArray(stride) && stride.length >= 2,
+            'invalid stride vector')
+          result.strideX = stride[0]
+          result.strideY = stride[1]
+          if (stride.length === 3) {
+            result.strideC = stride[2]
+          } else {
+            result.strideC = 1
+          }
+          result.needsTranspose = true
+        } else {
+          result.strideC = 1
+          result.strideX = result.strideC * result.channels
+          result.strideY = result.strideX * result.width
+        }
+
+        if ('offset' in pixelData) {
+          result.offset = pixelData.offset | 0
+          result.needsTranspose = true
+        }
+
+        if ('format' in pixelData) {
+          var format = pixelData.format
+          check.parameter(format, textureFormats)
+          result.format = textureFormats[format]
+          if (format in textureTypes) {
+            result.type = textureTypes[format]
+          }
+        }
+
+        if ('type' in pixelData) {
+          var type = pixelData.type
+          check.parameter(type, textureTypes)
+          result.type = textureTypes[type]
+        } else if (result.data instanceof Float32Array) {
+          result.type = GL_FLOAT
+        }
+      }
+
+      function setDefaultProps () {
+        result.type = GL_UNSIGNED_BYTE
+        result.format = GL_RGBA
+        result.channels = 4
+      }
+
+      var data = pixelData
+      if (isPixelData(pixelData.data)) {
+        data = pixelData.data
+      }
+
+      if (isTypedArray(data)) {
+        result.data = data
+        setObjectProps()
+      } else if (isNumericArray(data)) {
+        result.array = data
+        result.needsConvert = true
+        setObjectProps()
+      } else if (isCanvasElement(data) || isContext2D(data)) {
+        if (isCanvasElement(data)) {
+          result.canvas = data
+        } else {
+          result.canvas = data.canvas
+        }
+        result.width = result.width || result.canvas.width
+        result.height = result.height || result.canvas.height
+        setDefaultProps()
+      } else if (isImageElement(data)) {
+        result.image = data
+        result.width = result.width || data.naturalWidth
+        result.height = result.height || data.naturalHeight
+        setDefaultProps()
+      } else if (isVideoElement(data)) {
+        result.video = data
+        result.width = result.width || data.width
+        result.height = result.height || data.height
+        setDefaultProps()
+      } else if (isRectArray(data)) {
+        var w = data.length
+        var h = data[0].length
+        var c = 1
+        var pixels, i, j, k, p
+        if (Array.isArray(data[0][0])) {
+          c = data[0][0].length
+          check(c >= 0 && c <= 4, 'invalid number of channels for image data')
+          pixels = Array(w * h * c)
+          p = 0
+          for (i = 0; i < w; ++i) {
+            for (j = 0; j < h; ++j) {
+              for (k = 0; k < c; ++k) {
+                pixels[p++] = data[i][j][k]
+              }
+            }
+          }
+        } else {
+          pixels = Array(w * h)
+          p = 0
+          for (i = 0; i < w; ++i) {
+            for (j = 0; j < h; ++j) {
+              pixels[p++] = data[i][j]
+            }
+          }
+        }
+        result.width = w
+        result.height = h
+        result.channels = c
+        result.array = pixels
+        result.needsConvert = true
+      } else if (pixelData.copy) {
+        result.copy = true
+        result.x = pixelData.x | 0
+        result.y = pixelData.y | 0
+        result.width = pixelData.width | 0
+        result.height = pixelData.height | 0
+        setDefaultProps()
+      }
+
+      // Fix up missing type info for typed arrays
+      if (!result.type && result.data) {
+        if (result.format === GL_DEPTH_COMPONENT) {
+          if (result.data instanceof Uint16Array) {
+            result.type = GL_UNSIGNED_SHORT
+          } else if (result.data instanceof Uint32Array) {
+            result.type = GL_UNSIGNED_INT
+          }
+        } else if (result.data instanceof Float32Array) {
+          result.type = GL_FLOAT
+        }
+      }
+
+      // reconcile with texParams
+      function reconcile (param) {
+        if (result[param]) {
+          texParams[param] = texParams[param] || result[param]
+          check(result[param] === texParams[param], 'incompatible image param: ' + param)
+        } else {
+          result[param] = texParams[param]
+        }
+      }
+      reconcile('type')
+      reconcile('format')
+      reconcile('channels')
+
+      texParams.width = texParams.width || (result.width << miplevel)
+      texParams.height = texParams.height || (result.height << miplevel)
+
+      return result
+    }
+  }
+
+  function fillMissingImageParams (image, texParams) {
+    if (image.mipmap) {
+      for (var i = 0; i < image.mipmap.length; ++i) {
+        fillMissingPixelParams(
+          image.mipmap[i],
+          texParams.width >>> i,
+          texParams.height >>> i)
+      }
+    } else if (image.pixels) {
+      fillMissingPixelParams(image.pixels, texParams.width, texParams.height)
+    }
+
+    function fillMissingPixelParams (pixels, w, h) {
+      function checkProp (prop, expected) {
+        if (pixels[prop]) {
+          check(pixels[prop] === expected, 'invalid ' + prop)
+        }
+        pixels[prop] = expected
+      }
+
+      checkProp('width', w)
+      checkProp('height', h)
+      checkProp('channels', texParams.channels)
+      checkProp('format', texParams.internalformat)
+      checkProp('type', texParams.type)
+
+      pixels.format = texParams.format
+      pixels.internalformat = texParams.internalformat
+
+      if (pixels.needsConvert) {
+        switch (pixels.type) {
+          case GL_UNSIGNED_BYTE:
+            pixels.data = new Uint8Array(pixels.array)
+            break
+          case GL_UNSIGNED_SHORT:
+            pixels.data = new Uint16Array(pixels.array)
+            break
+          case GL_UNSIGNED_INT:
+            pixels.data = new Uint32Array(pixels.array)
+            break
+          case GL_FLOAT:
+            pixels.data = new Float32Array(pixels.array)
+            break
+          case GL_HALF_FLOAT_OES:
+            pixels.data = convertToHalfFloat(pixels.array)
+            break
+
+          case GL_UNSIGNED_SHORT_5_6_5:
+          case GL_UNSIGNED_SHORT_5_5_5_1:
+          case GL_UNSIGNED_SHORT_4_4_4_4:
+          case GL_UNSIGNED_INT_24_8_WEBGL:
+            check.raise('unsupported format for automatic conversion')
+            break
+
+          default:
+            check.raise('unsupported type conversion')
+        }
+        pixels.needsConvert = false
+        pixels.array = null
+      }
+
+      if (pixels.needsTranspose) {
+        pixels.data = transposePixels(
+          pixels.data,
+          pixels.width,
+          pixels.height,
+          pixels.channels,
+          pixels.strideX,
+          pixels.strideY,
+          pixels.strideC,
+          pixels.offset)
+      }
+
+      if (pixels.data) {
+        switch (pixels.type) {
+          case GL_UNSIGNED_BYTE:
+            check(pixels.data instanceof Uint8Array ||
+                  pixels.data instanceof Uint8ClampedArray,
+                  'incompatible pixel type')
+            break
+          case GL_UNSIGNED_SHORT_5_6_5:
+          case GL_UNSIGNED_SHORT_5_5_5_1:
+          case GL_UNSIGNED_SHORT_4_4_4_4:
+          case GL_UNSIGNED_SHORT:
+          case GL_HALF_FLOAT_OES:
+            check(pixels.data instanceof Uint16Array,
+                  'incompatible pixel type')
+            break
+          case GL_UNSIGNED_INT:
+            check(pixels.data instanceof Uint32Array,
+                  'incompatible pixel type')
+            break
+
+          case GL_FLOAT:
+            check(pixels.data instanceof Float32Array,
+                  'incompatible pixel type')
+            break
+
+          default:
+            check.raise('bad or missing pixel type')
+        }
+      }
+    }
+  }
+
+  function parseTexParams (options, defaults) {
+    var result = {
+      width: 0,
+      height: 0,
+      channels: 0,
+      format: 0,
+      type: 0,
+      wrapS: GL_REPEAT,
+      wrapT: GL_REPEAT,
+      minFilter: GL_NEAREST,
+      magFilter: GL_NEAREST,
+      genMipmaps: false,
+      anisoSamples: 1,
+      flipY: false,
+      premultiplyAlpha: false,
+      unpackAlignment: 1,
+      colorSpace: GL_BROWSER_DEFAULT_WEBGL
+    }
+
+    if (defaults) {
+      Object.assign(result, defaults)
+      parsePixelStorage(options, defaults, result)
+    } else {
+      parsePixelStorage(options, null, result)
+    }
+
+    if ('shape' in options) {
+      check(Array.isArray(options.shape) && options.shape.length >= 2,
+        'shape must be an array')
+      result.width = options.shape[0] | 0
+      result.height = options.shape[1] | 0
+      if (options.shape.length === 3) {
+        result.channels = options.shape[2] | 0
+      }
+    } else {
+      if ('radius' in options) {
+        result.width = result.height = options.radius | 0
+      }
+      if ('width' in options) {
+        result.width = options.width | 0
+      }
+      if ('height' in options) {
+        result.height = options.height | 0
+      }
+      if ('channels' in options) {
+        result.channels = options.channels | 0
+      }
+    }
+
+    if ('min' in options) {
+      check.parameter(options.min, minFilters)
+      result.minFilter = minFilters[options.min]
+    }
+
+    if ('mag' in options) {
+      check.parameter(options.mag, magFilters)
+      result.magFilter = magFilters[options.mag]
+    }
+
+    if ('wrap' in options) {
+      var wrap = options.wrap
+      if (typeof wrap === 'string') {
+        check.parameter(wrap, wrapModes)
+        result.wrapS = result.wrapT = wrapModes[wrap]
+      } else if (Array.isArray(wrap)) {
+        check.parameter(wrap[0], wrapModes)
+        check.parameter(wrap[1], wrapModes)
+        result.wrapS = wrapModes[wrap[0]]
+        result.wrapT = wrapModes[wrap[1]]
+      }
+    } else {
+      if ('wrapS' in options) {
+        check.parameter(options.wrapS, wrapModes)
+        result.wrapS = wrapModes[options.wrapS]
+      }
+      if ('wrapT' in options) {
+        check.parameter(options.wrapT, wrapModes)
+        result.wrapT = wrapModes[options.wrapT]
+      }
+    }
+
+    if ('aniso' in options) {
+      check.type(
+        options.aniso,
+        'number',
+        'number of aniso samples must be a number')
+      result.aniso = +options.aniso
+    }
+
+    if ('mipmap' in options) {
+      result.genMipmaps = !!options.mipmap
+    } else if ([
+      GL_NEAREST_MIPMAP_NEAREST,
+      GL_NEAREST_MIPMAP_LINEAR,
+      GL_LINEAR_MIPMAP_NEAREST,
+      GL_LINEAR_MIPMAP_LINEAR
+    ].indexOf(result.minFilter) >= 0) {
+      result.genMipmaps = true
+    }
+
+    if ('format' in options) {
+      check.parameter(options.format, textureFormats, 'invalid texture format')
+      result.format = textureFormats[options.format]
+      if (options.format in textureTypes) {
+        result.type = textureTypes[options.format]
+      }
+    }
+
+    if ('type' in options) {
+      check.parameter(options.type, textureTypes, 'invalid texture type')
+      result.type = textureTypes[options.type]
+    }
+
+    return result
+  }
+
+  function fillMissingTexParams (params) {
+    // Infer default format
+    if (!params.format) {
+      params.channels = params.channels || 4
+      switch (params.channels) {
+        case 1:
+          params.format = GL_LUMINANCE
+          break
+        case 2:
+          params.format = GL_LUMINANCE_ALPHA
+          break
+        case 3:
+          params.format = GL_RGB
+          break
+        default:
+          params.format = GL_RGBA
+          break
+      }
+    }
+
+    var format = params.format
+    if (format === GL_DEPTH_COMPONENT || format === GL_DEPTH_STENCIL) {
+      check(
+        extensions.webgl_depth_texture,
+        'depth/stencil texture not supported')
+      if (format === GL_DEPTH_COMPONENT) {
+        check(
+          params.type === GL_UNSIGNED_SHORT || GL_UNSIGNED_INT,
+          'depth texture type must be uint16 or uint32')
+      }
+      if (format === GL_DEPTH_STENCIL) {
+        check(
+          params.type === GL_UNSIGNED_INT_24_8_WEBGL,
+          'depth stencil texture format must match type')
+      }
+    }
+
+    // Save format to internal format
+    params.internalformat = format
+
+    // Set color format
+    params.format = colorFormats[format]
+    if (!params.channels) {
+      switch (params.format) {
+        case GL_LUMINANCE:
+        case GL_ALPHA:
+        case GL_DEPTH_COMPONENT:
+          params.channels = 1
+          break
+
+        case GL_DEPTH_STENCIL:
+        case GL_LUMINANCE_ALPHA:
+          params.channels = 2
+          break
+
+        case GL_RGB:
+          params.channels = 3
+          break
+
+        default:
+          params.channels = 4
+      }
+    }
+
+    // Check that texture type is supported
+    params.type = params.type || GL_UNSIGNED_BYTE
+    if (params.type === GL_FLOAT) {
+      check(
+        extensions.oes_texture_float,
+        'float texture not supported')
+    } else if (params.type === GL_HALF_FLOAT_OES) {
+      check(
+        extensions.oes_texture_half_float,
+        'half float texture not supported')
+    }
+
+    // Check float_linear and half_float_linear extensions
+    if ((params.type === GL_FLOAT && !extensions.oes_texture_float_linear) ||
+        (params.type === GL_HALF_FLOAT_OES &&
+          !extensions.oes_texture_half_float_linear)) {
+      params.magFilter = GL_NEAREST
+      if (params.minFilter === GL_LINEAR) {
+        params.minFilter = GL_NEAREST
+      } else if (params.minFilter === GL_LINEAR_MIPMAP_LINEAR ||
+                 params.minFilter === GL_LINEAR_MIPMAP_NEAREST ||
+                 params.minFilter === GL_NEAREST_MIPMAP_LINEAR) {
+        params.minFilter = GL_NEAREST_MIPMAP_NEAREST
+      }
+    }
+
+    // Set default values for width and height
+    params.width = params.width || 0
+    params.height = params.height || 0
+
+    if (params.genMipmaps) {
+      check(params.width === params.height && isPow2(params.width),
+        'must be a square power of 2 to support mipmaps')
+    }
+
+    // Set compressed flag
+    params.compressed =
+      compressedFormatEnums.indexOf(params.internalformat) >= 0
+  }
+
+  function parseTexture2D (object) {
+    // first pass: initially parse all data
+    var params = parseTexParams(object)
+    var image = parseMipImage(object, params)
+
+    // second pass: fill in defaults based on inferred parameters
+    fillMissingTexParams(params)
+    fillMissingImageParams(image, params)
+
+    return {
+      params: params,
+      image: image
+    }
+  }
+
+  function parseCube (object) {
+    var faces
+    if (Array.isArray(object)) {
+      faces = object
+    } else if ('faces' in object) {
+      faces = object.faces
+    } else {
+      faces = [{}, {}, {}, {}, {}, {}]
+    }
+
+    check(Array.isArray(faces) && faces.length === 6,
+      'invalid faces for cubemap')
+
+    var params = parseTexParams(object)
+    var parsedFaces = faces.map(function (face) {
+      return parseMipImage(face, params)
+    })
+
+    fillMissingTexParams(params)
+    for (var i = 0; i < 6; ++i) {
+      fillMissingImageParams(parsedFaces[i], params)
+    }
+
+    return {
+      params: params,
+      faces: parsedFaces
+    }
+  }
+
+  var activeTexture = 0
   var textureCount = 0
   var textureSet = {}
+  var numTexUnits = limits.textureUnits
+  var textureUnits = Array(numTexUnits).map(function () {
+    return null
+  })
 
-  function REGLTexture () {
+  function REGLTexture (target, texture) {
     this.id = textureCount++
+    this.target = target
+    this.texture = texture
 
-    // Texture target
-    this.target = GL_TEXTURE_2D
+    this.unit = -1
+    this.bindCount = 0
 
-    // Texture handle
-    this.texture = null
-
-    // Texture format
-    this.format = GL_RGBA
-    this.type = GL_UNSIGNED_BYTE
-
-    // Data
-    this.mipLevels = []
-
-    // Shape
+    // shape
     this.width = 0
     this.height = 0
 
-    // Parameters
-    this.minFilter = GL_NEAREST
-    this.magFilter = GL_NEAREST
-    this.wrapS = GL_REPEAT
-    this.wrapT = GL_REPEAT
-    this.mipSamples = 0
+    // parsed user inputs
+    this.data = null
+  }
 
-    // Storage flags
-    this.flipY = false
-    this.premultiplyAlpha = false
-    this.unpackAlignment = 1
-    this.colorSpace = GL_BROWSER_DEFAULT_WEBGL
+  function setTexPixels (target, image, lod) {
+    gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, image.flipY)
+    gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, image.premultiplyAlpha)
+    gl.pixelStorei(GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, image.colorSpace)
+    gl.pixelStorei(GL_UNPACK_ALIGNMENT, image.unpackAlignment)
+
+    var element = image.image || image.video || image.canvas
+    var internalformat = image.internalformat
+    var format = image.format
+    var type = image.type
+    var width = image.width
+    var height = image.height
+    if (element) {
+      gl.texImage2D(
+        target,
+        lod,
+        format,
+        format,
+        type,
+        element)
+    } else if (image.compressed) {
+      gl.compressedTexImage2D(
+        target,
+        lod,
+        internalformat,
+        width,
+        height,
+        0,
+        image.data)
+    } else if (image.copy) {
+      reglPoll()
+      gl.copyTexImage2D(
+        target,
+        lod,
+        format,
+        image.x,
+        image.y,
+        width,
+        height,
+        0)
+    } else {
+      gl.texImage2D(
+        target,
+        lod,
+        format,
+        width,
+        height,
+        0,
+        format,
+        type,
+        image.data)
+    }
+  }
+
+  function setTexImage (target, image) {
+    var mipmap = image.mipmap
+    if (Array.isArray(mipmap)) {
+      for (var i = 0; i < mipmap.length; ++i) {
+        setTexPixels(target, mipmap[i], i)
+      }
+    } else {
+      setTexPixels(target, image.pixels, 0)
+    }
   }
 
   Object.assign(REGLTexture.prototype, {
+
     bind: function () {
+      this.bindCount += 1
+      var unit = this.unit
+      if (unit < 0) {
+        // FIXME: should we use an LRU to allocate textures here?
+        for (var i = 0; i < numTexUnits; ++i) {
+          var other = textureUnits[i]
+          if (!other || other.bindCount <= 0) {
+            if (other) {
+              other.unit = -1
+            }
+            textureUnits[i] = this
+            unit = i
+            break
+          }
+        }
+        this.unit = unit
+        gl.activeTexture(GL_TEXTURE0 + unit)
+        gl.bindTexture(this.target, this.texture)
+        activeTexture = unit
+      }
+      return unit
+    },
+
+    unbind: function () {
+      this.bindCount -= 1
     },
 
     update: function (args) {
-      var options = args || {}
-
-      // Possible initialization pathways:
-      if (Array.isArray(args) ||
-          isTypedArray(args) ||
-          isHTMLElement(args)) {
-        options = {
-          data: args
-        }
-      }
-
-      // tex target
-      this.target = GL_TEXTURE_2D
-      if ('target' in options) {
-        check.param(options.target, texTargets, 'invalid texture target')
-        this.target = texTargets[options.target]
-      }
-
-      // min filter
-      this.minFilter = GL_NEAREST
-      if ('min' in options) {
-        check.param(options.min, minFilters)
-        this.minFilter = minFilters[options.min]
-      }
-
-      // mag filter
-      this.magFilter = GL_NEAREST
-      if ('mag' in options) {
-        check.param(options.mag, magFilters)
-        this.magFilter = magFilters(options.mag)
-      }
-
-      // wrap modes
-      this.wrapS = GL_REPEAT
-      this.wrapT = GL_REPEAT
-      if ('wrap' in options) {
-        var wrap = options.wrap
-        if (typeof wrap === 'string') {
-          check.param(wrap, wrapModes)
-          this.wrapS = this.wrapT = wrapModes[wrap]
-        } else if (Array.isArray(wrap)) {
-          check.param(wrap[0], wrapModes)
-          check.param(wrap[1], wrapModes)
-          this.wrapS = wrapModes[wrap[0]]
-          this.wrapT = wrapModes[wrap[1]]
-        }
-      } else {
-        if ('wrapS' in options) {
-          check.param(options.wrapS, wrapModes)
-          this.wrapS = wrapModes[options.wrapS]
-        }
-        if ('wrapT' in options) {
-          check.param(options.wrapT, wrapModes)
-          this.wrapT = wrapModes[options.wrapT]
-        }
-      }
-
-      // easy pixelStorei flags
-      this.premultiplyAlpha = !!options.premultiplyAlpha
-      this.flipY = !!options.flipY
-
-      // unpack alignment
-      this.unpackAlignment = 1
-      if ('alignment' in options) {
-        check.oneOf(
-          options.alignment,
-          [1, 2, 4, 8],
-          'invalid texture unpack alignment')
-        this.unpackAlignment = options.alignment
-      }
-
-      // colorspace
-      this.colorSpace = GL_BROWSER_DEFAULT_WEBGL
-      if ('colorSpace' in options) {
-        check.param(options.colorSpace, colorSpace, 'invalid colorSpace')
-        this.colorSpace = colorSpace[options.colorSpace]
-      }
-
-      // parse out data
-      var data = options.data || null
-      if (Array.isArray(data)) {
-
-      } else if (isTypedArray(data)) {
-
-      } else if (isHTMLElement(data)) {
-
-      } else {
-
-      }
-
-      // Set tex image
+      var params = args.params
+      this.width = params.width
+      this.height = params.height
+      this.data = args
+      this.refresh()
     },
 
     refresh: function () {
-      gl.textureParameteri(GL_TEXTURE_MIN_FILTER, this.minFilter)
-      gl.textureParameteri(GL_TEXTURE_MAG_FILTER, this.magFilter)
-      gl.textureParameteri(GL_TEXTURE_WRAP_T, this.wrapT)
-      gl.textureParameteri(GL_TEXTURE_WRAP_S, this.wrapS)
+      var target = this.target
+      var unit = this.unit
+      if (unit >= 0) {
+        gl.activeTexture(GL_TEXTURE0 + unit)
+        activeTexture = unit
+      } else {
+        gl.bindTexture(target, this.texture)
+      }
+
+      var data = this.data
+
+      if (target === GL_TEXTURE_2D) {
+        setTexImage(GL_TEXTURE_2D, data.image)
+      } else {
+        for (var i = 0; i < 6; ++i) {
+          setTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, data.faces[i])
+        }
+      }
+
+      // Set tex params
+      var params = data.params
+
+      // Generate mipmaps
+      if (params.genMipmaps) {
+        gl.generateMipmap(target)
+      }
+
+      gl.texParameteri(target, GL_TEXTURE_MIN_FILTER, params.minFilter)
+      gl.texParameteri(target, GL_TEXTURE_MAG_FILTER, params.magFilter)
+      gl.texParameteri(target, GL_TEXTURE_WRAP_S, params.wrapS)
+      gl.texParameteri(target, GL_TEXTURE_WRAP_T, params.wrapT)
+      if (extensions.ext_texture_filter_anisotropic) {
+        gl.texParameteri(target, GL_TEXTURE_MAX_ANISOTROPY_EXT, params.anisoSamples)
+      }
+
+      // Restore binding state
+      if (unit < 0) {
+        var active = textureUnits[activeTexture]
+        if (active) {
+          // restore binding state
+          gl.bindTexture(active.target, active.texture)
+        } else {
+          // otherwise become new active
+          this.unit = activeTexture
+        }
+      }
     },
 
     destroy: function () {
       check(this.texture, 'must not double free texture')
+      if (this.unit >= 0) {
+        gl.activeTexture(GL_TEXTURE0 + this.unit)
+        activeTexture = this.unit
+        gl.bindTexture(this.target, null)
+        textureUnits[this.unit] = null
+      }
       gl.deleteTexture(this.texture)
       this.texture = null
+      this.unit = -1
+      this.bindCount = 0
       delete textureSet[this.id]
     }
   })
 
-  function createTexture (options) {
-    var texture = new REGLTexture()
-    texture.texture = gl.createTexture()
-    texture.update(options)
+  function createTexture (options, target) {
+    var texture = new REGLTexture(target, gl.createTexture())
     textureSet[texture.id] = texture
 
-    function updateTexture (options) {
-      texture.update(options)
-      return updateTexture
+    var parse = target === GL_TEXTURE_2D
+      ? parseTexture2D
+      : parseCube
+
+    function reglTexture (options) {
+      texture.update(parse(options || {}))
+      reglTexture.width = texture.width
+      reglTexture.height = texture.height
     }
 
-    updateTexture._texture = texture
-    updateTexture.destroy = function () {
+    reglTexture(options)
+
+    reglTexture._reglType = 'texture'
+    reglTexture._texture = texture
+    reglTexture.destroy = function () {
       texture.destroy()
     }
 
-    return updateTexture
+    return reglTexture
   }
 
   function refreshTextures () {
     Object.keys(textureSet).forEach(function (texId) {
       textureSet[texId].refresh()
     })
+    for (var i = 0; i < numTexUnits; ++i) {
+      textureUnits[i] = null
+    }
+    activeTexture = 0
+    gl.activeTexture(GL_TEXTURE0)
   }
 
   function destroyTextures () {
+    for (var i = 0; i < numTexUnits; ++i) {
+      gl.activeTexture(GL_TEXTURE0 + i)
+      gl.bindTexture(GL_TEXTURE_2D, null)
+      textureUnits[i] = null
+    }
+    gl.activeTexture(GL_TEXTURE0)
+    activeTexture = 0
     Object.keys(textureSet).forEach(function (texId) {
       textureSet[texId].destroy()
     })
@@ -3395,7 +4378,7 @@ module.exports = function createTextureSet (gl, extensionState, limits) {
   }
 }
 
-},{"./check":3,"./is-typed-array":21}],29:[function(_dereq_,module,exports){
+},{"./check":3,"./is-typed-array":20}],28:[function(_dereq_,module,exports){
 module.exports = function wrapUniformState () {
   var uniformState = {}
 
@@ -3412,7 +4395,7 @@ module.exports = function wrapUniformState () {
   }
 }
 
-},{}],30:[function(_dereq_,module,exports){
+},{}],29:[function(_dereq_,module,exports){
 var check = _dereq_('./lib/check')
 var getContext = _dereq_('./lib/context')
 var wrapExtensions = _dereq_('./lib/extension')
@@ -3437,6 +4420,8 @@ var GL_DEPTH_BUFFER_BIT = 256
 var GL_STENCIL_BUFFER_BIT = 1024
 
 var GL_ARRAY_BUFFER = 34962
+var GL_TEXTURE_2D = 0x0DE1
+var GL_TEXTURE_CUBE_MAP = 0x8513
 
 var CONTEXT_LOST_EVENT = 'webglcontextlost'
 var CONTEXT_RESTORED_EVENT = 'webglcontextrestored'
@@ -3450,10 +4435,10 @@ module.exports = function wrapREGL () {
   var limits = wrapLimits(gl, extensionState)
   var bufferState = wrapBuffers(gl)
   var elementState = wrapElements(gl, extensionState, bufferState)
-  var textureState = wrapTextures(gl, extensionState, limits)
-  var fboState = wrapFBOs(gl, extensionState, textureState)
   var uniformState = wrapUniforms()
   var attributeState = wrapAttributes(gl, extensionState, bufferState)
+  var textureState = wrapTextures(gl, extensionState, limits, poll)
+  var fboState = wrapFBOs(gl, extensionState, textureState)
   var shaderState = wrapShaders(
     gl,
     extensionState,
@@ -3508,6 +4493,9 @@ module.exports = function wrapREGL () {
     var now = clock()
     frameState.dt = now - frameState.t
     frameState.t = now
+
+    // update textures
+
     for (var i = 0; i < rafCallbacks.length; ++i) {
       var cb = rafCallbacks[i]
       cb(frameState.count, frameState.t, frameState.dt)
@@ -3571,12 +4559,6 @@ module.exports = function wrapREGL () {
 
     if (options.onDestroy) {
       options.onDestroy()
-    }
-  }
-
-  function create (cache) {
-    return function (options) {
-      return cache.create(options)
     }
   }
 
@@ -3668,6 +4650,10 @@ module.exports = function wrapREGL () {
     return REGLCommand
   }
 
+  function poll () {
+    glState.poll()
+  }
+
   // Clears the currently bound frame buffer
   function clear (options) {
     var clearFlags = 0
@@ -3727,12 +4713,19 @@ module.exports = function wrapREGL () {
     prop: dynamic.define,
 
     // Object constructors
-    elements: create(elementState),
+    elements: function (options) {
+      return elementState.create(options)
+    },
     buffer: function (options) {
       return bufferState.create(options, GL_ARRAY_BUFFER)
     },
-    texture: create(textureState),
-    fbo: create(fboState),
+    texture: function (options) {
+      return textureState.create(options, GL_TEXTURE_2D)
+    },
+    cube: function (options) {
+      return textureState.create(options, GL_TEXTURE_CUBE_MAP)
+    },
+    // fbo: create(fboState),
 
     // Frame rendering
     frame: frame,
@@ -3749,5 +4742,5 @@ module.exports = function wrapREGL () {
   })
 }
 
-},{"./lib/attribute":1,"./lib/buffer":2,"./lib/check":3,"./lib/clock":4,"./lib/compile":6,"./lib/context":15,"./lib/draw":16,"./lib/dynamic":17,"./lib/elements":18,"./lib/extension":19,"./lib/fbo":20,"./lib/limits":22,"./lib/raf":23,"./lib/read":24,"./lib/shader":25,"./lib/state":27,"./lib/texture":28,"./lib/uniform":29}]},{},[30])(30)
+},{"./lib/attribute":1,"./lib/buffer":2,"./lib/check":3,"./lib/clock":4,"./lib/compile":6,"./lib/context":14,"./lib/draw":15,"./lib/dynamic":16,"./lib/elements":17,"./lib/extension":18,"./lib/fbo":19,"./lib/limits":21,"./lib/raf":22,"./lib/read":23,"./lib/shader":24,"./lib/state":26,"./lib/texture":27,"./lib/uniform":28}]},{},[29])(29)
 });
