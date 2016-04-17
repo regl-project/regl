@@ -9,6 +9,7 @@
   "dependencies": {},
   "devDependencies": {
     "angle-normals": "^1.0.0",
+    "baboon-image": "^2.0.0",
     "browserify": "^13.0.0",
     "budo": "^8.1.0",
     "bunny": "^1.0.1",
