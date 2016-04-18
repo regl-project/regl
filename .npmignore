@@ -1,3 +1,6 @@
 bench/*
 example/*
 test/*
+www/*
+bin/*
+DEVELOPING.md
