@@ -27,7 +27,10 @@ regl({
   },
 
   uniforms: {
-    texture: regl.texture(baboon)
+    texture: regl.texture({
+      flipY: true,
+      data: baboon
+    })
   },
 
   count: 3

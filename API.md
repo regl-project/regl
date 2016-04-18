@@ -48,7 +48,7 @@
   + [Limits](#limits)
   + [Clean up](#clean-up)
   + [Context loss](#context-loss)
-  
+
 ---------------------------------------
 ## Initialization
 
@@ -1105,6 +1105,7 @@ var copyPixels = regl.texture({
 | Video | An HTML video element |
 | Canvas | A canvas element |
 | Context 2D | A canvas 2D context |
+| String | A URL to an image or video to load |
 
 * If an image element is specified and not yet loaded, then regl will upload a temporary image and hook a callback on the image
 * If a video element is specified, then regl will reupload a frame of the video element each tick unless `poll` is set to false

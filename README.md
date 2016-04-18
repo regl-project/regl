@@ -189,3 +189,5 @@ You can run benchmarks locally using `npm run bench` or check them out here:
 (c) 2016 MIT License
 
 Supported by the [Freeman Lab](https://www.janelia.org/lab/freeman-lab) and the Howard Hughes Medical Institute
+
+Test video (doggie-chromakey.ogv) by [L0ckergn0me](https://archive.org/details/L0ckergn0me-PixieGreenScreen446)
