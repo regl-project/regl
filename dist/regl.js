@@ -1187,8 +1187,8 @@ module.exports = function reglCompiler (
       var TYPE = data.info.type
       var LOCATION = link(data.location)
       var VALUE = dyn(uniforms[uniform])
-      if (uniform.info.type === GL_SAMPLER_2D ||
-        uniform.info.type === GL_SAMPLER_CUBE) {
+      if (data.info.type === GL_SAMPLER_2D ||
+          data.info.type === GL_SAMPLER_CUBE) {
         var TEX_VALUE = def(VALUE + '._texture')
         DYNAMIC_TEXTURES.push(TEX_VALUE)
         batch(setUniformString(GL, GL_INT, LOCATION, TEX_VALUE + '.bind()'))
@@ -2606,7 +2606,9 @@ module.exports = function (gl, extensions) {
     subpixelBits: gl.getParameter(GL_SUBPIXEL_BITS),
 
     // supported extensions
-    extensions: Object.keys(extensions.extensions),
+    extensions: Object.keys(extensions.extensions).filter(function (ext) {
+      return !!extensions.extensions[ext]
+    }),
 
     // TODO compressed texture formats
 
@@ -3466,7 +3468,7 @@ function transposePixels (data, nx, ny, nc, sx, sy, sc, off) {
   return result
 }
 
-module.exports = function createTextureSet (gl, extensionState, limits, reglPoll) {
+module.exports = function createTextureSet (gl, extensionState, limits, reglPoll, viewport) {
   var extensions = extensionState.extensions
 
   var colorSpace = {
@@ -3753,7 +3755,14 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
       return {}
     }
 
-    function parsePixelData (pixelData, width, height, miplevel) {
+    function parsePixelData (inPixelData, width, height, miplevel) {
+      var pixelData = inPixelData
+      if (typeof inPixelData !== 'object' || !inPixelData) {
+        pixelData = {
+          data: inPixelData
+        }
+      }
+
       var result = parsePixelStorage(pixelData, defaults, {
         width: 0,
         height: 0,
@@ -3783,11 +3792,9 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
         poll: false
       })
 
-      if (!pixelData) {
+      if (!inPixelData) {
         return result
       }
-
-      check.type(pixelData, 'object', 'invalid pixel data')
 
       function setObjectProps () {
         if ('shape' in pixelData) {
@@ -3976,8 +3983,8 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
         result.copy = true
         result.x = pixelData.x | 0
         result.y = pixelData.y | 0
-        result.width = pixelData.width | 0
-        result.height = pixelData.height | 0
+        result.width = (pixelData.width || viewport.width) | 0
+        result.height = (pixelData.height || viewport.height) | 0
         setDefaultProps()
       }
 
@@ -4239,6 +4246,21 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
     return {
       params: params,
       image: image
+    }
+  }
+
+  function checkDims (target, data) {
+    if (target === GL_TEXTURE_2D) {
+      check(
+        data.params.width <= limits.textureSize &&
+        data.params.height <= limits.textureSize,
+        '2d texture is too large')
+    } else {
+      check(
+        data.params.width === data.params.height &&
+        data.params.width <= limits.cubeMapSize &&
+        data.params.height <= limits.cubeMapSize,
+        'invalid dimensions for cube map')
     }
   }
 
@@ -4510,6 +4532,7 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
             data.height = data.height || pixelData.video.height
           }
         })
+        checkDims(texture.target, data)
       }
       texture.refresh()
     }
@@ -4543,7 +4566,14 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
       ? parseTexture2D
       : parseCube
 
-    function reglTexture (options) {
+    function reglTexture () {
+      var options
+      if (arguments.length === 6) {
+        options = Array.prototype.slice.call(arguments)
+      } else {
+        options = arguments[0] || {}
+      }
+
       if (texture.cancelPending) {
         texture.cancelPending()
         texture.cancelPending = null
@@ -4558,6 +4588,7 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
         }
       }
       var args = parse(input)
+      checkDims(texture.target, args)
       var params = args.params
       texture.data = args
 
@@ -4685,8 +4716,6 @@ module.exports = function wrapREGL () {
   var elementState = wrapElements(gl, extensionState, bufferState)
   var uniformState = wrapUniforms()
   var attributeState = wrapAttributes(gl, extensionState, bufferState)
-  var textureState = wrapTextures(gl, extensionState, limits, poll)
-  var fboState = wrapFBOs(gl, extensionState, textureState)
   var shaderState = wrapShaders(
     gl,
     extensionState,
@@ -4697,6 +4726,13 @@ module.exports = function wrapREGL () {
     })
   var drawState = wrapDraw(gl, extensionState, bufferState)
   var glState = wrapContext(gl, shaderState)
+  var textureState = wrapTextures(
+    gl,
+    extensionState,
+    limits,
+    poll,
+    glState.viewport)
+  var fboState = wrapFBOs(gl, extensionState, textureState)
   var frameState = {
     count: 0,
     start: clock(),
@@ -4972,7 +5008,13 @@ module.exports = function wrapREGL () {
       return textureState.create(options, GL_TEXTURE_2D)
     },
     cube: function (options) {
-      return textureState.create(options, GL_TEXTURE_CUBE_MAP)
+      if (arguments.length === 6) {
+        return textureState.create(
+          Array.prototype.slice.call(arguments),
+          GL_TEXTURE_CUBE_MAP)
+      } else {
+        return textureState.create(options, GL_TEXTURE_CUBE_MAP)
+      }
     },
     // fbo: create(fboState),
 
