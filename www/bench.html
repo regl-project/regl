@@ -330,7 +330,7 @@ Object.keys(CASES).map(function (caseName) {
   return result
 })
 
-},{"../regl":37,"./list":7}],7:[function(require,module,exports){
+},{"../regl":33,"./list":7}],7:[function(require,module,exports){
 module.exports = {
   'clear': require('./clear'),
   'buffer': require('./buffer'),
@@ -549,7 +549,7 @@ module.exports = function wrapAttributeState (gl, extensionState, bufferState) {
   }
 }
 
-},{"./constants/dtypes.json":18}],9:[function(require,module,exports){
+},{"./constants/dtypes.json":15}],9:[function(require,module,exports){
 // Array and element buffer creation
 var check = require('./check')
 var isTypedArray = require('./is-typed-array')
@@ -715,7 +715,7 @@ module.exports = function wrapBufferState (gl) {
   }
 }
 
-},{"./check":10,"./constants/arraytypes.json":14,"./is-typed-array":27}],10:[function(require,module,exports){
+},{"./check":10,"./constants/arraytypes.json":14,"./is-typed-array":23}],10:[function(require,module,exports){
 // Error checking and parameter validation
 var isTypedArray = require('./is-typed-array')
 
@@ -779,7 +779,7 @@ module.exports = Object.assign(check, {
   oneOf: checkOneOf
 })
 
-},{"./is-typed-array":27}],11:[function(require,module,exports){
+},{"./is-typed-array":23}],11:[function(require,module,exports){
 /* globals performance */
 module.exports =
   (typeof performance !== 'undefined' && performance.now)
@@ -891,10 +891,6 @@ var createEnvironment = require('./codegen')
 
 var primTypes = require('./constants/primitives.json')
 var glTypes = require('./constants/dtypes.json')
-var compareFuncs = require('./constants/comparefuncs.json')
-var blendFuncs = require('./constants/blendfuncs.json')
-var blendEquations_base = require('./constants/blendequations.json')
-var stencilOps = require('./constants/stencil-ops.json')
 
 var GL_ELEMENT_ARRAY_BUFFER = 34963
 
@@ -936,6 +932,58 @@ var GL_CCW = 0x0901
 
 var GL_MIN_EXT = 0x8007
 var GL_MAX_EXT = 0x8008
+
+var blendFuncs = {
+  '0': 0,
+  '1': 1,
+  'zero': 0,
+  'one': 1,
+  'src color': 768,
+  'one minus src color': 769,
+  'src alpha': 770,
+  'one minus src alpha': 771,
+  'dst color': 774,
+  'one minus dst color': 775,
+  'dst alpha': 772,
+  'one minus dst alpha': 773,
+  'constant color': 32769,
+  'one minus constant color': 32770,
+  'constant alpha': 32771,
+  'one minus constant alpha': 32772,
+  'src alpha saturate': 776
+}
+
+var compareFuncs = {
+  'never': 512,
+  'less': 513,
+  '<': 513,
+  'equal': 514,
+  '=': 514,
+  '==': 514,
+  '===': 514,
+  'lequal': 515,
+  '<=': 515,
+  'greater': 516,
+  '>': 516,
+  'notequal': 517,
+  '!=': 517,
+  '!==': 517,
+  'gequal': 518,
+  '>=': 518,
+  'always': 519
+}
+
+var stencilOps = {
+  '0': 0,
+  'zero': 0,
+  'keep': 7680,
+  'replace': 7681,
+  'increment': 7682,
+  'decrement': 7683,
+  'increment wrap': 34055,
+  'decrement wrap': 34056,
+  'invert': 5386
+}
 
 function typeLength (x) {
   switch (x) {
@@ -1026,7 +1074,11 @@ module.exports = function reglCompiler (
   var extensions = extensionState.extensions
   var contextState = glState.contextState
 
-  var blendEquations = Object.create(blendEquations_base)
+  var blendEquations = {
+    'add': 32774,
+    'subtract': 32778,
+    'reverse subtract': 32779
+  }
   if (extensions.ext_blend_minmax) {
     blendEquations.min = GL_MIN_EXT
     blendEquations.max = GL_MAX_EXT
@@ -1076,7 +1128,7 @@ module.exports = function reglCompiler (
       var STACK = link(uniformState.uniforms[uniform.name])
       var TOP = STACK + '[' + STACK + '.length-1]'
       if (uniform.info.type === GL_SAMPLER_2D ||
-          uniform.info.type === GL_SAMPLER_CUBE) {
+        uniform.info.type === GL_SAMPLER_CUBE) {
         var TEX_VALUE = def(TOP + '._texture')
         TEXTURE_UNIFORMS.push(TEX_VALUE)
         draw(setUniformString(GL, GL_INT, LOCATION, TEX_VALUE + '.bind()'))
@@ -1243,7 +1295,7 @@ module.exports = function reglCompiler (
       var STACK = link(uniformState.uniforms[uniform.name])
       var TOP = STACK + '[' + STACK + '.length-1]'
       if (uniform.info.type === GL_SAMPLER_2D ||
-          uniform.info.type === GL_SAMPLER_CUBE) {
+        uniform.info.type === GL_SAMPLER_CUBE) {
         var TEX_VALUE = def(TOP + '._texture')
         batch(setUniformString(GL, GL_INT, LOCATION, TEX_VALUE + '.bind()'))
         exit(TEX_VALUE, '.unbind();')
@@ -1477,7 +1529,7 @@ module.exports = function reglCompiler (
       var LOCATION = link(data.location)
       var VALUE = dyn(uniforms[uniform])
       if (uniform.info.type === GL_SAMPLER_2D ||
-          uniform.info.type === GL_SAMPLER_CUBE) {
+        uniform.info.type === GL_SAMPLER_CUBE) {
         var TEX_VALUE = def(VALUE + '._texture')
         DYNAMIC_TEXTURES.push(TEX_VALUE)
         batch(setUniformString(GL, GL_INT, LOCATION, TEX_VALUE + '.bind()'))
@@ -2161,13 +2213,13 @@ module.exports = function reglCompiler (
           var BLEND_EQUATIONS = link(blendEquations)
           dynamicEntry(
             'if(typeof ', variable, '==="string"){',
-              BLEND_EQUATION_STACK, '.push(',
-              BLEND_EQUATIONS, '[', variable, '],',
-              BLEND_EQUATIONS, '[', variable, ']);',
+            BLEND_EQUATION_STACK, '.push(',
+            BLEND_EQUATIONS, '[', variable, '],',
+            BLEND_EQUATIONS, '[', variable, ']);',
             '}else{',
-              BLEND_EQUATION_STACK, '.push(',
-              BLEND_EQUATIONS, '[', variable, '.rgb],',
-              BLEND_EQUATIONS, '[', variable, '.alpha]);',
+            BLEND_EQUATION_STACK, '.push(',
+            BLEND_EQUATIONS, '[', variable, '.rgb],',
+            BLEND_EQUATIONS, '[', variable, '.alpha]);',
             '}')
           dynamicExit(BLEND_EQUATION_STACK, '.pop();')
           break
@@ -2260,13 +2312,13 @@ module.exports = function reglCompiler (
 
         case 'elements':
           var hasPrimitive =
-            !('primitive' in dynamicOptions) &&
+          !('primitive' in dynamicOptions) &&
             !('primitive' in staticOptions)
           var hasCount =
-            !('count' in dynamicOptions) &&
+          !('count' in dynamicOptions) &&
             !('count' in staticOptions)
           var hasOffset =
-            !('offset' in dynamicOptions) &&
+          !('offset' in dynamicOptions) &&
             !('offset' in staticOptions)
           var ELEMENTS = dynamicEntry.def()
           dynamicEntry(
@@ -2396,7 +2448,7 @@ module.exports = function reglCompiler (
   }
 }
 
-},{"./check":10,"./codegen":12,"./constants/blendequations.json":15,"./constants/blendfuncs.json":16,"./constants/comparefuncs.json":17,"./constants/dtypes.json":18,"./constants/primitives.json":19,"./constants/stencil-ops.json":20}],14:[function(require,module,exports){
+},{"./check":10,"./codegen":12,"./constants/dtypes.json":15,"./constants/primitives.json":16}],14:[function(require,module,exports){
 module.exports={
   "[object Int8Array]": 5120
 , "[object Int16Array]": 5122
@@ -2412,55 +2464,6 @@ module.exports={
 
 },{}],15:[function(require,module,exports){
 module.exports={
-  "add":32774,
-  "subtract":32778,
-  "reverse subtract":32779
-}
-
-},{}],16:[function(require,module,exports){
-module.exports={
-  "0":0,
-  "1":1,
-  "zero":0,
-  "one":1,
-  "src color": 768,
-  "one minus src color":769,
-  "src alpha":770,
-  "one minus src alpha":771,
-  "dst color":774,
-  "one minus dst color":775,
-  "dst alpha":772,
-  "one minus dst alpha":773,
-  "constant color": 32769,
-  "one minus constant color": 32770,
-  "constant alpha": 32771,
-  "one minus constant alpha": 32772,
-  "src alpha saturate": 776
-}
-
-},{}],17:[function(require,module,exports){
-module.exports={
-  "never": 512,
-  "less": 513,
-  "<": 513,
-  "equal": 514,
-  "=": 514,
-  "==": 514,
-  "===": 514,
-  "lequal": 515,
-  "<=": 515,
-  "greater": 516,
-  ">": 516,
-  "notequal": 517,
-  "!=": 517,
-  "!==": 517,
-  "gequal": 518,
-  ">=": 518,
-  "always": 519
-}
-
-},{}],18:[function(require,module,exports){
-module.exports={
   "int8": 5120
 , "int16": 5122
 , "int32": 5124
@@ -2470,7 +2473,7 @@ module.exports={
 , "float": 5126
 }
 
-},{}],19:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 module.exports={
   "points": 0,
   "lines": 1,
@@ -2481,20 +2484,7 @@ module.exports={
   "triangle fan": 6
 }
 
-},{}],20:[function(require,module,exports){
-module.exports={
-  "0": 0,
-  "zero": 0,
-  "keep": 7680,
-  "replace": 7681,
-  "increment": 7682,
-  "decrement": 7683,
-  "increment wrap": 34055,
-  "decrement wrap": 34056,
-  "invert": 5386
-}
-
-},{}],21:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 // Context and canvas creation helper functions
 /*globals HTMLElement,WebGLRenderingContext*/
 
@@ -2521,7 +2511,7 @@ function createCanvas (element, options) {
     })
   }
 
-  var scale = +window.devicePixelRatio
+  var scale = +args.options.pixelRatio
   function resize () {
     var w = window.innerWidth
     var h = window.innerHeight
@@ -2555,7 +2545,7 @@ function createCanvas (element, options) {
 }
 
 function getContext (canvas, options) {
-  var glOptions = options.glOptions
+  var glOptions = options.glOptions || {}
 
   function get (name) {
     try {
@@ -2573,7 +2563,9 @@ function getContext (canvas, options) {
 
   return {
     gl: gl,
-    options: options
+    options: Object.assign({
+      pixelRatio: window.devicePixelRatio
+    }, options)
   }
 }
 
@@ -2597,7 +2589,9 @@ module.exports = function parseArgs (args) {
     } else if (args[0] instanceof WebGLRenderingContext) {
       return {
         gl: args[0],
-        options: options
+        options: Object.assign({
+          pixelRatio: 1
+        }, options)
       }
     } else {
       options = args[0]
@@ -2611,7 +2605,7 @@ module.exports = function parseArgs (args) {
   }
 }
 
-},{"./check":10}],22:[function(require,module,exports){
+},{"./check":10}],18:[function(require,module,exports){
 var GL_TRIANGLES = 4
 
 module.exports = function wrapDrawState (gl) {
@@ -2628,7 +2622,7 @@ module.exports = function wrapDrawState (gl) {
   }
 }
 
-},{}],23:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 var VARIABLE_COUNTER = 0
 
 function DynamicVariable (isFunc, data) {
@@ -2671,7 +2665,7 @@ module.exports = {
   unbox: unbox
 }
 
-},{}],24:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 var check = require('./check')
 var isTypedArray = require('./is-typed-array')
 var primTypes = require('./constants/primitives.json')
@@ -2833,7 +2827,7 @@ module.exports = function wrapElementsState (gl, extensionState, bufferState) {
   }
 }
 
-},{"./check":10,"./constants/primitives.json":19,"./is-typed-array":27}],25:[function(require,module,exports){
+},{"./check":10,"./constants/primitives.json":16,"./is-typed-array":23}],21:[function(require,module,exports){
 module.exports = function createExtensionCache (gl) {
   var extensions = {}
 
@@ -2879,7 +2873,7 @@ module.exports = function createExtensionCache (gl) {
   }
 }
 
-},{}],26:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 // Framebuffer object state management
 
 module.exports = function wrapFBOState (
@@ -2904,13 +2898,13 @@ module.exports = function wrapFBOState (
   }
 }
 
-},{}],27:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var dtypes = require('./constants/arraytypes.json')
 module.exports = function (x) {
   return Object.prototype.toString.call(x) in dtypes
 }
 
-},{"./constants/arraytypes.json":14}],28:[function(require,module,exports){
+},{"./constants/arraytypes.json":14}],24:[function(require,module,exports){
 var GL_SUBPIXEL_BITS = 0x0D50
 var GL_RED_BITS = 0x0D52
 var GL_GREEN_BITS = 0x0D53
@@ -2982,7 +2976,7 @@ module.exports = function (gl, extensions) {
   }
 }
 
-},{}],29:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 /* globals document, Image, XMLHttpRequest */
 
 module.exports = loadTexture
@@ -3059,7 +3053,7 @@ function loadTexture (url) {
   return null
 }
 
-},{}],30:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
     typeof cancelAnimationFrame === 'function') {
@@ -3076,7 +3070,7 @@ if (typeof requestAnimationFrame === 'function' &&
   }
 }
 
-},{}],31:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 var check = require('./check')
 var isTypedArray = require('./is-typed-array')
 
@@ -3130,7 +3124,7 @@ module.exports = function wrapReadPixels (gl, glState) {
   return readPixels
 }
 
-},{"./check":10,"./is-typed-array":27}],32:[function(require,module,exports){
+},{"./check":10,"./is-typed-array":23}],28:[function(require,module,exports){
 var check = require('./check')
 
 var DEFAULT_FRAG_SHADER = 'void main(){gl_FragColor=vec4(0,0,0,0);}'
@@ -3343,7 +3337,7 @@ module.exports = function wrapShaderState (
   }
 }
 
-},{"./check":10}],33:[function(require,module,exports){
+},{"./check":10}],29:[function(require,module,exports){
 // A stack for managing the state of a scalar/vector parameter
 
 module.exports = function createStack (init, onChange) {
@@ -3401,7 +3395,7 @@ module.exports = function createStack (init, onChange) {
   }
 }
 
-},{}],34:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 var createStack = require('./stack')
 var createEnvironment = require('./codegen')
 
@@ -3582,7 +3576,7 @@ module.exports = function wrapContextState (gl, shaderState) {
   }
 }
 
-},{"./codegen":12,"./stack":33}],35:[function(require,module,exports){
+},{"./codegen":12,"./stack":29}],31:[function(require,module,exports){
 var check = require('./check')
 var isTypedArray = require('./is-typed-array')
 var loadTexture = require('./load-texture')
@@ -4973,7 +4967,7 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
   }
 }
 
-},{"./check":10,"./is-typed-array":27,"./load-texture":29}],36:[function(require,module,exports){
+},{"./check":10,"./is-typed-array":23,"./load-texture":25}],32:[function(require,module,exports){
 module.exports = function wrapUniformState () {
   var uniformState = {}
 
@@ -4990,7 +4984,7 @@ module.exports = function wrapUniformState () {
   }
 }
 
-},{}],37:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 var check = require('./lib/check')
 var getContext = require('./lib/context')
 var wrapExtensions = require('./lib/extension')
@@ -5051,7 +5045,8 @@ module.exports = function wrapREGL () {
     t: clock(),
     renderTime: 0,
     width: gl.drawingBufferWidth,
-    height: gl.drawingBufferHeight
+    height: gl.drawingBufferHeight,
+    pixelRatio: options.pixelRatio
   }
   var readPixels = wrapRead(gl, glState)
 
@@ -5337,6 +5332,6 @@ module.exports = function wrapREGL () {
   })
 }
 
-},{"./lib/attribute":8,"./lib/buffer":9,"./lib/check":10,"./lib/clock":11,"./lib/compile":13,"./lib/context":21,"./lib/draw":22,"./lib/dynamic":23,"./lib/elements":24,"./lib/extension":25,"./lib/fbo":26,"./lib/limits":28,"./lib/raf":30,"./lib/read":31,"./lib/shader":32,"./lib/state":34,"./lib/texture":35,"./lib/uniform":36}]},{},[6]);
+},{"./lib/attribute":8,"./lib/buffer":9,"./lib/check":10,"./lib/clock":11,"./lib/compile":13,"./lib/context":17,"./lib/draw":18,"./lib/dynamic":19,"./lib/elements":20,"./lib/extension":21,"./lib/fbo":22,"./lib/limits":24,"./lib/raf":26,"./lib/read":27,"./lib/shader":28,"./lib/state":30,"./lib/texture":31,"./lib/uniform":32}]},{},[6]);
 </script>
 </html>
