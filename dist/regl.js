@@ -3766,6 +3766,7 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
       var result = parsePixelStorage(pixelData, defaults, {
         width: 0,
         height: 0,
+        miplevel: miplevel,
         channels: defaults.channels,
         format: defaults.format,
         internalformat: 0,
@@ -4319,7 +4320,7 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
     this.data = null
   }
 
-  function setTexPixels (target, image, lod) {
+  function setTexPixels (target, image) {
     gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, image.flipY)
     gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, image.premultiplyAlpha)
     gl.pixelStorei(GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, image.colorSpace)
@@ -4331,6 +4332,7 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
     var type = image.type
     var width = image.width
     var height = image.height
+    var lod = image.miplevel
     if (isCanvasElement(element) ||
       (isImageElement(element) && element.complete) ||
       (isVideoElement(element) && element.readyState > 2)) {
@@ -4390,10 +4392,10 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
     var mipmap = image.mipmap
     if (Array.isArray(mipmap)) {
       for (var i = 0; i < mipmap.length; ++i) {
-        setTexPixels(target, mipmap[i], i)
+        setTexPixels(target, mipmap[i])
       }
     } else {
-      setTexPixels(target, image.pixels, 0)
+      setTexPixels(target, image.pixels)
     }
   }
 
@@ -4533,6 +4535,11 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
           }
         })
         checkDims(texture.target, data)
+
+        pixels.forEach(function (pixelData) {
+          pixelData.width = pixelData.width || data.width >> pixelData.miplevel
+          pixelData.height = pixelData.height || data.height >> pixelData.miplevel
+        })
       }
       texture.refresh()
     }
