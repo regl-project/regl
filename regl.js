@@ -58,7 +58,8 @@ module.exports = function wrapREGL () {
     t: clock(),
     renderTime: 0,
     width: gl.drawingBufferWidth,
-    height: gl.drawingBufferHeight
+    height: gl.drawingBufferHeight,
+    pixelRatio: options.pixelRatio
   }
   var readPixels = wrapRead(gl, glState)
 
