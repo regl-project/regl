@@ -2642,6 +2642,83 @@ module.exports = function (gl, extensions) {
 }
 
 },{}],22:[function(_dereq_,module,exports){
+/* globals document, Image, XMLHttpRequest */
+
+module.exports = loadTexture
+
+function getExtension (url) {
+  var parts = /\.(\w+)(\?.*)?$/.exec(url)
+  if (parts && parts[1]) {
+    return parts[1].toLowerCase()
+  }
+}
+
+function isVideoExtension (url) {
+  return [
+    'avi',
+    'asf',
+    'gifv',
+    'mov',
+    'qt',
+    'yuv',
+    'mpg',
+    'mpeg',
+    'm2v',
+    'mp4',
+    'm4p',
+    'm4v',
+    'ogg',
+    'ogv',
+    'vob',
+    'webm',
+    'wmv'
+  ].indexOf(url) >= 0
+}
+
+function isCompressedExtension (url) {
+  return [
+    // 'dds'
+  ].indexOf(url) >= 0
+}
+
+function loadVideo (url) {
+  var video = document.createElement('video')
+  video.autoplay = true
+  video.loop = true
+  video.src = url
+  return video
+}
+
+function loadCompressedTexture (url) {
+  var xhr = new XMLHttpRequest()
+  xhr.responseType = 'arraybuffer'
+  xhr.open('GET', url, true)
+  xhr.send()
+  return xhr
+}
+
+function loadImage (url) {
+  var image = new Image()
+  image.src = url
+  return image
+}
+
+// Currently this stuff only works in a DOM environment
+function loadTexture (url) {
+  if (typeof document !== 'undefined') {
+    var ext = getExtension(url)
+    if (isVideoExtension(ext)) {
+      return loadVideo(url)
+    }
+    if (isCompressedExtension(ext)) {
+      return loadCompressedTexture(url)
+    }
+    return loadImage(url)
+  }
+  return null
+}
+
+},{}],23:[function(_dereq_,module,exports){
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
     typeof cancelAnimationFrame === 'function') {
@@ -2658,7 +2735,7 @@ if (typeof requestAnimationFrame === 'function' &&
   }
 }
 
-},{}],23:[function(_dereq_,module,exports){
+},{}],24:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 var isTypedArray = _dereq_('./is-typed-array')
 
@@ -2712,7 +2789,7 @@ module.exports = function wrapReadPixels (gl, glState) {
   return readPixels
 }
 
-},{"./check":3,"./is-typed-array":20}],24:[function(_dereq_,module,exports){
+},{"./check":3,"./is-typed-array":20}],25:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 
 var DEFAULT_FRAG_SHADER = 'void main(){gl_FragColor=vec4(0,0,0,0);}'
@@ -2925,7 +3002,7 @@ module.exports = function wrapShaderState (
   }
 }
 
-},{"./check":3}],25:[function(_dereq_,module,exports){
+},{"./check":3}],26:[function(_dereq_,module,exports){
 // A stack for managing the state of a scalar/vector parameter
 
 module.exports = function createStack (init, onChange) {
@@ -2983,7 +3060,7 @@ module.exports = function createStack (init, onChange) {
   }
 }
 
-},{}],26:[function(_dereq_,module,exports){
+},{}],27:[function(_dereq_,module,exports){
 var createStack = _dereq_('./stack')
 var createEnvironment = _dereq_('./codegen')
 
@@ -3164,9 +3241,10 @@ module.exports = function wrapContextState (gl, shaderState) {
   }
 }
 
-},{"./codegen":5,"./stack":25}],27:[function(_dereq_,module,exports){
+},{"./codegen":5,"./stack":26}],28:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 var isTypedArray = _dereq_('./is-typed-array')
+var loadTexture = _dereq_('./load-texture')
 
 var GL_TEXTURE_2D = 0x0DE1
 var GL_TEXTURE_CUBE_MAP_POSITIVE_X = 0x8515
@@ -3273,6 +3351,17 @@ function isNumericArray (arr) {
     typeof arr[0] === 'number'))
 }
 
+function isNDArrayLike (obj) {
+  return (
+    typeof obj === 'object' &&
+    Array.isArray(obj.shape) &&
+    Array.isArray(obj.stride) &&
+    typeof obj.offset === 'number' &&
+    obj.shape.length === obj.stride.length &&
+    (Array.isArray(obj.data) ||
+      isTypedArray(obj.data)))
+}
+
 function isRectArray (arr) {
   if (!Array.isArray(arr)) {
     return false
@@ -3312,10 +3401,16 @@ function isVideoElement (object) {
   return classString(object) === '[object HTMLVideoElement]'
 }
 
+function isPendingXHR (object) {
+  return classString(object) === '[object XMLHttpRequest]'
+}
+
 function isPixelData (object) {
   return (
+    typeof object === 'string' ||
     isTypedArray(object) ||
     isNumericArray(object) ||
+    isNDArrayLike(object) ||
     isCanvasElement(object) ||
     isContext2D(object) ||
     isImageElement(object) ||
@@ -3522,6 +3617,124 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
     return result
   }
 
+  function parseTexParams (options, defaults) {
+    var result = {
+      width: 0,
+      height: 0,
+      channels: 0,
+      format: 0,
+      type: 0,
+      wrapS: GL_CLAMP_TO_EDGE,
+      wrapT: GL_CLAMP_TO_EDGE,
+      minFilter: GL_NEAREST,
+      magFilter: GL_NEAREST,
+      genMipmaps: false,
+      anisoSamples: 1,
+      flipY: false,
+      premultiplyAlpha: false,
+      unpackAlignment: 1,
+      colorSpace: GL_BROWSER_DEFAULT_WEBGL,
+      poll: false,
+      needsListeners: false
+    }
+
+    if (defaults) {
+      Object.assign(result, defaults)
+      parsePixelStorage(options, defaults, result)
+    } else {
+      parsePixelStorage(options, null, result)
+    }
+
+    if ('shape' in options) {
+      check(Array.isArray(options.shape) && options.shape.length >= 2,
+        'shape must be an array')
+      result.width = options.shape[0] | 0
+      result.height = options.shape[1] | 0
+      if (options.shape.length === 3) {
+        result.channels = options.shape[2] | 0
+      }
+    } else {
+      if ('radius' in options) {
+        result.width = result.height = options.radius | 0
+      }
+      if ('width' in options) {
+        result.width = options.width | 0
+      }
+      if ('height' in options) {
+        result.height = options.height | 0
+      }
+      if ('channels' in options) {
+        result.channels = options.channels | 0
+      }
+    }
+
+    if ('min' in options) {
+      check.parameter(options.min, minFilters)
+      result.minFilter = minFilters[options.min]
+    }
+
+    if ('mag' in options) {
+      check.parameter(options.mag, magFilters)
+      result.magFilter = magFilters[options.mag]
+    }
+
+    if ('wrap' in options) {
+      var wrap = options.wrap
+      if (typeof wrap === 'string') {
+        check.parameter(wrap, wrapModes)
+        result.wrapS = result.wrapT = wrapModes[wrap]
+      } else if (Array.isArray(wrap)) {
+        check.parameter(wrap[0], wrapModes)
+        check.parameter(wrap[1], wrapModes)
+        result.wrapS = wrapModes[wrap[0]]
+        result.wrapT = wrapModes[wrap[1]]
+      }
+    } else {
+      if ('wrapS' in options) {
+        check.parameter(options.wrapS, wrapModes)
+        result.wrapS = wrapModes[options.wrapS]
+      }
+      if ('wrapT' in options) {
+        check.parameter(options.wrapT, wrapModes)
+        result.wrapT = wrapModes[options.wrapT]
+      }
+    }
+
+    if ('aniso' in options) {
+      check.type(
+        options.aniso,
+        'number',
+        'number of aniso samples must be a number')
+      result.aniso = +options.aniso
+    }
+
+    if ('mipmap' in options) {
+      result.genMipmaps = !!options.mipmap
+    } else if ([
+      GL_NEAREST_MIPMAP_NEAREST,
+      GL_NEAREST_MIPMAP_LINEAR,
+      GL_LINEAR_MIPMAP_NEAREST,
+      GL_LINEAR_MIPMAP_LINEAR
+    ].indexOf(result.minFilter) >= 0) {
+      result.genMipmaps = true
+    }
+
+    if ('format' in options) {
+      check.parameter(options.format, textureFormats, 'invalid texture format')
+      result.format = textureFormats[options.format]
+      if (options.format in textureTypes) {
+        result.type = textureTypes[options.format]
+      }
+    }
+
+    if ('type' in options) {
+      check.parameter(options.type, textureTypes, 'invalid texture type')
+      result.type = textureTypes[options.type]
+    }
+
+    return result
+  }
+
   function parseMipImage (image, texParams) {
     var defaults = texParams
 
@@ -3564,6 +3777,7 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
         array: null,
         needsConvert: false,
         needsTranspose: false,
+        needsListeners: false,
         strideX: 0,
         strideY: 0,
         strideC: 0,
@@ -3571,7 +3785,8 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
         flipY: defaults.flipY,
         premultiplyAlpha: defaults.premultiplyAlpha,
         unpackAlignment: defaults.unpackAlignment,
-        colorSpace: defaults.colorSpace
+        colorSpace: defaults.colorSpace,
+        poll: false
       })
 
       if (!pixelData) {
@@ -3659,6 +3874,10 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
         data = pixelData.data
       }
 
+      if (typeof data === 'string') {
+        data = loadTexture(data)
+      }
+
       if (isTypedArray(data)) {
         result.data = data
         setObjectProps()
@@ -3666,6 +3885,37 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
         result.array = data
         result.needsConvert = true
         setObjectProps()
+      } else if (isNDArrayLike(data)) {
+        if (Array.isArray(data.data)) {
+          result.array = data.data
+          result.needsConvert = true
+        } else {
+          result.data = data
+        }
+
+        setObjectProps()
+
+        var shape = data.shape
+        result.width = shape[0]
+        result.height = shape[1]
+        if (shape.length === 3) {
+          result.channels = shape[2]
+        } else {
+          result.channels = 1
+        }
+
+        var stride = data.stride
+        result.strideX = data.stride[0]
+        result.strideY = data.stride[1]
+        if (stride.length === 3) {
+          result.strideC = data.stride[2]
+        } else {
+          result.strideC = 1
+        }
+
+        result.offset = data.offset
+
+        result.needsTranspose = true
       } else if (isCanvasElement(data) || isContext2D(data)) {
         if (isCanvasElement(data)) {
           result.canvas = data
@@ -3679,12 +3929,24 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
         result.image = data
         result.width = result.width || data.naturalWidth
         result.height = result.height || data.naturalHeight
+        if (!image.complete) {
+          result.needsListeners = true
+        }
         setDefaultProps()
+        if ('poll' in pixelData) {
+          result.poll = !!pixelData.poll
+        }
       } else if (isVideoElement(data)) {
         result.video = data
         result.width = result.width || data.width
         result.height = result.height || data.height
+        result.poll = true
         setDefaultProps()
+        if ('poll' in pixelData) {
+          result.poll = !!pixelData.poll
+        }
+      } else if (isPendingXHR(data)) {
+        // TODO: handle pending xhr request
       } else if (isRectArray(data)) {
         var w = data.length
         var h = data[0].length
@@ -3751,10 +4013,118 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
       reconcile('format')
       reconcile('channels')
 
+      texParams.poll = texParams.poll || result.poll
+      texParams.needsListeners = texParams.needsListeners || result.needsListeners
       texParams.width = texParams.width || (result.width << miplevel)
       texParams.height = texParams.height || (result.height << miplevel)
 
       return result
+    }
+  }
+
+  function fillMissingTexParams (params) {
+    // Infer default format
+    if (!params.format) {
+      params.channels = params.channels || 4
+      switch (params.channels) {
+        case 1:
+          params.format = GL_LUMINANCE
+          break
+        case 2:
+          params.format = GL_LUMINANCE_ALPHA
+          break
+        case 3:
+          params.format = GL_RGB
+          break
+        default:
+          params.format = GL_RGBA
+          break
+      }
+    }
+
+    var format = params.format
+    if (format === GL_DEPTH_COMPONENT || format === GL_DEPTH_STENCIL) {
+      check(
+        extensions.webgl_depth_texture,
+        'depth/stencil texture not supported')
+      if (format === GL_DEPTH_COMPONENT) {
+        check(
+          params.type === GL_UNSIGNED_SHORT || GL_UNSIGNED_INT,
+          'depth texture type must be uint16 or uint32')
+      }
+      if (format === GL_DEPTH_STENCIL) {
+        check(
+          params.type === GL_UNSIGNED_INT_24_8_WEBGL,
+          'depth stencil texture format must match type')
+      }
+    }
+
+    // Save format to internal format
+    params.internalformat = format
+
+    // Set color format
+    params.format = colorFormats[format]
+    if (!params.channels) {
+      switch (params.format) {
+        case GL_LUMINANCE:
+        case GL_ALPHA:
+        case GL_DEPTH_COMPONENT:
+          params.channels = 1
+          break
+
+        case GL_DEPTH_STENCIL:
+        case GL_LUMINANCE_ALPHA:
+          params.channels = 2
+          break
+
+        case GL_RGB:
+          params.channels = 3
+          break
+
+        default:
+          params.channels = 4
+      }
+    }
+
+    // Check that texture type is supported
+    params.type = params.type || GL_UNSIGNED_BYTE
+    if (params.type === GL_FLOAT) {
+      check(
+        extensions.oes_texture_float,
+        'float texture not supported')
+    } else if (params.type === GL_HALF_FLOAT_OES) {
+      check(
+        extensions.oes_texture_half_float,
+        'half float texture not supported')
+    }
+
+    // Check float_linear and half_float_linear extensions
+    if ((params.type === GL_FLOAT && !extensions.oes_texture_float_linear) ||
+        (params.type === GL_HALF_FLOAT_OES &&
+          !extensions.oes_texture_half_float_linear)) {
+      params.magFilter = GL_NEAREST
+      if (params.minFilter === GL_LINEAR) {
+        params.minFilter = GL_NEAREST
+      } else if (params.minFilter === GL_LINEAR_MIPMAP_LINEAR ||
+                 params.minFilter === GL_LINEAR_MIPMAP_NEAREST ||
+                 params.minFilter === GL_NEAREST_MIPMAP_LINEAR) {
+        params.minFilter = GL_NEAREST_MIPMAP_NEAREST
+      }
+    }
+
+    // Set default values for width and height
+    params.width = params.width || 0
+    params.height = params.height || 0
+
+    // Set compressed flag
+    params.compressed =
+      compressedFormatEnums.indexOf(params.internalformat) >= 0
+
+    if (params.genMipmaps) {
+      check(params.width === params.height && isPow2(params.width),
+        'must be a square power of 2 to support mipmaps')
+      check(!params.compressed,
+        'mipmap generation not supported for compressed textures')
     }
   }
 
@@ -3863,226 +4233,6 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
     }
   }
 
-  function parseTexParams (options, defaults) {
-    var result = {
-      width: 0,
-      height: 0,
-      channels: 0,
-      format: 0,
-      type: 0,
-      wrapS: GL_REPEAT,
-      wrapT: GL_REPEAT,
-      minFilter: GL_NEAREST,
-      magFilter: GL_NEAREST,
-      genMipmaps: false,
-      anisoSamples: 1,
-      flipY: false,
-      premultiplyAlpha: false,
-      unpackAlignment: 1,
-      colorSpace: GL_BROWSER_DEFAULT_WEBGL
-    }
-
-    if (defaults) {
-      Object.assign(result, defaults)
-      parsePixelStorage(options, defaults, result)
-    } else {
-      parsePixelStorage(options, null, result)
-    }
-
-    if ('shape' in options) {
-      check(Array.isArray(options.shape) && options.shape.length >= 2,
-        'shape must be an array')
-      result.width = options.shape[0] | 0
-      result.height = options.shape[1] | 0
-      if (options.shape.length === 3) {
-        result.channels = options.shape[2] | 0
-      }
-    } else {
-      if ('radius' in options) {
-        result.width = result.height = options.radius | 0
-      }
-      if ('width' in options) {
-        result.width = options.width | 0
-      }
-      if ('height' in options) {
-        result.height = options.height | 0
-      }
-      if ('channels' in options) {
-        result.channels = options.channels | 0
-      }
-    }
-
-    if ('min' in options) {
-      check.parameter(options.min, minFilters)
-      result.minFilter = minFilters[options.min]
-    }
-
-    if ('mag' in options) {
-      check.parameter(options.mag, magFilters)
-      result.magFilter = magFilters[options.mag]
-    }
-
-    if ('wrap' in options) {
-      var wrap = options.wrap
-      if (typeof wrap === 'string') {
-        check.parameter(wrap, wrapModes)
-        result.wrapS = result.wrapT = wrapModes[wrap]
-      } else if (Array.isArray(wrap)) {
-        check.parameter(wrap[0], wrapModes)
-        check.parameter(wrap[1], wrapModes)
-        result.wrapS = wrapModes[wrap[0]]
-        result.wrapT = wrapModes[wrap[1]]
-      }
-    } else {
-      if ('wrapS' in options) {
-        check.parameter(options.wrapS, wrapModes)
-        result.wrapS = wrapModes[options.wrapS]
-      }
-      if ('wrapT' in options) {
-        check.parameter(options.wrapT, wrapModes)
-        result.wrapT = wrapModes[options.wrapT]
-      }
-    }
-
-    if ('aniso' in options) {
-      check.type(
-        options.aniso,
-        'number',
-        'number of aniso samples must be a number')
-      result.aniso = +options.aniso
-    }
-
-    if ('mipmap' in options) {
-      result.genMipmaps = !!options.mipmap
-    } else if ([
-      GL_NEAREST_MIPMAP_NEAREST,
-      GL_NEAREST_MIPMAP_LINEAR,
-      GL_LINEAR_MIPMAP_NEAREST,
-      GL_LINEAR_MIPMAP_LINEAR
-    ].indexOf(result.minFilter) >= 0) {
-      result.genMipmaps = true
-    }
-
-    if ('format' in options) {
-      check.parameter(options.format, textureFormats, 'invalid texture format')
-      result.format = textureFormats[options.format]
-      if (options.format in textureTypes) {
-        result.type = textureTypes[options.format]
-      }
-    }
-
-    if ('type' in options) {
-      check.parameter(options.type, textureTypes, 'invalid texture type')
-      result.type = textureTypes[options.type]
-    }
-
-    return result
-  }
-
-  function fillMissingTexParams (params) {
-    // Infer default format
-    if (!params.format) {
-      params.channels = params.channels || 4
-      switch (params.channels) {
-        case 1:
-          params.format = GL_LUMINANCE
-          break
-        case 2:
-          params.format = GL_LUMINANCE_ALPHA
-          break
-        case 3:
-          params.format = GL_RGB
-          break
-        default:
-          params.format = GL_RGBA
-          break
-      }
-    }
-
-    var format = params.format
-    if (format === GL_DEPTH_COMPONENT || format === GL_DEPTH_STENCIL) {
-      check(
-        extensions.webgl_depth_texture,
-        'depth/stencil texture not supported')
-      if (format === GL_DEPTH_COMPONENT) {
-        check(
-          params.type === GL_UNSIGNED_SHORT || GL_UNSIGNED_INT,
-          'depth texture type must be uint16 or uint32')
-      }
-      if (format === GL_DEPTH_STENCIL) {
-        check(
-          params.type === GL_UNSIGNED_INT_24_8_WEBGL,
-          'depth stencil texture format must match type')
-      }
-    }
-
-    // Save format to internal format
-    params.internalformat = format
-
-    // Set color format
-    params.format = colorFormats[format]
-    if (!params.channels) {
-      switch (params.format) {
-        case GL_LUMINANCE:
-        case GL_ALPHA:
-        case GL_DEPTH_COMPONENT:
-          params.channels = 1
-          break
-
-        case GL_DEPTH_STENCIL:
-        case GL_LUMINANCE_ALPHA:
-          params.channels = 2
-          break
-
-        case GL_RGB:
-          params.channels = 3
-          break
-
-        default:
-          params.channels = 4
-      }
-    }
-
-    // Check that texture type is supported
-    params.type = params.type || GL_UNSIGNED_BYTE
-    if (params.type === GL_FLOAT) {
-      check(
-        extensions.oes_texture_float,
-        'float texture not supported')
-    } else if (params.type === GL_HALF_FLOAT_OES) {
-      check(
-        extensions.oes_texture_half_float,
-        'half float texture not supported')
-    }
-
-    // Check float_linear and half_float_linear extensions
-    if ((params.type === GL_FLOAT && !extensions.oes_texture_float_linear) ||
-        (params.type === GL_HALF_FLOAT_OES &&
-          !extensions.oes_texture_half_float_linear)) {
-      params.magFilter = GL_NEAREST
-      if (params.minFilter === GL_LINEAR) {
-        params.minFilter = GL_NEAREST
-      } else if (params.minFilter === GL_LINEAR_MIPMAP_LINEAR ||
-                 params.minFilter === GL_LINEAR_MIPMAP_NEAREST ||
-                 params.minFilter === GL_NEAREST_MIPMAP_LINEAR) {
-        params.minFilter = GL_NEAREST_MIPMAP_NEAREST
-      }
-    }
-
-    // Set default values for width and height
-    params.width = params.width || 0
-    params.height = params.height || 0
-
-    if (params.genMipmaps) {
-      check(params.width === params.height && isPow2(params.width),
-        'must be a square power of 2 to support mipmaps')
-    }
-
-    // Set compressed flag
-    params.compressed =
-      compressedFormatEnums.indexOf(params.internalformat) >= 0
-  }
-
   function parseTexture2D (object) {
     // first pass: initially parse all data
     var params = parseTexParams(object)
@@ -4130,6 +4280,7 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
   var activeTexture = 0
   var textureCount = 0
   var textureSet = {}
+  var pollSet = []
   var numTexUnits = limits.textureUnits
   var textureUnits = Array(numTexUnits).map(function () {
     return null
@@ -4140,12 +4291,13 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
     this.target = target
     this.texture = texture
 
+    this.pollId = -1
+
     this.unit = -1
     this.bindCount = 0
 
-    // shape
-    this.width = 0
-    this.height = 0
+    // cancels all pending callbacks
+    this.cancelPending = null
 
     // parsed user inputs
     this.data = null
@@ -4163,7 +4315,9 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
     var type = image.type
     var width = image.width
     var height = image.height
-    if (element) {
+    if (isCanvasElement(element) ||
+      (isImageElement(element) && element.complete) ||
+      (isVideoElement(element) && element.readyState > 2)) {
       gl.texImage2D(
         target,
         lod,
@@ -4191,7 +4345,7 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
         width,
         height,
         0)
-    } else {
+    } else if (image.data) {
       gl.texImage2D(
         target,
         lod,
@@ -4202,6 +4356,17 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
         format,
         type,
         image.data)
+    } else {
+      gl.texImage2D(
+        target,
+        lod,
+        format,
+        width || 1,
+        height || 1,
+        0,
+        format,
+        type,
+        null)
     }
   }
 
@@ -4213,6 +4378,16 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
       }
     } else {
       setTexPixels(target, image.pixels, 0)
+    }
+  }
+
+  function clearPoll (texture) {
+    var id = texture.pollId
+    if (id >= 0) {
+      var other = pollSet[id] = pollSet[pollSet.length - 1]
+      other.id = id
+      pollSet.pop()
+      texture.pollId = -1
     }
   }
 
@@ -4244,14 +4419,6 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
 
     unbind: function () {
       this.bindCount -= 1
-    },
-
-    update: function (args) {
-      var params = args.params
-      this.width = params.width
-      this.height = params.height
-      this.data = args
-      this.refresh()
     },
 
     refresh: function () {
@@ -4311,6 +4478,11 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
         gl.bindTexture(this.target, null)
         textureUnits[this.unit] = null
       }
+      if (this.cancelPending) {
+        this.cancelPending()
+        this.cancelPending = null
+      }
+      clearPoll(this)
       gl.deleteTexture(this.texture)
       this.texture = null
       this.unit = -1
@@ -4318,6 +4490,56 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
       delete textureSet[this.id]
     }
   })
+
+  function hookListeners (texture) {
+    var data = texture.data
+    var images = data.faces || [ data.image ]
+    var pixels = []
+
+    images.forEach(function (image) {
+      if (image.pixels) {
+        pixels.push(image.pixels)
+      } else if (image.mipmap) {
+        pixels.push.apply(pixels, image.mipmap)
+      }
+    })
+
+    function refresh () {
+      if (!data.width || !data.height) {
+        // try to recompute size
+        pixels.forEach(function (pixelData) {
+          if (pixelData.image) {
+            data.width = data.width || pixelData.image.naturalWidth
+            data.height = data.height || pixelData.image.naturalWidth
+          } else if (pixelData.video) {
+            data.width = data.width || pixelData.video.width
+            data.height = data.height || pixelData.video.height
+          }
+        })
+      }
+      texture.refresh()
+    }
+
+    pixels.forEach(function (pixelData) {
+      if (pixelData.image && !pixelData.image.complete) {
+        pixelData.image.addEventListener('load', refresh)
+      } else if (pixelData.video && pixelData.readyState < 1) {
+        pixelData.video.addEventListener('progress', refresh)
+      }
+    })
+
+    function detachListeners () {
+      pixels.forEach(function (pixelData) {
+        if (pixelData.image) {
+          pixelData.image.removeEventListener('load', refresh)
+        } else if (pixelData.video) {
+          pixelData.video.removeEventListener('progress', refresh)
+        }
+      })
+    }
+
+    return detachListeners
+  }
 
   function createTexture (options, target) {
     var texture = new REGLTexture(target, gl.createTexture())
@@ -4328,9 +4550,33 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
       : parseCube
 
     function reglTexture (options) {
-      texture.update(parse(options || {}))
-      reglTexture.width = texture.width
-      reglTexture.height = texture.height
+      if (texture.cancelPending) {
+        texture.cancelPending()
+        texture.cancelPending = null
+      }
+
+      clearPoll(texture)
+
+      var input = options || {}
+      if (typeof input !== 'object') {
+        input = {
+          data: input
+        }
+      }
+      var args = parse(input)
+      var params = args.params
+      texture.data = args
+
+      if (params.needsListeners) {
+        texture.cancelPending = hookListeners(texture)
+      }
+
+      if (params.poll) {
+        texture.pollId = pollSet.length
+        pollSet.push(texture)
+      }
+
+      texture.refresh()
     }
 
     reglTexture(options)
@@ -4368,17 +4614,25 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
     })
   }
 
+  // Update any textures
+  function pollTextures () {
+    for (var i = 0; i < pollSet.length; ++i) {
+      pollSet[i].refresh()
+    }
+  }
+
   return {
     create: createTexture,
     refresh: refreshTextures,
     clear: destroyTextures,
+    poll: pollTextures,
     getTexture: function (wrapper) {
       return null
     }
   }
 }
 
-},{"./check":3,"./is-typed-array":20}],28:[function(_dereq_,module,exports){
+},{"./check":3,"./is-typed-array":20,"./load-texture":22}],29:[function(_dereq_,module,exports){
 module.exports = function wrapUniformState () {
   var uniformState = {}
 
@@ -4395,7 +4649,7 @@ module.exports = function wrapUniformState () {
   }
 }
 
-},{}],29:[function(_dereq_,module,exports){
+},{}],30:[function(_dereq_,module,exports){
 var check = _dereq_('./lib/check')
 var getContext = _dereq_('./lib/context')
 var wrapExtensions = _dereq_('./lib/extension')
@@ -4494,7 +4748,7 @@ module.exports = function wrapREGL () {
     frameState.dt = now - frameState.t
     frameState.t = now
 
-    // update textures
+    textureState.poll()
 
     for (var i = 0; i < rafCallbacks.length; ++i) {
       var cb = rafCallbacks[i]
@@ -4742,5 +4996,5 @@ module.exports = function wrapREGL () {
   })
 }
 
-},{"./lib/attribute":1,"./lib/buffer":2,"./lib/check":3,"./lib/clock":4,"./lib/compile":6,"./lib/context":14,"./lib/draw":15,"./lib/dynamic":16,"./lib/elements":17,"./lib/extension":18,"./lib/fbo":19,"./lib/limits":21,"./lib/raf":22,"./lib/read":23,"./lib/shader":24,"./lib/state":26,"./lib/texture":27,"./lib/uniform":28}]},{},[29])(29)
+},{"./lib/attribute":1,"./lib/buffer":2,"./lib/check":3,"./lib/clock":4,"./lib/compile":6,"./lib/context":14,"./lib/draw":15,"./lib/dynamic":16,"./lib/elements":17,"./lib/extension":18,"./lib/fbo":19,"./lib/limits":21,"./lib/raf":23,"./lib/read":24,"./lib/shader":25,"./lib/state":27,"./lib/texture":28,"./lib/uniform":29}]},{},[30])(30)
 });
