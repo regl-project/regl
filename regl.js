@@ -331,7 +331,13 @@ module.exports = function wrapREGL () {
       return textureState.create(options, GL_TEXTURE_2D)
     },
     cube: function (options) {
-      return textureState.create(options, GL_TEXTURE_CUBE_MAP)
+      if (arguments.length === 6) {
+        return textureState.create(
+          Array.prototype.slice.call(arguments),
+          GL_TEXTURE_CUBE_MAP)
+      } else {
+        return textureState.create(options, GL_TEXTURE_CUBE_MAP)
+      }
     },
     // fbo: create(fboState),
 
