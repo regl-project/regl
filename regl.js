@@ -96,7 +96,7 @@ module.exports = function wrapREGL () {
     frameState.dt = now - frameState.t
     frameState.t = now
 
-    // update textures
+    textureState.poll()
 
     for (var i = 0; i < rafCallbacks.length; ++i) {
       var cb = rafCallbacks[i]
