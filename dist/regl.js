@@ -208,7 +208,7 @@ module.exports = function wrapAttributeState (gl, extensionState, bufferState) {
   }
 }
 
-},{"./constants/dtypes.json":11}],2:[function(_dereq_,module,exports){
+},{"./constants/dtypes.json":8}],2:[function(_dereq_,module,exports){
 // Array and element buffer creation
 var check = _dereq_('./check')
 var isTypedArray = _dereq_('./is-typed-array')
@@ -374,7 +374,7 @@ module.exports = function wrapBufferState (gl) {
   }
 }
 
-},{"./check":3,"./constants/arraytypes.json":7,"./is-typed-array":20}],3:[function(_dereq_,module,exports){
+},{"./check":3,"./constants/arraytypes.json":7,"./is-typed-array":16}],3:[function(_dereq_,module,exports){
 // Error checking and parameter validation
 var isTypedArray = _dereq_('./is-typed-array')
 
@@ -438,7 +438,7 @@ module.exports = Object.assign(check, {
   oneOf: checkOneOf
 })
 
-},{"./is-typed-array":20}],4:[function(_dereq_,module,exports){
+},{"./is-typed-array":16}],4:[function(_dereq_,module,exports){
 /* globals performance */
 module.exports =
   (typeof performance !== 'undefined' && performance.now)
@@ -550,10 +550,6 @@ var createEnvironment = _dereq_('./codegen')
 
 var primTypes = _dereq_('./constants/primitives.json')
 var glTypes = _dereq_('./constants/dtypes.json')
-var compareFuncs = _dereq_('./constants/comparefuncs.json')
-var blendFuncs = _dereq_('./constants/blendfuncs.json')
-var blendEquations_base = _dereq_('./constants/blendequations.json')
-var stencilOps = _dereq_('./constants/stencil-ops.json')
 
 var GL_ELEMENT_ARRAY_BUFFER = 34963
 
@@ -595,6 +591,58 @@ var GL_CCW = 0x0901
 
 var GL_MIN_EXT = 0x8007
 var GL_MAX_EXT = 0x8008
+
+var blendFuncs = {
+  '0': 0,
+  '1': 1,
+  'zero': 0,
+  'one': 1,
+  'src color': 768,
+  'one minus src color': 769,
+  'src alpha': 770,
+  'one minus src alpha': 771,
+  'dst color': 774,
+  'one minus dst color': 775,
+  'dst alpha': 772,
+  'one minus dst alpha': 773,
+  'constant color': 32769,
+  'one minus constant color': 32770,
+  'constant alpha': 32771,
+  'one minus constant alpha': 32772,
+  'src alpha saturate': 776
+}
+
+var compareFuncs = {
+  'never': 512,
+  'less': 513,
+  '<': 513,
+  'equal': 514,
+  '=': 514,
+  '==': 514,
+  '===': 514,
+  'lequal': 515,
+  '<=': 515,
+  'greater': 516,
+  '>': 516,
+  'notequal': 517,
+  '!=': 517,
+  '!==': 517,
+  'gequal': 518,
+  '>=': 518,
+  'always': 519
+}
+
+var stencilOps = {
+  '0': 0,
+  'zero': 0,
+  'keep': 7680,
+  'replace': 7681,
+  'increment': 7682,
+  'decrement': 7683,
+  'increment wrap': 34055,
+  'decrement wrap': 34056,
+  'invert': 5386
+}
 
 function typeLength (x) {
   switch (x) {
@@ -685,7 +733,11 @@ module.exports = function reglCompiler (
   var extensions = extensionState.extensions
   var contextState = glState.contextState
 
-  var blendEquations = Object.create(blendEquations_base)
+  var blendEquations = {
+    'add': 32774,
+    'subtract': 32778,
+    'reverse subtract': 32779
+  }
   if (extensions.ext_blend_minmax) {
     blendEquations.min = GL_MIN_EXT
     blendEquations.max = GL_MAX_EXT
@@ -735,7 +787,7 @@ module.exports = function reglCompiler (
       var STACK = link(uniformState.uniforms[uniform.name])
       var TOP = STACK + '[' + STACK + '.length-1]'
       if (uniform.info.type === GL_SAMPLER_2D ||
-          uniform.info.type === GL_SAMPLER_CUBE) {
+        uniform.info.type === GL_SAMPLER_CUBE) {
         var TEX_VALUE = def(TOP + '._texture')
         TEXTURE_UNIFORMS.push(TEX_VALUE)
         draw(setUniformString(GL, GL_INT, LOCATION, TEX_VALUE + '.bind()'))
@@ -902,7 +954,7 @@ module.exports = function reglCompiler (
       var STACK = link(uniformState.uniforms[uniform.name])
       var TOP = STACK + '[' + STACK + '.length-1]'
       if (uniform.info.type === GL_SAMPLER_2D ||
-          uniform.info.type === GL_SAMPLER_CUBE) {
+        uniform.info.type === GL_SAMPLER_CUBE) {
         var TEX_VALUE = def(TOP + '._texture')
         batch(setUniformString(GL, GL_INT, LOCATION, TEX_VALUE + '.bind()'))
         exit(TEX_VALUE, '.unbind();')
@@ -1136,7 +1188,7 @@ module.exports = function reglCompiler (
       var LOCATION = link(data.location)
       var VALUE = dyn(uniforms[uniform])
       if (uniform.info.type === GL_SAMPLER_2D ||
-          uniform.info.type === GL_SAMPLER_CUBE) {
+        uniform.info.type === GL_SAMPLER_CUBE) {
         var TEX_VALUE = def(VALUE + '._texture')
         DYNAMIC_TEXTURES.push(TEX_VALUE)
         batch(setUniformString(GL, GL_INT, LOCATION, TEX_VALUE + '.bind()'))
@@ -1820,13 +1872,13 @@ module.exports = function reglCompiler (
           var BLEND_EQUATIONS = link(blendEquations)
           dynamicEntry(
             'if(typeof ', variable, '==="string"){',
-              BLEND_EQUATION_STACK, '.push(',
-              BLEND_EQUATIONS, '[', variable, '],',
-              BLEND_EQUATIONS, '[', variable, ']);',
+            BLEND_EQUATION_STACK, '.push(',
+            BLEND_EQUATIONS, '[', variable, '],',
+            BLEND_EQUATIONS, '[', variable, ']);',
             '}else{',
-              BLEND_EQUATION_STACK, '.push(',
-              BLEND_EQUATIONS, '[', variable, '.rgb],',
-              BLEND_EQUATIONS, '[', variable, '.alpha]);',
+            BLEND_EQUATION_STACK, '.push(',
+            BLEND_EQUATIONS, '[', variable, '.rgb],',
+            BLEND_EQUATIONS, '[', variable, '.alpha]);',
             '}')
           dynamicExit(BLEND_EQUATION_STACK, '.pop();')
           break
@@ -1919,13 +1971,13 @@ module.exports = function reglCompiler (
 
         case 'elements':
           var hasPrimitive =
-            !('primitive' in dynamicOptions) &&
+          !('primitive' in dynamicOptions) &&
             !('primitive' in staticOptions)
           var hasCount =
-            !('count' in dynamicOptions) &&
+          !('count' in dynamicOptions) &&
             !('count' in staticOptions)
           var hasOffset =
-            !('offset' in dynamicOptions) &&
+          !('offset' in dynamicOptions) &&
             !('offset' in staticOptions)
           var ELEMENTS = dynamicEntry.def()
           dynamicEntry(
@@ -2055,7 +2107,7 @@ module.exports = function reglCompiler (
   }
 }
 
-},{"./check":3,"./codegen":5,"./constants/blendequations.json":8,"./constants/blendfuncs.json":9,"./constants/comparefuncs.json":10,"./constants/dtypes.json":11,"./constants/primitives.json":12,"./constants/stencil-ops.json":13}],7:[function(_dereq_,module,exports){
+},{"./check":3,"./codegen":5,"./constants/dtypes.json":8,"./constants/primitives.json":9}],7:[function(_dereq_,module,exports){
 module.exports={
   "[object Int8Array]": 5120
 , "[object Int16Array]": 5122
@@ -2071,55 +2123,6 @@ module.exports={
 
 },{}],8:[function(_dereq_,module,exports){
 module.exports={
-  "add":32774,
-  "subtract":32778,
-  "reverse subtract":32779
-}
-
-},{}],9:[function(_dereq_,module,exports){
-module.exports={
-  "0":0,
-  "1":1,
-  "zero":0,
-  "one":1,
-  "src color": 768,
-  "one minus src color":769,
-  "src alpha":770,
-  "one minus src alpha":771,
-  "dst color":774,
-  "one minus dst color":775,
-  "dst alpha":772,
-  "one minus dst alpha":773,
-  "constant color": 32769,
-  "one minus constant color": 32770,
-  "constant alpha": 32771,
-  "one minus constant alpha": 32772,
-  "src alpha saturate": 776
-}
-
-},{}],10:[function(_dereq_,module,exports){
-module.exports={
-  "never": 512,
-  "less": 513,
-  "<": 513,
-  "equal": 514,
-  "=": 514,
-  "==": 514,
-  "===": 514,
-  "lequal": 515,
-  "<=": 515,
-  "greater": 516,
-  ">": 516,
-  "notequal": 517,
-  "!=": 517,
-  "!==": 517,
-  "gequal": 518,
-  ">=": 518,
-  "always": 519
-}
-
-},{}],11:[function(_dereq_,module,exports){
-module.exports={
   "int8": 5120
 , "int16": 5122
 , "int32": 5124
@@ -2129,7 +2132,7 @@ module.exports={
 , "float": 5126
 }
 
-},{}],12:[function(_dereq_,module,exports){
+},{}],9:[function(_dereq_,module,exports){
 module.exports={
   "points": 0,
   "lines": 1,
@@ -2140,20 +2143,7 @@ module.exports={
   "triangle fan": 6
 }
 
-},{}],13:[function(_dereq_,module,exports){
-module.exports={
-  "0": 0,
-  "zero": 0,
-  "keep": 7680,
-  "replace": 7681,
-  "increment": 7682,
-  "decrement": 7683,
-  "increment wrap": 34055,
-  "decrement wrap": 34056,
-  "invert": 5386
-}
-
-},{}],14:[function(_dereq_,module,exports){
+},{}],10:[function(_dereq_,module,exports){
 // Context and canvas creation helper functions
 /*globals HTMLElement,WebGLRenderingContext*/
 
@@ -2180,7 +2170,7 @@ function createCanvas (element, options) {
     })
   }
 
-  var scale = +window.devicePixelRatio
+  var scale = +args.options.pixelRatio
   function resize () {
     var w = window.innerWidth
     var h = window.innerHeight
@@ -2214,7 +2204,7 @@ function createCanvas (element, options) {
 }
 
 function getContext (canvas, options) {
-  var glOptions = options.glOptions
+  var glOptions = options.glOptions || {}
 
   function get (name) {
     try {
@@ -2232,7 +2222,9 @@ function getContext (canvas, options) {
 
   return {
     gl: gl,
-    options: options
+    options: Object.assign({
+      pixelRatio: window.devicePixelRatio
+    }, options)
   }
 }
 
@@ -2256,7 +2248,9 @@ module.exports = function parseArgs (args) {
     } else if (args[0] instanceof WebGLRenderingContext) {
       return {
         gl: args[0],
-        options: options
+        options: Object.assign({
+          pixelRatio: 1
+        }, options)
       }
     } else {
       options = args[0]
@@ -2270,7 +2264,7 @@ module.exports = function parseArgs (args) {
   }
 }
 
-},{"./check":3}],15:[function(_dereq_,module,exports){
+},{"./check":3}],11:[function(_dereq_,module,exports){
 var GL_TRIANGLES = 4
 
 module.exports = function wrapDrawState (gl) {
@@ -2287,7 +2281,7 @@ module.exports = function wrapDrawState (gl) {
   }
 }
 
-},{}],16:[function(_dereq_,module,exports){
+},{}],12:[function(_dereq_,module,exports){
 var VARIABLE_COUNTER = 0
 
 function DynamicVariable (isFunc, data) {
@@ -2330,7 +2324,7 @@ module.exports = {
   unbox: unbox
 }
 
-},{}],17:[function(_dereq_,module,exports){
+},{}],13:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 var isTypedArray = _dereq_('./is-typed-array')
 var primTypes = _dereq_('./constants/primitives.json')
@@ -2492,7 +2486,7 @@ module.exports = function wrapElementsState (gl, extensionState, bufferState) {
   }
 }
 
-},{"./check":3,"./constants/primitives.json":12,"./is-typed-array":20}],18:[function(_dereq_,module,exports){
+},{"./check":3,"./constants/primitives.json":9,"./is-typed-array":16}],14:[function(_dereq_,module,exports){
 module.exports = function createExtensionCache (gl) {
   var extensions = {}
 
@@ -2538,7 +2532,7 @@ module.exports = function createExtensionCache (gl) {
   }
 }
 
-},{}],19:[function(_dereq_,module,exports){
+},{}],15:[function(_dereq_,module,exports){
 // Framebuffer object state management
 
 module.exports = function wrapFBOState (
@@ -2563,13 +2557,13 @@ module.exports = function wrapFBOState (
   }
 }
 
-},{}],20:[function(_dereq_,module,exports){
+},{}],16:[function(_dereq_,module,exports){
 var dtypes = _dereq_('./constants/arraytypes.json')
 module.exports = function (x) {
   return Object.prototype.toString.call(x) in dtypes
 }
 
-},{"./constants/arraytypes.json":7}],21:[function(_dereq_,module,exports){
+},{"./constants/arraytypes.json":7}],17:[function(_dereq_,module,exports){
 var GL_SUBPIXEL_BITS = 0x0D50
 var GL_RED_BITS = 0x0D52
 var GL_GREEN_BITS = 0x0D53
@@ -2641,7 +2635,7 @@ module.exports = function (gl, extensions) {
   }
 }
 
-},{}],22:[function(_dereq_,module,exports){
+},{}],18:[function(_dereq_,module,exports){
 /* globals document, Image, XMLHttpRequest */
 
 module.exports = loadTexture
@@ -2718,7 +2712,7 @@ function loadTexture (url) {
   return null
 }
 
-},{}],23:[function(_dereq_,module,exports){
+},{}],19:[function(_dereq_,module,exports){
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
     typeof cancelAnimationFrame === 'function') {
@@ -2735,7 +2729,7 @@ if (typeof requestAnimationFrame === 'function' &&
   }
 }
 
-},{}],24:[function(_dereq_,module,exports){
+},{}],20:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 var isTypedArray = _dereq_('./is-typed-array')
 
@@ -2789,7 +2783,7 @@ module.exports = function wrapReadPixels (gl, glState) {
   return readPixels
 }
 
-},{"./check":3,"./is-typed-array":20}],25:[function(_dereq_,module,exports){
+},{"./check":3,"./is-typed-array":16}],21:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 
 var DEFAULT_FRAG_SHADER = 'void main(){gl_FragColor=vec4(0,0,0,0);}'
@@ -3002,7 +2996,7 @@ module.exports = function wrapShaderState (
   }
 }
 
-},{"./check":3}],26:[function(_dereq_,module,exports){
+},{"./check":3}],22:[function(_dereq_,module,exports){
 // A stack for managing the state of a scalar/vector parameter
 
 module.exports = function createStack (init, onChange) {
@@ -3060,7 +3054,7 @@ module.exports = function createStack (init, onChange) {
   }
 }
 
-},{}],27:[function(_dereq_,module,exports){
+},{}],23:[function(_dereq_,module,exports){
 var createStack = _dereq_('./stack')
 var createEnvironment = _dereq_('./codegen')
 
@@ -3241,7 +3235,7 @@ module.exports = function wrapContextState (gl, shaderState) {
   }
 }
 
-},{"./codegen":5,"./stack":26}],28:[function(_dereq_,module,exports){
+},{"./codegen":5,"./stack":22}],24:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 var isTypedArray = _dereq_('./is-typed-array')
 var loadTexture = _dereq_('./load-texture')
@@ -4632,7 +4626,7 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
   }
 }
 
-},{"./check":3,"./is-typed-array":20,"./load-texture":22}],29:[function(_dereq_,module,exports){
+},{"./check":3,"./is-typed-array":16,"./load-texture":18}],25:[function(_dereq_,module,exports){
 module.exports = function wrapUniformState () {
   var uniformState = {}
 
@@ -4649,7 +4643,7 @@ module.exports = function wrapUniformState () {
   }
 }
 
-},{}],30:[function(_dereq_,module,exports){
+},{}],26:[function(_dereq_,module,exports){
 var check = _dereq_('./lib/check')
 var getContext = _dereq_('./lib/context')
 var wrapExtensions = _dereq_('./lib/extension')
@@ -4710,7 +4704,8 @@ module.exports = function wrapREGL () {
     t: clock(),
     renderTime: 0,
     width: gl.drawingBufferWidth,
-    height: gl.drawingBufferHeight
+    height: gl.drawingBufferHeight,
+    pixelRatio: options.pixelRatio
   }
   var readPixels = wrapRead(gl, glState)
 
@@ -4996,5 +4991,5 @@ module.exports = function wrapREGL () {
   })
 }
 
-},{"./lib/attribute":1,"./lib/buffer":2,"./lib/check":3,"./lib/clock":4,"./lib/compile":6,"./lib/context":14,"./lib/draw":15,"./lib/dynamic":16,"./lib/elements":17,"./lib/extension":18,"./lib/fbo":19,"./lib/limits":21,"./lib/raf":23,"./lib/read":24,"./lib/shader":25,"./lib/state":27,"./lib/texture":28,"./lib/uniform":29}]},{},[30])(30)
+},{"./lib/attribute":1,"./lib/buffer":2,"./lib/check":3,"./lib/clock":4,"./lib/compile":6,"./lib/context":10,"./lib/draw":11,"./lib/dynamic":12,"./lib/elements":13,"./lib/extension":14,"./lib/fbo":15,"./lib/limits":17,"./lib/raf":19,"./lib/read":20,"./lib/shader":21,"./lib/state":23,"./lib/texture":24,"./lib/uniform":25}]},{},[26])(26)
 });
