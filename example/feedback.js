@@ -57,8 +57,6 @@ regl.frame(function () {
   drawFeedback()
 
   pixels({
-    width: regl.stats.width,
-    height: regl.stats.height,
     copy: true
   })
 })

@@ -39,8 +39,6 @@ module.exports = function wrapREGL () {
   var elementState = wrapElements(gl, extensionState, bufferState)
   var uniformState = wrapUniforms()
   var attributeState = wrapAttributes(gl, extensionState, bufferState)
-  var textureState = wrapTextures(gl, extensionState, limits, poll)
-  var fboState = wrapFBOs(gl, extensionState, textureState)
   var shaderState = wrapShaders(
     gl,
     extensionState,
@@ -51,6 +49,13 @@ module.exports = function wrapREGL () {
     })
   var drawState = wrapDraw(gl, extensionState, bufferState)
   var glState = wrapContext(gl, shaderState)
+  var textureState = wrapTextures(
+    gl,
+    extensionState,
+    limits,
+    poll,
+    glState.viewport)
+  var fboState = wrapFBOs(gl, extensionState, textureState)
   var frameState = {
     count: 0,
     start: clock(),
