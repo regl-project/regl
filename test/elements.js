@@ -45,6 +45,7 @@ tape('elements', function (t) {
     }
   })
 
+  /*
   var drawDynamicWithCount = regl({
     frag: [
       'precision mediump float;',
@@ -73,6 +74,7 @@ tape('elements', function (t) {
 
     elements: regl.prop('elements')
   })
+  */
 
   var drawDynamic = regl({
     frag: [

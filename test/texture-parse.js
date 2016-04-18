@@ -45,8 +45,8 @@ tape('texture arg parsing', function (t) {
         type: gl.UNSIGNED_BYTE,
         width: 0,
         height: 0,
-        wrapS: gl.REPEAT,
-        wrapT: gl.REPEAT,
+        wrapS: gl.CLAMP_TO_EDGE,
+        wrapT: gl.CLAMP_TO_EDGE,
         minFilter: gl.NEAREST,
         magFilter: gl.NEAREST,
         genMipmaps: false
@@ -390,7 +390,7 @@ tape('texture arg parsing', function (t) {
     'ndarray-like input')
 
   // test half float
-  if (regl.limits.extensions.indexOf('oes_texture_half_float')) {
+  if (regl.limits.extensions.indexOf('oes_texture_half_float') >= 0) {
     checkProperties(
       regl.texture({
         type: 'half float',

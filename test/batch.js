@@ -40,7 +40,6 @@ tape('batch', function (t) {
       primitive: 'points'
     })
 
-
     var drawBatchCount = regl({
       frag: [
         'void main() {',
@@ -74,7 +73,6 @@ tape('batch', function (t) {
       primitive: 'points'
     })
 
-
     var points = [
       [8, 8],
       [0, 8],
@@ -82,7 +80,6 @@ tape('batch', function (t) {
       [15, 8],
       [8, 15]
     ]
-
 
     function runTest () {
       var pixels = regl.read()

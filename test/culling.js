@@ -2,8 +2,6 @@ var createContext = require('./util/create-context')
 var createREGL = require('../../regl')
 var tape = require('tape')
 
-var faces = require('../lib/constants/face.json')
-
 tape('culling', function (t) {
   var gl = createContext(16, 16)
   var regl = createREGL(gl)
@@ -14,7 +12,7 @@ tape('culling', function (t) {
     }
 
     same(gl.CULL_FACE, flags.enable, 'enable')
-    same(gl.CULL_FACE_MODE, faces[flags.face], 'face')
+    same(gl.CULL_FACE_MODE, flags.face === 'front' ? gl.FRONT : gl.BACK, 'face')
   }
 
   var permutations = [

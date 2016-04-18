@@ -2,8 +2,6 @@ var createContext = require('./util/create-context')
 var createREGL = require('../../regl')
 var tape = require('tape')
 
-var orientation = require('../lib/constants/orientation.json')
-
 tape('misc. state', function (t) {
   var gl = createContext(16, 16)
   var regl = createREGL(gl)
@@ -19,7 +17,7 @@ tape('misc. state', function (t) {
     }
 
     same(gl.DITHER, flags.dither, 'dither')
-    same(gl.FRONT_FACE, orientation[flags.frontFace], 'frontFace')
+    same(gl.FRONT_FACE, flags.frontFace === 'cw' ? gl.CW : gl.CCW, 'frontFace')
     same(gl.LINE_WIDTH, flags.lineWidth, 'lineWidth')
     same(gl.COLOR_WRITEMASK, flags.colorMask, 'colorMask')
   }
