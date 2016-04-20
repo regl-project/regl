@@ -185,9 +185,13 @@ You can run benchmarks locally using `npm run bench` or check them out here:
 
 [For info on how to build and test headless, see the contributing guide here](DEVELOPING.md)
 
-## License
+## Credits
 (c) 2016 MIT License
 
-Supported by the [Freeman Lab](https://www.janelia.org/lab/freeman-lab) and the Howard Hughes Medical Institute
+Supported by the [Freeman Lab](https://www.janelia.org/lab/freeman-lab) and the Howard Hughes Medical Institute (see @freeman-lab on GitHub)
 
-Test video (doggie-chromakey.ogv) by [L0ckergn0me](https://archive.org/details/L0ckergn0me-PixieGreenScreen446)
+Test video (doggie-chromakey.ogv) by [L0ckergn0me](https://archive.org/details/L0ckergn0me-PixieGreenScreen446), used under creative commons license
+
+Cube maps (posx.jpeg, negx.jpeg, posy.jpeg, negy.jpeg, posz.jpeg, negz.jpeg) by [Humus](http://www.humus.name/index.php?page=Textures), used under creative commons 3 license
+
+Environment map of Oregon due to Max Ogden (@ogd on GitHub)
