@@ -1686,7 +1686,7 @@ module.exports = function reglCompiler (
         var LINK_PROG = link(shaderState.create)
         entry(
           PROGRAM_STATE, '.push(',
-          LINK_PROG, '(', FRAG_SRC, ',', VERT_SRC, '));')
+          LINK_PROG, '(', VERT_SRC, ',', FRAG_SRC, '));')
       }
       exit(PROGRAM_STATE, '.pop();')
     }
@@ -2941,7 +2941,7 @@ module.exports = function wrapShaderState (
   function getProgram (vertSource, fragSource) {
     var cache = programCache[fragSource]
     if (!cache) {
-      cache = programCache[vertSource] = {}
+      cache = programCache[fragSource] = {}
     }
     var program = cache[vertSource]
     if (!program) {
