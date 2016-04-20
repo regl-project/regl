@@ -7,8 +7,6 @@ tape('texture arg parsing', function (t) {
   var regl = createREGL(gl)
 
   function checkProperties (texture, props, name) {
-    var textureProps = texture._texture.data
-
     function diff (actual, expected, prefix) {
       if (typeof expected === 'object') {
         if (expected instanceof Uint8Array ||
@@ -16,6 +14,8 @@ tape('texture arg parsing', function (t) {
             expected instanceof Uint32Array ||
             expected instanceof Float32Array) {
           t.same(actual, expected, prefix)
+        } else if (expected === null) {
+          t.equals(actual, expected, prefix)
         } else if (expected.nodeName) {
           t.equals(actual, expected, prefix)
         } else if (Array.isArray(expected)) {
@@ -32,14 +32,15 @@ tape('texture arg parsing', function (t) {
       }
     }
 
-    diff(textureProps, props, name || '')
+    diff(texture._texture.params, props.params || {}, (name || '') + ' params')
+    diff(texture._texture.pixels, props.pixels || [], (name || '') + ' pixels')
   }
 
   checkProperties(
     regl.texture({}),
     {
       params: {
-        anisoSamples: 1,
+        anisotropic: 1,
         format: gl.RGBA,
         internalformat: gl.RGBA,
         type: gl.UNSIGNED_BYTE,
@@ -61,22 +62,19 @@ tape('texture arg parsing', function (t) {
         [7, 8, 9] ]
     ),
     {
-      image: {
-        pixels: {
-          data: new Uint8Array([ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]),
-          type: gl.UNSIGNED_BYTE,
-          flipY: false,
-          premultiplyAlpha: false,
-          unpackAlignment: 1,
-          colorSpace: gl.BROWSER_DEFAULT_WEBGL
-        }
-      },
-      params: {
+      pixels: [{
+        target: gl.TEXTURE_2D,
+        data: new Uint8Array([ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]),
+        type: gl.UNSIGNED_BYTE,
+        flipY: false,
+        premultiplyAlpha: false,
+        unpackAlignment: 1,
+        colorSpace: gl.BROWSER_DEFAULT_WEBGL,
         width: 3,
         height: 3,
         channels: 1,
         format: gl.LUMINANCE
-      }
+      }]
     },
     'nested array')
 
@@ -98,28 +96,41 @@ tape('texture arg parsing', function (t) {
       params: {
         width: 4,
         height: 4,
-        channels: 1,
         format: gl.LUMINANCE,
         type: gl.UNSIGNED_BYTE
       },
-      image: {
-        mipmap: [
-          {
-            data: new Uint8Array([
-              0, 1, 2, 3,
-              4, 5, 6, 7,
-              8, 9, 10, 11,
-              12, 13, 14, 15
-            ])
-          },
-          {
-            data: new Uint8Array([0, 1, 2, 3])
-          },
-          {
-            data: new Uint8Array([0])
-          }
-        ]
-      }
+      pixels: [
+        {
+          target: gl.TEXTURE_2D,
+          miplevel: 0,
+          width: 4,
+          height: 4,
+          channels: 1,
+          data: new Uint8Array([
+            0, 1, 2, 3,
+            4, 5, 6, 7,
+            8, 9, 10, 11,
+            12, 13, 14, 15
+          ])
+        },
+        {
+          target: gl.TEXTURE_2D,
+          miplevel: 1,
+          width: 2,
+          height: 2,
+          data: new Uint8Array([
+            0, 1,
+            2, 3
+          ])
+        },
+        {
+          target: gl.TEXTURE_2D,
+          miplevel: 2,
+          width: 1,
+          height: 1,
+          data: new Uint8Array([0])
+        }
+      ]
     },
     'simple mipmaps')
 
@@ -148,13 +159,13 @@ tape('texture arg parsing', function (t) {
 
   checkProperties(
     regl.texture({
-      shape: [5, 1, 2],
+      shape: [8, 2, 2],
       wrap: ['clamp', 'mirror']
     }),
     {
       params: {
-        width: 5,
-        height: 1,
+        width: 8,
+        height: 2,
         format: gl.LUMINANCE_ALPHA,
         wrapS: gl.CLAMP_TO_EDGE,
         wrapT: gl.MIRRORED_REPEAT
@@ -182,16 +193,20 @@ tape('texture arg parsing', function (t) {
           format: gl.RGBA,
           type: gl.FLOAT
         },
-        image: {
-          pixels: {
-            data: new Float32Array([
-              1, 2, 3, 4,
-              5, 6, 7, 8,
-              9, 10, 11, 12,
-              13, 14, 15, 16
-            ])
-          }
-        }
+        pixels: [{
+          data: new Float32Array([
+            1, 2, 3, 4,
+            5, 6, 7, 8,
+            9, 10, 11, 12,
+            13, 14, 15, 16
+          ]),
+          width: 2,
+          height: 2,
+          channels: 4,
+          format: gl.RGBA,
+          internalformat: gl.RGBA,
+          type: gl.FLOAT
+        }]
       },
       'float')
 
@@ -205,11 +220,9 @@ tape('texture arg parsing', function (t) {
         params: {
           type: gl.FLOAT
         },
-        image: {
-          pixels: {
-            data: new Float32Array([1, 2, 3, 4])
-          }
-        }
+        pixels: [{
+          data: new Float32Array([1, 2, 3, 4])
+        }]
       },
       'float type infer')
   }
@@ -225,16 +238,14 @@ tape('texture arg parsing', function (t) {
       params: {
         width: 2,
         height: 2,
-        channels: 4,
         format: gl.RGBA,
         internalformat: gl.RGBA4,
         type: gl.UNSIGNED_SHORT_4_4_4_4
       },
-      image: {
-        pixels: {
-          data: new Uint16Array([1, 2, 3, 4])
-        }
-      }
+      pixels: [{
+        channels: 4,
+        data: new Uint16Array([1, 2, 3, 4])
+      }]
     },
     'rgba4')
 
@@ -248,16 +259,14 @@ tape('texture arg parsing', function (t) {
       params: {
         width: 2,
         height: 2,
-        channels: 4,
         format: gl.RGBA,
         internalformat: gl.RGB5_A1,
         type: gl.UNSIGNED_SHORT_5_5_5_1
       },
-      image: {
-        pixels: {
-          data: new Uint16Array([1, 2, 1000, 4])
-        }
-      }
+      pixels: [{
+        channels: 4,
+        data: new Uint16Array([1, 2, 1000, 4])
+      }]
     },
     'rgb5 a1')
 
@@ -271,16 +280,14 @@ tape('texture arg parsing', function (t) {
       params: {
         width: 2,
         height: 2,
-        channels: 3,
         format: gl.RGB,
         internalformat: gl.RGB565,
         type: gl.UNSIGNED_SHORT_5_6_5
       },
-      image: {
-        pixels: {
-          data: new Uint16Array([1, 2, 3, 4])
-        }
-      }
+      pixels: [{
+        channels: 3,
+        data: new Uint16Array([1, 2, 3, 4])
+      }]
     },
     'rgb565')
 
@@ -295,20 +302,16 @@ tape('texture arg parsing', function (t) {
       data: [1, 0, 2, 0, 3, 0, 4, 0]
     }),
     {
-      params: {
+      pixels: [{
         width: 2,
         height: 2,
-        channels: 1
-      },
-      image: {
-        pixels: {
-          flipY: true,
-          unpackAlignment: 2,
-          premultiplyAlpha: true,
-          colorSpace: gl.NONE,
-          data: new Uint8Array([1, 0, 2, 0, 3, 0, 4, 0])
-        }
-      }
+        channels: 1,
+        flipY: true,
+        unpackAlignment: 2,
+        premultiplyAlpha: true,
+        colorSpace: gl.NONE,
+        data: new Uint8Array([1, 0, 2, 0, 3, 0, 4, 0])
+      }]
     },
     'unpack parameters simple')
 
@@ -333,29 +336,30 @@ tape('texture arg parsing', function (t) {
       ]
     }),
     {
-      params: {
-        width: 2,
-        height: 2,
-        channels: 1
-      },
-      image: {
-        mipmap: [
-          {
-            flipY: false,
-            unpackAlignment: 2,
-            premultiplyAlpha: true,
-            colorSpace: gl.NONE,
-            data: new Uint8Array([1, 0, 2, 0, 3, 0, 4, 0])
-          },
-          {
-            flipY: true,
-            unpackAlignment: 1,
-            premultiplyAlpha: false,
-            colorSpace: gl.BROWSER_DEFAULT_WEBGL,
-            data: new Uint8Array([1])
-          }
-        ]
-      }
+      pixels: [
+        {
+          width: 2,
+          height: 2,
+          channels: 1,
+          miplevel: 0,
+          flipY: false,
+          unpackAlignment: 2,
+          premultiplyAlpha: true,
+          colorSpace: gl.NONE,
+          data: new Uint8Array([1, 0, 2, 0, 3, 0, 4, 0])
+        },
+        {
+          width: 1,
+          height: 1,
+          channels: 1,
+          miplevel: 1,
+          flipY: true,
+          unpackAlignment: 1,
+          premultiplyAlpha: false,
+          colorSpace: gl.BROWSER_DEFAULT_WEBGL,
+          data: new Uint8Array([1])
+        }
+      ]
     },
     'unpack parameters mipmap')
 
@@ -372,20 +376,16 @@ tape('texture arg parsing', function (t) {
       ]
     }),
     {
-      params: {
+      pixels: [{
         width: 2,
         height: 2,
         channels: 2,
-        type: gl.UNSIGNED_BYTE
-      },
-      image: {
-        pixels: {
-          data: new Uint8Array([
-            1, 2, 5, 6,
-            3, 4, 7, 8
-          ])
-        }
-      }
+        type: gl.UNSIGNED_BYTE,
+        data: new Uint8Array([
+          1, 2, 5, 6,
+          3, 4, 7, 8
+        ])
+      }]
     },
     'ndarray-like input')
 
@@ -421,31 +421,29 @@ tape('texture arg parsing', function (t) {
         params: {
           type: gl.getExtension('OES_texture_half_float').HALF_FLOAT_OES
         },
-        image: {
-          pixels: {
-            data: new Uint16Array([
-              '0 01111 0000000000',
-              '0 01111 0000000001',
-              '1 10000 0000000000',
-              '0 11110 1111111111',
-              '0 00001 0000000000',
-              '0 00000 1111111111',
-              '0 00000 0000000001',
-              '0 00000 0000000000',
-              '1 00000 0000000000',
-              '0 11111 0000000000',
-              '0 11111 0000000000',
-              '1 11111 0000000000',
-              '1 11111 0000000000',
-              '0 00000 0000000000',
-              '1 00000 0000000000',
-              '0 01101 0101010101',
-              '1 11111 1111111111'
-            ].map(function (str) {
-              return parseInt(str.replace(/\s/g, ''), 2)
-            }))
-          }
-        }
+        pixels: [{
+          data: new Uint16Array([
+            '0 01111 0000000000',
+            '0 01111 0000000001',
+            '1 10000 0000000000',
+            '0 11110 1111111111',
+            '0 00001 0000000000',
+            '0 00000 1111111111',
+            '0 00000 0000000001',
+            '0 00000 0000000000',
+            '1 00000 0000000000',
+            '0 11111 0000000000',
+            '0 11111 0000000000',
+            '1 11111 0000000000',
+            '1 11111 0000000000',
+            '0 00000 0000000000',
+            '1 00000 0000000000',
+            '0 01101 0101010101',
+            '1 11111 1111111111'
+          ].map(function (str) {
+            return parseInt(str.replace(/\s/g, ''), 2)
+          }))
+        }]
       },
       'half float')
   }
@@ -457,21 +455,17 @@ tape('texture arg parsing', function (t) {
       regl.texture({
         shape: [1, 1],
         format: 'depth',
-        data: new Uint16Array([1])
+        data: null
       }),
       {
-        params: {
+        pixels: [{
+          data: null,
           format: gl.DEPTH_COMPONENT,
           width: 1,
           height: 1,
           channels: 1,
-          type: gl.UNSIGNED_SHORT
-        },
-        image: {
-          pixels: {
-            data: new Uint16Array([1])
-          }
-        }
+          type: gl.UNSIGNED_INT
+        }]
       },
       'depth texture')
 
@@ -482,11 +476,11 @@ tape('texture arg parsing', function (t) {
         format: 'depth stencil'
       }),
       {
-        params: {
+        pixels: [{
           format: gl.DEPTH_STENCIL,
           channels: 2,
           type: gl.getExtension('WEBGL_depth_texture').UNSIGNED_INT_24_8_WEBGL
-        }
+        }]
       },
       'depth stencil')
   }
@@ -505,36 +499,28 @@ tape('texture arg parsing', function (t) {
     checkProperties(
       regl.texture(canvas),
       {
-        params: {
+        pixels: [{
           width: 2,
           height: 2,
           channels: 4,
           format: gl.RGBA,
-          type: gl.UNSIGNED_BYTE
-        },
-        image: {
-          pixels: {
-            canvas: canvas
-          }
-        }
+          type: gl.UNSIGNED_BYTE,
+          canvas: canvas
+        }]
       },
       'canvas')
 
     checkProperties(
       regl.texture(context),
       {
-        params: {
+        pixels: [{
           width: 2,
           height: 2,
           channels: 4,
           format: gl.RGBA,
-          type: gl.UNSIGNED_BYTE
-        },
-        image: {
-          pixels: {
-            canvas: canvas
-          }
-        }
+          type: gl.UNSIGNED_BYTE,
+          canvas: canvas
+        }]
       },
       'context 2d')
 
@@ -544,11 +530,9 @@ tape('texture arg parsing', function (t) {
     checkProperties(
       regl.texture(image),
       {
-        image: {
-          pixels: {
-            image: image
-          }
-        }
+        pixels: [{
+          image: image
+        }]
       },
       'image')
 
@@ -557,11 +541,9 @@ tape('texture arg parsing', function (t) {
     checkProperties(
       regl.texture(video),
       {
-        image: {
-          pixels: {
-            video: video
-          }
-        }
+        pixels: [{
+          video: video
+        }]
       },
       'video')
   }
@@ -596,40 +578,34 @@ tape('texture arg parsing', function (t) {
     ]),
     {
       params: {
-        width: 1,
-        height: 1,
-        channels: 1
       },
-      faces: [
+      pixels: [
         {
-          pixels: {
-            data: new Uint8Array([1])
-          }
+          width: 1,
+          height: 1,
+          channels: 1,
+          target: gl.TEXTURE_CUBE_MAP_POSITIVE_X,
+          data: new Uint8Array([1])
         },
         {
-          pixels: {
-            data: new Uint8Array([2])
-          }
+          target: gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+          data: new Uint8Array([2])
         },
         {
-          pixels: {
-            data: new Uint8Array([3])
-          }
+          target: gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
+          data: new Uint8Array([3])
         },
         {
-          pixels: {
-            data: new Uint8Array([4])
-          }
+          target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
+          data: new Uint8Array([4])
         },
         {
-          pixels: {
-            data: new Uint8Array([5])
-          }
+          target: gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
+          data: new Uint8Array([5])
         },
         {
-          pixels: {
-            data: new Uint8Array([6])
-          }
+          target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Z,
+          data: new Uint8Array([6])
         }
       ]
     },
