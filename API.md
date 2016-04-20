@@ -1072,6 +1072,21 @@ var copyPixels = regl.texture({
 })
 ```
 
+A data source from an image can be one of the following types:
+
+| Data type | Description |
+|-----------|-------------|
+| Rectangular array of arrays | Interpreted as 2D array of arrays |
+| Typed array | A binary array of pixel values |
+| Array | Interpreted as array of pixel values with type based on the input type |
+| `ndarray` | Any object with a `shape, stride, offset, data` |
+| Image | An HTML image element |
+| Video | An HTML video element |
+| Canvas | A canvas element |
+| Context 2D | A canvas 2D context |
+| String | A URL to an image or video to load |
+
+
 | Property | Description | Default |
 |----------|-------------|---------|
 | `width` | Width of texture | `0` |
@@ -1090,23 +1105,12 @@ var copyPixels = regl.texture({
 | `premultiplyAlpha` | Premultiply alpha when unpacking | `false` |
 | `colorSpace` | Sets colorspace conversion | `'browser'` |
 | `poll` | If set, then each frame check if this texture needs to be reuploaded | Depends on the element type |
+| `data` | Image data for the texture |
+| `crossOrigin` | Cross origin resource sharing URL |
 
 * `shape` can be used as an array shortcut for `[width, height, channels]` of image
 * `radius` can be specified for square images and sets both `width` and `height`
 * `data` can take one of the following values,
-
-| Data type | Description |
-|-----------|-------------|
-| Array | Interpreted as array of pixel values with type based on the input type |
-| Rectangular array of arrays | Interpreted as 2D array of arrays |
-| Typed array | A binary array of pixel values |
-| `ndarray` | Any object with a `shape, stride, offset, data` |
-| Image | An HTML image element |
-| Video | An HTML video element |
-| Canvas | A canvas element |
-| Context 2D | A canvas 2D context |
-| String | A URL to an image or video to load |
-
 * If an image element is specified and not yet loaded, then regl will upload a temporary image and hook a callback on the image
 * If a video element is specified, then regl will reupload a frame of the video element each tick unless `poll` is set to false
 * `mag` sets `gl.MAG_FILTER` for the texture and can have one of the following values
@@ -1195,6 +1199,20 @@ var copyPixels = regl.texture({
 * [`gl.compressedTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexImage2D.xml)
 * [`gl.copyTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexImage2D.xml)
 * [`gl.generateMipmap`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGenerateMipmap.xml)
+
+---------------------------------------
+#### Cube maps
+Cube maps follow similar syntax to textures.  They are created using `regl.cube()`
+
+```javascript
+var cubeMap = regl.cube(
+  'posx.jpg',
+  'negx.jpg',
+  'posy.jpg',
+  'negy.jpg',
+  'posz.jpg',
+  'negz.jpg')
+```
 
 ---------------------------------------
 #### Render buffers

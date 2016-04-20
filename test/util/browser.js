@@ -1,4 +1,5 @@
 require('tap-browser-color')()
+/*
 require('../clear')
 require('../buffer-parse')
 require('../element-parse')
@@ -16,4 +17,5 @@ require('../misc')
 require('../sample.js')
 require('../scissor.js')
 require('../viewport')
+*/
 require('../texture-parse')
