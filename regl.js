@@ -5,6 +5,7 @@ var wrapLimits = require('./lib/limits')
 var wrapBuffers = require('./lib/buffer')
 var wrapElements = require('./lib/elements')
 var wrapTextures = require('./lib/texture')
+var wrapRenderbuffers = require('./lib/renderbuffer')
 var wrapFBOs = require('./lib/fbo')
 var wrapUniforms = require('./lib/uniform')
 var wrapAttributes = require('./lib/attribute')
@@ -38,7 +39,7 @@ module.exports = function wrapREGL () {
   var bufferState = wrapBuffers(gl)
   var elementState = wrapElements(gl, extensionState, bufferState)
   var uniformState = wrapUniforms()
-  var attributeState = wrapAttributes(gl, extensionState, bufferState)
+  var attributeState = wrapAttributes(gl, extensionState, bufferState, limits)
   var shaderState = wrapShaders(
     gl,
     extensionState,
@@ -55,6 +56,7 @@ module.exports = function wrapREGL () {
     limits,
     poll,
     glState.viewport)
+  var renderbufferState = wrapRenderbuffers(gl, extensionState, limits)
   var fboState = wrapFBOs(gl, extensionState, textureState)
   var frameState = {
     count: 0,
@@ -137,6 +139,7 @@ module.exports = function wrapREGL () {
     extensionState.refresh()
     bufferState.refresh()
     textureState.refresh()
+    renderbufferState.refresh()
     fboState.refresh()
     shaderState.refresh()
     glState.refresh()
@@ -338,6 +341,9 @@ module.exports = function wrapREGL () {
       } else {
         return textureState.create(options, GL_TEXTURE_CUBE_MAP)
       }
+    },
+    renderbuffer: function (options) {
+      return renderbufferState.create(options)
     },
     // fbo: create(fboState),
 
