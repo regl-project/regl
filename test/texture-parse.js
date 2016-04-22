@@ -548,6 +548,30 @@ tape('texture arg parsing', function (t) {
       'video')
   }
 
+  // Check copy
+  checkProperties(
+    regl.texture({
+      copy: true
+    }),
+    {
+      params: {
+        minFilter: gl.NEAREST,
+        magFilter: gl.NEAREST
+      },
+      pixels: [{
+        format: gl.RGBA,
+        type: gl.UNSIGNED_BYTE,
+        internalformat: gl.RGBA,
+        copy: true,
+        x: 0,
+        y: 0,
+        width: 16,
+        height: 16,
+        channels: 4
+      }]
+    },
+    'copy tex image2d')
+
   // compressed textures
   if (regl.limits.extensions.indexOf('webgl_compressed_texture_s3tc') >= 0) {
     // TODO
