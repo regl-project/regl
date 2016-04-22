@@ -19,6 +19,7 @@
     "faucet": "0.0.1",
     "gl": "^3.0.3",
     "gl-mat4": "^1.1.4",
+    "google-closure-compiler": "^20160315.2.0",
     "hsv2rgb": "^1.1.0",
     "indexhtmlify": "^1.2.1",
     "mouse-change": "^1.2.1",
@@ -38,7 +39,7 @@
     "bench": "budo bench/index.js --open",
     "build": "npm run build-script && npm run build-min && npm run build-bench && npm run build-gallery",
     "build-script": "browserify regl.js -s regl | derequire > dist/regl.js",
-    "build-min": "uglifyjs < dist/regl.js > dist/regl.min.js",
+    "build-min": "node bin/build-min.js",
     "build-bench": "browserify bench/index.js | indexhtmlify > www/bench.html",
     "build-gallery": "node bin/build-gallery.js"
   },
