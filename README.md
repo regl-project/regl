@@ -186,14 +186,14 @@ You can run benchmarks locally using `npm run bench` or check them out here:
 [For info on how to build and test headless, see the contributing guide here](DEVELOPING.md)
 
 ## Credits
-(c) 2016 MIT License
+All code (c) 2016 MIT License
 
-Supported by the [Freeman Lab](https://www.janelia.org/lab/freeman-lab) and the Howard Hughes Medical Institute (see @freeman-lab on GitHub)
+Development supported by the [Freeman Lab](https://www.janelia.org/lab/freeman-lab) and the Howard Hughes Medical Institute (@freeman-lab on GitHub)
 
 Test video (doggie-chromakey.ogv) by [L0ckergn0me](https://archive.org/details/L0ckergn0me-PixieGreenScreen446), used under creative commons license
 
 Cube maps (posx.jpeg, negx.jpeg, posy.jpeg, negy.jpeg, posz.jpeg, negz.jpeg) by [Humus](http://www.humus.name/index.php?page=Textures), used under creative commons 3 license
 
-Environment map of Oregon due to Max Ogden (@ogd on GitHub)
+Environment map of Oregon (ogd-oregon-360.jpg) due to Max Ogden (@ogd on GitHub)
 
-DDS test images taken from the CC0 license [0-AD texture pack by Wildfire games](http://opengameart.org/content/0-ad-textures)
+DDS test images (alpine_cliff_a, alpine_cliff_a_norm, alpine_cliff_a_spec) taken from the CC0 license [0-AD texture pack by Wildfire games](http://opengameart.org/content/0-ad-textures)
