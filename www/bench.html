@@ -330,7 +330,7 @@ Object.keys(CASES).map(function (caseName) {
   return result
 })
 
-},{"../regl":34,"./list":7}],7:[function(require,module,exports){
+},{"../regl":35,"./list":7}],7:[function(require,module,exports){
 module.exports = {
   'clear': require('./clear'),
   'buffer': require('./buffer'),
@@ -3071,6 +3071,191 @@ function loadTexture (url, crossOrigin) {
 }
 
 },{}],26:[function(require,module,exports){
+// References:
+//
+// http://msdn.microsoft.com/en-us/library/bb943991.aspx/
+// http://blog.tojicode.com/2011/12/compressed-textures-in-webgl.html
+//
+var check = require('./check')
+
+module.exports = parseDDS
+
+var DDS_MAGIC = 0x20534444
+
+var GL_TEXTURE_2D = 0x0DE1
+var GL_TEXTURE_CUBE_MAP_POSITIVE_X = 0x8515
+
+var GL_COMPRESSED_RGB_S3TC_DXT1_EXT = 0x83F0
+var GL_COMPRESSED_RGBA_S3TC_DXT1_EXT = 0x83F1
+var GL_COMPRESSED_RGBA_S3TC_DXT3_EXT = 0x83F2
+var GL_COMPRESSED_RGBA_S3TC_DXT5_EXT = 0x83F3
+
+var GL_COMPRESSED_RGB_ETC1_WEBGL = 0x8D64
+
+var GL_UNSIGNED_BYTE = 0x1401
+// var GL_HALF_FLOAT_OES = 0x8D61
+// var GL_FLOAT = 0x1406
+
+var DDSD_MIPMAPCOUNT = 0x20000
+
+var DDSCAPS2_CUBEMAP = 0x200
+var DDSCAPS2_CUBEMAP_POSITIVEX = 0x400
+var DDSCAPS2_CUBEMAP_NEGATIVEX = 0x800
+var DDSCAPS2_CUBEMAP_POSITIVEY = 0x1000
+var DDSCAPS2_CUBEMAP_NEGATIVEY = 0x2000
+var DDSCAPS2_CUBEMAP_POSITIVEZ = 0x4000
+var DDSCAPS2_CUBEMAP_NEGATIVEZ = 0x8000
+
+var CUBEMAP_COMPLETE_FACES = (
+  DDSCAPS2_CUBEMAP_POSITIVEX |
+  DDSCAPS2_CUBEMAP_NEGATIVEX |
+  DDSCAPS2_CUBEMAP_POSITIVEY |
+  DDSCAPS2_CUBEMAP_NEGATIVEY |
+  DDSCAPS2_CUBEMAP_POSITIVEZ |
+  DDSCAPS2_CUBEMAP_NEGATIVEZ)
+
+var DDPF_FOURCC = 0x4
+var DDPF_RGB = 0x40
+
+var FOURCC_DXT1 = 0x31545844
+var FOURCC_DXT3 = 0x33545844
+var FOURCC_DXT5 = 0x35545844
+var FOURCC_ETC1 = 0x31435445
+
+// DDS_HEADER {
+var OFF_SIZE = 1        // int32 dwSize
+var OFF_FLAGS = 2       // int32 dwFlags
+var OFF_HEIGHT = 3      // int32 dwHeight
+var OFF_WIDTH = 4       // int32 dwWidth
+// var OFF_PITCH = 5       // int32 dwPitchOrLinearSize
+// var OFF_DEPTH = 6       // int32 dwDepth
+var OFF_MIPMAP = 7      // int32 dwMipMapCount; // offset: 7
+// int32[11] dwReserved1
+// DDS_PIXELFORMAT {
+// var OFF_PF_SIZE = 19    // int32 dwSize; // offset: 19
+var OFF_PF_FLAGS = 20   // int32 dwFlags
+var OFF_FOURCC = 21     // char[4] dwFourCC
+// var OFF_RGBA_BITS = 22  // int32 dwRGBBitCount
+// var OFF_RED_MASK = 23   // int32 dwRBitMask
+// var OFF_GREEN_MASK = 24 // int32 dwGBitMask
+// var OFF_BLUE_MASK = 25  // int32 dwBBitMask
+// var OFF_ALPHA_MASK = 26 // int32 dwABitMask; // offset: 26
+// }
+// var OFF_CAPS = 27       // int32 dwCaps; // offset: 27
+var OFF_CAPS2 = 28      // int32 dwCaps2
+// var OFF_CAPS3 = 29      // int32 dwCaps3
+// var OFF_CAPS4 = 30      // int32 dwCaps4
+// int32 dwReserved2 // offset 31
+
+function parseDDS (arrayBuffer) {
+  var header = new Int32Array(arrayBuffer)
+  check(header[0] === DDS_MAGIC,
+    'invalid magic number for dds header')
+
+  var flags = header[OFF_FLAGS]
+  check(flags & DDPF_FOURCC,
+    'unsupported dds format')
+
+  var width = header[OFF_WIDTH]
+  var height = header[OFF_HEIGHT]
+
+  var type = GL_UNSIGNED_BYTE
+  var format = 0
+  var blockBytes = 0
+  var channels = 4
+  switch (header[OFF_FOURCC]) {
+    case FOURCC_DXT1:
+      blockBytes = 8
+      if (flags & DDPF_RGB) {
+        channels = 3
+        format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT
+      } else {
+        format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
+      }
+      break
+
+    case FOURCC_DXT3:
+      blockBytes = 16
+      format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
+      break
+
+    case FOURCC_DXT5:
+      blockBytes = 16
+      format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+      break
+
+    case FOURCC_ETC1:
+      blockBytes = 8
+      format = GL_COMPRESSED_RGB_ETC1_WEBGL
+      break
+
+    // TODO: Implement hdr and uncompressed textures
+
+    default:
+      // Handle uncompressed data here
+      check.raise('unsupported dds texture format')
+  }
+
+  var pixelFlags = header[OFF_PF_FLAGS]
+
+  var mipmapCount = 1
+  if (pixelFlags & DDSD_MIPMAPCOUNT) {
+    mipmapCount = Math.max(1, header[OFF_MIPMAP])
+  }
+
+  var ptr = header[OFF_SIZE] + 4
+
+  var result = {
+    width: width,
+    height: height,
+    channels: channels,
+    format: format,
+    type: type,
+    compressed: true,
+    cube: false,
+    pixels: []
+  }
+
+  function parseMips (target) {
+    var mipWidth = width
+    var mipHeight = height
+
+    for (var i = 0; i < mipmapCount; ++i) {
+      var size =
+        Math.max(1, (mipWidth + 3) >> 2) *
+        Math.max(1, (mipHeight + 3) >> 2) *
+        blockBytes
+      result.pixels.push({
+        target: target,
+        miplevel: i,
+        width: mipWidth,
+        height: mipHeight,
+        data: new Uint8Array(arrayBuffer, ptr, size)
+      })
+      ptr += size
+      mipWidth >>= 1
+      mipHeight >>= 1
+    }
+  }
+
+  var caps2 = header[OFF_CAPS2]
+  var cubemap = !!(caps2 & DDSCAPS2_CUBEMAP)
+  if (cubemap) {
+    check(
+      (caps2 & CUBEMAP_COMPLETE_FACES) === CUBEMAP_COMPLETE_FACES,
+      'missing cubemap faces')
+    result.cube = true
+    for (var i = 0; i < 6; ++i) {
+      parseMips(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i)
+    }
+  } else {
+    parseMips(GL_TEXTURE_2D)
+  }
+
+  return result
+}
+
+},{"./check":10}],27:[function(require,module,exports){
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
     typeof cancelAnimationFrame === 'function') {
@@ -3087,7 +3272,7 @@ if (typeof requestAnimationFrame === 'function' &&
   }
 }
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 var check = require('./check')
 var isTypedArray = require('./is-typed-array')
 
@@ -3141,7 +3326,7 @@ module.exports = function wrapReadPixels (gl, glState) {
   return readPixels
 }
 
-},{"./check":10,"./is-typed-array":23}],28:[function(require,module,exports){
+},{"./check":10,"./is-typed-array":23}],29:[function(require,module,exports){
 var check = require('./check')
 
 var DEFAULT_FRAG_SHADER = 'void main(){gl_FragColor=vec4(0,0,0,0);}'
@@ -3354,7 +3539,7 @@ module.exports = function wrapShaderState (
   }
 }
 
-},{"./check":10}],29:[function(require,module,exports){
+},{"./check":10}],30:[function(require,module,exports){
 // A stack for managing the state of a scalar/vector parameter
 
 module.exports = function createStack (init, onChange) {
@@ -3412,7 +3597,7 @@ module.exports = function createStack (init, onChange) {
   }
 }
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 var createStack = require('./stack')
 var createEnvironment = require('./codegen')
 
@@ -3593,11 +3778,12 @@ module.exports = function wrapContextState (gl, shaderState) {
   }
 }
 
-},{"./codegen":12,"./stack":29}],31:[function(require,module,exports){
+},{"./codegen":12,"./stack":30}],32:[function(require,module,exports){
 var check = require('./check')
 var isTypedArray = require('./is-typed-array')
 var loadTexture = require('./load-texture')
 var convertToHalfFloat = require('./to-half-float')
+var parseDDS = require('./parse-dds')
 
 var GL_COMPRESSED_TEXTURE_FORMATS = 0x86A3
 
@@ -4769,6 +4955,7 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
         } else {
           // otherwise become new active
           this.unit = activeTexture
+          textureUnits[activeTexture] = this
         }
       }
     },
@@ -4846,18 +5033,60 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
       var pixels = this.pixels
       var texture = this
 
+      // Appends all the texture data from the buffer to the current
+      function appendDDS (target, miplevel, buffer) {
+        var dds = parseDDS(buffer)
+
+        check(dds.format in colorFormats, 'unsupported dds texture format')
+
+        if (dds.cube) {
+          check(texture.target === GL_TEXTURE_CUBE_MAP)
+
+          // TODO handle cube map
+        } else {
+          check(texture.target === GL_TEXTURE_2D)
+        }
+
+        if (miplevel) {
+          check(dds.pixels.length === 1, 'number of mip levels inconsistent')
+        }
+
+        dds.pixels.forEach(function (pixmap) {
+          var info = new PixelInfo(dds.cube ? pixmap.target : target)
+
+          info.channels = dds.channels
+          info.compressed = dds.compressed
+          info.type = dds.type
+          info.internalformat = dds.format
+          info.format = colorFormats[dds.format]
+
+          info.width = pixmap.width
+          info.height = pixmap.height
+          info.miplevel = pixmap.miplevel || miplevel
+          info.data = pixmap.data
+
+          pixels.push(info)
+        })
+      }
+
       function refresh () {
         // Update size of any newly loaded pixels
         for (var i = 0; i < pixels.length; ++i) {
           var pixelData = pixels[i]
           var image = pixelData.image
           var video = pixelData.video
+          var xhr = pixelData.xhr
           if (image && image.complete) {
             pixelData.width = image.naturalWidth
             pixelData.height = image.naturalHeight
           } else if (video && video.readyState > 2) {
             pixelData.width = video.width
             pixelData.height = video.height
+          } else if (xhr && xhr.readyState === 4) {
+            pixels[i] = pixels[pixels.length - 1]
+            pixels.pop()
+            xhr.removeEventListener('readystatechange', refresh)
+            appendDDS(pixelData.target, pixelData.miplevel, xhr.response)
           }
         }
         checkTextureComplete(params, pixels)
@@ -4869,6 +5098,8 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
           pixelData.image.addEventListener('load', refresh)
         } else if (pixelData.video && pixelData.readyState < 1) {
           pixelData.video.addEventListener('progress', refresh)
+        } else if (pixelData.xhr) {
+          pixelData.xhr.addEventListener('readystatechange', refresh)
         }
       })
 
@@ -4983,7 +5214,7 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
   }
 }
 
-},{"./check":10,"./is-typed-array":23,"./load-texture":25,"./to-half-float":32}],32:[function(require,module,exports){
+},{"./check":10,"./is-typed-array":23,"./load-texture":25,"./parse-dds":26,"./to-half-float":33}],33:[function(require,module,exports){
 module.exports = function convertToHalfFloat (array) {
   var floats = new Float32Array(array)
   var uints = new Uint32Array(floats.buffer)
@@ -5023,7 +5254,7 @@ module.exports = function convertToHalfFloat (array) {
   return ushorts
 }
 
-},{}],33:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 module.exports = function wrapUniformState () {
   var uniformState = {}
 
@@ -5040,7 +5271,7 @@ module.exports = function wrapUniformState () {
   }
 }
 
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 var check = require('./lib/check')
 var getContext = require('./lib/context')
 var wrapExtensions = require('./lib/extension')
@@ -5399,6 +5630,6 @@ module.exports = function wrapREGL () {
   })
 }
 
-},{"./lib/attribute":8,"./lib/buffer":9,"./lib/check":10,"./lib/clock":11,"./lib/compile":13,"./lib/context":17,"./lib/draw":18,"./lib/dynamic":19,"./lib/elements":20,"./lib/extension":21,"./lib/fbo":22,"./lib/limits":24,"./lib/raf":26,"./lib/read":27,"./lib/shader":28,"./lib/state":30,"./lib/texture":31,"./lib/uniform":33}]},{},[6]);
+},{"./lib/attribute":8,"./lib/buffer":9,"./lib/check":10,"./lib/clock":11,"./lib/compile":13,"./lib/context":17,"./lib/draw":18,"./lib/dynamic":19,"./lib/elements":20,"./lib/extension":21,"./lib/fbo":22,"./lib/limits":24,"./lib/raf":27,"./lib/read":28,"./lib/shader":29,"./lib/state":31,"./lib/texture":32,"./lib/uniform":34}]},{},[6]);
 </script>
 </html>
