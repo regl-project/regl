@@ -5,7 +5,15 @@ var tape = require('tape')
 tape('texture', function (t) {
   var regl = createREGL(createContext(16, 16))
 
-  // TODO
+  // Test basic texture rendering
+
+  // Test drawing with multiple textures
+
+  // Test texture updates
+
+  // Update in middle of draw loop
+
+  // Texture destruction
 
   regl.destroy()
   t.end()
