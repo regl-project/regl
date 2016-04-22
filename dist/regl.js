@@ -3294,8 +3294,8 @@ module.exports = function wrapContextState (gl, shaderState) {
   }
 
   var viewportState = {
-    width: 0,
-    height: 0
+    width: gl.drawingBufferWidth,
+    height: gl.drawingBufferHeight
   }
 
   // Caps, flags and other random WebGL context state
@@ -3950,8 +3950,6 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
 
       if (typeof data === 'string') {
         data = loadTexture(data, this.crossOrigin)
-      } else {
-        check(!data || isPixelData(data), 'invalid pixel data')
       }
 
       var array = null
@@ -4063,6 +4061,7 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
         this.copy = true
         this.x = this.x | 0
         this.y = this.y | 0
+        console.log(viewport)
         this.width = (this.width || viewport.width) | 0
         this.height = (this.height || viewport.height) | 0
         this.setDefaultFormat()
