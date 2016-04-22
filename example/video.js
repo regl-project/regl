@@ -43,7 +43,7 @@ const drawDoggie = regl({
   },
 
   uniforms: {
-    texture: regl.texture('doggie-chromakey.ogv'),
+    texture: regl.texture('assets/doggie-chromakey.ogv'),
 
     screenShape: function (args, batchId, stats) {
       return [stats.width, stats.height]

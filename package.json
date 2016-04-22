@@ -22,6 +22,7 @@
     "hsv2rgb": "^1.1.0",
     "indexhtmlify": "^1.2.1",
     "mouse-change": "^1.2.1",
+    "ncp": "^2.0.0",
     "runscript": "^1.1.0",
     "smokestack": "^3.4.1",
     "snazzy": "^3.0.0",

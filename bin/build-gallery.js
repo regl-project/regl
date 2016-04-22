@@ -1,6 +1,7 @@
 var fs = require('fs')
 var glob = require('glob')
 var browserify = require('browserify')
+var ncp = require('ncp')
 var mkdirp = require('mkdirp')
 
 function pageName (file) {
@@ -33,6 +34,9 @@ mkdirp('www/gallery', function (err) {
   if (err) {
     return
   }
+  ncp('example/assets', 'www/gallery/assets', function (err) {
+    console.log(err)
+  })
   glob('example/*.js', {}, function (err, files) {
     if (err) {
       return

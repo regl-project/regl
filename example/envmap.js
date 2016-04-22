@@ -20,12 +20,12 @@ const setupEnvMap = regl({
 
   uniforms: {
     envmap: regl.cube(
-      'posx.jpg',
-      'negx.jpg',
-      'posy.jpg',
-      'negy.jpg',
-      'posz.jpg',
-      'negz.jpg'),
+      'assets/posx.jpg',
+      'assets/negx.jpg',
+      'assets/posy.jpg',
+      'assets/negy.jpg',
+      'assets/posz.jpg',
+      'assets/negz.jpg'),
 
     view: regl.prop('view'),
 
