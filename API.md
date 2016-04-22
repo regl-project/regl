@@ -914,7 +914,6 @@ resource(options)
 resource.destroy()
 ```
 
-
 ---------------------------------------
 ### Types
 
@@ -1163,10 +1162,10 @@ A data source from an image can be one of the following types:
 | `'rgb arc'` | `ext.COMPRESSED_RGB_ATC_WEBGL` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
 | `'rgba arc explicit alpha'` | `ext.COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
 | `'rgba arc interpolated alpha'` | `ext.COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
-| 'rgb pvrtc 4bppv1' | `ext.COMPRESSED_RGB_PVRTC_4BPPV1_IMG` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
-| 'rgb pvrtc 2bppv1' | `ext.COMPRESSED_RGB_PVRTC_2BPPV1_IMG` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
-| 'rgba pvrtc 4bppv1' | `ext.COMPRESSED_RGBA_PVRTC_4BPPV1_IMG` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
-| 'rgba pvrtc 2bppv1' | `ext.COMPRESSED_RGBA_PVRTC_2BPPV1_IMG` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
+| `'rgb pvrtc 4bppv1'` | `ext.COMPRESSED_RGB_PVRTC_4BPPV1_IMG` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
+| `'rgb pvrtc 2bppv1'` | `ext.COMPRESSED_RGB_PVRTC_2BPPV1_IMG` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
+| `'rgba pvrtc 4bppv1'` | `ext.COMPRESSED_RGBA_PVRTC_4BPPV1_IMG` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
+| `'rgba pvrtc 2bppv1'` | `ext.COMPRESSED_RGBA_PVRTC_2BPPV1_IMG` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
 | `'rgb etc1'` | `ext.COMPRESSED_RGB_ETC1_WEBGL` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_etc1](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_etc1/) |
 
 * In many cases `type` can be inferred from the format and other information in the texture.  However, in some situations it may still be necessary to set it manually.  In such an event, the following values are possible,
@@ -1217,7 +1216,37 @@ var cubeMap = regl.cube(
 ---------------------------------------
 #### Render buffers
 
-**NOT YET IMPLEMENTED**
+Example,
+
+```javascript
+var rb = regl.renderbuffer({
+  width: 16,
+  height: 16,
+  format: 'rgba4'
+})
+```
+
+| Property | Interpretation | Default |
+|----------|----------------|---------|
+| `'format'` | Sets the internal format of the render buffer | `'rgba4'` |
+| `'width'` | Sets the width of the render buffer in pixels | `1` |
+| `'height'` | Sets the height of the render buffer in pixels | `1` |
+
+| Format | Description |
+|--------|-------------|
+| `'rgba4'` | `gl.RGBA4` |
+| `'rgb565'` | `gl.RGB565` |
+| `'rgb5 a1'` | `gl.RGB5_A1` |
+| `'depth'` | `gl.DEPTH_COMPONENT16` |
+| `'stencil'` | `gl.STENCIL_INDEX8` |
+| `'srgba'` | `ext.SRGB8_ALPHA8_EXT`, only if [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) supported |
+
+**Relevant WebGL APIs**
+
+* [`gl.createRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateRenderbuffer.xml)
+* [`gl.deleteRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteRenderbuffer.xml)
+* [`gl.renderbufferStorage`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glRenderbufferStorage.xml)
+* [`gl.bindRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBindRenderbuffer.xml)
 
 ---------------------------------------
 #### Frame buffers
