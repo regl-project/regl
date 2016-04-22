@@ -195,3 +195,5 @@ Test video (doggie-chromakey.ogv) by [L0ckergn0me](https://archive.org/details/L
 Cube maps (posx.jpeg, negx.jpeg, posy.jpeg, negy.jpeg, posz.jpeg, negz.jpeg) by [Humus](http://www.humus.name/index.php?page=Textures), used under creative commons 3 license
 
 Environment map of Oregon due to Max Ogden (@ogd on GitHub)
+
+DDS test images taken from the CC0 license [0-AD texture pack by Wildfire games](http://opengameart.org/content/0-ad-textures)
