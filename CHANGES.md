@@ -1,7 +1,8 @@
 # Release notes
 
-## Next
+## 0.2.0
 
+* Texture support implemented, but not well tested
 * Fix attribute binding bug
 
 ## 0.1.0
