@@ -117,6 +117,29 @@ tape('buffer arg parsing', function (t) {
     },
     'nested array with types')
 
+  checkProperties(
+    regl.buffer({
+      data: new Float32Array([
+        4, 0, 3, 0,
+        2, 0, 1, 0
+      ]),
+      shape: [2, 2],
+      stride: [-4, -2],
+      offset: 6
+    }),
+    {
+      type: gl.ARRAY_BUFFER,
+      dtype: gl.FLOAT,
+      dimension: 2,
+      usage: gl.STATIC_DRAW,
+      byteLength: 4 * 4,
+      data: new Float32Array([
+        1, 2,
+        3, 4
+      ])
+    },
+    'ndarray-like input')
+
   regl.destroy()
   t.end()
 })
