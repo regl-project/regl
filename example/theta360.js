@@ -30,7 +30,7 @@ const setupEnvMap = regl({
   `,
 
   uniforms: {
-    envmap: regl.texture('ogd-oregon-360.jpg'),
+    envmap: regl.texture('assets/ogd-oregon-360.jpg'),
 
     view: regl.prop('view'),
 
