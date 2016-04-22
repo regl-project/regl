@@ -59,12 +59,12 @@ Object.assign(AttributeRecord.prototype, {
   }
 })
 
-module.exports = function wrapAttributeState (gl, extensionState, bufferState) {
+module.exports = function wrapAttributeState (gl, extensionState, bufferState, limits) {
   var extensions = extensionState.extensions
 
   var attributeState = {}
 
-  var NUM_ATTRIBUTES = gl.getParameter(gl.MAX_VERTEX_ATTRIBS)
+  var NUM_ATTRIBUTES = limits.attributes
   var attributeBindings = new Array(NUM_ATTRIBUTES)
   for (var i = 0; i < NUM_ATTRIBUTES; ++i) {
     attributeBindings[i] = new AttributeRecord()
