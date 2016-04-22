@@ -1,5 +1,10 @@
 # Release notes
 
+## Next
+
+* regl.buffer and regl.elements can now take ndarray-like inputs
+* Switch to using Google closure compiler for minified builds
+
 ## 0.2.0
 
 * Texture support implemented, but not well tested
