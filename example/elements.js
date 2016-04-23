@@ -6,21 +6,19 @@ regl.clear({
 })
 
 regl({
-  frag: [
-    'precision mediump float;',
-    'uniform vec4 color;',
-    'void main() {',
-    '  gl_FragColor = color;',
-    '}'
-  ].join('\n'),
+  frag: `
+    precision mediump float;
+    uniform vec4 color;
+    void main() {
+      gl_FragColor = color;
+    }`,
 
-  vert: [
-    'precision mediump float;',
-    'attribute vec2 position;',
-    'void main() {',
-    '  gl_Position = vec4(position, 0, 1);',
-    '}'
-  ].join('\n'),
+  vert: `
+    precision mediump float;
+    attribute vec2 position;
+    void main() {
+      gl_Position = vec4(position, 0, 1);
+    }`,
 
   attributes: {
     position: regl.buffer((new Array(5)).fill().map(function (x, i) {
