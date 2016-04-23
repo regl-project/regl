@@ -59,12 +59,12 @@ Object.assign(AttributeRecord.prototype, {
   }
 })
 
-module.exports = function wrapAttributeState (gl, extensionState, bufferState, limits) {
+module.exports = function wrapAttributeState (gl, extensionState, bufferState) {
   var extensions = extensionState.extensions
 
   var attributeState = {}
 
-  var NUM_ATTRIBUTES = limits.attributes
+  var NUM_ATTRIBUTES = gl.getParameter(gl.MAX_VERTEX_ATTRIBS)
   var attributeBindings = new Array(NUM_ATTRIBUTES)
   for (var i = 0; i < NUM_ATTRIBUTES; ++i) {
     attributeBindings[i] = new AttributeRecord()
@@ -212,10 +212,19 @@ module.exports = function wrapAttributeState (gl, extensionState, bufferState, l
 // Array and element buffer creation
 var check = _dereq_('./check')
 var isTypedArray = _dereq_('./is-typed-array')
+var isNDArrayLike = _dereq_('./is-ndarray')
 var arrayTypes = _dereq_('./constants/arraytypes.json')
+var bufferTypes = _dereq_('./constants/dtypes.json')
+var values = _dereq_('./values')
 
-var GL_UNSIGNED_BYTE = 5121
 var GL_STATIC_DRAW = 35044
+
+var GL_BYTE = 5120
+var GL_UNSIGNED_BYTE = 5121
+var GL_SHORT = 5122
+var GL_UNSIGNED_SHORT = 5123
+var GL_INT = 5124
+var GL_UNSIGNED_INT = 5125
 var GL_FLOAT = 5126
 
 var usageTypes = {
@@ -224,13 +233,46 @@ var usageTypes = {
   'stream': 35040
 }
 
-function flatten (data, dimension) {
-  var result = new Float32Array(data.length * dimension)
+function typedArrayCode (data) {
+  return arrayTypes[Object.prototype.toString.call(data)] | 0
+}
+
+function makeTypedArray (dtype, args) {
+  switch (dtype) {
+    case GL_UNSIGNED_BYTE:
+      return new Uint8Array(args)
+    case GL_UNSIGNED_SHORT:
+      return new Uint16Array(args)
+    case GL_UNSIGNED_INT:
+      return new Uint32Array(args)
+    case GL_BYTE:
+      return new Int8Array(args)
+    case GL_SHORT:
+      return new Int16Array(args)
+    case GL_INT:
+      return new Int32Array(args)
+    case GL_FLOAT:
+      return new Float32Array(args)
+    default:
+      return null
+  }
+}
+
+function flatten (result, data, dimension) {
   var ptr = 0
   for (var i = 0; i < data.length; ++i) {
     var v = data[i]
     for (var j = 0; j < dimension; ++j) {
       result[ptr++] = v[j]
+    }
+  }
+}
+
+function transpose (result, data, shapeX, shapeY, strideX, strideY, offset) {
+  var ptr = 0
+  for (var i = 0; i < shapeX; ++i) {
+    for (var j = 0; j < shapeY; ++j) {
+      result[ptr++] = data[strideX * i + strideY * j + offset]
     }
   }
   return result
@@ -251,13 +293,38 @@ module.exports = function wrapBufferState (gl) {
     this.dtype = GL_UNSIGNED_BYTE
   }
 
-  Object.assign(REGLBuffer.prototype, {
-    bind: function () {
-      gl.bindBuffer(this.type, this.buffer)
-    },
+  REGLBuffer.prototype.bind = function () {
+    gl.bindBuffer(this.type, this.buffer)
+  }
 
-    update: function (options) {
-      if (Array.isArray(options) || isTypedArray(options)) {
+  function refresh (buffer) {
+    if (!gl.isBuffer(buffer.buffer)) {
+      buffer.buffer = gl.createBuffer()
+    }
+    buffer.bind()
+    gl.bufferData(buffer.type, buffer.data || buffer.byteLength, buffer.usage)
+  }
+
+  function destroy (buffer) {
+    check(buffer.buffer, 'buffer must not be deleted already')
+    if (gl.isBuffer(buffer.buffer)) {
+      gl.deleteBuffer(buffer.buffer)
+    }
+    buffer.buffer = null
+    delete bufferSet[this.id]
+  }
+
+  function createBuffer (options, type, deferInit) {
+    var handle = gl.createBuffer()
+
+    var buffer = new REGLBuffer(handle, type)
+    bufferSet[buffer.id] = buffer
+
+    function reglBuffer (input) {
+      var options = input || {}
+      if (Array.isArray(options) ||
+          isTypedArray(options) ||
+          isNDArrayLike(options)) {
         options = {
           data: options
         }
@@ -275,77 +342,96 @@ module.exports = function wrapBufferState (gl) {
 
       if ('usage' in options) {
         var usage = options.usage
-        check.parameter(usage, usageTypes, 'buffer usage')
-        this.usage = usageTypes[options.usage]
+        check.parameter(usage, usageTypes, 'invalid buffer usage')
+        buffer.usage = usageTypes[options.usage]
+      } else {
+        buffer.usage = GL_STATIC_DRAW
+      }
+
+      var dtype = 0
+      if ('type' in options) {
+        check.parameter(options.type, bufferTypes, 'invalid buffer type')
+        dtype = bufferTypes[options.type]
       }
 
       var dimension = (options.dimension | 0) || 1
+      var byteLength = 0
+      var data = null
       if ('data' in options) {
-        var data = options.data
+        data = options.data
         if (data === null) {
-          this.byteLength = options.length | 0
-          this.dtype = GL_UNSIGNED_BYTE
+          byteLength = options.length | 0
         } else {
-          if (Array.isArray(data)) {
+          if (isNDArrayLike(data)) {
+            var shape = data.shape
+            var stride = data.stride
+            var offset = data.offset
+
+            var shapeX = 0
+            var shapeY = 0
+            var strideX = 0
+            var strideY = 0
+            if (shape.length === 1) {
+              shapeX = shape[0]
+              shapeY = 1
+              strideX = stride[0]
+              strideY = 0
+            } else if (shape.length === 2) {
+              shapeX = shape[0]
+              shapeY = shape[1]
+              strideX = stride[0]
+              strideY = stride[1]
+            } else {
+              check.raise('invalid shape')
+            }
+
+            dtype = dtype || typedArrayCode(data) || GL_FLOAT
+            dimension = shapeY
+            data = transpose(
+              makeTypedArray(dtype, shapeX * shapeY),
+              data.data,
+              shapeX, shapeY,
+              strideX, strideY,
+              offset)
+          } else if (Array.isArray(data)) {
             if (data.length > 0 && Array.isArray(data[0])) {
               dimension = data[0].length
-              data = flatten(data, dimension)
-              this.dtype = GL_FLOAT
+              dtype = dtype || GL_FLOAT
+              var result = makeTypedArray(dtype, data.length * dimension)
+              data = flatten(result, data, dimension)
+              data = result
             } else {
-              data = new Float32Array(data)
-              this.dtype = GL_FLOAT
+              dtype = dtype || GL_FLOAT
+              data = makeTypedArray(dtype, data)
             }
           } else {
             check.isTypedArray(data, 'invalid data type buffer data')
-            this.dtype = arrayTypes[Object.prototype.toString.call(data)]
+            dtype = dtype || typedArrayCode(data)
           }
-          this.dimension = dimension
-          this.byteLength = data.byteLength
+          byteLength = data.byteLength
         }
-        this.data = data
       } else if ('length' in options) {
-        var byteLength = options.length
+        byteLength = options.length | 0
         check.nni(byteLength, 'buffer length must be a nonnegative integer')
-        this.data = null
-        this.byteLength = options.length | 0
-        this.dtype = GL_UNSIGNED_BYTE
       }
 
-      this.bind()
-      gl.bufferData(this.type, this.data || this.byteLength, this.usage)
-    },
+      buffer.data = data
+      buffer.dtype = dtype || GL_UNSIGNED_BYTE
+      buffer.byteLength = byteLength
+      buffer.dimension = dimension
 
-    refresh: function () {
-      if (!gl.isBuffer(this.buffer)) {
-        this.buffer = gl.createBuffer()
-      }
-      this.update({})
-    },
+      refresh(buffer)
 
-    destroy: function () {
-      check(this.buffer, 'buffer must not be deleted already')
-      gl.deleteBuffer(this.buffer)
-      this.buffer = null
-      delete bufferSet[this.id]
-    }
-  })
-
-  function createBuffer (options, type) {
-    options = options || {}
-    var handle = gl.createBuffer()
-
-    var buffer = new REGLBuffer(handle, type)
-    buffer.update(options)
-    bufferSet[buffer.id] = buffer
-
-    function reglBuffer (options) {
-      buffer.update(options || {})
       return reglBuffer
+    }
+
+    if (!deferInit) {
+      reglBuffer(options)
     }
 
     reglBuffer._reglType = 'buffer'
     reglBuffer._buffer = buffer
-    reglBuffer.destroy = function () { buffer.destroy() }
+    reglBuffer.destroy = function () { destroy(buffer) }
 
     return reglBuffer
   }
@@ -354,15 +440,11 @@ module.exports = function wrapBufferState (gl) {
     create: createBuffer,
 
     clear: function () {
-      Object.keys(bufferSet).forEach(function (bufferId) {
-        bufferSet[bufferId].destroy()
-      })
+      values(bufferSet).forEach(destroy)
     },
 
     refresh: function () {
-      Object.keys(bufferSet).forEach(function (bufferId) {
-        bufferSet[bufferId].refresh()
-      })
+      values(bufferSet).forEach(refresh)
     },
 
     getBuffer: function (wrapper) {
@@ -374,7 +456,7 @@ module.exports = function wrapBufferState (gl) {
   }
 }
 
-},{"./check":3,"./constants/arraytypes.json":7,"./is-typed-array":16}],3:[function(_dereq_,module,exports){
+},{"./check":3,"./constants/arraytypes.json":7,"./constants/dtypes.json":8,"./is-ndarray":16,"./is-typed-array":17,"./values":30}],3:[function(_dereq_,module,exports){
 // Error checking and parameter validation
 var isTypedArray = _dereq_('./is-typed-array')
 
@@ -398,36 +480,40 @@ function encolon (message) {
 }
 
 function checkParameter (param, possibilities, message) {
-  check(param in possibilities,
-    'unknown parameter (' + param + ')' + encolon(message) +
-    '. possible values: ' + Object.keys(possibilities).join())
+  if (!(param in possibilities)) {
+    raise('unknown parameter (' + param + ')' + encolon(message) +
+          '. possible values: ' + Object.keys(possibilities).join())
+  }
 }
 
 function checkIsTypedArray (data, message) {
-  check(
-    isTypedArray(data),
-    'invalid parameter type' + encolon(message) +
-    '. must be a typed array')
+  if (!isTypedArray(data)) {
+    raise(
+      'invalid parameter type' + encolon(message) +
+      '. must be a typed array')
+  }
 }
 
 function checkTypeOf (value, type, message) {
-  check(typeof value === type,
-    'invalid parameter type' + encolon(message) +
-    '. expected ' + type + ', got ' + (typeof value))
+  if (typeof value !== type) {
+    raise(
+      'invalid parameter type' + encolon(message) +
+      '. expected ' + type + ', got ' + (typeof value))
+  }
 }
 
 function checkNonNegativeInt (value, message) {
-  check(
-    (value >= 0) &&
-    ((value | 0) === value),
-    'invalid parameter type, (' + value + ')' + encolon(message) +
-    '. must be a nonnegative integer')
+  if (!((value >= 0) &&
+        ((value | 0) === value))) {
+    raise('invalid parameter type, (' + value + ')' + encolon(message) +
+          '. must be a nonnegative integer')
+  }
 }
 
 function checkOneOf (value, list, message) {
-  check(
-    list.indexOf(value) >= 0,
-    'invalid value' + encolon(message) + '. must be one of: ' + list)
+  if (list.indexOf(value) < 0) {
+    raise('invalid value' + encolon(message) + '. must be one of: ' + list)
+  }
 }
 
 module.exports = Object.assign(check, {
@@ -439,7 +525,7 @@ module.exports = Object.assign(check, {
   oneOf: checkOneOf
 })
 
-},{"./is-typed-array":16}],4:[function(_dereq_,module,exports){
+},{"./is-typed-array":17}],4:[function(_dereq_,module,exports){
 /* globals performance */
 module.exports =
   (typeof performance !== 'undefined' && performance.now)
@@ -985,7 +1071,7 @@ module.exports = function reglCompiler (
     if (!hasDynamicElements) {
       batch(
         'if(', CUR_ELEMENTS, '){',
-        GL, '.bindBuffer(', GL_ELEMENT_ARRAY_BUFFER, ',', CUR_ELEMENTS, '.buffer._buffer.buffer);',
+        GL, '.bindBuffer(', GL_ELEMENT_ARRAY_BUFFER, ',', CUR_ELEMENTS, '.buffer.buffer);',
         '}else{',
         GL, '.bindBuffer(', GL_ELEMENT_ARRAY_BUFFER, ',null);',
         '}')
@@ -1260,7 +1346,7 @@ module.exports = function reglCompiler (
         GL,
         '.bindBuffer(',
         GL_ELEMENT_ARRAY_BUFFER, ',',
-        CUR_ELEMENTS, '.buffer._buffer.buffer);')
+        CUR_ELEMENTS, '.buffer.buffer);')
     }
     if (instancing) {
       if (options.instances) {
@@ -2328,14 +2414,18 @@ module.exports = {
 },{}],13:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 var isTypedArray = _dereq_('./is-typed-array')
+var isNDArrayLike = _dereq_('./is-ndarray')
 var primTypes = _dereq_('./constants/primitives.json')
 
 var GL_POINTS = 0
 var GL_LINES = 1
 var GL_TRIANGLES = 4
 
+var GL_BYTE = 5120
 var GL_UNSIGNED_BYTE = 5121
+var GL_SHORT = 5122
 var GL_UNSIGNED_SHORT = 5123
+var GL_INT = 5124
 var GL_UNSIGNED_INT = 5125
 
 var GL_ELEMENT_ARRAY_BUFFER = 34963
@@ -2352,127 +2442,135 @@ module.exports = function wrapElementsState (gl, extensionState, bufferState) {
     this.type = 0
   }
 
-  function parseOptions (elements, options) {
-    var result = {
-      type: 'elements'
-    }
-    var ext32bit = extensions.oes_element_index_uint
-    elements.primType = GL_TRIANGLES
-    elements.vertCount = 0
-    elements.type = 0
-
-    var data = null
-
-    // Check option type
-    if (!options) {
-      return result
-    }
-    if (typeof options === 'number') {
-      result.length = options
-    } else {
-      check.type(options, 'object', 'argument to element buffer must be object')
-      data = options.data || options
-    }
-
-    if (Array.isArray(data)) {
-      if (options.length === 0) {
-        data = null
-      } else if (Array.isArray(data[0])) {
-        var dim = data[0].length
-        if (dim === 1) elements.primType = GL_POINTS
-        if (dim === 2) elements.primType = GL_LINES
-        if (dim === 3) elements.primType = GL_TRIANGLES
-        var i
-        var count = 0
-        for (i = 0; i < data.length; ++i) {
-          count += data[i].length
-        }
-        var flattened = ext32bit
-          ? new Uint32Array(count)
-          : new Uint16Array(count)
-        var ptr = 0
-        for (i = 0; i < data.length; ++i) {
-          var x = data[i]
-          for (var j = 0; j < x.length; ++j) {
-            flattened[ptr++] = x[j]
-          }
-        }
-        data = flattened
-      } else if (ext32bit) {
-        data = new Uint32Array(data)
-      } else {
-        data = new Uint16Array(data)
-      }
-    }
-
-    if (isTypedArray(data)) {
-      if ((data instanceof Uint8Array) ||
-          (data instanceof Uint8ClampedArray)) {
-        elements.type = GL_UNSIGNED_BYTE
-      } else if (data instanceof Uint16Array) {
-        elements.type = GL_UNSIGNED_SHORT
-      } else if (data instanceof Uint32Array) {
-        check(ext32bit, '32-bit element buffers not supported')
-        elements.type = GL_UNSIGNED_INT
-      } else {
-        check.raise('invalid typed array for element buffer')
-      }
-      elements.vertCount = data.length
-      result.data = data
-    } else {
-      check(!data, 'invalid element buffer data type')
-    }
-
-    if (typeof options === 'object') {
-      if ('primitive' in options) {
-        var primitive = options.primitive
-        check.param(primitive, primTypes)
-        elements.primType = primTypes[primitive]
-      }
-
-      if ('usage' in options) {
-        result.usage = options.usage
-      }
-
-      if ('count' in options) {
-        elements.vertCount = options.vertCount | 0
-      }
-    }
-
-    return result
+  REGLElementBuffer.prototype.bind = function () {
+    this.buffer.bind()
   }
-
-  Object.assign(REGLElementBuffer.prototype, {
-    bind: function () {
-      gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.buffer._buffer.buffer)
-    },
-
-    destroy: function () {
-      if (this.buffer) {
-        this.buffer.destroy()
-        this.buffer = null
-      }
-    }
-  })
 
   function createElements (options) {
     var elements = new REGLElementBuffer()
+    var buffer = bufferState.create(null, GL_ELEMENT_ARRAY_BUFFER, true)
+    elements.buffer = buffer._buffer
 
-    // Create buffer
-    elements.buffer = bufferState.create(
-      parseOptions(elements, options),
-      GL_ELEMENT_ARRAY_BUFFER)
+    function reglElements (input) {
+      var options = input
+      var ext32bit = extensions.oes_element_index_uint
 
-    function updateElements (options) {
-      elements.buffer(parseOptions(elements, options))
-      return updateElements
+      // Upload data to vertex buffer
+      if (!options) {
+        buffer()
+      } else if (typeof options === 'number') {
+        buffer(options)
+      } else {
+        var data = null
+        var usage = 'static'
+        var byteLength = 0
+        if (
+          Array.isArray(options) ||
+          isTypedArray(options) ||
+          isNDArrayLike(options)) {
+          data = options
+        } else {
+          check.type(options, 'object', 'invalid arguments for elements')
+          if ('data' in options) {
+            data = options.data
+          }
+          if ('usage' in options) {
+            usage = options.usage
+          }
+          if ('length' in options) {
+            byteLength = options.length
+          }
+        }
+        if (Array.isArray(data) ||
+            (isNDArrayLike(data) && data.dtype === 'array') ||
+            'type' in options) {
+          buffer({
+            type: options.type ||
+              (ext32bit
+                ? 'uint32'
+                : 'uint16'),
+            usage: usage,
+            data: data,
+            length: byteLength
+          })
+        } else {
+          buffer({
+            usage: usage,
+            data: data,
+            length: byteLength
+          })
+        }
+        if (Array.isArray(data) || isTypedArray(data)) {
+          buffer.dimension = 3
+        }
+      }
+
+      // try to guess default primitive type and arguments
+      var vertCount = elements.buffer.byteLength
+      var type = 0
+      switch (elements.buffer.dtype) {
+        case GL_UNSIGNED_BYTE:
+        case GL_BYTE:
+          type = GL_UNSIGNED_BYTE
+          break
+
+        case GL_UNSIGNED_SHORT:
+        case GL_SHORT:
+          type = GL_UNSIGNED_SHORT
+          vertCount >>= 1
+          break
+
+        case GL_UNSIGNED_INT:
+        case GL_INT:
+          check(ext32bit, '32 bit element buffers not supported')
+          type = GL_UNSIGNED_INT
+          vertCount >>= 2
+          break
+
+        default:
+          check.raise('invalid element buffer type')
+      }
+
+      // try to guess primitive type from cell dimension
+      var primType = GL_TRIANGLES
+      var dimension = elements.buffer.dimension
+      if (dimension === 1) primType = GL_POINTS
+      if (dimension === 2) primType = GL_LINES
+      if (dimension === 3) primType = GL_TRIANGLES
+
+      // if manual override present, use that
+      if (typeof options === 'object') {
+        if ('primitive' in options) {
+          var primitive = options.primitive
+          check.parameter(primitive, primTypes)
+          primType = primTypes[primitive]
+        }
+
+        if ('count' in options) {
+          vertCount = options.vertCount | 0
+        }
+      }
+
+      // update properties for element buffer
+      elements.primType = primType
+      elements.vertCount = vertCount
+      elements.type = type
+
+      return reglElements
     }
 
-    updateElements._reglType = 'elements'
-    updateElements._elements = elements
-    updateElements.destroy = function () { elements.destroy() }
+    reglElements(options)
 
-    return updateElements
+    Object.assign(reglElements, {
+      _reglType: 'elements',
+      _elements: elements,
+      destroy: function () {
+        elements.buffer.destroy()
+        elements.buffer = null
+      }
+    })
+
+    return reglElements
   }
 
   return {
@@ -2487,7 +2585,7 @@ module.exports = function wrapElementsState (gl, extensionState, bufferState) {
   }
 }
 
-},{"./check":3,"./constants/primitives.json":9,"./is-typed-array":16}],14:[function(_dereq_,module,exports){
+},{"./check":3,"./constants/primitives.json":9,"./is-ndarray":16,"./is-typed-array":17}],14:[function(_dereq_,module,exports){
 module.exports = function createExtensionCache (gl) {
   var extensions = {}
 
@@ -2559,12 +2657,26 @@ module.exports = function wrapFBOState (
 }
 
 },{}],16:[function(_dereq_,module,exports){
+var isTypedArray = _dereq_('./is-typed-array')
+
+module.exports = function isNDArrayLike (obj) {
+  return (
+    typeof obj === 'object' &&
+    Array.isArray(obj.shape) &&
+    Array.isArray(obj.stride) &&
+    typeof obj.offset === 'number' &&
+    obj.shape.length === obj.stride.length &&
+    (Array.isArray(obj.data) ||
+      isTypedArray(obj.data)))
+}
+
+},{"./is-typed-array":17}],17:[function(_dereq_,module,exports){
 var dtypes = _dereq_('./constants/arraytypes.json')
 module.exports = function (x) {
   return Object.prototype.toString.call(x) in dtypes
 }
 
-},{"./constants/arraytypes.json":7}],17:[function(_dereq_,module,exports){
+},{"./constants/arraytypes.json":7}],18:[function(_dereq_,module,exports){
 var GL_SUBPIXEL_BITS = 0x0D50
 var GL_RED_BITS = 0x0D52
 var GL_GREEN_BITS = 0x0D53
@@ -2646,7 +2758,7 @@ module.exports = function (gl, extensionState) {
   }
 }
 
-},{}],18:[function(_dereq_,module,exports){
+},{}],19:[function(_dereq_,module,exports){
 /* globals document, Image, XMLHttpRequest */
 
 module.exports = loadTexture
@@ -2729,7 +2841,7 @@ function loadTexture (url, crossOrigin) {
   return null
 }
 
-},{}],19:[function(_dereq_,module,exports){
+},{}],20:[function(_dereq_,module,exports){
 // References:
 //
 // http://msdn.microsoft.com/en-us/library/bb943991.aspx/
@@ -2914,7 +3026,7 @@ function parseDDS (arrayBuffer) {
   return result
 }
 
-},{"./check":3}],20:[function(_dereq_,module,exports){
+},{"./check":3}],21:[function(_dereq_,module,exports){
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
     typeof cancelAnimationFrame === 'function') {
@@ -2931,7 +3043,7 @@ if (typeof requestAnimationFrame === 'function' &&
   }
 }
 
-},{}],21:[function(_dereq_,module,exports){
+},{}],22:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 var isTypedArray = _dereq_('./is-typed-array')
 
@@ -2985,7 +3097,138 @@ module.exports = function wrapReadPixels (gl, glState) {
   return readPixels
 }
 
-},{"./check":3,"./is-typed-array":16}],22:[function(_dereq_,module,exports){
+},{"./check":3,"./is-typed-array":17}],23:[function(_dereq_,module,exports){
+var check = _dereq_('./check')
+
+var GL_RENDERBUFFER = 0x8D41
+
+var GL_RGBA4 = 0x8056
+var GL_RGB5_A1 = 0x8057
+var GL_RGB565 = 0x8D62
+var GL_DEPTH_COMPONENT16 = 0x81A5
+var GL_STENCIL_INDEX8 = 0x8D48
+
+var GL_SRGB8_ALPHA8_EXT = 0x8C43
+
+module.exports = function (gl, extensions, limits) {
+  var formatTypes = {
+    'rgba4': GL_RGBA4,
+    'rgb565': GL_RGB565,
+    'rgb5 a1': GL_RGB5_A1,
+    'depth': GL_DEPTH_COMPONENT16,
+    'stencil': GL_STENCIL_INDEX8
+  }
+
+  if (extensions.ext_srgb) {
+    formatTypes['srgba'] = GL_SRGB8_ALPHA8_EXT
+  }
+
+  var renderbufferCount = 0
+  var renderbufferSet = {}
+
+  function REGLRenderbuffer () {
+    this.id = renderbufferCount++
+    this.renderbuffer = null
+
+    this.format = GL_RGBA4
+    this.width = 0
+    this.height = 0
+  }
+
+  REGLRenderbuffer.prototype.bind = function () {
+    gl.bindRenderbuffer(GL_RENDERBUFFER, this.renderbuffer)
+  }
+
+  function refresh(rb) {
+    if (!gl.isRenderbuffer(rb.renderbuffer)) {
+      rb.renderbuffer = gl.createRenderbuffer()
+    }
+    rb.bind()
+    gl.renderbufferStorage(
+      GL_RENDERBUFFER,
+      rb.format,
+      rb.width,
+      rb.height)
+  }
+
+  function destroy (rb) {
+    gl.bindRenderbuffer(GL_RENDERBUFFER, null)
+    if (gl.isRenderbuffer(rb.renderbuffer)) {
+      gl.deleteRenderbuffer(rb.renderbuffer)
+    }
+    rb.renderbuffer = null
+    delete renderbufferSet[rb.renderbufferCount]
+  }
+
+  function createRenderbuffer (input) {
+    var renderbuffer = new REGLRenderbuffer()
+    renderbufferSet[renderbuffer.id] = renderbuffer
+
+    function reglRenderbuffer (input) {
+      var options = input || {}
+
+      var w = 0
+      var h = 0
+      if ('shape' in options) {
+        var shape = options.shape
+        check(Array.isArray(shape) && shape.length >= 2,
+          'invalid renderbuffer shape')
+        w = shape[0] | 0
+        h = shape[1] | 0
+      } else {
+        if ('radius' in options) {
+          w = h = options.radius | 0
+        }
+        if ('width' in options) {
+          w = options.width | 0
+        }
+        if ('height' in options) {
+          h = options.height | 0
+        }
+      }
+      var s = limits.renderbufferSize
+      check(w >= 0 && h >= 0 && w <= s && h <= s,
+        'invalid renderbuffer size')
+      this.width = Math.max(w, 1)
+      this.height = Math.max(h, 1)
+
+      this.format = GL_RGBA4
+      if ('format' in options) {
+        var format = options.format
+        check.parameter(format, formatTypes, 'invalid render buffer format')
+        this.format = formatTypes[format]
+      }
+
+      return reglRenderbuffer
+    }
+
+    reglRenderbuffer(input)
+
+    Object.assign(reglRenderbuffer, {
+      _reglType: 'renderbuffer',
+      _renderbuffer: renderbuffer,
+      destroy: destroy.bind(renderbuffer)
+    })
+
+    return reglRenderbuffer
+  }
+
+  function refreshRenderbuffers () {
+    Object.keys(renderbufferSet).forEach(refresh)
+  }
+
+  function destroyRenderbuffers () {
+    Object.keys(renderbufferSet).forEach(destroy)
+  }
+
+  return {
+    create: createRenderbuffer,
+    refresh: refreshRenderbuffers,
+    destroy: destroyRenderbuffers
+  }
+}
+
+},{"./check":3}],24:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 
 var DEFAULT_FRAG_SHADER = 'void main(){gl_FragColor=vec4(0,0,0,0);}'
@@ -3198,7 +3441,7 @@ module.exports = function wrapShaderState (
   }
 }
 
-},{"./check":3}],23:[function(_dereq_,module,exports){
+},{"./check":3}],25:[function(_dereq_,module,exports){
 // A stack for managing the state of a scalar/vector parameter
 
 module.exports = function createStack (init, onChange) {
@@ -3256,7 +3499,7 @@ module.exports = function createStack (init, onChange) {
   }
 }
 
-},{}],24:[function(_dereq_,module,exports){
+},{}],26:[function(_dereq_,module,exports){
 var createStack = _dereq_('./stack')
 var createEnvironment = _dereq_('./codegen')
 
@@ -3437,9 +3680,10 @@ module.exports = function wrapContextState (gl, shaderState) {
   }
 }
 
-},{"./codegen":5,"./stack":23}],25:[function(_dereq_,module,exports){
+},{"./codegen":5,"./stack":25}],27:[function(_dereq_,module,exports){
 var check = _dereq_('./check')
 var isTypedArray = _dereq_('./is-typed-array')
+var isNDArrayLike = _dereq_('./is-ndarray')
 var loadTexture = _dereq_('./load-texture')
 var convertToHalfFloat = _dereq_('./to-half-float')
 var parseDDS = _dereq_('./parse-dds')
@@ -3543,17 +3787,6 @@ function isNumericArray (arr) {
     Array.isArray(arr) &&
     (arr.length === 0 ||
     typeof arr[0] === 'number'))
-}
-
-function isNDArrayLike (obj) {
-  return (
-    typeof obj === 'object' &&
-    Array.isArray(obj.shape) &&
-    Array.isArray(obj.stride) &&
-    typeof obj.offset === 'number' &&
-    obj.shape.length === obj.stride.length &&
-    (Array.isArray(obj.data) ||
-      isTypedArray(obj.data)))
 }
 
 function isRectArray (arr) {
@@ -4872,7 +5105,7 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
   }
 }
 
-},{"./check":3,"./is-typed-array":16,"./load-texture":18,"./parse-dds":19,"./to-half-float":26}],26:[function(_dereq_,module,exports){
+},{"./check":3,"./is-ndarray":16,"./is-typed-array":17,"./load-texture":19,"./parse-dds":20,"./to-half-float":28}],28:[function(_dereq_,module,exports){
 module.exports = function convertToHalfFloat (array) {
   var floats = new Float32Array(array)
   var uints = new Uint32Array(floats.buffer)
@@ -4912,7 +5145,7 @@ module.exports = function convertToHalfFloat (array) {
   return ushorts
 }
 
-},{}],27:[function(_dereq_,module,exports){
+},{}],29:[function(_dereq_,module,exports){
 module.exports = function wrapUniformState () {
   var uniformState = {}
 
@@ -4929,7 +5162,12 @@ module.exports = function wrapUniformState () {
   }
 }
 
-},{}],28:[function(_dereq_,module,exports){
+},{}],30:[function(_dereq_,module,exports){
+module.exports = function (obj) {
+  return Object.keys(obj).map(function (key) { return obj[key] })
+}
+
+},{}],31:[function(_dereq_,module,exports){
 var check = _dereq_('./lib/check')
 var getContext = _dereq_('./lib/context')
 var wrapExtensions = _dereq_('./lib/extension')
@@ -4937,6 +5175,7 @@ var wrapLimits = _dereq_('./lib/limits')
 var wrapBuffers = _dereq_('./lib/buffer')
 var wrapElements = _dereq_('./lib/elements')
 var wrapTextures = _dereq_('./lib/texture')
+var wrapRenderbuffers = _dereq_('./lib/renderbuffer')
 var wrapFBOs = _dereq_('./lib/fbo')
 var wrapUniforms = _dereq_('./lib/uniform')
 var wrapAttributes = _dereq_('./lib/attribute')
@@ -4970,7 +5209,7 @@ module.exports = function wrapREGL () {
   var bufferState = wrapBuffers(gl)
   var elementState = wrapElements(gl, extensionState, bufferState)
   var uniformState = wrapUniforms()
-  var attributeState = wrapAttributes(gl, extensionState, bufferState)
+  var attributeState = wrapAttributes(gl, extensionState, bufferState, limits)
   var shaderState = wrapShaders(
     gl,
     extensionState,
@@ -4987,6 +5226,7 @@ module.exports = function wrapREGL () {
     limits,
     poll,
     glState.viewport)
+  var renderbufferState = wrapRenderbuffers(gl, extensionState, limits)
   var fboState = wrapFBOs(gl, extensionState, textureState)
   var frameState = {
     count: 0,
@@ -5069,6 +5309,7 @@ module.exports = function wrapREGL () {
     extensionState.refresh()
     bufferState.refresh()
     textureState.refresh()
+    renderbufferState.refresh()
     fboState.refresh()
     shaderState.refresh()
     glState.refresh()
@@ -5271,6 +5512,9 @@ module.exports = function wrapREGL () {
         return textureState.create(options, GL_TEXTURE_CUBE_MAP)
       }
     },
+    renderbuffer: function (options) {
+      return renderbufferState.create(options)
+    },
     // fbo: create(fboState),
 
     // Frame rendering
@@ -5288,5 +5532,5 @@ module.exports = function wrapREGL () {
   })
 }
 
-},{"./lib/attribute":1,"./lib/buffer":2,"./lib/check":3,"./lib/clock":4,"./lib/compile":6,"./lib/context":10,"./lib/draw":11,"./lib/dynamic":12,"./lib/elements":13,"./lib/extension":14,"./lib/fbo":15,"./lib/limits":17,"./lib/raf":20,"./lib/read":21,"./lib/shader":22,"./lib/state":24,"./lib/texture":25,"./lib/uniform":27}]},{},[28])(28)
+},{"./lib/attribute":1,"./lib/buffer":2,"./lib/check":3,"./lib/clock":4,"./lib/compile":6,"./lib/context":10,"./lib/draw":11,"./lib/dynamic":12,"./lib/elements":13,"./lib/extension":14,"./lib/fbo":15,"./lib/limits":18,"./lib/raf":21,"./lib/read":22,"./lib/renderbuffer":23,"./lib/shader":24,"./lib/state":26,"./lib/texture":27,"./lib/uniform":29}]},{},[31])(31)
 });
