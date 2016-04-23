@@ -15,7 +15,6 @@
     "bunny": "^1.0.1",
     "canvas-fit": "^1.5.0",
     "coverify": "^1.4.1",
-    "derequire": "^2.0.3",
     "faucet": "0.0.1",
     "gl": "^3.0.3",
     "gl-mat4": "^1.1.4",
@@ -38,7 +37,7 @@
     "coverage": "browserify test/util/browser.js -t coverify | smokestack | coverify",
     "bench": "budo bench/index.js --open",
     "build": "npm run build-script && npm run build-min && npm run build-bench && npm run build-gallery",
-    "build-script": "browserify regl.js -s regl | derequire > dist/regl.js",
+    "build-script": "browserify regl.js --standalone reglInit > dist/regl.js",
     "build-min": "node bin/build-min.js",
     "build-bench": "browserify bench/index.js | indexhtmlify > www/bench.html",
     "build-gallery": "node bin/build-gallery.js"
