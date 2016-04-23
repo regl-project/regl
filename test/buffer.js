@@ -35,6 +35,18 @@ tape('buffer arg parsing', function (t) {
     'empty')
 
   checkProperties(
+    regl.buffer(100),
+    {
+      type: gl.ARRAY_BUFFER,
+      dtype: gl.UNSIGNED_BYTE,
+      dimension: 1,
+      usage: gl.STATIC_DRAW,
+      byteLength: 100,
+      data: null
+    },
+    'length only')
+
+  checkProperties(
     regl.buffer(new Uint16Array([1, 2, 3])),
     {
       type: gl.ARRAY_BUFFER,
