@@ -1,5 +1,5 @@
-(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.regl = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
-var glTypes = _dereq_('./constants/dtypes.json')
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.reglInit = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var glTypes = require('./constants/dtypes.json')
 
 var GL_FLOAT = 5126
 
@@ -208,14 +208,14 @@ module.exports = function wrapAttributeState (gl, extensionState, bufferState) {
   }
 }
 
-},{"./constants/dtypes.json":8}],2:[function(_dereq_,module,exports){
+},{"./constants/dtypes.json":8}],2:[function(require,module,exports){
 // Array and element buffer creation
-var check = _dereq_('./check')
-var isTypedArray = _dereq_('./is-typed-array')
-var isNDArrayLike = _dereq_('./is-ndarray')
-var arrayTypes = _dereq_('./constants/arraytypes.json')
-var bufferTypes = _dereq_('./constants/dtypes.json')
-var values = _dereq_('./values')
+var check = require('./check')
+var isTypedArray = require('./is-typed-array')
+var isNDArrayLike = require('./is-ndarray')
+var arrayTypes = require('./constants/arraytypes.json')
+var bufferTypes = require('./constants/dtypes.json')
+var values = require('./values')
 
 var GL_STATIC_DRAW = 35044
 
@@ -456,9 +456,9 @@ module.exports = function wrapBufferState (gl) {
   }
 }
 
-},{"./check":3,"./constants/arraytypes.json":7,"./constants/dtypes.json":8,"./is-ndarray":16,"./is-typed-array":17,"./values":30}],3:[function(_dereq_,module,exports){
+},{"./check":3,"./constants/arraytypes.json":7,"./constants/dtypes.json":8,"./is-ndarray":16,"./is-typed-array":17,"./values":30}],3:[function(require,module,exports){
 // Error checking and parameter validation
-var isTypedArray = _dereq_('./is-typed-array')
+var isTypedArray = require('./is-typed-array')
 
 function raise (message) {
   var error = new Error('(regl) ' + message)
@@ -525,14 +525,14 @@ module.exports = Object.assign(check, {
   oneOf: checkOneOf
 })
 
-},{"./is-typed-array":17}],4:[function(_dereq_,module,exports){
+},{"./is-typed-array":17}],4:[function(require,module,exports){
 /* globals performance */
 module.exports =
   (typeof performance !== 'undefined' && performance.now)
   ? function () { return performance.now() }
   : function () { return +(new Date()) }
 
-},{}],5:[function(_dereq_,module,exports){
+},{}],5:[function(require,module,exports){
 function slice (x) {
   return Array.prototype.slice.call(x)
 }
@@ -631,12 +631,12 @@ module.exports = function createEnvironment () {
   }
 }
 
-},{}],6:[function(_dereq_,module,exports){
-var check = _dereq_('./check')
-var createEnvironment = _dereq_('./codegen')
+},{}],6:[function(require,module,exports){
+var check = require('./check')
+var createEnvironment = require('./codegen')
 
-var primTypes = _dereq_('./constants/primitives.json')
-var glTypes = _dereq_('./constants/dtypes.json')
+var primTypes = require('./constants/primitives.json')
+var glTypes = require('./constants/dtypes.json')
 
 var GL_ELEMENT_ARRAY_BUFFER = 34963
 
@@ -2194,7 +2194,7 @@ module.exports = function reglCompiler (
   }
 }
 
-},{"./check":3,"./codegen":5,"./constants/dtypes.json":8,"./constants/primitives.json":9}],7:[function(_dereq_,module,exports){
+},{"./check":3,"./codegen":5,"./constants/dtypes.json":8,"./constants/primitives.json":9}],7:[function(require,module,exports){
 module.exports={
   "[object Int8Array]": 5120
 , "[object Int16Array]": 5122
@@ -2208,7 +2208,7 @@ module.exports={
 , "[object ArrayBuffer]": 5121
 }
 
-},{}],8:[function(_dereq_,module,exports){
+},{}],8:[function(require,module,exports){
 module.exports={
   "int8": 5120
 , "int16": 5122
@@ -2219,7 +2219,7 @@ module.exports={
 , "float": 5126
 }
 
-},{}],9:[function(_dereq_,module,exports){
+},{}],9:[function(require,module,exports){
 module.exports={
   "points": 0,
   "lines": 1,
@@ -2230,11 +2230,11 @@ module.exports={
   "triangle fan": 6
 }
 
-},{}],10:[function(_dereq_,module,exports){
+},{}],10:[function(require,module,exports){
 // Context and canvas creation helper functions
 /*globals HTMLElement,WebGLRenderingContext*/
 
-var check = _dereq_('./check')
+var check = require('./check')
 
 function createCanvas (element, options) {
   var canvas = document.createElement('canvas')
@@ -2351,7 +2351,7 @@ module.exports = function parseArgs (args) {
   }
 }
 
-},{"./check":3}],11:[function(_dereq_,module,exports){
+},{"./check":3}],11:[function(require,module,exports){
 var GL_TRIANGLES = 4
 
 module.exports = function wrapDrawState (gl) {
@@ -2368,7 +2368,7 @@ module.exports = function wrapDrawState (gl) {
   }
 }
 
-},{}],12:[function(_dereq_,module,exports){
+},{}],12:[function(require,module,exports){
 var VARIABLE_COUNTER = 0
 
 function DynamicVariable (isFunc, data) {
@@ -2411,11 +2411,11 @@ module.exports = {
   unbox: unbox
 }
 
-},{}],13:[function(_dereq_,module,exports){
-var check = _dereq_('./check')
-var isTypedArray = _dereq_('./is-typed-array')
-var isNDArrayLike = _dereq_('./is-ndarray')
-var primTypes = _dereq_('./constants/primitives.json')
+},{}],13:[function(require,module,exports){
+var check = require('./check')
+var isTypedArray = require('./is-typed-array')
+var isNDArrayLike = require('./is-ndarray')
+var primTypes = require('./constants/primitives.json')
 
 var GL_POINTS = 0
 var GL_LINES = 1
@@ -2585,7 +2585,7 @@ module.exports = function wrapElementsState (gl, extensionState, bufferState) {
   }
 }
 
-},{"./check":3,"./constants/primitives.json":9,"./is-ndarray":16,"./is-typed-array":17}],14:[function(_dereq_,module,exports){
+},{"./check":3,"./constants/primitives.json":9,"./is-ndarray":16,"./is-typed-array":17}],14:[function(require,module,exports){
 module.exports = function createExtensionCache (gl) {
   var extensions = {}
 
@@ -2631,7 +2631,7 @@ module.exports = function createExtensionCache (gl) {
   }
 }
 
-},{}],15:[function(_dereq_,module,exports){
+},{}],15:[function(require,module,exports){
 // Framebuffer object state management
 
 module.exports = function wrapFBOState (
@@ -2656,8 +2656,8 @@ module.exports = function wrapFBOState (
   }
 }
 
-},{}],16:[function(_dereq_,module,exports){
-var isTypedArray = _dereq_('./is-typed-array')
+},{}],16:[function(require,module,exports){
+var isTypedArray = require('./is-typed-array')
 
 module.exports = function isNDArrayLike (obj) {
   return (
@@ -2670,13 +2670,13 @@ module.exports = function isNDArrayLike (obj) {
       isTypedArray(obj.data)))
 }
 
-},{"./is-typed-array":17}],17:[function(_dereq_,module,exports){
-var dtypes = _dereq_('./constants/arraytypes.json')
+},{"./is-typed-array":17}],17:[function(require,module,exports){
+var dtypes = require('./constants/arraytypes.json')
 module.exports = function (x) {
   return Object.prototype.toString.call(x) in dtypes
 }
 
-},{"./constants/arraytypes.json":7}],18:[function(_dereq_,module,exports){
+},{"./constants/arraytypes.json":7}],18:[function(require,module,exports){
 var GL_SUBPIXEL_BITS = 0x0D50
 var GL_RED_BITS = 0x0D52
 var GL_GREEN_BITS = 0x0D53
@@ -2758,7 +2758,7 @@ module.exports = function (gl, extensionState) {
   }
 }
 
-},{}],19:[function(_dereq_,module,exports){
+},{}],19:[function(require,module,exports){
 /* globals document, Image, XMLHttpRequest */
 
 module.exports = loadTexture
@@ -2841,13 +2841,13 @@ function loadTexture (url, crossOrigin) {
   return null
 }
 
-},{}],20:[function(_dereq_,module,exports){
+},{}],20:[function(require,module,exports){
 // References:
 //
 // http://msdn.microsoft.com/en-us/library/bb943991.aspx/
 // http://blog.tojicode.com/2011/12/compressed-textures-in-webgl.html
 //
-var check = _dereq_('./check')
+var check = require('./check')
 
 module.exports = parseDDS
 
@@ -3026,7 +3026,7 @@ function parseDDS (arrayBuffer) {
   return result
 }
 
-},{"./check":3}],21:[function(_dereq_,module,exports){
+},{"./check":3}],21:[function(require,module,exports){
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
     typeof cancelAnimationFrame === 'function') {
@@ -3043,9 +3043,9 @@ if (typeof requestAnimationFrame === 'function' &&
   }
 }
 
-},{}],22:[function(_dereq_,module,exports){
-var check = _dereq_('./check')
-var isTypedArray = _dereq_('./is-typed-array')
+},{}],22:[function(require,module,exports){
+var check = require('./check')
+var isTypedArray = require('./is-typed-array')
 
 var GL_RGBA = 6408
 var GL_UNSIGNED_BYTE = 5121
@@ -3097,8 +3097,8 @@ module.exports = function wrapReadPixels (gl, glState) {
   return readPixels
 }
 
-},{"./check":3,"./is-typed-array":17}],23:[function(_dereq_,module,exports){
-var check = _dereq_('./check')
+},{"./check":3,"./is-typed-array":17}],23:[function(require,module,exports){
+var check = require('./check')
 
 var GL_RENDERBUFFER = 0x8D41
 
@@ -3228,8 +3228,8 @@ module.exports = function (gl, extensions, limits) {
   }
 }
 
-},{"./check":3}],24:[function(_dereq_,module,exports){
-var check = _dereq_('./check')
+},{"./check":3}],24:[function(require,module,exports){
+var check = require('./check')
 
 var DEFAULT_FRAG_SHADER = 'void main(){gl_FragColor=vec4(0,0,0,0);}'
 var DEFAULT_VERT_SHADER = 'void main(){gl_Position=vec4(0,0,0,0);}'
@@ -3441,7 +3441,7 @@ module.exports = function wrapShaderState (
   }
 }
 
-},{"./check":3}],25:[function(_dereq_,module,exports){
+},{"./check":3}],25:[function(require,module,exports){
 // A stack for managing the state of a scalar/vector parameter
 
 module.exports = function createStack (init, onChange) {
@@ -3499,9 +3499,9 @@ module.exports = function createStack (init, onChange) {
   }
 }
 
-},{}],26:[function(_dereq_,module,exports){
-var createStack = _dereq_('./stack')
-var createEnvironment = _dereq_('./codegen')
+},{}],26:[function(require,module,exports){
+var createStack = require('./stack')
+var createEnvironment = require('./codegen')
 
 // WebGL constants
 var GL_CULL_FACE = 0x0B44
@@ -3680,13 +3680,13 @@ module.exports = function wrapContextState (gl, shaderState) {
   }
 }
 
-},{"./codegen":5,"./stack":25}],27:[function(_dereq_,module,exports){
-var check = _dereq_('./check')
-var isTypedArray = _dereq_('./is-typed-array')
-var isNDArrayLike = _dereq_('./is-ndarray')
-var loadTexture = _dereq_('./load-texture')
-var convertToHalfFloat = _dereq_('./to-half-float')
-var parseDDS = _dereq_('./parse-dds')
+},{"./codegen":5,"./stack":25}],27:[function(require,module,exports){
+var check = require('./check')
+var isTypedArray = require('./is-typed-array')
+var isNDArrayLike = require('./is-ndarray')
+var loadTexture = require('./load-texture')
+var convertToHalfFloat = require('./to-half-float')
+var parseDDS = require('./parse-dds')
 
 var GL_COMPRESSED_TEXTURE_FORMATS = 0x86A3
 
@@ -5105,7 +5105,7 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
   }
 }
 
-},{"./check":3,"./is-ndarray":16,"./is-typed-array":17,"./load-texture":19,"./parse-dds":20,"./to-half-float":28}],28:[function(_dereq_,module,exports){
+},{"./check":3,"./is-ndarray":16,"./is-typed-array":17,"./load-texture":19,"./parse-dds":20,"./to-half-float":28}],28:[function(require,module,exports){
 module.exports = function convertToHalfFloat (array) {
   var floats = new Float32Array(array)
   var uints = new Uint32Array(floats.buffer)
@@ -5145,7 +5145,7 @@ module.exports = function convertToHalfFloat (array) {
   return ushorts
 }
 
-},{}],29:[function(_dereq_,module,exports){
+},{}],29:[function(require,module,exports){
 module.exports = function wrapUniformState () {
   var uniformState = {}
 
@@ -5162,31 +5162,31 @@ module.exports = function wrapUniformState () {
   }
 }
 
-},{}],30:[function(_dereq_,module,exports){
+},{}],30:[function(require,module,exports){
 module.exports = function (obj) {
   return Object.keys(obj).map(function (key) { return obj[key] })
 }
 
-},{}],31:[function(_dereq_,module,exports){
-var check = _dereq_('./lib/check')
-var getContext = _dereq_('./lib/context')
-var wrapExtensions = _dereq_('./lib/extension')
-var wrapLimits = _dereq_('./lib/limits')
-var wrapBuffers = _dereq_('./lib/buffer')
-var wrapElements = _dereq_('./lib/elements')
-var wrapTextures = _dereq_('./lib/texture')
-var wrapRenderbuffers = _dereq_('./lib/renderbuffer')
-var wrapFBOs = _dereq_('./lib/fbo')
-var wrapUniforms = _dereq_('./lib/uniform')
-var wrapAttributes = _dereq_('./lib/attribute')
-var wrapShaders = _dereq_('./lib/shader')
-var wrapDraw = _dereq_('./lib/draw')
-var wrapContext = _dereq_('./lib/state')
-var createCompiler = _dereq_('./lib/compile')
-var wrapRead = _dereq_('./lib/read')
-var dynamic = _dereq_('./lib/dynamic')
-var raf = _dereq_('./lib/raf')
-var clock = _dereq_('./lib/clock')
+},{}],31:[function(require,module,exports){
+var check = require('./lib/check')
+var getContext = require('./lib/context')
+var wrapExtensions = require('./lib/extension')
+var wrapLimits = require('./lib/limits')
+var wrapBuffers = require('./lib/buffer')
+var wrapElements = require('./lib/elements')
+var wrapTextures = require('./lib/texture')
+var wrapRenderbuffers = require('./lib/renderbuffer')
+var wrapFBOs = require('./lib/fbo')
+var wrapUniforms = require('./lib/uniform')
+var wrapAttributes = require('./lib/attribute')
+var wrapShaders = require('./lib/shader')
+var wrapDraw = require('./lib/draw')
+var wrapContext = require('./lib/state')
+var createCompiler = require('./lib/compile')
+var wrapRead = require('./lib/read')
+var dynamic = require('./lib/dynamic')
+var raf = require('./lib/raf')
+var clock = require('./lib/clock')
 
 var GL_COLOR_BUFFER_BIT = 16384
 var GL_DEPTH_BUFFER_BIT = 256
