@@ -14,6 +14,7 @@
     "budo": "^8.1.0",
     "bunny": "^1.0.1",
     "canvas-fit": "^1.5.0",
+    "canvas-orbit-camera": "^1.0.2",
     "coverify": "^1.4.1",
     "faucet": "0.0.1",
     "gl": "^3.0.3",
