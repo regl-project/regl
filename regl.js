@@ -6,7 +6,7 @@ var wrapBuffers = require('./lib/buffer')
 var wrapElements = require('./lib/elements')
 var wrapTextures = require('./lib/texture')
 var wrapRenderbuffers = require('./lib/renderbuffer')
-var wrapFBOs = require('./lib/fbo')
+var wrapFrambuffers = require('./lib/framebuffer')
 var wrapUniforms = require('./lib/uniform')
 var wrapAttributes = require('./lib/attribute')
 var wrapShaders = require('./lib/shader')
@@ -57,7 +57,7 @@ module.exports = function wrapREGL () {
     poll,
     glState.viewport)
   var renderbufferState = wrapRenderbuffers(gl, extensionState, limits)
-  var fboState = wrapFBOs(gl, extensionState, textureState)
+  var framebufferState = wrapFramebuffers(gl, extensionState, textureState)
   var frameState = {
     count: 0,
     start: clock(),
@@ -76,7 +76,7 @@ module.exports = function wrapREGL () {
     bufferState,
     elementState,
     textureState,
-    fboState,
+    framebufferState,
     glState,
     uniformState,
     attributeState,
@@ -140,7 +140,7 @@ module.exports = function wrapREGL () {
     bufferState.refresh()
     textureState.refresh()
     renderbufferState.refresh()
-    fboState.refresh()
+    framebufferState.refresh()
     shaderState.refresh()
     glState.refresh()
     if (options.onContextRestored) {
@@ -164,7 +164,8 @@ module.exports = function wrapREGL () {
     }
 
     shaderState.clear()
-    fboState.clear()
+    framebufferState.clear()
+    renderbufferState.clear()
     textureState.clear()
     bufferState.clear()
 
