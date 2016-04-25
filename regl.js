@@ -35,29 +35,63 @@ module.exports = function wrapREGL () {
   var options = args.options
 
   var extensionState = wrapExtensions(gl)
-  var limits = wrapLimits(gl, extensionState)
+  var extensions = extensionState.extensions
+
+  var limits = wrapLimits(
+    gl,
+    extensions)
+
   var bufferState = wrapBuffers(gl)
-  var elementState = wrapElements(gl, extensionState, bufferState)
+
+  var elementState = wrapElements(
+    gl,
+    extensions,
+    bufferState)
+
   var uniformState = wrapUniforms()
-  var attributeState = wrapAttributes(gl, extensionState, bufferState, limits)
+
+  var attributeState = wrapAttributes(
+    gl,
+    extensions,
+    limits,
+    bufferState)
+
   var shaderState = wrapShaders(
     gl,
-    extensionState,
     attributeState,
     uniformState,
     function (program) {
       return compiler.draw(program)
     })
-  var drawState = wrapDraw(gl, extensionState, bufferState)
-  var glState = wrapContext(gl, shaderState)
+
+  var drawState = wrapDraw(
+    gl,
+    extensions,
+    bufferState)
+
+  var glState = wrapContext(
+    gl,
+    shaderState)
+
   var textureState = wrapTextures(
     gl,
-    extensionState,
+    extensions,
     limits,
     poll,
     glState.viewport)
-  var renderbufferState = wrapRenderbuffers(gl, extensionState, limits)
-  var framebufferState = wrapFramebuffers(gl, extensionState, textureState)
+
+  var renderbufferState = wrapRenderbuffers(
+    gl,
+    extensions,
+    limits)
+
+  var framebufferState = wrapFramebuffers(
+    gl,
+    extensions,
+    limits,
+    textureState,
+    renderbufferState)
+
   var frameState = {
     count: 0,
     start: clock(),
@@ -68,11 +102,13 @@ module.exports = function wrapREGL () {
     height: gl.drawingBufferHeight,
     pixelRatio: options.pixelRatio
   }
+
   var readPixels = wrapRead(gl, glState)
 
   var compiler = createCompiler(
     gl,
-    extensionState,
+    extensions,
+    limits,
     bufferState,
     elementState,
     textureState,
@@ -321,10 +357,10 @@ module.exports = function wrapREGL () {
     // Clear current FBO
     clear: clear,
 
-    // Dynamic variable binding
+    // Short cut for prop binding
     prop: dynamic.define,
 
-    // Object constructors
+    // Resources
     elements: function (options) {
       return elementState.create(options)
     },
@@ -346,7 +382,12 @@ module.exports = function wrapREGL () {
     renderbuffer: function (options) {
       return renderbufferState.create(options)
     },
-    // fbo: create(fboState),
+    framebuffer: function (options) {
+      return framebufferState.create(options)
+    },
+    framebufferCube: function (options) {
+      check.raise('framebuffer cube not yet implemented')
+    },
 
     // Frame rendering
     frame: frame,

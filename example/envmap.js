@@ -29,10 +29,10 @@ const setupEnvMap = regl({
 
     view: regl.prop('view'),
 
-    projection: (args, batchId, {width, heigth}) =>
+    projection: (args, batchId, {width, height}) =>
       mat4.perspective([],
         Math.PI / 4,
-        regl.stats.width / regl.stats.height,
+        width / height,
         0.01,
         1000),
 
