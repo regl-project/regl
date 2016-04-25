@@ -1343,19 +1343,22 @@ regl exposes info about the WebGL context limits and capabilities via the `regl.
 | `stencilBits` | Bit depth of stencil buffer |
 | `subpixelBits` | `gl.SUBPIXEL_BITS` |
 | `extensions` | A list of all supported extensions |
-| `pointSizeRange` | `gl.ALIASED_POINT_SIZE_RANGE` |
-| `lineWidthRange` | `gl.ALIASED_LINE_WIDTH_RANGE` |
-| `viewport` | `gl.MAX_VIEWPORT_DIMS` |
-| `combinedTextureUnits` | `gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS` |
-| `cubeMapSize` | `gl.MAX_CUBE_MAP_TEXTURE_SIZE` |
-| `renderbufferSize` | `gl.MAX_RENDERBUFFER_SIZE` |
-| `texUnits` | `gl.MAX_TEXTURE_IMAGE_UNITS` |
-| `textureSize` | `gl.MAX_TEXTURE_SIZE` |
-| `attributes` | `gl.MAX_VERTEX_ATTRIBS` |
-| `vertexUniforms` | `gl.MAX_VERTEX_UNIFORM_VECTORS` |
-| `vertexTextureUnits` | `gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS` |
-| `varyingVectors` | `gl.MAX_VARYING_VECTORS` |
-| `fragmentUniforms` | `gl.MAX_FRAGMENT_UNIFORM_VECTORS` |
+| `maxAnisotropic` | Maximum number of anisotropic filtering samples |
+| `maxDrawbuffers` | Maximum number of draw buffers |
+| `maxColorAttachments` | Maximum number of color attachments |
+| `pointSizeDims` | `gl.ALIASED_POINT_SIZE_RANGE` |
+| `lineWidthDims` | `gl.ALIASED_LINE_WIDTH_RANGE` |
+| `maxViewportDims` | `gl.MAX_VIEWPORT_DIMS` |
+| `maxCombinedTextureUnits` | `gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS` |
+| `maxCubeMapSize` | `gl.MAX_CUBE_MAP_TEXTURE_SIZE` |
+| `maxRenderbufferSize` | `gl.MAX_RENDERBUFFER_SIZE` |
+| `maxTextureUnits` | `gl.MAX_TEXTURE_IMAGE_UNITS` |
+| `maxTextureSize` | `gl.MAX_TEXTURE_SIZE` |
+| `maxAttributes` | `gl.MAX_VERTEX_ATTRIBS` |
+| `maxVertexUniforms` | `gl.MAX_VERTEX_UNIFORM_VECTORS` |
+| `maxVertexTextureUnits` | `gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS` |
+| `maxVaryingVectors` | `gl.MAX_VARYING_VECTORS` |
+| `maxFragmentUniforms` | `gl.MAX_FRAGMENT_UNIFORM_VECTORS` |
 | `glsl` | `gl.SHADING_LANGUAGE_VERSION` |
 | `renderer` | `gl.RENDERER` |
 | `vendor` | `gl.VENDOR` |
