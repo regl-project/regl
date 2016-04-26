@@ -15,20 +15,20 @@ tape('framebuffer', function (t) {
     t.equals(_framebuffer.height, props.height, prefix + '.height')
 
     t.equals(
-      framebuffer.color,
-      _framebuffer.colorAttachments,
+      framebuffer.color.length,
+      _framebuffer.colorAttachments.length,
       prefix + ' color handle')
     t.equals(
-      framebuffer.depth,
-      _framebuffer.depthAttachment,
+      !!framebuffer.depth,
+      !!_framebuffer.depthAttachment,
       prefix + ' depth handle')
     t.equals(
-      framebuffer.stencil,
-      _framebuffer.stencilAttachment,
+      !!framebuffer.stencil,
+      !!_framebuffer.stencilAttachment,
       prefix + ' stencil handle')
     t.equals(
-      framebuffer.depthStencil,
-      _framebuffer.depthStencilAttachment,
+      !!framebuffer.depthStencil,
+      !!_framebuffer.depthStencilAttachment,
       prefix + ' depth stencil handle')
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, _framebuffer.framebuffer)
@@ -46,9 +46,9 @@ tape('framebuffer', function (t) {
       if (!expected) {
         t.equals(actual, null, label + ' is null')
         t.equals(
-          getParameter(gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME),
-          null,
-          label + ' object assoc')
+          getParameter(gl.FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE),
+          0,
+          label + ' object type')
         return
       }
 
@@ -64,7 +64,8 @@ tape('framebuffer', function (t) {
         t.equals(actual.renderbuffer.height, props.height, label + '.height')
         t.equals(
           getParameter(gl.FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE),
-          gl.RENDERBUFFER)
+          gl.RENDERBUFFER,
+          label + ' object type')
         t.equals(
           getParameter(gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME),
           actual.renderbuffer._renderbuffer.renderbuffer,
@@ -81,7 +82,7 @@ tape('framebuffer', function (t) {
         t.equals(
           getParameter(gl.FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE),
           gl.TEXTURE,
-          label + '.object type')
+          label + ' object type')
         t.equals(
           getParameter(gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME),
           actual.texture._texture.texture,
@@ -167,13 +168,17 @@ tape('framebuffer', function (t) {
     regl.framebuffer({
       width: 10,
       height: 10,
-      colorBuffers: [],
+      format: 'rgba4',
       depth: true,
       stencil: true
     }),
     {
       width: 10,
       height: 10,
+      color: [{
+        target: gl.RENDERBUFFER,
+        format: gl.RGBA4
+      }],
       depthStencil: {
         target: gl.RENDERBUFFER,
         format: gl.DEPTH_STENCIL
@@ -210,19 +215,24 @@ tape('framebuffer', function (t) {
         format: gl.RGBA
       }],
       depth: {
-        target: gl.RENDEBUFFER,
+        target: gl.RENDERBUFFER,
         format: gl.DEPTH_COMPONENT16
       }
     },
     'before update')
 
+  t.ok(origFBO._framebuffer.ownsColor, 'owns color buffer')
+  t.ok(origFBO._framebuffer.ownsDepthStencil, 'owns depth/stencil buffer')
+
   origFBO({
-    radius: 10
+    radius: 10,
+    depth: true,
+    stencil: true
   })
 
   // Should reuse texture and renderbuffer references
-  t.equals(origFBO.color[0], origColor[0], 'colors consistent')
-  t.equals(origFBO.depth, origDepth, 'depth consistent')
+  t.equals(origFBO.color[0], origColor[0], 'colors buffer reused')
+  t.equals(origFBO.depthStencil, origDepth, 'depth buffer reused')
 
   checkProperties(
     origFBO,
@@ -234,9 +244,9 @@ tape('framebuffer', function (t) {
         level: 0,
         format: gl.RGBA
       }],
-      depth: {
-        target: gl.RENDEBUFFER,
-        format: gl.DEPTH_COMPONENT16
+      depthStencil: {
+        target: gl.RENDERBUFFER,
+        format: gl.DEPTH_STENCIL
       }
     },
     'after update')
