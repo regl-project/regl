@@ -15,10 +15,10 @@ tape('renderbuffer parsing', function (t) {
     t.equals(rbProps.height, props.height, prefix + ' height')
     t.equals(rbProps.format, props.format, prefix + ' format')
 
-    rbProps.bind()
-    t.equals(gl.getParameter(gl.RENDERBUFFER_WIDTH), props.width, prefix + ' rb width')
-    t.equals(gl.getParameter(gl.RENDERBUFFER_HEIGHT), props.width, prefix + ' rb height')
-    t.equals(gl.getParameter(gl.RENDERBUFFER_INTERNAL_FORMAT), props.format, prefix + ' rb format')
+    gl.bindRenderbuffer(gl.RENDERBUFFER, rbProps.renderbuffer)
+    t.equals(gl.getRenderbufferParameter(gl.RENDERBUFFER, gl.RENDERBUFFER_WIDTH), props.width, prefix + ' rb width')
+    t.equals(gl.getRenderbufferParameter(gl.RENDERBUFFER, gl.RENDERBUFFER_HEIGHT), props.width, prefix + ' rb height')
+    t.equals(gl.getRenderbufferParameter(gl.RENDERBUFFER, gl.RENDERBUFFER_INTERNAL_FORMAT), props.format, prefix + ' rb format')
   }
 
   checkProperties(
