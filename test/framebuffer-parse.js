@@ -2,7 +2,7 @@ var createContext = require('./util/create-context')
 var createREGL = require('../../regl')
 var tape = require('tape')
 
-tape('framebuffer', function (t) {
+tape('framebuffer parsing', function (t) {
   var gl = createContext(16, 16)
   var regl = createREGL(gl)
 
@@ -252,6 +252,10 @@ tape('framebuffer', function (t) {
     'after update')
 
   // check multiple render targets
+  var extDrawBuffers = gl.getExtension('WEBGL_draw_buffers')
+  if (extDrawBuffers) {
+    // TODO check multiple render target support
+  }
 
   regl.destroy()
   t.end()
