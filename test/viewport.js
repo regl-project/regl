@@ -100,6 +100,8 @@ tape('viewport', function (t) {
     testFlags('static - ', params)
   })
 
+  // TODO test resizing
+
   regl.destroy()
   t.end()
 })
