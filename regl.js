@@ -37,6 +37,11 @@ module.exports = function wrapREGL () {
   var extensionState = wrapExtensions(gl)
   var extensions = extensionState.extensions
 
+  var viewportState = {
+    width: gl.drawingBufferWidth,
+    height: gl.drawingBufferHeight
+  }
+
   var limits = wrapLimits(
     gl,
     extensions)
@@ -69,16 +74,12 @@ module.exports = function wrapREGL () {
     extensions,
     bufferState)
 
-  var glState = wrapContext(
-    gl,
-    shaderState)
-
   var textureState = wrapTextures(
     gl,
     extensions,
     limits,
     poll,
-    glState.viewport)
+    viewportState)
 
   var renderbufferState = wrapRenderbuffers(
     gl,
@@ -103,7 +104,12 @@ module.exports = function wrapREGL () {
     pixelRatio: options.pixelRatio
   }
 
-  var readPixels = wrapRead(gl, glState)
+  var glState = wrapContext(
+    gl,
+    framebufferState,
+    viewportState)
+
+  var readPixels = wrapRead(gl, poll, viewportState)
 
   var compiler = createCompiler(
     gl,
@@ -118,7 +124,8 @@ module.exports = function wrapREGL () {
     attributeState,
     shaderState,
     drawState,
-    frameState)
+    frameState,
+    poll)
 
   var canvas = gl.canvas
 
@@ -133,6 +140,7 @@ module.exports = function wrapREGL () {
         frameState.height !== gl.drawingBufferHeight) {
       frameState.width = gl.drawingBufferWidth
       frameState.height = gl.drawingBufferHeight
+      framebufferState.notifyViewportChanged()
       glState.notifyViewportChanged()
     }
 
@@ -299,6 +307,7 @@ module.exports = function wrapREGL () {
   }
 
   function poll () {
+    framebufferState.poll()
     glState.poll()
   }
 
@@ -307,19 +316,17 @@ module.exports = function wrapREGL () {
     var clearFlags = 0
 
     // Update context state
-    glState.poll()
+    poll()
 
     var c = options.color
     if (c) {
       gl.clearColor(+c[0] || 0, +c[1] || 0, +c[2] || 0, +c[3] || 0)
       clearFlags |= GL_COLOR_BUFFER_BIT
     }
-
     if ('depth' in options) {
       gl.clearDepth(+options.depth)
       clearFlags |= GL_DEPTH_BUFFER_BIT
     }
-
     if ('stencil' in options) {
       gl.clearStencil(options.stencil | 0)
       clearFlags |= GL_STENCIL_BUFFER_BIT
