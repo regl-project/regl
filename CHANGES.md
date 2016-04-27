@@ -2,6 +2,8 @@
 
 ## Next
 
+* added renderbuffers (via regl.renderbuffer)
+* added framebuffer objects (via regl.framebuffer)
 * regl.buffer and regl.elements can now take ndarray-like inputs
 * Switch to using Google closure compiler for minified builds
 
