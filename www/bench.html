@@ -400,12 +400,10 @@ Object.assign(AttributeRecord.prototype, {
   }
 })
 
-module.exports = function wrapAttributeState (gl, extensionState, bufferState) {
-  var extensions = extensionState.extensions
-
+module.exports = function wrapAttributeState (gl, extensions, limits, bufferState) {
   var attributeState = {}
 
-  var NUM_ATTRIBUTES = gl.getParameter(gl.MAX_VERTEX_ATTRIBS)
+  var NUM_ATTRIBUTES = limits.maxAttributes
   var attributeBindings = new Array(NUM_ATTRIBUTES)
   for (var i = 0; i < NUM_ATTRIBUTES; ++i) {
     attributeBindings[i] = new AttributeRecord()
@@ -647,12 +645,13 @@ module.exports = function wrapBufferState (gl) {
   }
 
   function destroy (buffer) {
-    check(buffer.buffer, 'buffer must not be deleted already')
-    if (gl.isBuffer(buffer.buffer)) {
-      gl.deleteBuffer(buffer.buffer)
+    var handle = buffer.buffer
+    check(handle, 'buffer must not be deleted already')
+    if (gl.isBuffer(handle)) {
+      gl.deleteBuffer(handle)
     }
     buffer.buffer = null
-    delete bufferSet[this.id]
+    delete bufferSet[buffer.id]
   }
 
   function createBuffer (options, type, deferInit) {
@@ -1145,20 +1144,34 @@ function stackTop (x) {
   return x + '[' + x + '.length-1]'
 }
 
+// Need to process framebuffer first in options list
+function optionPriority (a, b) {
+  if (a === 'framebuffer') {
+    return -1
+  }
+  if (a < b) {
+    return -1
+  } else if (a > b) {
+    return 1
+  }
+  return 0
+}
+
 module.exports = function reglCompiler (
   gl,
-  extensionState,
+  extensions,
+  limits,
   bufferState,
   elementState,
   textureState,
-  fboState,
+  framebufferState,
   glState,
   uniformState,
   attributeState,
   shaderState,
   drawState,
-  frameState) {
-  var extensions = extensionState.extensions
+  frameState,
+  reglPoll) {
   var contextState = glState.contextState
 
   var blendEquations = {
@@ -1309,12 +1322,14 @@ module.exports = function reglCompiler (
     var PROGRAM = link(program.program)
     var BIND_ATTRIBUTE = link(attributeState.bind)
     var FRAME_STATE = link(frameState)
+    var FRAMEBUFFER_STATE = link(framebufferState)
     var DRAW_STATE = {
       count: link(drawState.count),
       offset: link(drawState.offset),
       instances: link(drawState.instances),
       primitive: link(drawState.primitive)
     }
+    var CONTEXT_STATE = {}
     var ELEMENTS = link(elementState.elements)
     var CUR_COUNT = def(stackTop(DRAW_STATE.count))
     var CUR_OFFSET = def(stackTop(DRAW_STATE.offset))
@@ -1328,6 +1343,15 @@ module.exports = function reglCompiler (
       INSTANCE_EXT = link(instancing)
     }
     var hasDynamicElements = 'elements' in options
+
+    function linkContext (x) {
+      var result = CONTEXT_STATE[x]
+      if (result) {
+        return result
+      }
+      result = CONTEXT_STATE[x] = link(contextState[x])
+      return result
+    }
 
     // -------------------------------
     // batch/argument vars
@@ -1428,7 +1452,7 @@ module.exports = function reglCompiler (
     // -------------------------------
     // set dynamic flags
     // -------------------------------
-    Object.keys(options).forEach(function (option) {
+    Object.keys(options).sort(optionPriority).forEach(function (option) {
       var VALUE = dyn(options[option])
 
       function setCap (flag) {
@@ -1439,6 +1463,18 @@ module.exports = function reglCompiler (
       }
 
       switch (option) {
+        case 'framebuffer':
+          var VIEWPORT_STATE = linkContext('viewport')
+          var SCISSOR_STATE = linkContext('scissor.box')
+          batch(
+            'if(', FRAMEBUFFER_STATE, '.push(',
+            VALUE, '&&', VALUE, '._framebuffer)){',
+            FRAMEBUFFER_STATE, '.poll();',
+            VIEWPORT_STATE, '.setDirty();',
+            SCISSOR_STATE, '.setDirty();',
+            '}')
+          break
+
         // Caps
         case 'cull.enable':
           setCap(GL_CULL_FACE)
@@ -1572,23 +1608,13 @@ module.exports = function reglCompiler (
           break
 
         case 'scissor.box':
-          var SCISSOR_X = batch.def(VALUE + '.x||0')
-          var SCISSOR_Y = batch.def(VALUE + '.y||0')
-          batch(GL, '.scissor(',
-            SCISSOR_X, ',',
-            SCISSOR_Y, ',',
-            '"w" in ', VALUE, '?', VALUE, '.w:', GL, '.drawingBufferWidth-', SCISSOR_X, ',',
-            '"h" in ', VALUE, '?', VALUE, '.h:', GL, '.drawingBufferHeight-', SCISSOR_Y, ');')
-          break
-
         case 'viewport':
-          var VIEWPORT_X = batch.def(VALUE + '.x||0')
-          var VIEWPORT_Y = batch.def(VALUE + '.y||0')
-          batch(GL, '.viewport(',
-            VIEWPORT_X, ',',
-            VIEWPORT_Y, ',',
-            '"w" in ', VALUE, '?', VALUE, '.w:', GL, '.drawingBufferWidth-', VIEWPORT_X, ',',
-            '"h" in ', VALUE, '?', VALUE, '.h:', GL, '.drawingBufferHeight-', VIEWPORT_Y, ');')
+          var BOX_STATE = linkContext(option)
+          batch(BOX_STATE, '.push(',
+            VALUE, '.x||0,',
+            VALUE, '.y||0,',
+            VALUE, '.w||-1,',
+            VALUE, '.h||-1);')
           break
 
         case 'primitives':
@@ -1601,6 +1627,17 @@ module.exports = function reglCompiler (
           check.raise('unsupported option for batch', option)
       }
     })
+
+    // update viewport/scissor box state and restore framebuffer
+    if ('viewport' in options || 'framebuffer' in options) {
+      batch(linkContext('viewport'), '.poll();')
+    }
+    if ('scissor.box' in options || 'framebuffer' in options) {
+      batch(linkContext('scissor.box'), '.poll();')
+    }
+    if ('framebuffer' in options) {
+      batch(FRAMEBUFFER_STATE, '.pop();')
+    }
 
     // -------------------------------
     // set dynamic uniforms
@@ -1765,10 +1802,11 @@ module.exports = function reglCompiler (
     // -------------------------------
     // Common state variables
     // -------------------------------
-    var GL_POLL = link(glState.poll)
+    var GL_POLL = link(reglPoll)
     var FRAG_SHADER_STATE = link(shaderState.fragShaders)
     var VERT_SHADER_STATE = link(shaderState.vertShaders)
     var PROGRAM_STATE = link(shaderState.programs)
+    var FRAMEBUFFER_STATE = link(framebufferState)
     var DRAW_STATE = {
       count: link(drawState.count),
       offset: link(drawState.offset),
@@ -1807,7 +1845,7 @@ module.exports = function reglCompiler (
     }
 
     var hasShader = false
-    Object.keys(staticOptions).forEach(function (param) {
+    Object.keys(staticOptions).sort(optionPriority).forEach(function (param) {
       var value = staticOptions[param]
       switch (param) {
         case 'frag':
@@ -1820,6 +1858,22 @@ module.exports = function reglCompiler (
           hasShader = true
           entry(VERT_SHADER_STATE, '.push(', link(value), ');')
           exit(VERT_SHADER_STATE, '.pop();')
+          break
+
+        case 'framebuffer':
+          var fbo = framebufferState.getFramebuffer(value)
+          check(value === null || fbo, 'invalid framebuffer object')
+          var VIEWPORT_STATE = linkContext('viewport')
+          var SCISSOR_STATE = linkContext('scissor.box')
+          entry('if(', FRAMEBUFFER_STATE, '.push(', link(
+            value && value._framebuffer), ')){',
+            VIEWPORT_STATE, '.setDirty();',
+            SCISSOR_STATE, '.setDirty();',
+            '}')
+          exit('if(', FRAMEBUFFER_STATE, '.pop()){',
+            VIEWPORT_STATE, '.setDirty();',
+            SCISSOR_STATE, '.setDirty();',
+            '}')
           break
 
         // Update draw state
@@ -2028,7 +2082,13 @@ module.exports = function reglCompiler (
           break
 
         case 'lineWidth':
-          check(value > 0 && typeof value === 'number', param)
+          var lineWidthDims = limits.lineWidthDims
+          check(
+            typeof value === 'number' &&
+            value >= lineWidthDims[0] &&
+            value <= lineWidthDims[1],
+            'invalid line width, must positive number between ' +
+            lineWidthDims[0] + ' and ' + lineWidthDims[1])
           handleStaticOption(param, value)
           break
 
@@ -2237,11 +2297,27 @@ module.exports = function reglCompiler (
     // -------------------------------
     // dynamic context state variables
     // -------------------------------
-    Object.keys(dynamicOptions).forEach(function (param) {
+    Object.keys(dynamicOptions).sort(optionPriority).forEach(function (param) {
       // Link in dynamic variable
       var variable = dyn(dynamicOptions[param])
 
       switch (param) {
+        case 'framebuffer':
+          var VIEWPORT_STATE = linkContext('viewport')
+          var SCISSOR_STATE = linkContext('scissor.box')
+          dynamicEntry('if(',
+            FRAMEBUFFER_STATE, '.push(',
+            variable, '&&', variable, '._framebuffer)){',
+            VIEWPORT_STATE, '.setDirty();',
+            SCISSOR_STATE, '.setDirty();',
+            '}')
+          dynamicExit('if(',
+            FRAMEBUFFER_STATE, '.pop()){',
+            VIEWPORT_STATE, '.setDirty();',
+            SCISSOR_STATE, '.setDirty();',
+            '}')
+          break
+
         case 'cull.enable':
         case 'blend.enable':
         case 'dither':
@@ -2771,9 +2847,7 @@ var GL_UNSIGNED_INT = 5125
 
 var GL_ELEMENT_ARRAY_BUFFER = 34963
 
-module.exports = function wrapElementsState (gl, extensionState, bufferState) {
-  var extensions = extensionState.extensions
-
+module.exports = function wrapElementsState (gl, extensions, bufferState) {
   var elements = [ null ]
 
   function REGLElementBuffer () {
@@ -2906,7 +2980,8 @@ module.exports = function wrapElementsState (gl, extensionState, bufferState) {
       _reglType: 'elements',
       _elements: elements,
       destroy: function () {
-        elements.buffer.destroy()
+        check(elements.buffer !== null, 'must not double destroy elements')
+        buffer.destroy()
         elements.buffer = null
       }
     })
@@ -2973,31 +3048,758 @@ module.exports = function createExtensionCache (gl) {
 }
 
 },{}],22:[function(require,module,exports){
-// Framebuffer object state management
+var check = require('./check')
+var values = require('./values')
+
+// We store these constants so that the minifier can inline them
+var GL_FRAMEBUFFER = 0x8D40
+var GL_RENDERBUFFER = 0x8D41
+
+var GL_TEXTURE_2D = 0x0DE1
+var GL_TEXTURE_CUBE_MAP = 0x8513
+var GL_TEXTURE_CUBE_MAP_POSITIVE_X = 0x8515
+
+var GL_COLOR_ATTACHMENT0 = 0x8CE0
+var GL_DEPTH_ATTACHMENT = 0x8D00
+var GL_STENCIL_ATTACHMENT = 0x8D20
+var GL_DEPTH_STENCIL_ATTACHMENT = 0x821A
+
+var GL_UNSIGNED_BYTE = 0x1401
+var GL_FLOAT = 0x1406
+
+var GL_HALF_FLOAT_OES = 0x8D61
+
+var GL_ALPHA = 0x1906
+var GL_LUMINANCE = 0x1909
+var GL_LUMINANCE_ALPHA = 0x190A
+var GL_RGB = 0x1907
+var GL_RGBA = 0x1908
+
+var GL_RGBA4 = 0x8056
+var GL_RGB5_A1 = 0x8057
+var GL_RGB565 = 0x8D62
+var GL_DEPTH_COMPONENT16 = 0x81A5
+var GL_STENCIL_INDEX8 = 0x8D48
+
+var GL_DEPTH_COMPONENT = 0x1902
+var GL_DEPTH_STENCIL = 0x84F9
+
+var GL_SRGB8_ALPHA8_EXT = 0x8C43
+
+var GL_RGBA32F_EXT = 0x8814
+
+var GL_RGBA16F_EXT = 0x881A
+var GL_RGB16F_EXT = 0x881B
+
+var GL_FRAMEBUFFER_COMPLETE = 0x8CD5
+var GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT = 0x8CD6
+var GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT = 0x8CD7
+var GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS = 0x8CD9
+var GL_FRAMEBUFFER_UNSUPPORTED = 0x8CDD
+
+var GL_BACK = 1029
+
+var BACK_BUFFER = [GL_BACK]
 
 module.exports = function wrapFBOState (
   gl,
-  textureCache) {
-  function createFBO (options) {
+  extensions,
+  limits,
+  textureState,
+  renderbufferState) {
+  var statusCode = {}
+  statusCode[GL_FRAMEBUFFER_COMPLETE] = 'complete'
+  statusCode[GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT] = 'incomplete attachment'
+  statusCode[GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS] = 'incomplete dimensions'
+  statusCode[GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT] = 'incomplete, missing attachment'
+  statusCode[GL_FRAMEBUFFER_UNSUPPORTED] = 'unsupported'
+
+  var colorTextureFormats = {
+    'rgba': GL_RGBA
   }
 
-  function clearCache () {
+  var colorRenderbufferFormats = {
+    'rgba4': GL_RGBA4,
+    'rgb565': GL_RGB565,
+    'rgb5 a1': GL_RGB5_A1
+  }
+
+  if (extensions.ext_srgb) {
+    colorRenderbufferFormats['srgba'] = GL_SRGB8_ALPHA8_EXT
+  }
+
+  if (extensions.ext_color_buffer_half_float) {
+    colorRenderbufferFormats['rgba16f'] = GL_RGBA16F_EXT
+    colorRenderbufferFormats['rgb16f'] = GL_RGB16F_EXT
+  }
+
+  if (extensions.webgl_color_buffer_float) {
+    colorRenderbufferFormats['rgba32f'] = GL_RGBA32F_EXT
+  }
+
+  var depthRenderbufferFormatEnums = [GL_DEPTH_COMPONENT16]
+  var stencilRenderbufferFormatEnums = [GL_STENCIL_INDEX8]
+  var depthStencilRenderbufferFormatEnums = [GL_DEPTH_STENCIL]
+
+  var depthTextureFormatEnums = []
+  var stencilTextureFormatEnums = []
+  var depthStencilTextureFormatEnums = []
+
+  if (extensions.webgl_depth_texture) {
+    depthTextureFormatEnums.push(GL_DEPTH_COMPONENT)
+    depthStencilTextureFormatEnums.push(GL_DEPTH_STENCIL)
+  }
+
+  var colorFormats = Object.assign({},
+    colorTextureFormats,
+    colorRenderbufferFormats)
+
+  var colorTextureFormatEnums = values(colorTextureFormats)
+  var colorRenderbufferFormatEnums = values(colorRenderbufferFormats)
+
+  var highestPrecision = GL_UNSIGNED_BYTE
+  var colorTypes = {
+    'uint8': GL_UNSIGNED_BYTE
+  }
+  if (extensions.oes_texture_half_float) {
+    highestPrecision = colorTypes['half float'] = GL_HALF_FLOAT_OES
+  }
+  if (extensions.oes_texture_float) {
+    highestPrecision = colorTypes.float = GL_FLOAT
+  }
+  colorTypes.best = highestPrecision
+
+  var DRAW_BUFFERS = (function () {
+    var result = new Array(limits.maxDrawbuffers)
+    for (var i = 0; i <= limits.maxDrawbuffers; ++i) {
+      var row = result[i] = new Array(i)
+      for (var j = 0; j < i; ++j) {
+        row[j] = GL_COLOR_ATTACHMENT0 + j
+      }
+    }
+    return result
+  })()
+
+  function FramebufferAttachment (target, level, texture, renderbuffer) {
+    this.target = target
+    this.level = level
+    this.texture = texture
+    this.renderbuffer = renderbuffer
+  }
+
+  function decRef (attachment) {
+    if (attachment) {
+      if (attachment.texture) {
+        attachment.texture._texture.decRef()
+      }
+      if (attachment.renderbuffer) {
+        attachment.renderbuffer._renderbuffer.decRef()
+      }
+    }
+  }
+
+  function checkFormat (attachment, texFormats, rbFormats) {
+    if (attachment.texture) {
+      check.oneOf(attachment.texture._texture.params.internalformat, texFormats,
+        'unsupported texture format for attachment')
+    } else {
+      check.oneOf(attachment.renderbuffer._renderbuffer.format, rbFormats,
+        'unsupported renderbuffer format for attachment')
+    }
+  }
+
+  function incRefAndCheckShape (attachment, framebuffer) {
+    var width = framebuffer.width
+    var height = framebuffer.height
+    if (attachment.texture) {
+      var texture = attachment.texture._texture
+      var tw = Math.max(1, texture.params.width >> attachment.level)
+      var th = Math.max(1, texture.params.height >> attachment.level)
+      width = width || tw
+      height = height || th
+      check(tw === width && th === height,
+        'inconsistent width/height for supplied texture')
+      check(texture.pollId < 0,
+        'polling fbo textures not supported')
+      texture.refCount += 1
+    } else {
+      var renderbuffer = attachment.renderbuffer._renderbuffer
+      width = width || renderbuffer.width
+      height = height || renderbuffer.height
+      check(
+        renderbuffer.width === width && renderbuffer.height === height,
+        'inconsistent width/height for renderbuffer')
+      check(
+        colorRenderbufferFormatEnums.indexOf(renderbuffer.format) >= 0,
+        'renderbuffer format not compatible with color channels')
+      renderbuffer.refCount += 1
+    }
+    framebuffer.width = width
+    framebuffer.height = height
+  }
+
+  function attach (location, attachment) {
+    if (attachment) {
+      if (attachment.texture) {
+        gl.framebufferTexture2D(
+          GL_FRAMEBUFFER,
+          location,
+          attachment.target,
+          attachment.texture._texture.texture,
+          attachment.level)
+      } else {
+        gl.framebufferRenderbuffer(
+          GL_FRAMEBUFFER,
+          location,
+          GL_RENDERBUFFER,
+          attachment.renderbuffer._renderbuffer.renderbuffer)
+      }
+    } else {
+      gl.framebufferTexture2D(
+        GL_FRAMEBUFFER,
+        location,
+        GL_TEXTURE_2D,
+        null,
+        0)
+    }
+  }
+
+  function tryUpdateAttachment (
+    attachment,
+    isTexture,
+    format,
+    type,
+    width,
+    height) {
+    if (attachment.texture) {
+      var texture = attachment.texture
+      if (isTexture) {
+        texture({
+          format: format,
+          type: type,
+          width: width,
+          height: height
+        })
+        texture._texture.refCount += 1
+        return true
+      }
+    } else {
+      var renderbuffer = attachment.renderbuffer
+      if (!isTexture) {
+        renderbuffer({
+          format: format,
+          width: width,
+          height: height
+        })
+        renderbuffer._renderbuffer.refCount += 1
+        return true
+      }
+    }
+    decRef(attachment)
+    return false
+  }
+
+  function parseAttachment (attachment) {
+    var target = GL_TEXTURE_2D
+    var level = 0
+    var texture = null
+    var renderbuffer = null
+
+    var data = attachment
+    if (typeof attachment === 'object') {
+      data = attachment.data
+      if ('level' in attachment) {
+        level = attachment.level | 0
+      }
+      if ('target' in attachment) {
+        target = attachment.target | 0
+      }
+    }
+
+    check.type(data, 'function', 'invalid attachment data')
+
+    var type = attachment._reglType
+    if (type === 'texture') {
+      texture = attachment
+      if (texture._texture.target === GL_TEXTURE_CUBE_MAP) {
+        check(
+          target >= GL_TEXTURE_CUBE_MAP_POSITIVE_X &&
+          target < GL_TEXTURE_CUBE_MAP_POSITIVE_X + 6,
+          'invalid cube map target')
+      } else {
+        check(target === GL_TEXTURE_2D)
+      }
+      // TODO check miplevel is consistent
+    } else if (type === 'renderbuffer') {
+      renderbuffer = attachment
+      target = GL_RENDERBUFFER
+      level = 0
+    } else {
+      check.raise('invalid regl object for attachment')
+    }
+
+    return new FramebufferAttachment(target, level, texture, renderbuffer)
+  }
+
+  function unwrapAttachment (attachment) {
+    return attachment && (attachment.texture || attachment.renderbuffer)
+  }
+
+  var framebufferCount = 0
+  var framebufferSet = {}
+  var framebufferStack = [null]
+  var framebufferDirty = true
+
+  function REGLFramebuffer () {
+    this.id = framebufferCount++
+    framebufferSet[this.id] = this
+
+    this.framebuffer = null
+    this.width = 0
+    this.height = 0
+
+    this.colorAttachments = []
+    this.depthAttachment = null
+    this.stencilAttachment = null
+    this.depthStencilAttachment = null
+
+    this.ownsColor = false
+    this.ownsDepthStencil = false
+  }
+
+  function refresh (framebuffer) {
+    if (!gl.isFramebuffer(framebuffer.framebuffer)) {
+      framebuffer.framebuffer = gl.createFramebuffer()
+    }
+    framebufferDirty = true
+    gl.bindFramebuffer(GL_FRAMEBUFFER, framebuffer.framebuffer)
+
+    var colorAttachments = framebuffer.colorAttachments
+    for (var i = 0; i < colorAttachments.length; ++i) {
+      attach(GL_COLOR_ATTACHMENT0 + i, colorAttachments[i])
+    }
+    for (i = colorAttachments.length; i < limits.maxColorAttachments; ++i) {
+      attach(GL_COLOR_ATTACHMENT0 + i, null)
+    }
+    attach(GL_DEPTH_ATTACHMENT, framebuffer.depthAttachment)
+    attach(GL_STENCIL_ATTACHMENT, framebuffer.stencilAttachment)
+    attach(GL_DEPTH_STENCIL_ATTACHMENT, framebuffer.depthStencilAttachment)
+
+    if (extensions.webgl_draw_buffers) {
+      extensions.webgl_draw_buffers.drawBuffersWEBGL(
+        DRAW_BUFFERS[colorAttachments.length])
+    }
+
+    // Check status code
+    var status = gl.checkFramebufferStatus(GL_FRAMEBUFFER)
+    if (status !== GL_FRAMEBUFFER_COMPLETE) {
+      check.raise('framebuffer configuration not supported, status = ' +
+        statusCode[status])
+    }
+  }
+
+  function decFBORefs (framebuffer) {
+    framebuffer.colorAttachments.forEach(decRef)
+    decRef(framebuffer.depthAttachment)
+    decRef(framebuffer.stencilAttachment)
+    decRef(framebuffer.depthStencilAttachment)
+  }
+
+  function destroy (framebuffer) {
+    var handle = framebuffer.framebuffer
+    check(handle, 'must not double destroy framebuffer')
+    if (gl.isFramebuffer(handle)) {
+      gl.deleteFramebuffer(handle)
+    }
+  }
+
+  function createFBO (options) {
+    var framebuffer = new REGLFramebuffer()
+
+    function reglFramebuffer (input) {
+      var i
+      var options = input || {}
+
+      var extDrawBuffers = extensions.webgl_draw_buffers
+
+      var width = 0
+      var height = 0
+      if ('shape' in options) {
+        var shape = options.shape
+        check(Array.isArray(shape) && shape.length >= 2,
+          'invalid shape for framebuffer')
+        width = shape[0]
+        height = shape[1]
+      } else {
+        if ('radius' in options) {
+          width = height = options.radius
+        }
+        if ('width' in options) {
+          width = options.width
+        }
+        if ('height' in options) {
+          height = options.height
+        }
+      }
+
+      // colorType, numColors
+      var colorBuffers = null
+      var ownsColor = false
+      if ('colorBuffers' in options || 'colorBuffer' in options) {
+        var colorInputs = options.colorBuffers || options.colorBuffer
+        if (!Array.isArray(colorInputs)) {
+          colorInputs = [colorInputs]
+        }
+
+        framebuffer.width = width
+        framebuffer.height = height
+
+        if (colorInputs.length > 1) {
+          check(extDrawBuffers, 'multiple render targets not supported')
+        }
+        check(colorInputs.length >= 0,
+          'must specify at least one color attachment')
+
+        // Wrap color attachments
+        colorBuffers = colorInputs.map(parseAttachment)
+
+        // Check head node
+        for (i = 0; i < colorBuffers.length; ++i) {
+          var colorAttachment = colorBuffers[i]
+          checkFormat(
+            colorAttachment,
+            colorTextureFormatEnums,
+            colorRenderbufferFormatEnums)
+          incRefAndCheckShape(
+            colorAttachment,
+            framebuffer)
+        }
+
+        width = framebuffer.width
+        height = framebuffer.height
+      } else {
+        var colorTexture = true
+        var colorFormat = 'rgba'
+        var colorType = 'uint8'
+        var colorCount = 1
+        ownsColor = true
+
+        framebuffer.width = width || gl.drawingBufferWidth
+        framebuffer.height = height || gl.drawingBufferHeight
+
+        if ('format' in options) {
+          colorFormat = options.format
+          check.parameter(colorFormat, colorFormats, 'invalid color format')
+          colorTexture = colorFormat in colorTextureFormats
+        }
+
+        if ('type' in options) {
+          check(colorTexture,
+            'colorType can not be set for renderbuffer targets')
+          colorType = options.type
+          check.parameter(colorType, colorTypes, 'invalid color type')
+        }
+
+        if ('colorCount' in options) {
+          colorCount = options.colorCount | 0
+          check(colorCount >= 0, 'color count must be positive')
+        }
+
+        // Reuse color buffer array if we own it
+        if (framebuffer.ownsColor) {
+          colorBuffers = framebuffer.colorAttachments
+          while (colorBuffers.length > colorCount) {
+            decRef(colorBuffers.pop())
+          }
+        } else {
+          colorBuffers = []
+        }
+
+        // update buffers in place, remove incompatible buffers
+        for (i = 0; i < colorBuffers.length; ++i) {
+          if (!tryUpdateAttachment(
+              colorBuffers[i],
+              colorTexture,
+              colorFormat,
+              colorType,
+              width,
+              height)) {
+            colorBuffers[i--] = colorBuffers[colorBuffers.length - 1]
+            colorBuffers.pop()
+          }
+        }
+
+        // Then append new buffers
+        while (colorBuffers.length < colorCount) {
+          if (colorTexture) {
+            colorBuffers.push(new FramebufferAttachment(
+              GL_TEXTURE_2D,
+              0,
+              textureState.create({
+                format: colorFormat,
+                type: colorType,
+                width: width,
+                height: height
+              }, GL_TEXTURE_2D),
+              null))
+          } else {
+            colorBuffers.push(new FramebufferAttachment(
+              GL_RENDERBUFFER,
+              0,
+              null,
+              renderbufferState.create({
+                format: colorFormat,
+                width: width,
+                height: height
+              })))
+          }
+        }
+      }
+
+      check(colorBuffers.length > 0, 'must specify at least one color buffer')
+
+      framebuffer.width = width
+      framebuffer.height = height
+
+      var depthBuffer = null
+      var stencilBuffer = null
+      var depthStencilBuffer = null
+      var ownsDepthStencil = false
+      var depthStencilCount = 0
+
+      if ('depthBuffer' in options) {
+        depthBuffer = parseAttachment(options.depthBuffer)
+        checkFormat(
+          depthBuffer,
+          depthTextureFormatEnums,
+          depthRenderbufferFormatEnums)
+        depthStencilCount += 1
+      }
+      if ('stencilBuffer' in options) {
+        stencilBuffer = parseAttachment(options.stencilBuffer)
+        checkFormat(
+          stencilBuffer,
+          stencilTextureFormatEnums,
+          stencilRenderbufferFormatEnums)
+        depthStencilCount += 1
+      }
+      if ('depthStencilBuffer' in options) {
+        depthStencilBuffer = parseAttachment(options.depthStencilBuffer)
+        checkFormat(
+          depthStencilBuffer,
+          depthStencilTextureFormatEnums,
+          depthStencilRenderbufferFormatEnums)
+        depthStencilCount += 1
+      }
+
+      if (!(depthBuffer || stencilBuffer || depthStencilBuffer)) {
+        var depth = true
+        var stencil = false
+        var useTexture = false
+
+        if ('depth' in options) {
+          depth = !!options.depth
+        }
+        if ('stencil' in options) {
+          stencil = !!options.stencil
+        }
+        if ('depthTexture' in options) {
+          useTexture = !!options.depthTexture
+        }
+
+        var curDepthStencil =
+          framebuffer.depthAttachment ||
+          framebuffer.stencilAttachment ||
+          framebuffer.depthStencilAttachment
+        var nextDepthStencil = null
+
+        if (depth || stencil) {
+          ownsDepthStencil = true
+
+          if (useTexture) {
+            check(extensions.webgl_depth_texture,
+              'depth texture extension not supported')
+            var depthTextureFormat
+            check(depth, 'stencil only textures not supported')
+            if (stencil) {
+              depthTextureFormat = 'depth stencil'
+            } else {
+              depthTextureFormat = 'depth'
+            }
+            if (framebuffer.ownsDepthStencil && curDepthStencil.texture) {
+              curDepthStencil.texture({
+                format: depthTextureFormat,
+                width: width,
+                height: height
+              })
+              curDepthStencil.texture._texture.refCount += 1
+              nextDepthStencil = curDepthStencil
+            } else {
+              nextDepthStencil = new FramebufferAttachment(
+                GL_TEXTURE_2D,
+                0,
+                textureState.create({
+                  format: depthTextureFormat,
+                  width: width,
+                  height: height
+                }, GL_TEXTURE_2D),
+                null)
+            }
+          } else {
+            var depthRenderbufferFormat
+            if (depth) {
+              if (stencil) {
+                depthRenderbufferFormat = 'depth stencil'
+              } else {
+                depthRenderbufferFormat = 'depth'
+              }
+            } else {
+              depthRenderbufferFormat = 'stencil'
+            }
+            if (framebuffer.ownsDepthStencil && curDepthStencil.renderbuffer) {
+              curDepthStencil.renderbuffer({
+                format: depthRenderbufferFormat,
+                width: width,
+                height: height
+              })
+              curDepthStencil.renderbuffer._renderbuffer.refCount += 1
+              nextDepthStencil = curDepthStencil
+            } else {
+              nextDepthStencil = new FramebufferAttachment(
+                GL_RENDERBUFFER,
+                0,
+                null,
+                renderbufferState.create({
+                  format: depthRenderbufferFormat,
+                  width: width,
+                  height: height
+                }))
+            }
+          }
+
+          if (depth) {
+            if (stencil) {
+              depthStencilBuffer = nextDepthStencil
+            } else {
+              depthBuffer = nextDepthStencil
+            }
+          } else {
+            stencilBuffer = nextDepthStencil
+          }
+        }
+      } else {
+        check(depthStencilCount === 1,
+          'can specify only one of depth, stencil or depthStencil attachment')
+
+        incRefAndCheckShape(
+          depthBuffer ||
+          stencilBuffer ||
+          depthStencilBuffer,
+          framebuffer)
+      }
+
+      decFBORefs(framebuffer)
+
+      framebuffer.colorAttachments = colorBuffers
+      framebuffer.depthAttachment = depthBuffer
+      framebuffer.stencilAttachment = stencilBuffer
+      framebuffer.depthStencilAttachment = depthStencilBuffer
+      framebuffer.ownsColor = ownsColor
+      framebuffer.ownsDepthStencil = ownsDepthStencil
+
+      reglFramebuffer.color = colorBuffers.map(unwrapAttachment)
+      reglFramebuffer.depth = unwrapAttachment(depthBuffer)
+      reglFramebuffer.stencil = unwrapAttachment(stencilBuffer)
+      reglFramebuffer.depthStencil = unwrapAttachment(depthStencilBuffer)
+
+      refresh(framebuffer)
+
+      reglFramebuffer.width = framebuffer.width
+      reglFramebuffer.height = framebuffer.height
+
+      return reglFramebuffer
+    }
+
+    reglFramebuffer(options)
+
+    Object.assign(reglFramebuffer, {
+      _reglType: 'framebuffer',
+      _framebuffer: framebuffer,
+      destroy: function () {
+        destroy(framebuffer)
+      }
+    })
+
+    return reglFramebuffer
   }
 
   function refreshCache () {
+    values(framebufferSet).forEach(refresh)
+  }
+
+  function clearCache () {
+    values(framebufferSet).forEach(destroy)
+  }
+
+  function poll () {
+    if (framebufferDirty) {
+      var top = framebufferStack[framebufferStack.length - 1]
+      var ext_drawbuffers = extensions.webgl_draw_buffers
+
+      if (top) {
+        gl.bindFramebuffer(GL_FRAMEBUFFER, top.framebuffer)
+        if (ext_drawbuffers) {
+          ext_drawbuffers.drawBuffersWEBGL(DRAW_BUFFERS[top.colorAttachments.length])
+        }
+      } else {
+        gl.bindFramebuffer(GL_FRAMEBUFFER, null)
+        if (ext_drawbuffers) {
+          ext_drawbuffers.drawBuffersWEBGL(BACK_BUFFER)
+        }
+      }
+
+      framebufferDirty = false
+    }
+  }
+
+  function currentFramebuffer () {
+    return framebufferStack[framebufferStack.length - 1]
   }
 
   return {
+    top: currentFramebuffer,
+    dirty: function () {
+      return framebufferDirty
+    },
+    push: function (next_) {
+      var next = next_ || null
+      framebufferDirty = framebufferDirty || (next !== currentFramebuffer())
+      framebufferStack.push(next)
+      return framebufferDirty
+    },
+    pop: function () {
+      var prev = currentFramebuffer()
+      framebufferStack.pop()
+      framebufferDirty = framebufferDirty || (prev !== currentFramebuffer())
+      return framebufferDirty
+    },
+    getFramebuffer: function (object) {
+      if (typeof object === 'function' && object._reglType === 'framebuffer') {
+        var fbo = object._framebuffer
+        if (fbo instanceof REGLFramebuffer) {
+          return fbo
+        }
+      }
+      return null
+    },
+    poll: poll,
     create: createFBO,
     clear: clearCache,
-    refresh: refreshCache,
-    getFBO: function (wrapper) {
-      return null
-    }
+    refresh: refreshCache
   }
 }
 
-},{}],23:[function(require,module,exports){
+},{"./check":10,"./values":37}],23:[function(require,module,exports){
 var isTypedArray = require('./is-typed-array')
 
 module.exports = function isNDArrayLike (obj) {
@@ -3048,12 +3850,20 @@ var GL_SHADING_LANGUAGE_VERSION = 0x8B8C
 
 var GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT = 0x84FF
 
-module.exports = function (gl, extensionState) {
-  var extensions = extensionState.extensions
+var GL_MAX_COLOR_ATTACHMENTS_WEBGL = 0x8CDF
+var GL_MAX_DRAW_BUFFERS_WEBGL = 0x8824
 
+module.exports = function (gl, extensions) {
   var maxAnisotropic = 1
   if (extensions.ext_texture_filter_anisotropic) {
     maxAnisotropic = gl.getParameter(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT)
+  }
+
+  var maxDrawbuffers = 1
+  var maxColorAttachments = 1
+  if (extensions.webgl_draw_buffers) {
+    maxDrawbuffers = gl.getParameter(GL_MAX_DRAW_BUFFERS_WEBGL)
+    maxColorAttachments = gl.getParameter(GL_MAX_COLOR_ATTACHMENTS_WEBGL)
   }
 
   return {
@@ -3076,20 +3886,24 @@ module.exports = function (gl, extensionState) {
     // max aniso samples
     maxAnisotropic: maxAnisotropic,
 
+    // max draw buffers
+    maxDrawbuffers: maxDrawbuffers,
+    maxColorAttachments: maxColorAttachments,
+
     // point and line size ranges
-    pointSize: gl.getParameter(GL_ALIASED_POINT_SIZE_RANGE),
-    lineWidth: gl.getParameter(GL_ALIASED_LINE_WIDTH_RANGE),
-    viewport: gl.getParameter(GL_MAX_VIEWPORT_DIMS),
-    combinedTextureUnits: gl.getParameter(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS),
-    cubeMapSize: gl.getParameter(GL_MAX_CUBE_MAP_TEXTURE_SIZE),
-    renderbufferSize: gl.getParameter(GL_MAX_RENDERBUFFER_SIZE),
-    textureUnits: gl.getParameter(GL_MAX_TEXTURE_IMAGE_UNITS),
-    textureSize: gl.getParameter(GL_MAX_TEXTURE_SIZE),
-    attributes: gl.getParameter(GL_MAX_VERTEX_ATTRIBS),
-    vertexUniforms: gl.getParameter(GL_MAX_VERTEX_UNIFORM_VECTORS),
-    vertexTextureUnits: gl.getParameter(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS),
-    varyingVectors: gl.getParameter(GL_MAX_VARYING_VECTORS),
-    fragmentUniforms: gl.getParameter(GL_MAX_FRAGMENT_UNIFORM_VECTORS),
+    pointSizeDims: gl.getParameter(GL_ALIASED_POINT_SIZE_RANGE),
+    lineWidthDims: gl.getParameter(GL_ALIASED_LINE_WIDTH_RANGE),
+    maxViewportDims: gl.getParameter(GL_MAX_VIEWPORT_DIMS),
+    maxCombinedTextureUnits: gl.getParameter(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS),
+    maxCubeMapSize: gl.getParameter(GL_MAX_CUBE_MAP_TEXTURE_SIZE),
+    maxRenderbufferSize: gl.getParameter(GL_MAX_RENDERBUFFER_SIZE),
+    maxTextureUnits: gl.getParameter(GL_MAX_TEXTURE_IMAGE_UNITS),
+    maxTextureSize: gl.getParameter(GL_MAX_TEXTURE_SIZE),
+    maxAttributes: gl.getParameter(GL_MAX_VERTEX_ATTRIBS),
+    maxVertexUniforms: gl.getParameter(GL_MAX_VERTEX_UNIFORM_VECTORS),
+    maxVertexTextureUnits: gl.getParameter(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS),
+    maxVaryingVectors: gl.getParameter(GL_MAX_VARYING_VECTORS),
+    maxFragmentUniforms: gl.getParameter(GL_MAX_FRAGMENT_UNIFORM_VECTORS),
 
     // vendor info
     glsl: gl.getParameter(GL_SHADING_LANGUAGE_VERSION),
@@ -3392,7 +4206,7 @@ var GL_RGBA = 6408
 var GL_UNSIGNED_BYTE = 5121
 var GL_PACK_ALIGNMENT = 0x0D05
 
-module.exports = function wrapReadPixels (gl, glState) {
+module.exports = function wrapReadPixels (gl, reglPoll, viewportState) {
   function readPixels (input) {
     var options = input || {}
     if (isTypedArray(input)) {
@@ -3409,10 +4223,9 @@ module.exports = function wrapReadPixels (gl, glState) {
     }
 
     // Update WebGL state
-    glState.poll()
+    reglPoll()
 
     // Read viewport state
-    var viewportState = glState.viewport
     var x = options.x || 0
     var y = options.y || 0
     var width = options.width || viewportState.width
@@ -3440,6 +4253,7 @@ module.exports = function wrapReadPixels (gl, glState) {
 
 },{"./check":10,"./is-typed-array":24}],30:[function(require,module,exports){
 var check = require('./check')
+var values = require('./values')
 
 var GL_RENDERBUFFER = 0x8D41
 
@@ -3448,8 +4262,14 @@ var GL_RGB5_A1 = 0x8057
 var GL_RGB565 = 0x8D62
 var GL_DEPTH_COMPONENT16 = 0x81A5
 var GL_STENCIL_INDEX8 = 0x8D48
+var GL_DEPTH_STENCIL = 0x84F9
 
 var GL_SRGB8_ALPHA8_EXT = 0x8C43
+
+var GL_RGBA32F_EXT = 0x8814
+
+var GL_RGBA16F_EXT = 0x881A
+var GL_RGB16F_EXT = 0x881B
 
 module.exports = function (gl, extensions, limits) {
   var formatTypes = {
@@ -3457,11 +4277,21 @@ module.exports = function (gl, extensions, limits) {
     'rgb565': GL_RGB565,
     'rgb5 a1': GL_RGB5_A1,
     'depth': GL_DEPTH_COMPONENT16,
-    'stencil': GL_STENCIL_INDEX8
+    'stencil': GL_STENCIL_INDEX8,
+    'depth stencil': GL_DEPTH_STENCIL
   }
 
   if (extensions.ext_srgb) {
     formatTypes['srgba'] = GL_SRGB8_ALPHA8_EXT
+  }
+
+  if (extensions.ext_color_buffer_half_float) {
+    formatTypes['rgba16f'] = GL_RGBA16F_EXT
+    formatTypes['rgb16f'] = GL_RGB16F_EXT
+  }
+
+  if (extensions.webgl_color_buffer_float) {
+    formatTypes['rgba32f'] = GL_RGBA32F_EXT
   }
 
   var renderbufferCount = 0
@@ -3469,6 +4299,8 @@ module.exports = function (gl, extensions, limits) {
 
   function REGLRenderbuffer () {
     this.id = renderbufferCount++
+    this.refCount = 1
+
     this.renderbuffer = null
 
     this.format = GL_RGBA4
@@ -3476,15 +4308,17 @@ module.exports = function (gl, extensions, limits) {
     this.height = 0
   }
 
-  REGLRenderbuffer.prototype.bind = function () {
-    gl.bindRenderbuffer(GL_RENDERBUFFER, this.renderbuffer)
+  REGLRenderbuffer.prototype.decRef = function () {
+    if (--this.refCount === 0) {
+      destroy(this)
+    }
   }
 
-  function refresh(rb) {
+  function refresh (rb) {
     if (!gl.isRenderbuffer(rb.renderbuffer)) {
       rb.renderbuffer = gl.createRenderbuffer()
     }
-    rb.bind()
+    gl.bindRenderbuffer(GL_RENDERBUFFER, rb.renderbuffer)
     gl.renderbufferStorage(
       GL_RENDERBUFFER,
       rb.format,
@@ -3493,12 +4327,15 @@ module.exports = function (gl, extensions, limits) {
   }
 
   function destroy (rb) {
+    var handle = rb.renderbuffer
+    check(handle, 'must not double destroy renderbuffer')
     gl.bindRenderbuffer(GL_RENDERBUFFER, null)
-    if (gl.isRenderbuffer(rb.renderbuffer)) {
-      gl.deleteRenderbuffer(rb.renderbuffer)
+    if (gl.isRenderbuffer(handle)) {
+      gl.deleteRenderbuffer(handle)
     }
     rb.renderbuffer = null
-    delete renderbufferSet[rb.renderbufferCount]
+    rb.refCount = 0
+    delete renderbufferSet[rb.id]
   }
 
   function createRenderbuffer (input) {
@@ -3527,18 +4364,20 @@ module.exports = function (gl, extensions, limits) {
           h = options.height | 0
         }
       }
-      var s = limits.renderbufferSize
+      var s = limits.maxRenderbufferSize
       check(w >= 0 && h >= 0 && w <= s && h <= s,
         'invalid renderbuffer size')
-      this.width = Math.max(w, 1)
-      this.height = Math.max(h, 1)
+      reglRenderbuffer.width = renderbuffer.width = Math.max(w, 1)
+      reglRenderbuffer.height = renderbuffer.height = Math.max(h, 1)
 
-      this.format = GL_RGBA4
+      renderbuffer.format = GL_RGBA4
       if ('format' in options) {
         var format = options.format
         check.parameter(format, formatTypes, 'invalid render buffer format')
-        this.format = formatTypes[format]
+        renderbuffer.format = formatTypes[format]
       }
+
+      refresh(renderbuffer)
 
       return reglRenderbuffer
     }
@@ -3548,28 +4387,30 @@ module.exports = function (gl, extensions, limits) {
     Object.assign(reglRenderbuffer, {
       _reglType: 'renderbuffer',
       _renderbuffer: renderbuffer,
-      destroy: destroy.bind(renderbuffer)
+      destroy: function () {
+        renderbuffer.decRef()
+      }
     })
 
     return reglRenderbuffer
   }
 
   function refreshRenderbuffers () {
-    Object.keys(renderbufferSet).forEach(refresh)
+    values(renderbufferSet).forEach(refresh)
   }
 
   function destroyRenderbuffers () {
-    Object.keys(renderbufferSet).forEach(destroy)
+    values(renderbufferSet).forEach(destroy)
   }
 
   return {
     create: createRenderbuffer,
     refresh: refreshRenderbuffers,
-    destroy: destroyRenderbuffers
+    clear: destroyRenderbuffers
   }
 }
 
-},{"./check":10}],31:[function(require,module,exports){
+},{"./check":10,"./values":37}],31:[function(require,module,exports){
 var check = require('./check')
 
 var DEFAULT_FRAG_SHADER = 'void main(){gl_FragColor=vec4(0,0,0,0);}'
@@ -3586,7 +4427,6 @@ function ActiveInfo (name, location, info) {
 
 module.exports = function wrapShaderState (
   gl,
-  extensions,
   attributeState,
   uniformState,
   compileShaderDraw) {
@@ -3788,6 +4628,7 @@ module.exports = function wrapShaderState (
 module.exports = function createStack (init, onChange) {
   var n = init.length
   var stack = init.slice()
+  var current = init.slice()
   var dirty = true
 
   function poll () {
@@ -3815,21 +4656,29 @@ module.exports = function createStack (init, onChange) {
         default:
           onChange.apply(null, stack.slice(ptr, stack.length))
       }
+      for (var i = 0; i < n; ++i) {
+        current[i] = stack[ptr + i]
+      }
       dirty = false
     }
   }
 
   return {
     push: function () {
+      dirty = false
       for (var i = 0; i < n; ++i) {
-        stack.push(arguments[i])
+        var x = arguments[i]
+        dirty = dirty || (x !== current[i])
+        stack.push(x)
       }
-      dirty = true
     },
 
     pop: function () {
+      dirty = false
+      for (var i = 0; i < n; ++i) {
+        dirty = dirty || (stack[stack.length - n + i] !== current[i])
+      }
       stack.length -= n
-      dirty = true
     },
 
     poll: poll,
@@ -3864,7 +4713,7 @@ var GL_CCW = 2305
 var GL_ALWAYS = 519
 var GL_KEEP = 7680
 
-module.exports = function wrapContextState (gl, shaderState) {
+module.exports = function wrapContextState (gl, framebufferState, viewportState) {
   function capStack (cap, dflt) {
     var result = createStack([!!dflt], function (flag) {
       if (flag) {
@@ -3875,11 +4724,6 @@ module.exports = function wrapContextState (gl, shaderState) {
     })
     result.flag = cap
     return result
-  }
-
-  var viewportState = {
-    width: gl.drawingBufferWidth,
-    height: gl.drawingBufferHeight
   }
 
   // Caps, flags and other random WebGL context state
@@ -3972,12 +4816,21 @@ module.exports = function wrapContextState (gl, shaderState) {
     'scissor.enable': capStack(GL_SCISSOR_TEST),
     'scissor.box': createStack([0, 0, -1, -1], function (x, y, w, h) {
       var w_ = w
+      var fbo = framebufferState.top()
       if (w < 0) {
-        w_ = gl.drawingBufferWidth - x
+        if (fbo) {
+          w_ = fbo.width - x
+        } else {
+          w_ = gl.drawingBufferWidth - x
+        }
       }
       var h_ = h
       if (h < 0) {
-        h_ = gl.drawingBufferHeight - y
+        if (fbo) {
+          h_ = fbo.height - y
+        } else {
+          h_ = gl.drawingBufferHeight - y
+        }
       }
       gl.scissor(x, y, w_, h_)
     }),
@@ -3985,12 +4838,21 @@ module.exports = function wrapContextState (gl, shaderState) {
     // Viewport
     'viewport': createStack([0, 0, -1, -1], function (x, y, w, h) {
       var w_ = w
+      var fbo = framebufferState.top()
       if (w < 0) {
-        w_ = gl.drawingBufferWidth - x
+        if (fbo) {
+          w_ = fbo.width - x
+        } else {
+          w_ = gl.drawingBufferWidth - x
+        }
       }
       var h_ = h
       if (h < 0) {
-        h_ = gl.drawingBufferHeight - y
+        if (fbo) {
+          h_ = fbo.height - y
+        } else {
+          h_ = gl.drawingBufferHeight - y
+        }
       }
       gl.viewport(x, y, w_, h_)
       viewportState.width = w_
@@ -4023,6 +4885,7 @@ module.exports = function wrapContextState (gl, shaderState) {
 
 },{"./codegen":12,"./stack":32}],34:[function(require,module,exports){
 var check = require('./check')
+var values = require('./values')
 var isTypedArray = require('./is-typed-array')
 var isNDArrayLike = require('./is-ndarray')
 var loadTexture = require('./load-texture')
@@ -4201,9 +5064,7 @@ function transposePixels (data, nx, ny, nc, sx, sy, sc, off) {
   return result
 }
 
-module.exports = function createTextureSet (gl, extensionState, limits, reglPoll, viewport) {
-  var extensions = extensionState.extensions
-
+module.exports = function createTextureSet (gl, extensions, limits, reglPoll, viewportState) {
   var mipmapHint = {
     "don't care": GL_DONT_CARE,
     'dont care': GL_DONT_CARE,
@@ -4635,9 +5496,8 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
         this.copy = true
         this.x = this.x | 0
         this.y = this.y | 0
-        console.log(viewport)
-        this.width = (this.width || viewport.width) | 0
-        this.height = (this.height || viewport.height) | 0
+        this.width = (this.width || viewportState.width) | 0
+        this.height = (this.height || viewportState.height) | 0
         this.setDefaultFormat()
       }
 
@@ -4868,10 +5728,6 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
   }
 
   Object.assign(TexParams.prototype, {
-    clear: function () {
-      TexParams.call(this, this.target)
-    },
-
     parse: function (options) {
       if (typeof options !== 'object' || !options) {
         return
@@ -5103,15 +5959,17 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
   var textureCount = 0
   var textureSet = {}
   var pollSet = []
-  var numTexUnits = limits.textureUnits
+  var numTexUnits = limits.maxTextureUnits
   var textureUnits = Array(numTexUnits).map(function () {
     return null
   })
 
-  function REGLTexture (target, texture) {
+  function REGLTexture (target) {
     this.id = textureCount++
+    this.refCount = 1
+
     this.target = target
-    this.texture = texture
+    this.texture = null
 
     this.pollId = -1
 
@@ -5126,30 +5984,260 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
     this.pixels = []
   }
 
-  Object.assign(REGLTexture.prototype, {
+  function update (texture, options) {
+    var i
+    clearListeners(texture)
 
+    // Clear parameters and pixel data
+    var params = texture.params
+    TexParams.call(params, texture.target)
+    var pixels = texture.pixels
+    pixels.length = 0
+
+    // parse parameters
+    params.parse(options)
+
+    // parse pixel data
+    function parseMip (target, data) {
+      var mipmap = data.mipmap
+      var pixmap
+      if (Array.isArray(mipmap)) {
+        for (var i = 0; i < mipmap.length; ++i) {
+          pixmap = new PixelInfo(target)
+          pixmap.parseFlags(options)
+          pixmap.parseFlags(data)
+          pixmap.parse(mipmap[i], i)
+          pixels.push(pixmap)
+        }
+      } else {
+        pixmap = new PixelInfo(target)
+        pixmap.parseFlags(options)
+        pixmap.parse(data, 0)
+        pixels.push(pixmap)
+      }
+    }
+    if (texture.target === GL_TEXTURE_2D) {
+      parseMip(GL_TEXTURE_2D, options)
+    } else {
+      var faces = options.faces || options
+      if (Array.isArray(faces)) {
+        check(faces.length === 6,
+          'invalid number of faces in cube map')
+        for (i = 0; i < 6; ++i) {
+          parseMip(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, faces[i])
+        }
+      } else if (typeof faces === 'string') {
+        // TODO Read dds
+      } else {
+        // Initialize to all empty textures
+        for (i = 0; i < 6; ++i) {
+          parseMip(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, {})
+        }
+      }
+    }
+
+    // do a second pass to reconcile defaults
+    checkTextureComplete(params, pixels)
+
+    if (params.needsListeners) {
+      hookListeners(texture)
+    }
+
+    if (params.needsPoll) {
+      texture.pollId = pollSet.length
+      pollSet.push(texture)
+    }
+
+    refresh(texture)
+  }
+
+  function refresh (texture) {
+    if (!gl.isTexture(texture.texture)) {
+      texture.texture = gl.createTexture()
+    }
+
+    // Lazy bind
+    var target = texture.target
+    var unit = texture.unit
+    if (unit >= 0) {
+      gl.activeTexture(GL_TEXTURE0 + unit)
+      activeTexture = unit
+    } else {
+      gl.bindTexture(target, texture.texture)
+    }
+
+    // Upload
+    var pixels = texture.pixels
+    var params = texture.params
+    for (var i = 0; i < pixels.length; ++i) {
+      pixels[i].upload(params)
+    }
+    params.upload()
+
+    // Lazy unbind
+    if (unit < 0) {
+      var active = textureUnits[activeTexture]
+      if (active) {
+        // restore binding state
+        gl.bindTexture(active.target, active.texture)
+      } else {
+        // otherwise become new active
+        texture.unit = activeTexture
+        textureUnits[activeTexture] = texture
+      }
+    }
+  }
+
+  function hookListeners (texture) {
+    var params = texture.params
+    var pixels = texture.pixels
+
+    // Appends all the texture data from the buffer to the current
+    function appendDDS (target, miplevel, buffer) {
+      var dds = parseDDS(buffer)
+
+      check(dds.format in colorFormats, 'unsupported dds texture format')
+
+      if (dds.cube) {
+        check(texture.target === GL_TEXTURE_CUBE_MAP)
+
+        // TODO handle cube map DDS
+        check.raise('cube map DDS not yet implemented')
+      } else {
+        check(texture.target === GL_TEXTURE_2D)
+      }
+
+      if (miplevel) {
+        check(dds.pixels.length === 1, 'number of mip levels inconsistent')
+      }
+
+      dds.pixels.forEach(function (pixmap) {
+        var info = new PixelInfo(dds.cube ? pixmap.target : target)
+
+        info.channels = dds.channels
+        info.compressed = dds.compressed
+        info.type = dds.type
+        info.internalformat = dds.format
+        info.format = colorFormats[dds.format]
+
+        info.width = pixmap.width
+        info.height = pixmap.height
+        info.miplevel = pixmap.miplevel || miplevel
+        info.data = pixmap.data
+
+        pixels.push(info)
+      })
+    }
+
+    function onData () {
+      // Update size of any newly loaded pixels
+      for (var i = 0; i < pixels.length; ++i) {
+        var pixelData = pixels[i]
+        var image = pixelData.image
+        var video = pixelData.video
+        var xhr = pixelData.xhr
+        if (image && image.complete) {
+          pixelData.width = image.naturalWidth
+          pixelData.height = image.naturalHeight
+        } else if (video && video.readyState > 2) {
+          pixelData.width = video.width
+          pixelData.height = video.height
+        } else if (xhr && xhr.readyState === 4) {
+          pixels[i] = pixels[pixels.length - 1]
+          pixels.pop()
+          xhr.removeEventListener('readystatechange', refresh)
+          appendDDS(pixelData.target, pixelData.miplevel, xhr.response)
+        }
+      }
+      checkTextureComplete(params, pixels)
+      refresh(texture)
+    }
+
+    pixels.forEach(function (pixelData) {
+      if (pixelData.image && !pixelData.image.complete) {
+        pixelData.image.addEventListener('load', onData)
+      } else if (pixelData.video && pixelData.readyState < 1) {
+        pixelData.video.addEventListener('progress', onData)
+      } else if (pixelData.xhr) {
+        pixelData.xhr.addEventListener('readystatechange', onData)
+      }
+    })
+
+    texture.cancelPending = function detachListeners () {
+      pixels.forEach(function (pixelData) {
+        if (pixelData.image) {
+          pixelData.image.removeEventListener('load', onData)
+        } else if (pixelData.video) {
+          pixelData.video.removeEventListener('progress', onData)
+        } else if (pixelData.xhr) {
+          pixelData.xhr.removeEventListener('readystatechange', onData)
+          pixelData.xhr.abort()
+        }
+      })
+    }
+  }
+
+  function clearListeners (texture) {
+    var cancelPending = texture.cancelPending
+    if (cancelPending) {
+      cancelPending()
+      texture.cancelPending = null
+    }
+    var id = texture.pollId
+    if (id >= 0) {
+      var other = pollSet[id] = pollSet[pollSet.length - 1]
+      other.id = id
+      pollSet.pop()
+      texture.pollId = -1
+    }
+  }
+
+  function destroy (texture) {
+    var handle = texture.texture
+    check(handle, 'must not double destroy texture')
+    var unit = texture.unit
+    var target = texture.target
+    if (unit >= 0) {
+      gl.activeTexture(GL_TEXTURE0 + unit)
+      activeTexture = unit
+      gl.bindTexture(target, null)
+      textureUnits[unit] = null
+    }
+    clearListeners(texture)
+    if (gl.isTexture(handle)) {
+      gl.deleteTexture(handle)
+    }
+    texture.texture = null
+    texture.params = null
+    texture.pixels = null
+    texture.refCount = 0
+    delete textureSet[texture.id]
+  }
+
+  Object.assign(REGLTexture.prototype, {
     bind: function () {
-      this.bindCount += 1
-      var unit = this.unit
+      var texture = this
+      texture.bindCount += 1
+      var unit = texture.unit
       if (unit < 0) {
-        // FIXME: should we use an LRU to allocate textures here?
         for (var i = 0; i < numTexUnits; ++i) {
           var other = textureUnits[i]
-          if (!other || other.bindCount <= 0) {
-            if (other) {
-              other.unit = -1
+          if (other) {
+            if (other.bindCount > 0) {
+              continue
             }
-            textureUnits[i] = this
-            unit = i
-            break
+            other.unit = -1
           }
+          textureUnits[i] = texture
+          unit = i
+          break
         }
         if (unit >= numTexUnits) {
           check.raise('insufficient number of texture units')
         }
-        this.unit = unit
+        texture.unit = unit
         gl.activeTexture(GL_TEXTURE0 + unit)
-        gl.bindTexture(this.target, this.texture)
+        gl.bindTexture(texture.target, texture.texture)
         activeTexture = unit
       }
       return unit
@@ -5159,226 +6247,15 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
       this.bindCount -= 1
     },
 
-    refresh: function () {
-      // Lazy bind
-      var target = this.target
-      var unit = this.unit
-      if (unit >= 0) {
-        gl.activeTexture(GL_TEXTURE0 + unit)
-        activeTexture = unit
-      } else {
-        gl.bindTexture(target, this.texture)
+    decRef: function () {
+      if (--this.refCount === 0) {
+        destroy(this)
       }
-
-      // Upload
-      var pixels = this.pixels
-      var params = this.params
-      for (var i = 0; i < pixels.length; ++i) {
-        pixels[i].upload(params)
-      }
-      params.upload()
-
-      // Lazy unbind
-      if (unit < 0) {
-        var active = textureUnits[activeTexture]
-        if (active) {
-          // restore binding state
-          gl.bindTexture(active.target, active.texture)
-        } else {
-          // otherwise become new active
-          this.unit = activeTexture
-          textureUnits[activeTexture] = this
-        }
-      }
-    },
-
-    update: function (options) {
-      var i
-
-      this.clearListeners()
-
-      // Clear parameters and pixel data
-      var params = this.params
-      var pixels = this.pixels
-      params.clear()
-      pixels.length = 0
-
-      // parse parameters
-      params.parse(options)
-
-      // parse pixel data
-      function parseMip (target, data) {
-        var mipmap = data.mipmap
-        var pixmap
-        if (Array.isArray(mipmap)) {
-          for (var i = 0; i < mipmap.length; ++i) {
-            pixmap = new PixelInfo(target)
-            pixmap.parseFlags(options)
-            pixmap.parseFlags(data)
-            pixmap.parse(mipmap[i], i)
-            pixels.push(pixmap)
-          }
-        } else {
-          pixmap = new PixelInfo(target)
-          pixmap.parseFlags(options)
-          pixmap.parse(data, 0)
-          pixels.push(pixmap)
-        }
-      }
-      if (this.target === GL_TEXTURE_2D) {
-        parseMip(GL_TEXTURE_2D, options)
-      } else {
-        var faces = options.faces || options
-        if (Array.isArray(faces)) {
-          check(faces.length === 6,
-            'invalid number of faces in cube map')
-          for (i = 0; i < 6; ++i) {
-            parseMip(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, faces[i])
-          }
-        } else if (typeof faces === 'string') {
-          // TODO Read dds
-        } else {
-          // Initialize to all empty textures
-          for (i = 0; i < 6; ++i) {
-            parseMip(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, {})
-          }
-        }
-      }
-
-      // do a second pass to reconcile defaults
-      checkTextureComplete(params, pixels)
-
-      if (params.needsListeners) {
-        this.hookListeners()
-      }
-
-      if (params.needsPoll) {
-        this.pollId = pollSet.length
-        pollSet.push(this)
-      }
-
-      this.refresh()
-    },
-
-    hookListeners: function () {
-      var params = this.params
-      var pixels = this.pixels
-      var texture = this
-
-      // Appends all the texture data from the buffer to the current
-      function appendDDS (target, miplevel, buffer) {
-        var dds = parseDDS(buffer)
-
-        check(dds.format in colorFormats, 'unsupported dds texture format')
-
-        if (dds.cube) {
-          check(texture.target === GL_TEXTURE_CUBE_MAP)
-
-          // TODO handle cube map
-        } else {
-          check(texture.target === GL_TEXTURE_2D)
-        }
-
-        if (miplevel) {
-          check(dds.pixels.length === 1, 'number of mip levels inconsistent')
-        }
-
-        dds.pixels.forEach(function (pixmap) {
-          var info = new PixelInfo(dds.cube ? pixmap.target : target)
-
-          info.channels = dds.channels
-          info.compressed = dds.compressed
-          info.type = dds.type
-          info.internalformat = dds.format
-          info.format = colorFormats[dds.format]
-
-          info.width = pixmap.width
-          info.height = pixmap.height
-          info.miplevel = pixmap.miplevel || miplevel
-          info.data = pixmap.data
-
-          pixels.push(info)
-        })
-      }
-
-      function refresh () {
-        // Update size of any newly loaded pixels
-        for (var i = 0; i < pixels.length; ++i) {
-          var pixelData = pixels[i]
-          var image = pixelData.image
-          var video = pixelData.video
-          var xhr = pixelData.xhr
-          if (image && image.complete) {
-            pixelData.width = image.naturalWidth
-            pixelData.height = image.naturalHeight
-          } else if (video && video.readyState > 2) {
-            pixelData.width = video.width
-            pixelData.height = video.height
-          } else if (xhr && xhr.readyState === 4) {
-            pixels[i] = pixels[pixels.length - 1]
-            pixels.pop()
-            xhr.removeEventListener('readystatechange', refresh)
-            appendDDS(pixelData.target, pixelData.miplevel, xhr.response)
-          }
-        }
-        checkTextureComplete(params, pixels)
-        texture.refresh()
-      }
-
-      pixels.forEach(function (pixelData) {
-        if (pixelData.image && !pixelData.image.complete) {
-          pixelData.image.addEventListener('load', refresh)
-        } else if (pixelData.video && pixelData.readyState < 1) {
-          pixelData.video.addEventListener('progress', refresh)
-        } else if (pixelData.xhr) {
-          pixelData.xhr.addEventListener('readystatechange', refresh)
-        }
-      })
-
-      this.cancelPending = function detachListeners () {
-        pixels.forEach(function (pixelData) {
-          if (pixelData.image) {
-            pixelData.image.removeEventListener('load', refresh)
-          } else if (pixelData.video) {
-            pixelData.video.removeEventListener('progress', refresh)
-          }
-        })
-      }
-    },
-
-    clearListeners: function () {
-      if (this.cancelPending) {
-        this.cancelPending()
-        this.cancelPending = null
-      }
-      var id = this.pollId
-      if (id >= 0) {
-        var other = pollSet[id] = pollSet[pollSet.length - 1]
-        other.id = id
-        pollSet.pop()
-        this.pollId = -1
-      }
-    },
-
-    destroy: function () {
-      check(this.texture, 'must not double free texture')
-      if (this.unit >= 0) {
-        gl.activeTexture(GL_TEXTURE0 + this.unit)
-        activeTexture = this.unit
-        gl.bindTexture(this.target, null)
-        textureUnits[this.unit] = null
-      }
-      this.clearListeners()
-      gl.deleteTexture(this.texture)
-      this.texture = null
-      this.params = null
-      this.pixels = null
-      delete textureSet[this.id]
     }
   })
 
   function createTexture (options, target) {
-    var texture = new REGLTexture(target, gl.createTexture())
+    var texture = new REGLTexture(target)
     textureSet[texture.id] = texture
 
     function reglTexture (a0, a1, a2, a3, a4, a5) {
@@ -5386,7 +6263,10 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
       if (target === GL_TEXTURE_CUBE_MAP && arguments.length === 6) {
         options = [a0, a1, a2, a3, a4, a5]
       }
-      texture.update(options)
+      update(texture, options)
+      reglTexture.width = texture.params.width
+      reglTexture.height = texture.params.height
+      return reglTexture
     }
 
     reglTexture(options)
@@ -5395,7 +6275,7 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
       _reglType: 'texture',
       _texture: texture,
       destroy: function () {
-        texture.destroy()
+        texture.decRef()
       }
     })
 
@@ -5404,9 +6284,7 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
 
   // Called after context restore
   function refreshTextures () {
-    Object.keys(textureSet).forEach(function (texId) {
-      textureSet[texId].refresh()
-    })
+    values(textureSet).forEach(refresh)
     for (var i = 0; i < numTexUnits; ++i) {
       textureUnits[i] = null
     }
@@ -5423,16 +6301,12 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
     }
     gl.activeTexture(GL_TEXTURE0)
     activeTexture = 0
-    Object.keys(textureSet).forEach(function (texId) {
-      textureSet[texId].destroy()
-    })
+    values(textureSet).forEach(destroy)
   }
 
   // Called once per raf, updates video textures
   function pollTextures () {
-    for (var i = 0; i < pollSet.length; ++i) {
-      pollSet[i].refresh()
-    }
+    pollSet.forEach(refresh)
   }
 
   return {
@@ -5446,7 +6320,7 @@ module.exports = function createTextureSet (gl, extensionState, limits, reglPoll
   }
 }
 
-},{"./check":10,"./is-ndarray":23,"./is-typed-array":24,"./load-texture":26,"./parse-dds":27,"./to-half-float":35}],35:[function(require,module,exports){
+},{"./check":10,"./is-ndarray":23,"./is-typed-array":24,"./load-texture":26,"./parse-dds":27,"./to-half-float":35,"./values":37}],35:[function(require,module,exports){
 module.exports = function convertToHalfFloat (array) {
   var floats = new Float32Array(array)
   var uints = new Uint32Array(floats.buffer)
@@ -5517,7 +6391,7 @@ var wrapBuffers = require('./lib/buffer')
 var wrapElements = require('./lib/elements')
 var wrapTextures = require('./lib/texture')
 var wrapRenderbuffers = require('./lib/renderbuffer')
-var wrapFBOs = require('./lib/fbo')
+var wrapFramebuffers = require('./lib/framebuffer')
 var wrapUniforms = require('./lib/uniform')
 var wrapAttributes = require('./lib/attribute')
 var wrapShaders = require('./lib/shader')
@@ -5546,29 +6420,64 @@ module.exports = function wrapREGL () {
   var options = args.options
 
   var extensionState = wrapExtensions(gl)
-  var limits = wrapLimits(gl, extensionState)
+  var extensions = extensionState.extensions
+
+  var viewportState = {
+    width: gl.drawingBufferWidth,
+    height: gl.drawingBufferHeight
+  }
+
+  var limits = wrapLimits(
+    gl,
+    extensions)
+
   var bufferState = wrapBuffers(gl)
-  var elementState = wrapElements(gl, extensionState, bufferState)
+
+  var elementState = wrapElements(
+    gl,
+    extensions,
+    bufferState)
+
   var uniformState = wrapUniforms()
-  var attributeState = wrapAttributes(gl, extensionState, bufferState, limits)
+
+  var attributeState = wrapAttributes(
+    gl,
+    extensions,
+    limits,
+    bufferState)
+
   var shaderState = wrapShaders(
     gl,
-    extensionState,
     attributeState,
     uniformState,
     function (program) {
       return compiler.draw(program)
     })
-  var drawState = wrapDraw(gl, extensionState, bufferState)
-  var glState = wrapContext(gl, shaderState)
+
+  var drawState = wrapDraw(
+    gl,
+    extensions,
+    bufferState)
+
   var textureState = wrapTextures(
     gl,
-    extensionState,
+    extensions,
     limits,
     poll,
-    glState.viewport)
-  var renderbufferState = wrapRenderbuffers(gl, extensionState, limits)
-  var fboState = wrapFBOs(gl, extensionState, textureState)
+    viewportState)
+
+  var renderbufferState = wrapRenderbuffers(
+    gl,
+    extensions,
+    limits)
+
+  var framebufferState = wrapFramebuffers(
+    gl,
+    extensions,
+    limits,
+    textureState,
+    renderbufferState)
+
   var frameState = {
     count: 0,
     start: clock(),
@@ -5579,21 +6488,29 @@ module.exports = function wrapREGL () {
     height: gl.drawingBufferHeight,
     pixelRatio: options.pixelRatio
   }
-  var readPixels = wrapRead(gl, glState)
+
+  var glState = wrapContext(
+    gl,
+    framebufferState,
+    viewportState)
+
+  var readPixels = wrapRead(gl, poll, viewportState)
 
   var compiler = createCompiler(
     gl,
-    extensionState,
+    extensions,
+    limits,
     bufferState,
     elementState,
     textureState,
-    fboState,
+    framebufferState,
     glState,
     uniformState,
     attributeState,
     shaderState,
     drawState,
-    frameState)
+    frameState,
+    poll)
 
   var canvas = gl.canvas
 
@@ -5651,7 +6568,7 @@ module.exports = function wrapREGL () {
     bufferState.refresh()
     textureState.refresh()
     renderbufferState.refresh()
-    fboState.refresh()
+    framebufferState.refresh()
     shaderState.refresh()
     glState.refresh()
     if (options.onContextRestored) {
@@ -5675,7 +6592,8 @@ module.exports = function wrapREGL () {
     }
 
     shaderState.clear()
-    fboState.clear()
+    framebufferState.clear()
+    renderbufferState.clear()
     textureState.clear()
     bufferState.clear()
 
@@ -5773,6 +6691,7 @@ module.exports = function wrapREGL () {
   }
 
   function poll () {
+    framebufferState.poll()
     glState.poll()
   }
 
@@ -5781,19 +6700,17 @@ module.exports = function wrapREGL () {
     var clearFlags = 0
 
     // Update context state
-    glState.poll()
+    poll()
 
     var c = options.color
     if (c) {
       gl.clearColor(+c[0] || 0, +c[1] || 0, +c[2] || 0, +c[3] || 0)
       clearFlags |= GL_COLOR_BUFFER_BIT
     }
-
     if ('depth' in options) {
       gl.clearDepth(+options.depth)
       clearFlags |= GL_DEPTH_BUFFER_BIT
     }
-
     if ('stencil' in options) {
       gl.clearStencil(options.stencil | 0)
       clearFlags |= GL_STENCIL_BUFFER_BIT
@@ -5831,10 +6748,13 @@ module.exports = function wrapREGL () {
     // Clear current FBO
     clear: clear,
 
-    // Dynamic variable binding
+    // Short cut for prop binding
     prop: dynamic.define,
 
-    // Object constructors
+    // executes an empty draw command
+    draw: compileProcedure({}),
+
+    // Resources
     elements: function (options) {
       return elementState.create(options)
     },
@@ -5856,7 +6776,12 @@ module.exports = function wrapREGL () {
     renderbuffer: function (options) {
       return renderbufferState.create(options)
     },
-    // fbo: create(fboState),
+    framebuffer: function (options) {
+      return framebufferState.create(options)
+    },
+    framebufferCube: function (options) {
+      check.raise('framebuffer cube not yet implemented')
+    },
 
     // Frame rendering
     frame: frame,
@@ -5873,6 +6798,6 @@ module.exports = function wrapREGL () {
   })
 }
 
-},{"./lib/attribute":8,"./lib/buffer":9,"./lib/check":10,"./lib/clock":11,"./lib/compile":13,"./lib/context":17,"./lib/draw":18,"./lib/dynamic":19,"./lib/elements":20,"./lib/extension":21,"./lib/fbo":22,"./lib/limits":25,"./lib/raf":28,"./lib/read":29,"./lib/renderbuffer":30,"./lib/shader":31,"./lib/state":33,"./lib/texture":34,"./lib/uniform":36}]},{},[6]);
+},{"./lib/attribute":8,"./lib/buffer":9,"./lib/check":10,"./lib/clock":11,"./lib/compile":13,"./lib/context":17,"./lib/draw":18,"./lib/dynamic":19,"./lib/elements":20,"./lib/extension":21,"./lib/framebuffer":22,"./lib/limits":25,"./lib/raf":28,"./lib/read":29,"./lib/renderbuffer":30,"./lib/shader":31,"./lib/state":33,"./lib/texture":34,"./lib/uniform":36}]},{},[6]);
 </script>
 </html>
