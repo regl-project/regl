@@ -10,9 +10,11 @@
 * Add support for polling buffers and animated GIFs (useful for web audio)
 * Support more DDS texture formats (HDR, PVRTC, etc.)
 * Cubic framebuffer objects
+* Browserify transform to remove all runtime checks
 * Benchmark suite
 * More unit tests
-* Reduce bundle size
+* Fix CI problems
+* Reduce file size
 * Web site
 * Recipe book
 
