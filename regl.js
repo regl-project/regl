@@ -140,7 +140,6 @@ module.exports = function wrapREGL () {
         frameState.height !== gl.drawingBufferHeight) {
       frameState.width = gl.drawingBufferWidth
       frameState.height = gl.drawingBufferHeight
-      framebufferState.notifyViewportChanged()
       glState.notifyViewportChanged()
     }
 
@@ -366,6 +365,9 @@ module.exports = function wrapREGL () {
 
     // Short cut for prop binding
     prop: dynamic.define,
+
+    // executes an empty draw command
+    draw: compileProcedure({}),
 
     // Resources
     elements: function (options) {
