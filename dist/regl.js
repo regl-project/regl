@@ -4288,11 +4288,12 @@ module.exports = function createStack (init, onChange) {
   var n = init.length
   var stack = init.slice()
   var current = init.slice()
-  var dirty = true
+  var dirty = false
+  var forceDirty = true
 
   function poll () {
     var ptr = stack.length - n
-    if (dirty) {
+    if (dirty || forceDirty) {
       switch (n) {
         case 1:
           onChange(stack[ptr])
@@ -4318,7 +4319,7 @@ module.exports = function createStack (init, onChange) {
       for (var i = 0; i < n; ++i) {
         current[i] = stack[ptr + i]
       }
-      dirty = false
+      forceDirty = dirty = false
     }
   }
 
@@ -4334,16 +4335,16 @@ module.exports = function createStack (init, onChange) {
 
     pop: function () {
       dirty = false
+      stack.length -= n
       for (var i = 0; i < n; ++i) {
         dirty = dirty || (stack[stack.length - n + i] !== current[i])
       }
-      stack.length -= n
     },
 
     poll: poll,
 
     setDirty: function () {
-      dirty = true
+      forceDirty = true
     }
   }
 }
@@ -4870,7 +4871,7 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
     this.flipY = false
     this.premultiplyAlpha = false
     this.unpackAlignment = 1
-    this.colorSpace = GL_BROWSER_DEFAULT_WEBGL
+    this.colorSpace = 0
 
     // shape
     this.width = 0
@@ -5131,8 +5132,8 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
           check(c >= 0 && c <= 4, 'invalid number of channels for image data')
           array = Array(w * h * c)
           p = 0
-          for (i = 0; i < w; ++i) {
-            for (j = 0; j < h; ++j) {
+          for (j = 0; j < h; ++j) {
+            for (i = 0; i < w; ++i) {
               for (k = 0; k < c; ++k) {
                 array[p++] = data[i][j][k]
               }
@@ -5141,8 +5142,8 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
         } else {
           array = Array(w * h)
           p = 0
-          for (i = 0; i < w; ++i) {
-            for (j = 0; j < h; ++j) {
+          for (j = 0; j < h; ++j) {
+            for (i = 0; i < w; ++i) {
               array[p++] = data[i][j]
             }
           }
