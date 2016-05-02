@@ -16,7 +16,11 @@
 * Fix CI problems
 * Reduce file size
 * Web site
-* Recipe book
+* Recipe book/example set
+    + Minecraft example
+    + Globe
+    + Tile based 2D rendering
+    + Compound scene
 
 ## Next
 
