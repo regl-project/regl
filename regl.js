@@ -217,7 +217,6 @@ module.exports = function wrapREGL () {
     }
   }
 
-  // Compiles a set of procedures for an object
   function compileProcedure (options) {
     check(!!options, 'invalid args to regl({...})')
     check.type(options, 'object', 'invalid args to regl({...})')
@@ -310,7 +309,6 @@ module.exports = function wrapREGL () {
     glState.poll()
   }
 
-  // Clears the currently bound frame buffer
   function clear (options) {
     var clearFlags = 0
 
