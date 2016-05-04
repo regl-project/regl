@@ -21,6 +21,11 @@
     + Globe
     + Tile based 2D rendering
     + Compound scene
+    + Shadow mapping
+    + Stencil shadows
+    + Turing patterns
+    + Spring/cloth physics
+    + Asset loading (obj, ply, etc.)
 
 ## Next
 
