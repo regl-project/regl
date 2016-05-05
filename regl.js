@@ -1,5 +1,7 @@
 var check = require('./lib/check')
+var extend = require('./lib/extend')
 var getContext = require('./lib/context')
+var createStringStore = require('./lib/strings')
 var wrapExtensions = require('./lib/extension')
 var wrapLimits = require('./lib/limits')
 var wrapBuffers = require('./lib/buffer')
@@ -34,6 +36,9 @@ module.exports = function wrapREGL () {
   var gl = args.gl
   var options = args.options
 
+  // Use string store to track string ids
+  var stringStore = createStringStore()
+
   var extensionState = wrapExtensions(gl)
   var extensions = extensionState.extensions
 
@@ -53,13 +58,14 @@ module.exports = function wrapREGL () {
     extensions,
     bufferState)
 
-  var uniformState = wrapUniforms()
+  var uniformState = wrapUniforms(stringStore)
 
   var attributeState = wrapAttributes(
     gl,
     extensions,
     limits,
-    bufferState)
+    bufferState,
+    stringStore)
 
   var shaderState = wrapShaders(
     gl,
@@ -67,7 +73,8 @@ module.exports = function wrapREGL () {
     uniformState,
     function (program) {
       return compiler.draw(program)
-    })
+    },
+    stringStore)
 
   var drawState = wrapDraw(
     gl,
@@ -113,6 +120,7 @@ module.exports = function wrapREGL () {
 
   var compiler = createCompiler(
     gl,
+    stringStore,
     extensions,
     limits,
     bufferState,
@@ -224,7 +232,7 @@ module.exports = function wrapREGL () {
     var hasDynamic = false
 
     function flattenNestedOptions (options) {
-      var result = Object.assign({}, options)
+      var result = extend({}, options)
       delete result.uniforms
       delete result.attributes
 
@@ -357,7 +365,7 @@ module.exports = function wrapREGL () {
     }
   }
 
-  return Object.assign(compileProcedure, {
+  return extend(compileProcedure, {
     // Clear current FBO
     clear: clear,
 
