@@ -1,5 +1,6 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.reglInit = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var glTypes = require('./constants/dtypes.json')
+var extend = require('./extend')
 
 var GL_FLOAT = 5126
 
@@ -20,7 +21,7 @@ function AttributeRecord () {
   this.divisor = 0
 }
 
-Object.assign(AttributeRecord.prototype, {
+extend(AttributeRecord.prototype, {
   equals: function (other, size) {
     if (!this.pointer) {
       return !other.pointer &&
@@ -59,7 +60,13 @@ Object.assign(AttributeRecord.prototype, {
   }
 })
 
-module.exports = function wrapAttributeState (gl, extensions, limits, bufferState) {
+module.exports = function wrapAttributeState (
+  gl,
+  extensions,
+  limits,
+  bufferState,
+  stringStore) {
+
   var attributeState = {}
 
   var NUM_ATTRIBUTES = limits.maxAttributes
@@ -88,7 +95,7 @@ module.exports = function wrapAttributeState (gl, extensions, limits, bufferStat
     return records[++stack.top]
   }
 
-  Object.assign(AttributeStack.prototype, {
+  extend(AttributeStack.prototype, {
     pushVec: function (x, y, z, w) {
       var head = pushAttributeStack(this)
       head.pointer = false
@@ -192,21 +199,22 @@ module.exports = function wrapAttributeState (gl, extensions, limits, bufferStat
   // DEFINE A NEW ATTRIBUTE
   // ===================================================
   function defAttribute (name) {
-    if (name in attributeState) {
-      return
+    var id = stringStore.id(name)
+    var result = attributeState[id]
+    if (!result) {
+      result = attributeState[id] = new AttributeStack()
     }
-    attributeState[name] = new AttributeStack()
+    return result
   }
 
   return {
     bindings: attributeBindings,
-    attributes: attributeState,
     bind: bindAttribute,
     def: defAttribute
   }
 }
 
-},{"./constants/dtypes.json":8}],2:[function(require,module,exports){
+},{"./constants/dtypes.json":8,"./extend":14}],2:[function(require,module,exports){
 // Array and element buffer creation
 var check = require('./check')
 var isTypedArray = require('./is-typed-array')
@@ -455,9 +463,10 @@ module.exports = function wrapBufferState (gl) {
   }
 }
 
-},{"./check":3,"./constants/arraytypes.json":7,"./constants/dtypes.json":8,"./is-ndarray":16,"./is-typed-array":17,"./values":30}],3:[function(require,module,exports){
+},{"./check":3,"./constants/arraytypes.json":7,"./constants/dtypes.json":8,"./is-ndarray":17,"./is-typed-array":18,"./values":32}],3:[function(require,module,exports){
 // Error checking and parameter validation
 var isTypedArray = require('./is-typed-array')
+var extend = require('./extend')
 
 function raise (message) {
   var error = new Error('(regl) ' + message)
@@ -515,16 +524,32 @@ function checkOneOf (value, list, message) {
   }
 }
 
-module.exports = Object.assign(check, {
+function checkShaderError (gl, shader, source, type) {
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    var errLog = gl.getShaderInfoLog(shader)
+    check.raise('Error compiling shader:\n' + errLog)
+  }
+}
+
+function checkLinkError (gl, program) {
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    var errLog = gl.getProgramInfoLog(program)
+    check.raise('Error linking program:\n' + errLog)
+  }
+}
+
+module.exports = extend(check, {
   raise: raise,
   parameter: checkParameter,
   type: checkTypeOf,
   isTypedArray: checkIsTypedArray,
   nni: checkNonNegativeInt,
-  oneOf: checkOneOf
+  oneOf: checkOneOf,
+  shaderError: checkShaderError,
+  linkError: checkLinkError
 })
 
-},{"./is-typed-array":17}],4:[function(require,module,exports){
+},{"./extend":14,"./is-typed-array":18}],4:[function(require,module,exports){
 /* globals performance */
 module.exports =
   (typeof performance !== 'undefined' && performance.now)
@@ -532,6 +557,8 @@ module.exports =
   : function () { return +(new Date()) }
 
 },{}],5:[function(require,module,exports){
+var extend = require('./extend')
+
 function slice (x) {
   return Array.prototype.slice.call(x)
 }
@@ -573,7 +600,7 @@ module.exports = function createEnvironment () {
       return name
     }
 
-    return Object.assign(push, {
+    return extend(push, {
       def: def,
       toString: function () {
         return [
@@ -597,7 +624,7 @@ module.exports = function createEnvironment () {
     var body = block()
     var bodyToString = body.toString
 
-    var result = procedures[name] = Object.assign(body, {
+    var result = procedures[name] = extend(body, {
       arg: arg,
       toString: function () {
         return [
@@ -611,7 +638,6 @@ module.exports = function createEnvironment () {
     return result
   }
 
-  // compiles and returns all blocks
   function compile () {
     var code = ['"use strict";return {']
     Object.keys(procedures).forEach(function (name) {
@@ -630,7 +656,7 @@ module.exports = function createEnvironment () {
   }
 }
 
-},{}],6:[function(require,module,exports){
+},{"./extend":14}],6:[function(require,module,exports){
 var check = require('./check')
 var createEnvironment = require('./codegen')
 
@@ -818,6 +844,7 @@ function optionPriority (a, b) {
 
 module.exports = function reglCompiler (
   gl,
+  stringStore,
   extensions,
   limits,
   bufferState,
@@ -873,7 +900,7 @@ module.exports = function reglCompiler (
 
     // set up attribute state
     program.attributes.forEach(function (attribute) {
-      var STACK = link(attributeState.attributes[attribute.name])
+      var STACK = link(attributeState.def(attribute.name))
       draw(BIND_ATTRIBUTE, '(',
         attribute.location, ',',
         link(attributeState.bindings[attribute.location]), ',',
@@ -884,15 +911,15 @@ module.exports = function reglCompiler (
     // set up uniforms
     program.uniforms.forEach(function (uniform) {
       var LOCATION = link(uniform.location)
-      var STACK = link(uniformState.uniforms[uniform.name])
+      var STACK = link(uniformState.def(uniform.name))
       var TOP = STACK + '[' + STACK + '.length-1]'
-      if (uniform.info.type === GL_SAMPLER_2D ||
-        uniform.info.type === GL_SAMPLER_CUBE) {
+      var type = uniform.info.type
+      if (type === GL_SAMPLER_2D || type === GL_SAMPLER_CUBE) {
         var TEX_VALUE = def(TOP + '._texture')
         TEXTURE_UNIFORMS.push(TEX_VALUE)
         draw(setUniformString(GL, GL_INT, LOCATION, TEX_VALUE + '.bind()'))
       } else {
-        draw(setUniformString(GL, uniform.info.type, LOCATION, TOP))
+        draw(setUniformString(GL, type, LOCATION, TOP))
       }
     })
 
@@ -1062,15 +1089,15 @@ module.exports = function reglCompiler (
         return
       }
       var LOCATION = link(uniform.location)
-      var STACK = link(uniformState.uniforms[uniform.name])
+      var STACK = link(uniformState.def(uniform.name))
       var TOP = STACK + '[' + STACK + '.length-1]'
-      if (uniform.info.type === GL_SAMPLER_2D ||
-        uniform.info.type === GL_SAMPLER_CUBE) {
+      var type = uniform.info.type
+      if (type === GL_SAMPLER_2D || type === GL_SAMPLER_CUBE) {
         var TEX_VALUE = def(TOP + '._texture')
         batch(setUniformString(GL, GL_INT, LOCATION, TEX_VALUE + '.bind()'))
         exit(TEX_VALUE, '.unbind();')
       } else {
-        batch(setUniformString(GL, uniform.info.type, LOCATION, TOP))
+        batch(setUniformString(GL, type, LOCATION, TOP))
       }
     })
 
@@ -1081,7 +1108,7 @@ module.exports = function reglCompiler (
       if (attributes.name in attributes) {
         return
       }
-      var STACK = link(attributeState.attributes[attribute.name])
+      var STACK = link(attributeState.def(attribute.name))
       batch(BIND_ATTRIBUTE, '(',
         attribute.location, ',',
         link(attributeState.bindings[attribute.location]), ',',
@@ -1462,6 +1489,7 @@ module.exports = function reglCompiler (
     // Common state variables
     // -------------------------------
     var GL_POLL = link(reglPoll)
+    var STRING_STORE = link(stringStore)
     var FRAG_SHADER_STATE = link(shaderState.fragShaders)
     var VERT_SHADER_STATE = link(shaderState.vertShaders)
     var PROGRAM_STATE = link(shaderState.programs)
@@ -1509,13 +1537,13 @@ module.exports = function reglCompiler (
       switch (param) {
         case 'frag':
           hasShader = true
-          entry(FRAG_SHADER_STATE, '.push(', link(value), ');')
+          entry(FRAG_SHADER_STATE, '.push(', link(stringStore.id(value)), ');')
           exit(FRAG_SHADER_STATE, '.pop();')
           break
 
         case 'vert':
           hasShader = true
-          entry(VERT_SHADER_STATE, '.push(', link(value), ');')
+          entry(VERT_SHADER_STATE, '.push(', link(stringStore.id(value)), ');')
           exit(VERT_SHADER_STATE, '.pop();')
           break
 
@@ -1824,7 +1852,9 @@ module.exports = function reglCompiler (
         var fragSrc = staticOptions.frag
         var vertSrc = staticOptions.vert
         entry(PROGRAM_STATE, '.push(',
-          link(shaderState.create(vertSrc, fragSrc)), ');')
+          link(shaderState.create(
+            stringStore.id(vertSrc),
+            stringStore.id(fragSrc))), ');')
       } else {
         var FRAG_SRC = entry.def(
           FRAG_SHADER_STATE, '[', FRAG_SHADER_STATE, '.length-1]')
@@ -1842,8 +1872,7 @@ module.exports = function reglCompiler (
     // update static uniforms
     // -------------------------------
     Object.keys(staticUniforms).forEach(function (uniform) {
-      uniformState.def(uniform)
-      var STACK = link(uniformState.uniforms[uniform])
+      var STACK = link(uniformState.def(uniform))
       var VALUE
       var value = staticUniforms[uniform]
       if (typeof value === 'function' && value._reglType) {
@@ -1861,8 +1890,7 @@ module.exports = function reglCompiler (
     // update default attributes
     // -------------------------------
     Object.keys(staticAttributes).forEach(function (attribute) {
-      attributeState.def(attribute)
-      var ATTRIBUTE = link(attributeState.attributes[attribute])
+      var ATTRIBUTE = link(attributeState.def(attribute))
 
       var data = staticAttributes[attribute]
       if (typeof data === 'number') {
@@ -2174,8 +2202,7 @@ module.exports = function reglCompiler (
     // dynamic uniforms
     // -------------------------------
     Object.keys(dynamicUniforms).forEach(function (uniform) {
-      uniformState.def(uniform)
-      var STACK = link(uniformState.uniforms[uniform])
+      var STACK = link(uniformState.def(uniform))
       var VALUE = dyn(dynamicUniforms[uniform])
       dynamicEntry(STACK, '.push(', VALUE, ');')
       dynamicExit(STACK, '.pop();')
@@ -2185,8 +2212,7 @@ module.exports = function reglCompiler (
     // dynamic attributes
     // -------------------------------
     Object.keys(dynamicAttributes).forEach(function (attribute) {
-      attributeState.def(attribute)
-      var ATTRIBUTE = link(attributeState.attributes[attribute])
+      var ATTRIBUTE = link(attributeState.def(attribute))
       var VALUE = dyn(dynamicAttributes[attribute])
       dynamicEntry(ATTRIBUTE, '.pushDyn(', VALUE, ');')
       dynamicExit(ATTRIBUTE, '.pop();')
@@ -2311,12 +2337,13 @@ module.exports={
 /*globals HTMLElement,WebGLRenderingContext*/
 
 var check = require('./check')
+var extend = require('./extend')
 
 function createCanvas (element, options) {
   var canvas = document.createElement('canvas')
   var args = getContext(canvas, options)
 
-  Object.assign(canvas.style, {
+  extend(canvas.style, {
     border: 0,
     margin: 0,
     padding: 0,
@@ -2327,7 +2354,7 @@ function createCanvas (element, options) {
 
   if (element === document.body) {
     canvas.style.position = 'absolute'
-    Object.assign(element.style, {
+    extend(element.style, {
       margin: 0,
       padding: 0
     })
@@ -2344,7 +2371,7 @@ function createCanvas (element, options) {
     }
     canvas.width = scale * w
     canvas.height = scale * h
-    Object.assign(canvas.style, {
+    extend(canvas.style, {
       width: w + 'px',
       height: h + 'px'
     })
@@ -2353,7 +2380,7 @@ function createCanvas (element, options) {
   window.addEventListener('resize', resize, false)
 
   var prevDestroy = args.options.onDestroy
-  args.options = Object.assign({}, args.options, {
+  args.options = extend(extend({}, args.options), {
     onDestroy: function () {
       window.removeEventListener('resize', resize)
       element.removeChild(canvas)
@@ -2385,7 +2412,7 @@ function getContext (canvas, options) {
 
   return {
     gl: gl,
-    options: Object.assign({
+    options: extend({
       pixelRatio: window.devicePixelRatio
     }, options)
   }
@@ -2411,7 +2438,7 @@ module.exports = function parseArgs (args) {
     } else if (args[0] instanceof WebGLRenderingContext) {
       return {
         gl: args[0],
-        options: Object.assign({
+        options: extend({
           pixelRatio: 1
         }, options)
       }
@@ -2427,7 +2454,7 @@ module.exports = function parseArgs (args) {
   }
 }
 
-},{"./check":3}],11:[function(require,module,exports){
+},{"./check":3,"./extend":14}],11:[function(require,module,exports){
 var GL_TRIANGLES = 4
 
 module.exports = function wrapDrawState (gl) {
@@ -2635,15 +2662,13 @@ module.exports = function wrapElementsState (gl, extensions, bufferState) {
 
     reglElements(options)
 
-    Object.assign(reglElements, {
-      _reglType: 'elements',
-      _elements: elements,
-      destroy: function () {
-        check(elements.buffer !== null, 'must not double destroy elements')
-        buffer.destroy()
-        elements.buffer = null
-      }
-    })
+    reglElements._reglType = 'elements'
+    reglElements._elements = elements
+    reglElements.destroy = function () {
+      check(elements.buffer !== null, 'must not double destroy elements')
+      buffer.destroy()
+      elements.buffer = null
+    }
 
     return reglElements
   }
@@ -2660,7 +2685,16 @@ module.exports = function wrapElementsState (gl, extensions, bufferState) {
   }
 }
 
-},{"./check":3,"./constants/primitives.json":9,"./is-ndarray":16,"./is-typed-array":17}],14:[function(require,module,exports){
+},{"./check":3,"./constants/primitives.json":9,"./is-ndarray":17,"./is-typed-array":18}],14:[function(require,module,exports){
+module.exports = function (base, opts) {
+  var keys = Object.keys(opts)
+  for (var i = 0; i < keys.length; ++i) {
+    base[keys[i]] = opts[keys[i]]
+  }
+  return base
+}
+
+},{}],15:[function(require,module,exports){
 module.exports = function createExtensionCache (gl) {
   var extensions = {}
 
@@ -2706,9 +2740,10 @@ module.exports = function createExtensionCache (gl) {
   }
 }
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 var check = require('./check')
 var values = require('./values')
+var extend = require('./extend')
 
 // We store these constants so that the minifier can inline them
 var GL_FRAMEBUFFER = 0x8D40
@@ -2809,8 +2844,8 @@ module.exports = function wrapFBOState (
     depthStencilTextureFormatEnums.push(GL_DEPTH_STENCIL)
   }
 
-  var colorFormats = Object.assign({},
-    colorTextureFormats,
+  var colorFormats = extend(extend({},
+    colorTextureFormats),
     colorRenderbufferFormats)
 
   var colorTextureFormatEnums = values(colorTextureFormats)
@@ -3381,13 +3416,11 @@ module.exports = function wrapFBOState (
 
     reglFramebuffer(options)
 
-    Object.assign(reglFramebuffer, {
-      _reglType: 'framebuffer',
-      _framebuffer: framebuffer,
-      destroy: function () {
-        destroy(framebuffer)
-      }
-    })
+    reglFramebuffer._reglType = 'framebuffer'
+    reglFramebuffer._framebuffer = framebuffer
+    reglFramebuffer._destroy = function () {
+      destroy(framebuffer)
+    }
 
     return reglFramebuffer
   }
@@ -3458,7 +3491,7 @@ module.exports = function wrapFBOState (
   }
 }
 
-},{"./check":3,"./values":30}],16:[function(require,module,exports){
+},{"./check":3,"./extend":14,"./values":32}],17:[function(require,module,exports){
 var isTypedArray = require('./is-typed-array')
 
 module.exports = function isNDArrayLike (obj) {
@@ -3472,13 +3505,13 @@ module.exports = function isNDArrayLike (obj) {
       isTypedArray(obj.data)))
 }
 
-},{"./is-typed-array":17}],17:[function(require,module,exports){
+},{"./is-typed-array":18}],18:[function(require,module,exports){
 var dtypes = require('./constants/arraytypes.json')
 module.exports = function (x) {
   return Object.prototype.toString.call(x) in dtypes
 }
 
-},{"./constants/arraytypes.json":7}],18:[function(require,module,exports){
+},{"./constants/arraytypes.json":7}],19:[function(require,module,exports){
 var GL_SUBPIXEL_BITS = 0x0D50
 var GL_RED_BITS = 0x0D52
 var GL_GREEN_BITS = 0x0D53
@@ -3572,7 +3605,7 @@ module.exports = function (gl, extensions) {
   }
 }
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 /* globals document, Image, XMLHttpRequest */
 
 module.exports = loadTexture
@@ -3655,7 +3688,7 @@ function loadTexture (url, crossOrigin) {
   return null
 }
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 // References:
 //
 // http://msdn.microsoft.com/en-us/library/bb943991.aspx/
@@ -3840,7 +3873,7 @@ function parseDDS (arrayBuffer) {
   return result
 }
 
-},{"./check":3}],21:[function(require,module,exports){
+},{"./check":3}],22:[function(require,module,exports){
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
     typeof cancelAnimationFrame === 'function') {
@@ -3857,7 +3890,7 @@ if (typeof requestAnimationFrame === 'function' &&
   }
 }
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var check = require('./check')
 var isTypedArray = require('./is-typed-array')
 
@@ -3910,7 +3943,7 @@ module.exports = function wrapReadPixels (gl, reglPoll, viewportState) {
   return readPixels
 }
 
-},{"./check":3,"./is-typed-array":17}],23:[function(require,module,exports){
+},{"./check":3,"./is-typed-array":18}],24:[function(require,module,exports){
 var check = require('./check')
 var values = require('./values')
 
@@ -4043,13 +4076,11 @@ module.exports = function (gl, extensions, limits) {
 
     reglRenderbuffer(input)
 
-    Object.assign(reglRenderbuffer, {
-      _reglType: 'renderbuffer',
-      _renderbuffer: renderbuffer,
-      destroy: function () {
-        renderbuffer.decRef()
-      }
-    })
+    reglRenderbuffer._reglType = 'renderbuffer'
+    reglRenderbuffer._renderbuffer = renderbuffer
+    reglRenderbuffer.destroy = function () {
+      renderbuffer.decRef()
+    }
 
     return reglRenderbuffer
   }
@@ -4069,14 +4100,18 @@ module.exports = function (gl, extensions, limits) {
   }
 }
 
-},{"./check":3,"./values":30}],24:[function(require,module,exports){
+},{"./check":3,"./values":32}],25:[function(require,module,exports){
 var check = require('./check')
+var values = require('./values')
 
 var DEFAULT_FRAG_SHADER = 'void main(){gl_FragColor=vec4(0,0,0,0);}'
 var DEFAULT_VERT_SHADER = 'void main(){gl_Position=vec4(0,0,0,0);}'
 
 var GL_FRAGMENT_SHADER = 35632
 var GL_VERTEX_SHADER = 35633
+
+var GL_ACTIVE_UNIFORMS = 0x8B86
+var GL_ACTIVE_ATTRIBUTES = 0x8B89
 
 function ActiveInfo (name, location, info) {
   this.name = name
@@ -4088,47 +4123,28 @@ module.exports = function wrapShaderState (
   gl,
   attributeState,
   uniformState,
-  compileShaderDraw) {
+  compileShaderDraw,
+  stringStore) {
   // ===================================================
   // glsl compilation and linking
   // ===================================================
-  var shaders = {}
+  var fragShaders = {}
+  var vertShaders = {}
 
-  var fragShaders = [DEFAULT_FRAG_SHADER]
-  var vertShaders = [DEFAULT_VERT_SHADER]
-
-  function getShader (type, source) {
-    var cache = shaders[type]
-    var shader = cache[source]
+  function getShader (type, id) {
+    var cache = type === GL_FRAGMENT_SHADER ? fragShaders : vertShaders
+    var shader = cache[id]
 
     if (!shader) {
+      var source = stringStore.str(id)
       shader = gl.createShader(type)
       gl.shaderSource(shader, source)
       gl.compileShader(shader)
-
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        var errLog = gl.getShaderInfoLog(shader)
-        check.raise('Error compiling shader:\n' + errLog)
-      }
-      cache[source] = shader
+      check.shaderError(gl, shader, source, type)
+      cache[id] = shader
     }
 
     return shader
-  }
-
-  function refreshShaders () {
-    shaders[GL_FRAGMENT_SHADER] = {}
-    shaders[GL_VERTEX_SHADER] = {}
-  }
-
-  function clearShaders () {
-    Object.keys(shaders).forEach(function (type) {
-      Object.keys(shaders[type]).forEach(function (shader) {
-        gl.deleteShader(shaders[type][shader])
-      })
-    })
-    shaders[GL_FRAGMENT_SHADER] = {}
-    shaders[GL_VERTEX_SHADER] = {}
   }
 
   // ===================================================
@@ -4137,9 +4153,9 @@ module.exports = function wrapShaderState (
   var programCache = {}
   var programList = []
 
-  function REGLProgram (fragSrc, vertSrc) {
-    this.fragSrc = fragSrc
-    this.vertSrc = vertSrc
+  function REGLProgram (fragId, vertId) {
+    this.fragId = fragId
+    this.vertId = vertId
     this.program = null
     this.uniforms = []
     this.attributes = []
@@ -4147,141 +4163,117 @@ module.exports = function wrapShaderState (
     this.batchCache = {}
   }
 
-  Object.assign(REGLProgram.prototype, {
-    link: function () {
-      var i, info
+  function linkProgram (desc) {
+    var i, info
 
-      // -------------------------------
-      // compile & link
-      // -------------------------------
-      var fragShader = getShader(gl.FRAGMENT_SHADER, this.fragSrc)
-      var vertShader = getShader(gl.VERTEX_SHADER, this.vertSrc)
+    // -------------------------------
+    // compile & link
+    // -------------------------------
+    var fragShader = getShader(GL_FRAGMENT_SHADER, desc.fragId)
+    var vertShader = getShader(GL_VERTEX_SHADER, desc.vertId)
 
-      var program = this.program = gl.createProgram()
-      gl.attachShader(program, fragShader)
-      gl.attachShader(program, vertShader)
-      gl.linkProgram(program)
-      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-        var errLog = gl.getProgramInfoLog(program)
-        check.raise('Error linking program:\n' + errLog)
-      }
+    var program = desc.program = gl.createProgram()
+    gl.attachShader(program, fragShader)
+    gl.attachShader(program, vertShader)
+    gl.linkProgram(program)
+    check.linkError(gl, program)
 
-      // -------------------------------
-      // grab uniforms
-      // -------------------------------
-      var numUniforms = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS)
-      var uniforms = this.uniforms = []
-      for (i = 0; i < numUniforms; ++i) {
-        info = gl.getActiveUniform(program, i)
-        if (info) {
-          if (info.size > 1) {
-            for (var j = 0; j < info.size; ++j) {
-              var name = info.name.replace('[0]', '[' + j + ']')
-              uniforms.push(new ActiveInfo(
-                name,
-                gl.getUniformLocation(program, name),
-                info))
-              uniformState.def(name)
-            }
-          } else {
+    // -------------------------------
+    // grab uniforms
+    // -------------------------------
+    var numUniforms = gl.getProgramParameter(program, GL_ACTIVE_UNIFORMS)
+    var uniforms = desc.uniforms = []
+
+    for (i = 0; i < numUniforms; ++i) {
+      info = gl.getActiveUniform(program, i)
+      if (info) {
+        if (info.size > 1) {
+          for (var j = 0; j < info.size; ++j) {
+            var name = info.name.replace('[0]', '[' + j + ']')
+            uniformState.def(name)
             uniforms.push(new ActiveInfo(
-              info.name,
-              gl.getUniformLocation(program, info.name),
+              name,
+              gl.getUniformLocation(program, name),
               info))
-            uniformState.def(info.name)
           }
-        }
-      }
-
-      // -------------------------------
-      // grab attributes
-      // -------------------------------
-      var numAttributes = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES)
-      var attributes = this.attributes = []
-      for (i = 0; i < numAttributes; ++i) {
-        info = gl.getActiveAttrib(program, i)
-        if (info) {
-          attributes.push(new ActiveInfo(
+        } else {
+          uniformState.def(info.name)
+          uniforms.push(new ActiveInfo(
             info.name,
-            gl.getAttribLocation(program, info.name),
+            gl.getUniformLocation(program, info.name),
             info))
-          attributeState.def(info.name)
         }
       }
-
-      // -------------------------------
-      // clear cached rendering methods
-      // -------------------------------
-      this.draw = compileShaderDraw(this)
-      this.batchCache = {}
-    },
-
-    destroy: function () {
-      gl.deleteProgram(this.program)
     }
-  })
 
-  function getProgram (vertSource, fragSource) {
-    var cache = programCache[fragSource]
+    // -------------------------------
+    // grab attributes
+    // -------------------------------
+    var numAttributes = gl.getProgramParameter(program, GL_ACTIVE_ATTRIBUTES)
+    var attributes = desc.attributes = []
+    for (i = 0; i < numAttributes; ++i) {
+      info = gl.getActiveAttrib(program, i)
+      if (info) {
+        attributeState.def(info.name)
+        attributes.push(new ActiveInfo(
+          info.name,
+          gl.getAttribLocation(program, info.name),
+          info))
+      }
+    }
+
+    // -------------------------------
+    // clear cached rendering methods
+    // -------------------------------
+    desc.draw = compileShaderDraw(desc)
+    desc.batchCache = {}
+  }
+
+  function getProgram (vertId, fragId) {
+    var cache = programCache[fragId]
     if (!cache) {
-      cache = programCache[fragSource] = {}
+      cache = programCache[fragId] = {}
     }
-    var program = cache[vertSource]
+    var program = cache[vertId]
     if (!program) {
-      program = new REGLProgram(fragSource, vertSource)
-      program.link()
-      cache[vertSource] = program
+      program = new REGLProgram(fragId, vertId)
+      linkProgram(program)
+      cache[vertId] = program
       programList.push(program)
     }
     return program
   }
 
-  function clearPrograms () {
-    programList.forEach(function (program) {
-      program.destroy()
-    })
-    programList.length = 0
-    programCache = {}
-  }
-
-  function refreshPrograms () {
-    programList.forEach(function (program) {
-      program.link()
-    })
-  }
-
-  // ===================================================
-  // program state
-  // ===================================================
-  var programState = [null]
-
-  // ===================================================
-  // context management
-  // ===================================================
-  function clear () {
-    clearShaders()
-    clearPrograms()
-  }
-
-  function refresh () {
-    refreshShaders()
-    refreshPrograms()
-  }
-
-  // We call clear once to initialize all data structures
-  clear()
-
   return {
     create: getProgram,
-    clear: clear,
-    refresh: refresh,
-    programs: programState,
-    fragShaders: fragShaders,
-    vertShaders: vertShaders
+
+    clear: function () {
+      var deleteShader = gl.deleteShader.bind(gl)
+      values(fragShaders).forEach(deleteShader)
+      fragShaders = {}
+      values(vertShaders).forEach(deleteShader)
+      vertShaders = {}
+
+      programList.forEach(function (desc) {
+        gl.deleteProgram(desc.program)
+      })
+      programList.length = 0
+      programCache = {}
+    },
+
+    refresh: function () {
+      fragShaders = {}
+      vertShaders = {}
+      programList.forEach(linkProgram)
+    },
+
+    programs: [ null ],
+    fragShaders: [ stringStore.id(DEFAULT_FRAG_SHADER) ],
+    vertShaders: [ stringStore.id(DEFAULT_VERT_SHADER) ]
   }
 }
 
-},{"./check":3}],25:[function(require,module,exports){
+},{"./check":3,"./values":32}],26:[function(require,module,exports){
 // A stack for managing the state of a scalar/vector parameter
 
 module.exports = function createStack (init, onChange) {
@@ -4349,7 +4341,7 @@ module.exports = function createStack (init, onChange) {
   }
 }
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 var createStack = require('./stack')
 var createEnvironment = require('./codegen')
 
@@ -4528,6 +4520,7 @@ module.exports = function wrapContextState (gl, framebufferState, viewportState)
     poll(STACK, '.poll();')
     refresh(STACK, '.setDirty();')
   })
+
   var procs = env.compile()
 
   return {
@@ -4543,8 +4536,30 @@ module.exports = function wrapContextState (gl, framebufferState, viewportState)
   }
 }
 
-},{"./codegen":5,"./stack":25}],27:[function(require,module,exports){
+},{"./codegen":5,"./stack":26}],28:[function(require,module,exports){
+module.exports = function createStringStore() {
+  var stringIds = {}
+  var stringValues = ['']
+  return {
+    id: function (str) {
+      var result = stringIds[str]
+      if (result) {
+        return result
+      }
+      result = stringIds[str] = stringValues.length
+      stringValues.push(str)
+      return result
+    },
+
+    str: function (id) {
+      return stringValues[id]
+    }
+  }
+}
+
+},{}],29:[function(require,module,exports){
 var check = require('./check')
+var extend = require('./extend')
 var values = require('./values')
 var isTypedArray = require('./is-typed-array')
 var isNDArrayLike = require('./is-ndarray')
@@ -4743,7 +4758,7 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
     'linear': GL_LINEAR
   }
 
-  var minFilters = Object.assign({
+  var minFilters = extend({
     'nearest mipmap nearest': GL_NEAREST_MIPMAP_NEAREST,
     'linear mipmap nearest': GL_LINEAR_MIPMAP_NEAREST,
     'nearest mipmap linear': GL_NEAREST_MIPMAP_LINEAR,
@@ -4790,12 +4805,12 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
   }
 
   if (extensions.webgl_depth_texture) {
-    Object.assign(textureFormats, {
+    extend(textureFormats, {
       'depth': GL_DEPTH_COMPONENT,
       'depth stencil': GL_DEPTH_STENCIL
     })
 
-    Object.assign(textureTypes, {
+    extend(textureTypes, {
       'uint16': GL_UNSIGNED_SHORT,
       'uint32': GL_UNSIGNED_INT,
       'depth stencil': GL_UNSIGNED_INT_24_8_WEBGL
@@ -4803,7 +4818,7 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
   }
 
   if (extensions.webgl_compressed_texture_s3tc) {
-    Object.assign(compressedTextureFormats, {
+    extend(compressedTextureFormats, {
       'rgb s3tc dxt1': GL_COMPRESSED_RGB_S3TC_DXT1_EXT,
       'rgba s3tc dxt1': GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
       'rgba s3tc dxt3': GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,
@@ -4812,7 +4827,7 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
   }
 
   if (extensions.webgl_compressed_texture_atc) {
-    Object.assign(compressedTextureFormats, {
+    extend(compressedTextureFormats, {
       'rgb arc': GL_COMPRESSED_RGB_ATC_WEBGL,
       'rgba atc explicit alpha': GL_COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL,
       'rgba atc interpolated alpha': GL_COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL
@@ -4820,7 +4835,7 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
   }
 
   if (extensions.webgl_compressed_texture_pvrtc) {
-    Object.assign(compressedTextureFormats, {
+    extend(compressedTextureFormats, {
       'rgb pvrtc 4bppv1': GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG,
       'rgb pvrtc 2bppv1': GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG,
       'rgba pvrtc 4bppv1': GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG,
@@ -4913,7 +4928,7 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
     this.needsListeners = false
   }
 
-  Object.assign(PixelInfo.prototype, {
+  extend(PixelInfo.prototype, {
     parseFlags: function (options) {
       if (typeof options !== 'object' || !options) {
         return
@@ -5387,7 +5402,7 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
     this.mipmapHint = GL_DONT_CARE
   }
 
-  Object.assign(TexParams.prototype, {
+  extend(TexParams.prototype, {
     parse: function (options) {
       if (typeof options !== 'object' || !options) {
         return
@@ -5874,7 +5889,7 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
     delete textureSet[texture.id]
   }
 
-  Object.assign(REGLTexture.prototype, {
+  extend(REGLTexture.prototype, {
     bind: function () {
       var texture = this
       texture.bindCount += 1
@@ -5931,14 +5946,12 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
 
     reglTexture(options)
 
-    Object.assign(reglTexture, {
-      _reglType: 'texture',
-      _texture: texture,
-      destroy: function () {
-        texture.decRef()
-      }
-    })
-
+    reglTexture._reglType = 'texture'
+    reglTexture._texture = texture
+    reglTexture.destroy = function () {
+      texture.decRef()
+    }
+  
     return reglTexture
   }
 
@@ -5980,7 +5993,7 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
   }
 }
 
-},{"./check":3,"./is-ndarray":16,"./is-typed-array":17,"./load-texture":19,"./parse-dds":20,"./to-half-float":28,"./values":30}],28:[function(require,module,exports){
+},{"./check":3,"./extend":14,"./is-ndarray":17,"./is-typed-array":18,"./load-texture":20,"./parse-dds":21,"./to-half-float":30,"./values":32}],30:[function(require,module,exports){
 module.exports = function convertToHalfFloat (array) {
   var floats = new Float32Array(array)
   var uints = new Uint32Array(floats.buffer)
@@ -6020,31 +6033,36 @@ module.exports = function convertToHalfFloat (array) {
   return ushorts
 }
 
-},{}],29:[function(require,module,exports){
-module.exports = function wrapUniformState () {
+},{}],31:[function(require,module,exports){
+module.exports = function wrapUniformState (stringStore) {
   var uniformState = {}
 
   function defUniform (name) {
-    if (name in uniformState) {
-      return
+    var id = stringStore.id(name)
+    var result = uniformState[id]
+    if (!result) {
+      result = uniformState[id] = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+      ]
     }
-    uniformState[name] = [ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] ]
+    return result
   }
 
   return {
-    uniforms: uniformState,
     def: defUniform
   }
 }
 
-},{}],30:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 module.exports = function (obj) {
   return Object.keys(obj).map(function (key) { return obj[key] })
 }
 
-},{}],31:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 var check = require('./lib/check')
+var extend = require('./lib/extend')
 var getContext = require('./lib/context')
+var createStringStore = require('./lib/strings')
 var wrapExtensions = require('./lib/extension')
 var wrapLimits = require('./lib/limits')
 var wrapBuffers = require('./lib/buffer')
@@ -6079,6 +6097,9 @@ module.exports = function wrapREGL () {
   var gl = args.gl
   var options = args.options
 
+  // Use string store to track string ids
+  var stringStore = createStringStore()
+
   var extensionState = wrapExtensions(gl)
   var extensions = extensionState.extensions
 
@@ -6098,13 +6119,14 @@ module.exports = function wrapREGL () {
     extensions,
     bufferState)
 
-  var uniformState = wrapUniforms()
+  var uniformState = wrapUniforms(stringStore)
 
   var attributeState = wrapAttributes(
     gl,
     extensions,
     limits,
-    bufferState)
+    bufferState,
+    stringStore)
 
   var shaderState = wrapShaders(
     gl,
@@ -6112,7 +6134,8 @@ module.exports = function wrapREGL () {
     uniformState,
     function (program) {
       return compiler.draw(program)
-    })
+    },
+    stringStore)
 
   var drawState = wrapDraw(
     gl,
@@ -6158,6 +6181,7 @@ module.exports = function wrapREGL () {
 
   var compiler = createCompiler(
     gl,
+    stringStore,
     extensions,
     limits,
     bufferState,
@@ -6262,7 +6286,6 @@ module.exports = function wrapREGL () {
     }
   }
 
-  // Compiles a set of procedures for an object
   function compileProcedure (options) {
     check(!!options, 'invalid args to regl({...})')
     check.type(options, 'object', 'invalid args to regl({...})')
@@ -6270,7 +6293,7 @@ module.exports = function wrapREGL () {
     var hasDynamic = false
 
     function flattenNestedOptions (options) {
-      var result = Object.assign({}, options)
+      var result = extend({}, options)
       delete result.uniforms
       delete result.attributes
 
@@ -6355,7 +6378,6 @@ module.exports = function wrapREGL () {
     glState.poll()
   }
 
-  // Clears the currently bound frame buffer
   function clear (options) {
     var clearFlags = 0
 
@@ -6404,7 +6426,7 @@ module.exports = function wrapREGL () {
     }
   }
 
-  return Object.assign(compileProcedure, {
+  return extend(compileProcedure, {
     // Clear current FBO
     clear: clear,
 
@@ -6458,5 +6480,5 @@ module.exports = function wrapREGL () {
   })
 }
 
-},{"./lib/attribute":1,"./lib/buffer":2,"./lib/check":3,"./lib/clock":4,"./lib/compile":6,"./lib/context":10,"./lib/draw":11,"./lib/dynamic":12,"./lib/elements":13,"./lib/extension":14,"./lib/framebuffer":15,"./lib/limits":18,"./lib/raf":21,"./lib/read":22,"./lib/renderbuffer":23,"./lib/shader":24,"./lib/state":26,"./lib/texture":27,"./lib/uniform":29}]},{},[31])(31)
+},{"./lib/attribute":1,"./lib/buffer":2,"./lib/check":3,"./lib/clock":4,"./lib/compile":6,"./lib/context":10,"./lib/draw":11,"./lib/dynamic":12,"./lib/elements":13,"./lib/extend":14,"./lib/extension":15,"./lib/framebuffer":16,"./lib/limits":19,"./lib/raf":22,"./lib/read":23,"./lib/renderbuffer":24,"./lib/shader":25,"./lib/state":27,"./lib/strings":28,"./lib/texture":29,"./lib/uniform":31}]},{},[33])(33)
 });
