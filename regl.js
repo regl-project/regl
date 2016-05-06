@@ -1,5 +1,5 @@
-var check = require('./lib/check')
-var extend = require('./lib/extend')
+var check = require('./lib/util/check')
+var extend = require('./lib/util/extend')
 var getContext = require('./lib/context')
 var createStringStore = require('./lib/strings')
 var wrapExtensions = require('./lib/extension')
@@ -17,8 +17,8 @@ var wrapContext = require('./lib/state')
 var createCompiler = require('./lib/compile')
 var wrapRead = require('./lib/read')
 var dynamic = require('./lib/dynamic')
-var raf = require('./lib/raf')
-var clock = require('./lib/clock')
+var raf = require('./lib/util/raf')
+var clock = require('./lib/util/clock')
 
 var GL_COLOR_BUFFER_BIT = 16384
 var GL_DEPTH_BUFFER_BIT = 256
