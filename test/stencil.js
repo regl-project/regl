@@ -2,8 +2,37 @@ var createContext = require('./util/create-context')
 var createREGL = require('../../regl')
 var tape = require('tape')
 
-var compareFuncs = require('../lib/constants/compareFuncs.json')
-var stencilOps = require('../lib/constants/stencil-ops.json')
+var compareFuncs = {
+  "never": 512,
+  "less": 513,
+  "<": 513,
+  "equal": 514,
+  "=": 514,
+  "==": 514,
+  "===": 514,
+  "lequal": 515,
+  "<=": 515,
+  "greater": 516,
+  ">": 516,
+  "notequal": 517,
+  "!=": 517,
+  "!==": 517,
+  "gequal": 518,
+  ">=": 518,
+  "always": 519
+}
+
+var stencilOps = {
+  "0": 0,
+  "zero": 0,
+  "keep": 7680,
+  "replace": 7681,
+  "increment": 7682,
+  "decrement": 7683,
+  "increment wrap": 34055,
+  "decrement wrap": 34056,
+  "invert": 5386
+}
 
 tape('stencil', function (t) {
   var gl = createContext(16, 16)

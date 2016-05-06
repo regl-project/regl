@@ -2,7 +2,26 @@ var createContext = require('./util/create-context')
 var createREGL = require('../../regl')
 var tape = require('tape')
 
-var depthFuncs = require('../lib/constants/comparefuncs.json')
+var depthFuncs = {
+  "never": 512,
+  "less": 513,
+  "<": 513,
+  "equal": 514,
+  "=": 514,
+  "==": 514,
+  "===": 514,
+  "lequal": 515,
+  "<=": 515,
+  "greater": 516,
+  ">": 516,
+  "notequal": 517,
+  "!=": 517,
+  "!==": 517,
+  "gequal": 518,
+  ">=": 518,
+  "always": 519
+}
+
 
 tape('depth', function (t) {
   var gl = createContext(16, 16)
