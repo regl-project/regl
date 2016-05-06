@@ -6,8 +6,7 @@
   "directories": {
     "example": "example"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "angle-normals": "^1.0.0",
     "baboon-image": "^2.0.0",
@@ -34,7 +33,7 @@
     "tap-browser-color": "^0.1.2",
     "tape": "^4.4.0",
     "through2": "^2.0.1",
-    "uglify-js": "^2.6.2"
+    "vectorize-text": "^3.0.2"
   },
   "scripts": {
     "test": "standard | snazzy && tape test/*.js | faucet",
