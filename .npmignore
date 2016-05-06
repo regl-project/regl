@@ -3,4 +3,4 @@ example/*
 test/*
 www/*
 bin/*
-DEVELOPING.md
+dist/*
