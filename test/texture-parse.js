@@ -69,7 +69,7 @@ tape('texture arg parsing', function (t) {
         flipY: false,
         premultiplyAlpha: false,
         unpackAlignment: 1,
-        colorSpace: gl.BROWSER_DEFAULT_WEBGL,
+        colorSpace: gl.NONE,
         width: 3,
         height: 3,
         channels: 1,
