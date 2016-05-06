@@ -12,12 +12,6 @@ const setupEnvMap = regl({
     gl_FragColor = textureCube(envmap, reflectDir);
   }`,
 
-  vert: `
-  precision mediump float;
-  varying vec3 reflectDir;
-  void main() { gl_Position = vec4(0,0,0,0); }
-  `,
-
   uniforms: {
     envmap: regl.cube(
       'assets/posx.jpg',

@@ -23,12 +23,6 @@ const setupEnvMap = regl({
     gl_FragColor = lookupEnv(reflectDir);
   }`,
 
-  vert: `
-  precision mediump float;
-  varying vec3 reflectDir;
-  void main() { gl_Position = vec4(0,0,0,0); }
-  `,
-
   uniforms: {
     envmap: regl.texture('assets/ogd-oregon-360.jpg'),
 
@@ -78,11 +72,10 @@ const drawBunny = regl({
   uniform mat4 projection, view, invView;
   varying vec3 reflectDir;
   void main() {
-    vec4 eye = invView * vec4(0, 0, 0, 1);
-    reflectDir = reflect(
-      normalize(position.xyz - eye.xyz / eye.w),
-      normal);
-    gl_Position = projection * view * vec4(position, 1);
+    vec4 cameraPosition = view * vec4(position, 1);
+    vec3 eye = normalize(position - invView[3].xyz / invView[3].w);
+    reflectDir = reflect(eye, normal);
+    gl_Position = projection * cameraPosition;
   }`,
 
   attributes: {
