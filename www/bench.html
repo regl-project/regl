@@ -894,6 +894,16 @@ function ShaderError (fileNumber, lineNumber, message) {
   this.message = message
 }
 
+function guessFileName () {
+  var error = new Error()
+  var stack = error.stack
+  var pat = /at compileProcedure.*\n\s+at.*\((.*)\)/.exec(stack)
+  if (pat) {
+    return pat[1]
+  }
+  return 'unknown'
+}
+
 function parseSource (source) {
   var lines = source.split('\n')
   var annotated = []
@@ -903,6 +913,7 @@ function parseSource (source) {
     unknown: new ShaderFile(),
     0: new ShaderFile()
   }
+  files.unknown.name = files[0].name = guessFileName()
   files.unknown.lines.push(new ShaderLine(0, ''))
   for (var i = 0; i < lines.length; ++i) {
     var line = lines[i]
