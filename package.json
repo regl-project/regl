@@ -12,12 +12,14 @@
   "devDependencies": {
     "angle-normals": "^1.0.0",
     "baboon-image": "^2.0.0",
+    "bl": "^1.1.2",
     "browserify": "^13.0.0",
     "budo": "^8.1.0",
     "bunny": "^1.0.1",
     "canvas-fit": "^1.5.0",
     "canvas-orbit-camera": "^1.0.2",
     "coverify": "^1.4.1",
+    "falafel": "^1.2.0",
     "faucet": "0.0.1",
     "gl": "^3.0.3",
     "gl-mat4": "^1.1.4",
@@ -32,6 +34,7 @@
     "standard": "^6.0.7",
     "tap-browser-color": "^0.1.2",
     "tape": "^4.4.0",
+    "through2": "^2.0.1",
     "uglify-js": "^2.6.2"
   },
   "scripts": {

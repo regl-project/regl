@@ -468,6 +468,8 @@ module.exports = function wrapBufferState (gl) {
 var isTypedArray = require('./is-typed-array')
 var extend = require('./extend')
 
+var GL_COMPILE_STATUS
+
 function raise (message) {
   var error = new Error('(regl) ' + message)
   console.error(error)
@@ -524,17 +526,195 @@ function checkOneOf (value, list, message) {
   }
 }
 
+function leftPad (str, n) {
+  str = str + ''
+  while (str.length < n) {
+    str = ' ' + str
+  }
+  return str
+}
+
+function ShaderFile () {
+  this.name = 'unknown'
+  this.lines = []
+  this.index = {}
+  this.hasErrors = false
+}
+
+function ShaderLine (number, line) {
+  this.number = number
+  this.line = line
+  this.errors = []
+}
+
+function ShaderError (fileNumber, lineNumber, message) {
+  this.file = fileNumber
+  this.line = lineNumber
+  this.message = message
+}
+
+function parseSource (source) {
+  var lines = source.split('\n')
+  var annotated = []
+  var lineNumber = 1
+  var fileNumber = 0
+  var files = {
+    unknown: new ShaderFile(),
+    0: new ShaderFile()
+  }
+  files.unknown.lines.push(new ShaderLine(0, ''))
+  for (var i = 0; i < lines.length; ++i) {
+    var line = lines[i]
+    var parts = /^\s*\#\s*(\w+)\s+(.+)\s*$/.exec(line)
+    if (parts) {
+      switch(parts[1]) {
+        case 'line':
+          var lineNumberInfo = /(\d+)(\s+\d+)?/.exec(parts[2])
+          if (lineNumberInfo) {
+            lineNumber = lineNumberInfo[1] | 0
+            if (lineNumberInfo[2]) {
+              fileNumber = lineNumberInfo[2] | 0
+              if (!(fileNumber in files)) {
+                files[fileNumber] = new ShaderFile()
+              }
+            }
+          }
+          break
+        case 'define':
+          var nameInfo = /SHADER_NAME(_B64)?\s+(.*)$/.exec(parts[2])
+          if (nameInfo) {
+            files[fileNumber].name = (nameInfo[1]
+                ? btoa(nameInfo[2])
+                : nameInfo[2])
+          }
+          break
+      }
+    }
+    files[fileNumber].lines.push(new ShaderLine(lineNumber++, line))
+  }
+  Object.keys(files).forEach(function (fileNumber) {
+    var file = files[fileNumber]
+    file.lines.forEach(function (line) {
+      file.index[line.number] = line
+    })
+  })
+  return files
+}
+
+function parseErrorLog (errLog) {
+  var result = []
+  errLog.split('\n').forEach(function (errMsg) {
+    var parts = /^ERROR\:\s+(\d+)\:(\d+)\:\s*(.*)$/.exec(errMsg)
+    if (parts) {
+      result.push(new ShaderError(
+        parts[1] | 0,
+        parts[2] | 0,
+        parts[3].trim()))
+    } else if (errMsg.length > 0) {
+      result.push(new ShaderError('unknown', 0, errMsg))
+    }
+  })
+  return result
+}
+
+function annotateFiles (files, errors) {
+  errors.forEach(function (error) {
+    var file = files[error.file]
+    if (file) {
+      var line = file.index[error.line]
+      if (line) {
+        line.errors.push(error)
+        file.hasErrors = true
+        return
+      }
+    }
+    files.unknown.hasErrors = true
+    files.unknown.lines[0].errors.push(error)
+  })
+}
+
 function checkShaderError (gl, shader, source, type) {
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     var errLog = gl.getShaderInfoLog(shader)
-    check.raise('Error compiling shader:\n' + errLog)
+    var typeName = type === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex'
+    var files = parseSource(source)
+    var errors = parseErrorLog(errLog)
+    annotateFiles(files, errors)
+
+    Object.keys(files).forEach(function (fileNumber) {
+      var file = files[fileNumber]
+      if (!file.hasErrors) {
+        return
+      }
+
+      var strings = ['']
+      var styles = ['']
+
+      function push (str, style) {
+        strings.push(str)
+        styles.push(style || '')
+      }
+
+      push('file number ' + fileNumber + ': ' + file.name + '\n', 'color:red;text-decoration:underline;font-weight:bold')
+
+      file.lines.forEach(function (line) {
+        if (line.errors.length > 0) {
+          push(leftPad(line.number, 4) + '|  ', 'background-color:yellow; font-weight:bold')
+          push(line.line + '\n', 'color:red; background-color:yellow; font-weight:bold')
+
+          // try to guess token
+          var offset = 0
+          line.errors.forEach(function (error) {
+
+            var message = error.message
+            var token = /^\s*\'(.*)\'\s*\:\s*(.*)$/.exec(message)
+            if (token) {
+              var tokenPat = token[1]
+              message = token[2]
+              switch (tokenPat) {
+                case 'assign':
+                  tokenPat = '='
+                  break
+              }
+              offset = Math.max(line.line.indexOf(tokenPat, offset), 0)
+            } else {
+              offset = 0
+            }
+
+            push(leftPad('| ', 6))
+            push(leftPad('^^^', offset + 3) + '\n', 'font-weight:bold')
+            push(leftPad('| ', 6))
+            push(message + '\n', 'font-weight:bold')
+          })
+          push(leftPad('| ', 6) + '\n')
+        } else {
+          push(leftPad(line.number, 4) + '|  ')
+          push(line.line + '\n', 'color:red')
+        }
+      })
+
+      styles[0] = strings.join('%c')
+
+      console.log.apply(console, styles)
+    })
+
+    check.raise('Error compiling ' + typeName + ' shader, ' + files[0].name)
   }
 }
 
-function checkLinkError (gl, program) {
+function checkLinkError (gl, program, fragShader, vertShader) {
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
     var errLog = gl.getProgramInfoLog(program)
-    check.raise('Error linking program:\n' + errLog)
+    var fragParse = parseSource(fragShader)
+    var vertParse = parseSource(vertShader)
+
+    var header = 'Error linking program, vertex shader: ' +
+      vertParse[0].name + ', fragment shader: ' + fragParse[0].name
+
+    console.log('%c' + header + '\n%c' + errLog,
+      'color:red;text-decoration:underline;font-weight:bold',
+      'color:red')
+    check.raise(header)
   }
 }
 
@@ -4176,7 +4356,11 @@ module.exports = function wrapShaderState (
     gl.attachShader(program, fragShader)
     gl.attachShader(program, vertShader)
     gl.linkProgram(program)
-    check.linkError(gl, program)
+    check.linkError(
+      gl,
+      program,
+      stringStore.str(desc.fragId),
+      stringStore.str(desc.vertId))
 
     // -------------------------------
     // grab uniforms

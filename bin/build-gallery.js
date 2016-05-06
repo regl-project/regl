@@ -1,6 +1,7 @@
 var fs = require('fs')
 var glob = require('glob')
 var browserify = require('browserify')
+var removeCheck = require('./remove-check')
 var ncp = require('ncp')
 var mkdirp = require('mkdirp')
 var ClosureCompiler = require('google-closure-compiler').compiler
@@ -52,6 +53,7 @@ mkdirp('www/gallery', function (err) {
         debug: true
       })
       b.add(file)
+      b.transform(removeCheck)
       b.bundle(function (err, bundle) {
         if (err) {
           throw err

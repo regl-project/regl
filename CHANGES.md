@@ -3,14 +3,11 @@
 ## Planned
 
 * Improve readability of generated code
-* Use numeric ids instead of strings for shader sources
-* Better error messages for shader compilation failure
 * Change buffer and texture APIs to separate data from rest of options
 * Add in place update methods to buffers and textures
 * Add support for polling buffers and animated GIFs (useful for web audio)
 * Support more DDS texture formats (HDR, PVRTC, etc.)
 * Cubic framebuffer objects
-* Browserify transform to remove all runtime checks
 * Benchmark suite
 * More unit tests
 * Fix CI problems
@@ -29,12 +26,16 @@
 
 ## Next
 
+* Use numeric ids instead of strings for shader sources
+* shader error messages are better
+* Browserify transform to remove all runtime checks
+
 ## 0.3.0
 
 * added renderbuffers (via regl.renderbuffer)
 * added framebuffer objects (via regl.framebuffer)
 * regl.buffer and regl.elements can now take ndarray-like inputs
-* Switch to using Google closure compiler for minified builds
+* witch to using Google closure compiler for minified builds
 
 ## 0.2.0
 
