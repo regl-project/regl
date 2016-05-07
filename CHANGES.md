@@ -28,9 +28,10 @@
 ## Next
 
 * Use numeric ids instead of strings for shader sources
-* shader error messages are better
+* Shader error messages are better
 * Browserify transform to remove all runtime checks
 * Shader linking is deferred until draw call, enables partial shaders in scope
+* Error on missing attributes
 
 ## 0.3.0
 
