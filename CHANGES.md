@@ -3,7 +3,6 @@
 ## Planned
 
 * Improve readability of generated code
-* Improve error messages for missing inputs (uniforms, attributes, count)
 * Change buffer and texture APIs to separate data from rest of options
 * Add in place update methods to buffers and textures
 * Add support for polling buffers and animated GIFs (useful for web audio)

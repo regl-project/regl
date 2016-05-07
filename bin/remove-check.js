@@ -33,18 +33,18 @@ module.exports = function () {
               node.update('')
               return
             }
-          break
+            break
           case 'VariableDeclaration':
             if (node.declarations.length === 1 &&
                 isCheckRequire(node.declarations[0])) {
               node.update('')
               return
             }
-          break
+            break
         }
       })
       this.push(result.toString())
-    } catch(e) {
+    } catch (e) {
       this.push(data)
     }
     done()

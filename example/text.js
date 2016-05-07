@@ -12,7 +12,7 @@ const feedBackTexture = regl.texture({
   copy: true,
   min: 'linear',
   mag: 'linear'
- })
+})
 
 const drawFeedback = regl({
   frag: `
@@ -34,7 +34,6 @@ const drawFeedback = regl({
     uv = position;
     gl_Position = vec4(2.0 * position - 1.0, 0, 1);
   }`,
-
 
   attributes: {
     position: regl.buffer([-2, 0, 0, -2, 2, 2])

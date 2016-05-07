@@ -36,7 +36,6 @@ module.exports = function wrapREGL () {
   var gl = args.gl
   var options = args.options
 
-  // Use string store to track string ids
   var stringStore = createStringStore()
 
   var extensionState = wrapExtensions(gl)
@@ -137,7 +136,6 @@ module.exports = function wrapREGL () {
 
   var canvas = gl.canvas
 
-  // raf stuff
   var rafCallbacks = []
   var activeRAF = 0
   function handleRAF () {
@@ -205,7 +203,6 @@ module.exports = function wrapREGL () {
     canvas.addEventListener(CONTEXT_RESTORED_EVENT, handleContextRestored, false)
   }
 
-  // Resource destructuion
   function destroy () {
     stopRAF()
 
@@ -256,7 +253,6 @@ module.exports = function wrapREGL () {
       return result
     }
 
-    // First we separate the options into static and dynamic components
     function separateDynamic (object) {
       var staticItems = {}
       var dynamicItems = {}
@@ -335,7 +331,6 @@ module.exports = function wrapREGL () {
   function clear (options) {
     var clearFlags = 0
 
-    // Update context state
     poll()
 
     var c = options.color
@@ -356,7 +351,6 @@ module.exports = function wrapREGL () {
     gl.clear(clearFlags)
   }
 
-  // Registers another requestAnimationFrame callback
   function frame (cb) {
     rafCallbacks.push(cb)
 

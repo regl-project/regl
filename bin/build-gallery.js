@@ -46,7 +46,6 @@ mkdirp('www/gallery', function (err) {
   glob('example/*.js', {}, function (err, files) {
     if (err) {
       throw err
-      return
     }
     files.forEach(function (file) {
       var b = browserify({
@@ -57,7 +56,6 @@ mkdirp('www/gallery', function (err) {
       b.bundle(function (err, bundle) {
         if (err) {
           throw err
-          return
         }
         console.log('bundled', file)
         minifyAndGenPage(file, bundle)
@@ -114,6 +112,9 @@ function writePage (file, bundle) {
         </body>
       </html>`,
     function (err) {
+      if (err) {
+        throw err
+      }
       console.log('wrote page', pageName(file))
     })
 }
