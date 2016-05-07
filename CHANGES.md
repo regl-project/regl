@@ -31,7 +31,7 @@
 * Shader error messages are better
 * Browserify transform to remove all runtime checks
 * Shader linking is deferred until draw call, enables partial shaders in scope
-* Error on missing attributes
+* Report errors for missing attributes, uniforms and vertex count
 
 ## 0.3.0
 
