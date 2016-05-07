@@ -3,25 +3,24 @@ var createREGL = require('../../regl')
 var tape = require('tape')
 
 var depthFuncs = {
-  "never": 512,
-  "less": 513,
-  "<": 513,
-  "equal": 514,
-  "=": 514,
-  "==": 514,
-  "===": 514,
-  "lequal": 515,
-  "<=": 515,
-  "greater": 516,
-  ">": 516,
-  "notequal": 517,
-  "!=": 517,
-  "!==": 517,
-  "gequal": 518,
-  ">=": 518,
-  "always": 519
+  'never': 512,
+  'less': 513,
+  '<': 513,
+  'equal': 514,
+  '=': 514,
+  '==': 514,
+  '===': 514,
+  'lequal': 515,
+  '<=': 515,
+  'greater': 516,
+  '>': 516,
+  'notequal': 517,
+  '!=': 517,
+  '!==': 517,
+  'gequal': 518,
+  '>=': 518,
+  'always': 519
 }
-
 
 tape('depth', function (t) {
   var gl = createContext(16, 16)
@@ -91,14 +90,22 @@ tape('depth', function (t) {
 
     function depthTest (x, y) {
       switch (depthFuncs[flags.func]) {
-        case gl.NEVER: return false
-        case gl.LESS: return x < y
-        case gl.LEQUAL: return x <= y
-        case gl.EQUAL: return x === y
-        case gl.GEQUAL: return x >= y
-        case gl.GREATER: return x > y
-        case gl.NOTEQUAL: return x !== y
-        case gl.ALWAYS: return true
+        case gl.NEVER:
+          return false
+        case gl.LESS:
+          return x < y
+        case gl.LEQUAL:
+          return x <= y
+        case gl.EQUAL:
+          return x === y
+        case gl.GEQUAL:
+          return x >= y
+        case gl.GREATER:
+          return x > y
+        case gl.NOTEQUAL:
+          return x !== y
+        case gl.ALWAYS:
+          return true
         default:
           t.fail('invalid depth func: ' + flags.func)
       }

@@ -15,7 +15,6 @@ browserify(INPUT_FILE, { standalone: 'initREGL' })
   .bundle()
   .pipe(fs.createWriteStream(UNCHECKED_FILE))
   .on('close', function () {
-
     console.log('minifying script: ', UNCHECKED_FILE)
 
     var closureCompiler = new ClosureCompiler({

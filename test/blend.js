@@ -3,31 +3,30 @@ var createContext = require('./util/create-context')
 var createREGL = require('../regl')
 
 var blendFuncs = {
-  "0":0,
-  "1":1,
-  "zero":0,
-  "one":1,
-  "src color": 768,
-  "one minus src color":769,
-  "src alpha":770,
-  "one minus src alpha":771,
-  "dst color":774,
-  "one minus dst color":775,
-  "dst alpha":772,
-  "one minus dst alpha":773,
-  "constant color": 32769,
-  "one minus constant color": 32770,
-  "constant alpha": 32771,
-  "one minus constant alpha": 32772,
-  "src alpha saturate": 776
+  '0': 0,
+  '1': 1,
+  'zero': 0,
+  'one': 1,
+  'src color': 768,
+  'one minus src color': 769,
+  'src alpha': 770,
+  'one minus src alpha': 771,
+  'dst color': 774,
+  'one minus dst color': 775,
+  'dst alpha': 772,
+  'one minus dst alpha': 773,
+  'constant color': 32769,
+  'one minus constant color': 32770,
+  'constant alpha': 32771,
+  'one minus constant alpha': 32772,
+  'src alpha saturate': 776
 }
 
 var blendEquations = {
-  "add":32774,
-  "subtract":32778,
-  "reverse subtract":32779
+  'add': 32774,
+  'subtract': 32778,
+  'reverse subtract': 32779
 }
-
 
 tape('blend', function (t) {
   var gl = createContext(16, 16)

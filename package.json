@@ -70,7 +70,10 @@
     "url": "https://github.com/mikolalysenko/regl/issues"
   },
   "standard": {
-    "ignore": "dist/*"
+    "ignore": [
+      "dist/*",
+      "www/*"
+    ]
   },
   "homepage": "https://mikolalysenko.github.io/regl"
 }
