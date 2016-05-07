@@ -296,15 +296,30 @@ module.exports = function wrapREGL () {
       return EMPTY_ARRAY
     }
 
+    check.saveDrawInfo(opts, uniforms, stringStore)
+
     function REGLCommand (args, body) {
+      if (typeof args === 'function') {
+        return scope(null, args)
+      } else if (typeof body === 'function') {
+        return scope(args, body)
+      }
+
+      // Runtime shader check.  Removed in production builds
+      check.drawOk(
+        drawState,
+        shaderState,
+        uniformState,
+        opts._commandRef,
+        opts._fragId,
+        opts._vertId,
+        opts._uniformSet,
+        opts._hasCount)
+
       if (typeof args === 'number') {
         return batch(args | 0, reserve(args | 0))
       } else if (Array.isArray(args)) {
         return batch(args.length, args)
-      } else if (typeof args === 'function') {
-        return scope(null, args)
-      } else if (typeof body === 'function') {
-        return scope(args, body)
       }
       return draw(args)
     }
