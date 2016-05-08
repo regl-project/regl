@@ -2,8 +2,9 @@
 
 ## Planned
 
+* Implicit coercion for vertex buffers
 * Improve readability of generated code
-* Change buffer and texture APIs to separate data from rest of options
+* Change buffer and texture APIs to separate data from rest of options (?)
 * Add in place update methods to buffers and textures
 * Add support for polling buffers and animated GIFs (useful for web audio)
 * Support more DDS texture formats (HDR, PVRTC, etc.)
@@ -13,6 +14,7 @@
 * Fix CI problems
 * Reduce file size
 * Web site
+* Consider some strategy for
 * Recipe book/example set
     + Minecraft example
     + Globe
