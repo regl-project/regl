@@ -115,7 +115,7 @@ tape('batch mode attributes', function (t) {
 
   // check offsets
   checkPixmap({
-    position: [0, 0, 1, 0],
+    position: regl.buffer([0, 0, 1, 0]),
     primitive: 'point',
     count: 1,
     offset: 1,
@@ -129,7 +129,7 @@ tape('batch mode attributes', function (t) {
   ], 'offset')
 
   checkPixmap([{
-    position: [0, 0, 1, 0],
+    position: regl.buffer([0, 0, 1, 0]),
     primitive: 'point',
     count: 1,
     offset: 1,
