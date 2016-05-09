@@ -1,3 +1,4 @@
+var extend = require('../lib/util/extend')
 var createContext = require('./util/create-context')
 var createREGL = require('../../regl')
 var tape = require('tape')
@@ -80,7 +81,7 @@ tape('viewport', function (t) {
     count: 6
   }
 
-  var dynamicDraw = regl(Object.assign({
+  var dynamicDraw = regl(extend({
     viewport: regl.prop('viewport')
   }, staticOptions))
 
@@ -95,7 +96,7 @@ tape('viewport', function (t) {
   })
 
   permutations.forEach(function (params) {
-    var staticDraw = regl(Object.assign({}, params, staticOptions))
+    var staticDraw = regl(extend(extend({}, params), staticOptions))
     staticDraw()
     testFlags('static - ', params)
   })

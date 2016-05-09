@@ -177,7 +177,7 @@ tape('blend', function (t) {
   })
 
   permutations.forEach(function (params) {
-    var staticDraw = regl(Object.assign({
+    var staticDraw = regl(extend({
       blend: params
     }, staticOptions))
     staticDraw()

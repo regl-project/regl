@@ -1,5 +1,6 @@
 var createContext = require('./util/create-context')
-var createREGL = require('../../regl')
+var createREGL = require('../regl')
+var extend = require('../lib/util/extend')
 var tape = require('tape')
 
 tape('culling', function (t) {
@@ -57,7 +58,7 @@ tape('culling', function (t) {
     count: 6
   }
 
-  var dynamicDraw = regl(Object.assign({
+  var dynamicDraw = regl(extend({
     cull: {
       enable: regl.prop('enable'),
       face: regl.prop('face')
@@ -75,7 +76,7 @@ tape('culling', function (t) {
   })
 
   permutations.forEach(function (params) {
-    var staticDraw = regl(Object.assign({
+    var staticDraw = regl(extend({
       cull: params
     }, staticOptions))
     staticDraw()
