@@ -11,6 +11,7 @@
 * Add support for polling buffers and animated GIFs (useful for web audio)
 * Cubic framebuffer objects
 * More unit tests, improve code coverage
+* Kill all garbage collection
 * Benchmark suite
 * Optimize generated code
 * Optimize bundle size, remove string constants
