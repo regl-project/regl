@@ -1,4 +1,5 @@
 var tape = require('tape')
+var extend = require('../lib/util/extend')
 var createContext = require('./util/create-context')
 var createREGL = require('../regl')
 
@@ -125,7 +126,7 @@ tape('blend', function (t) {
     count: 6
   }
 
-  var dynamicDraw = regl(Object.assign({
+  var dynamicDraw = regl(extend({
     blend: {
       enable: regl.prop('enable'),
       color: regl.prop('color'),
