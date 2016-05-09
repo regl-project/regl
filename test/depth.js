@@ -1,5 +1,6 @@
+var extend = require('../lib/util/extend')
 var createContext = require('./util/create-context')
-var createREGL = require('../../regl')
+var createREGL = require('../regl')
 var tape = require('tape')
 
 var depthFuncs = {
@@ -24,6 +25,7 @@ var depthFuncs = {
 
 tape('depth', function (t) {
   var gl = createContext(5, 5)
+  console.log(gl)
   var regl = createREGL(gl)
 
   // TODO: test depth range
@@ -227,7 +229,7 @@ tape('depth', function (t) {
   }
 
   function testStatic (cdepth, depths, flags) {
-    var drawStatic = regl(Object.assign({}, desc, {depth: flags}))
+    var drawStatic = regl(extend(extend({}, desc), {depth: flags}))
     regl.clear({
       color: [0, 0, 0, 1],
       depth: cdepth

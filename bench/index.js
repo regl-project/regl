@@ -1,9 +1,10 @@
 /* globals performance */
 var CASES = require('./list')
+var extend = require('../lib/util/extend')
 var regl = require('../regl')()
 
 var container = document.createElement('div')
-Object.assign(container.style, {
+extend(container.style, {
   'position': 'absolute',
   'left': '0px',
   'top': '0px',
@@ -119,7 +120,7 @@ function button (text, onClick) {
 
   var statNode = document.createElement('h5')
   statNode.innerText = 'n:0, t:(---), m:(---)'
-  Object.assign(statNode.style, {
+  extend(statNode.style, {
     'margin': '4px',
     'display': 'inline'
   })

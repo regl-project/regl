@@ -1,5 +1,6 @@
+var extend = require('../lib/util/extend')
 var createContext = require('./util/create-context')
-var createREGL = require('../../regl')
+var createREGL = require('../regl')
 var tape = require('tape')
 
 var compareFuncs = {
@@ -154,7 +155,7 @@ tape('stencil', function (t) {
     count: 6
   }
 
-  var dynamicDraw = regl(Object.assign({
+  var dynamicDraw = regl(extend({
     stencil: {
       enable: regl.prop('enable'),
       func: regl.prop('func'),
@@ -175,7 +176,7 @@ tape('stencil', function (t) {
   })
 
   permutations.forEach(function (params) {
-    var staticDraw = regl(Object.assign({
+    var staticDraw = regl(extend({
       stencil: params
     }, staticOptions))
     staticDraw()

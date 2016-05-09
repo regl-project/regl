@@ -1,3 +1,4 @@
+var extend = require('../lib/util/extend')
 var createContext = require('./util/create-context')
 var createREGL = require('../../regl')
 var tape = require('tape')
@@ -26,13 +27,13 @@ tape('misc. state', function (t) {
     {
       dither: true,
       frontFace: 'ccw',
-      lineWidth: 5,
+      lineWidth: regl.limits.lineWidthDims[1],
       colorMask: [false, true, false, true]
     },
     {
       dither: false,
       frontFace: 'cw',
-      lineWidth: 1,
+      lineWidth: regl.limits.lineWidthDims[0],
       colorMask: [true, true, false, true]
     }
   ]
@@ -68,7 +69,7 @@ tape('misc. state', function (t) {
     count: 6
   }
 
-  var dynamicDraw = regl(Object.assign({
+  var dynamicDraw = regl(extend({
     dither: regl.prop('dither'),
     frontFace: regl.prop('frontFace'),
     lineWidth: regl.prop('lineWidth'),
@@ -86,7 +87,7 @@ tape('misc. state', function (t) {
   })
 
   permutations.forEach(function (params) {
-    var staticDraw = regl(Object.assign({}, params, staticOptions))
+    var staticDraw = regl(extend(extend({}, params), staticOptions))
     staticDraw()
     testFlags('static - ', params)
   })
