@@ -3,7 +3,7 @@ var createREGL = require('../../regl')
 var tape = require('tape')
 
 tape('elements', function (t) {
-  var regl = createREGL(createContext(16, 16))
+  var regl = createREGL(createContext(7, 7))
   var elements = regl.elements([
     [0, 2],
     [1, 3]
@@ -112,7 +112,7 @@ tape('elements', function (t) {
     var expected = []
 
     function expect (r, g, b, a) {
-      var ptr = 4 * (16 * i + j)
+      var ptr = 4 * (7 * i + j)
       var ir = pixels[ptr]
       var ig = pixels[ptr + 1]
       var ib = pixels[ptr + 2]
@@ -124,8 +124,8 @@ tape('elements', function (t) {
       }
     }
 
-    for (i = 0; i < 16; ++i) {
-      for (j = 0; j < 16; ++j) {
+    for (i = 0; i < 7; ++i) {
+      for (j = 0; j < 7; ++j) {
         cb(i, j, expect)
       }
     }
@@ -135,7 +135,7 @@ tape('elements', function (t) {
 
   function testPlus (msg) {
     testImage(function (i, j, expect) {
-      if (i === 7 || j === 7) {
+      if (i === 3 || j === 3) {
         expect(0, 0, 255, 255)
       } else {
         expect(255, 0, 0, 255)
@@ -145,7 +145,7 @@ tape('elements', function (t) {
 
   function testBar (msg) {
     testImage(function (i, j, expect) {
-      if (i === 7) {
+      if (i === 3) {
         expect(0, 0, 255, 255)
       } else {
         expect(255, 0, 0, 255)
