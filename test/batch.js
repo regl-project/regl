@@ -82,7 +82,7 @@ tape('batch', function (t) {
       uniforms: {
         offset: function (args, index) {
           var p = points[index]
-          return [(p[0] + 0.5) / 2.25 - 1.0, (p[1] + 0.5) / 2.25 - 1.0]
+          return [(p[0] - 2.0) / 2.1, (p[1] - 2.0) / 2.1]
         }
       },
 
@@ -116,7 +116,7 @@ tape('batch', function (t) {
 
     drawBatch(points.map(function (p) {
       return {
-        offset: [(p[0] + 0.5) / 2.25 - 1.0, (p[1] + 0.5) / 2.25 - 1.0]
+        offset: [(p[0] - 2.0) / 2.1, (p[1] - 2.0) / 2.1]
       }
     }))
     runTest()
