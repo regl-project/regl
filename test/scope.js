@@ -63,13 +63,13 @@ tape('scope', function (t) {
     position: regl.buffer([0, 0, 4, 0, 4, 4, 0, 4]),
     count: 4,
     offset: 0,
-    primitive: 'point'
+    primitive: 'points'
   }, function () {
     scope({
       position: regl.buffer([2, 2]),
       count: 1,
       offset: 0,
-      primitive: 'point'
+      primitive: 'points'
     })
     checkPixmap([
       0, 0, 0, 0, 0,
@@ -83,7 +83,7 @@ tape('scope', function (t) {
       position: regl.buffer([3, 3]),
       count: 1,
       offset: 0,
-      primitive: 'point'
+      primitive: 'points'
     }])
     checkPixmap([
       0, 0, 0, 0, 0,
