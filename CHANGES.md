@@ -2,7 +2,6 @@
 
 ## Planned
 
-* Fix CI problems
 * Add a mechanism for requiring/selectively disabling extensions
 * Upgrade vertex pointer format, allow for implicit conversion from arrays
 * Improve validation of vertex attributes
@@ -30,6 +29,7 @@
 
 ## Next
 
+* Circle CI finally passes!
 * Use numeric ids instead of strings for shader sources
 * Shader error messages are better
 * Browserify transform to remove all runtime checks
