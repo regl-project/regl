@@ -4,7 +4,7 @@ var tape = require('tape')
 
 tape('line', function (t) {
   setTimeout(function () {
-    var regl = createREGL(createContext(16, 16))
+    var regl = createREGL(createContext(7, 7))
 
     regl.clear({
       color: [1, 0, 0, 1],
@@ -44,12 +44,12 @@ tape('line', function (t) {
     var got = []
     var expect = []
 
-    for (var i = 0; i < 16; ++i) {
+    for (var i = 0; i < 7; ++i) {
       var rowGot = []
       var rowExpect = []
-      for (var j = 0; j < 16; ++j) {
-        var ptr = 4 * (16 * i + j)
-        if (i === 7) {
+      for (var j = 0; j < 7; ++j) {
+        var ptr = 4 * (7 * i + j)
+        if (i === 3) {
           rowExpect.push('*')
         } else {
           rowExpect.push(' ')
