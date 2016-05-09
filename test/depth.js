@@ -23,7 +23,7 @@ var depthFuncs = {
 }
 
 tape('depth', function (t) {
-  var gl = createContext(16, 16)
+  var gl = createContext(5, 5)
   var regl = createREGL(gl)
 
   // TODO: test depth range
@@ -121,9 +121,9 @@ tape('depth', function (t) {
       }
     }
 
-    for (i = 0; i < 16; ++i) {
-      for (j = 0; j < 16; ++j) {
-        var ptr = 4 * (16 * i + j)
+    for (i = 0; i < 5; ++i) {
+      for (j = 0; j < 5; ++j) {
+        var ptr = 4 * (5 * i + j)
 
         var r = pixels[ptr]
         var g = pixels[ptr + 1]
@@ -142,7 +142,7 @@ tape('depth', function (t) {
         var di = depths[0]
         var dj = depths[1]
 
-        if (i === 7 && j === 7) {
+        if (i === 2 && j === 2) {
           if (!flags.enable) {
             expect('green')
           } else if (!flags.mask) {
@@ -166,13 +166,13 @@ tape('depth', function (t) {
               expect('black')
             }
           }
-        } else if (i === 7) {
+        } else if (i === 2) {
           if (!flags.enable || depthTest(di, cdepth)) {
             expect('red')
           } else {
             expect('black')
           }
-        } else if (j === 7) {
+        } else if (j === 2) {
           if (!flags.enable || depthTest(dj, cdepth)) {
             expect('green')
           } else {
