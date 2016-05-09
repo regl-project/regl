@@ -1,64 +1,8 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.initREGL = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var glTypes = require('./constants/dtypes.json')
-var extend = require('./extend')
+
 
 var GL_FLOAT = 5126
-
-function AttributeRecord () {
-  this.pointer = false
-
-  this.x = 0.0
-  this.y = 0.0
-  this.z = 0.0
-  this.w = 0.0
-
-  this.buffer = null
-  this.size = 0
-  this.normalized = false
-  this.type = GL_FLOAT
-  this.offset = 0
-  this.stride = 0
-  this.divisor = 0
-}
-
-extend(AttributeRecord.prototype, {
-  equals: function (other, size) {
-    if (!this.pointer) {
-      return !other.pointer &&
-        this.x === other.x &&
-        this.y === other.y &&
-        this.z === other.z &&
-        this.w === other.w
-    } else {
-      return other.pointer &&
-        this.buffer === other.buffer &&
-        this.size === size &&
-        this.normalized === other.normalized &&
-        this.type === other.type &&
-        this.offset === other.offset &&
-        this.stride === other.stride &&
-        this.divisor === other.divisor
-    }
-  },
-
-  set: function (other, size) {
-    var pointer = this.pointer = other.pointer
-    if (pointer) {
-      this.buffer = other.buffer
-      this.size = size
-      this.normalized = other.normalized
-      this.type = other.type
-      this.offset = other.offset
-      this.stride = other.stride
-      this.divisor = other.divisor
-    } else {
-      this.x = other.x
-      this.y = other.y
-      this.z = other.z
-      this.w = other.w
-    }
-  }
-})
 
 module.exports = function wrapAttributeState (
   gl,
@@ -66,8 +10,61 @@ module.exports = function wrapAttributeState (
   limits,
   bufferState,
   stringStore) {
-
   var attributeState = {}
+
+  function AttributeRecord () {
+    this.pointer = false
+
+    this.x = 0.0
+    this.y = 0.0
+    this.z = 0.0
+    this.w = 0.0
+
+    this.buffer = null
+    this.size = 0
+    this.normalized = false
+    this.type = GL_FLOAT
+    this.offset = 0
+    this.stride = 0
+    this.divisor = 0
+  }
+
+  function attributeRecordsEqual (left, right, size) {
+    if (!left.pointer) {
+      return !right.pointer &&
+        left.x === right.x &&
+        left.y === right.y &&
+        left.z === right.z &&
+        left.w === right.w
+    } else {
+      return right.pointer &&
+        left.buffer === right.buffer &&
+        left.size === size &&
+        left.normalized === right.normalized &&
+        left.type === right.type &&
+        left.offset === right.offset &&
+        left.stride === right.stride &&
+        left.divisor === right.divisor
+    }
+  }
+
+  function setAttributeRecord (left, right, size) {
+    var pointer = left.pointer = right.pointer
+    if (pointer) {
+      left.buffer = right.buffer
+      left.size = size
+      left.normalized = right.normalized
+      left.type = right.type
+      left.offset = right.offset
+      left.stride = right.stride
+      left.divisor = right.divisor
+    } else {
+      left.x = right.x
+      left.y = right.y
+      left.z = right.z
+      left.w = right.w
+    }
+  }
 
   var NUM_ATTRIBUTES = limits.maxAttributes
   var attributeBindings = new Array(NUM_ATTRIBUTES)
@@ -75,97 +72,22 @@ module.exports = function wrapAttributeState (
     attributeBindings[i] = new AttributeRecord()
   }
 
-  function AttributeStack () {
-    var records = new Array(16)
-    for (var i = 0; i < 16; ++i) {
-      records[i] = new AttributeRecord()
-    }
-    this.records = records
-    this.top = 0
+  function AttributeStack (name) {
+    this.records = []
+    this.name = name
   }
 
-  function pushAttributeStack (stack) {
+  function stackTop (stack) {
     var records = stack.records
-    var top = stack.top
-
-    while (records.length - 1 <= top) {
-      records.push(new AttributeRecord())
-    }
-
-    return records[++stack.top]
+    return records[records.length - 1]
   }
-
-  extend(AttributeStack.prototype, {
-    pushVec: function (x, y, z, w) {
-      var head = pushAttributeStack(this)
-      head.pointer = false
-      head.x = x
-      head.y = y
-      head.z = z
-      head.w = w
-    },
-
-    pushPtr: function (
-      buffer,
-      size,
-      offset,
-      stride,
-      divisor,
-      normalized,
-      type) {
-      var head = pushAttributeStack(this)
-      head.pointer = true
-      head.buffer = buffer
-      head.size = size
-      head.offset = offset
-      head.stride = stride
-      head.divisor = divisor
-      head.normalized = normalized
-      head.type = type
-    },
-
-    pushDyn: function (data) {
-      if (typeof data === 'number') {
-        this.pushVec(data, 0, 0, 0)
-      } else if (Array.isArray(data)) {
-        this.pushVec(data[0], data[1], data[2], data[3])
-      } else {
-        var buffer = bufferState.getBuffer(data)
-        var size = 0
-        var stride = 0
-        var offset = 0
-        var divisor = 0
-        var normalized = false
-        var type = GL_FLOAT
-        if (!buffer) {
-          buffer = bufferState.getBuffer(data.buffer)
-          size = data.size || 0
-          stride = data.stride || 0
-          offset = data.offset || 0
-          divisor = data.divisor || 0
-          normalized = data.normalized || false
-          type = buffer.dtype
-          if ('type' in data) {
-            type = glTypes[data.type]
-          }
-        } else {
-          type = buffer.dtype
-        }
-        this.pushPtr(buffer, size, offset, stride, divisor, normalized, type)
-      }
-    },
-
-    pop: function () {
-      this.top -= 1
-    }
-  })
 
   // ===================================================
   // BIND AN ATTRIBUTE
   // ===================================================
-  function bindAttribute (index, current, next, size) {
-    size = next.size || size
-    if (current.equals(next, size)) {
+  function bindAttributeRecord (index, current, next, insize) {
+    var size = next.size || insize
+    if (attributeRecordsEqual(current, next, size)) {
       return
     }
     if (!next.pointer) {
@@ -192,7 +114,11 @@ module.exports = function wrapAttributeState (
         extInstancing.vertexAttribDivisorANGLE(index, next.divisor)
       }
     }
-    current.set(next, size)
+    setAttributeRecord(current, next, size)
+  }
+
+  function bindAttribute (index, current, attribStack, size) {
+    bindAttributeRecord(index, current, stackTop(attribStack), size)
   }
 
   // ===================================================
@@ -202,26 +128,97 @@ module.exports = function wrapAttributeState (
     var id = stringStore.id(name)
     var result = attributeState[id]
     if (!result) {
-      result = attributeState[id] = new AttributeStack()
+      result = attributeState[id] = new AttributeStack(name)
     }
     return result
+  }
+
+  function createAttributeBox (name) {
+    var stack = [new AttributeRecord()]
+    
+
+    function alloc (data) {
+      var box
+      if (stack.length <= 0) {
+        box = new AttributeRecord()
+      } else {
+        box = stack.pop()
+      }
+      if (typeof data === 'number') {
+        box.pointer = false
+        box.x = data
+        box.y = 0
+        box.z = 0
+        box.w = 0
+      } else if (Array.isArray(data)) {
+        box.pointer = false
+        box.x = data[0]
+        box.y = data[1]
+        box.z = data[2]
+        box.w = data[3]
+      } else {
+        var buffer = bufferState.getBuffer(data)
+        var size = 0
+        var stride = 0
+        var offset = 0
+        var divisor = 0
+        var normalized = false
+        var type = GL_FLOAT
+        if (!buffer) {
+          buffer = bufferState.getBuffer(data.buffer)
+          
+          size = data.size || 0
+          stride = data.stride || 0
+          offset = data.offset || 0
+          divisor = data.divisor || 0
+          normalized = data.normalized || false
+          type = buffer.dtype
+          if ('type' in data) {
+            type = glTypes[data.type]
+          }
+        } else {
+          type = buffer.dtype
+        }
+        box.pointer = true
+        box.buffer = buffer
+        box.size = size
+        box.offset = offset
+        box.stride = stride
+        box.divisor = divisor
+        box.normalized = normalized
+        box.type = type
+      }
+      return box
+    }
+
+    function free (box) {
+      stack.push(box)
+    }
+
+    return {
+      alloc: alloc,
+      free: free
+    }
   }
 
   return {
     bindings: attributeBindings,
     bind: bindAttribute,
-    def: defAttribute
+    bindRecord: bindAttributeRecord,
+    def: defAttribute,
+    box: createAttributeBox,
+    state: attributeState
   }
 }
 
-},{"./constants/dtypes.json":7,"./extend":13}],2:[function(require,module,exports){
+},{"./constants/dtypes.json":5}],2:[function(require,module,exports){
 // Array and element buffer creation
 
-var isTypedArray = require('./is-typed-array')
-var isNDArrayLike = require('./is-ndarray')
+var isTypedArray = require('./util/is-typed-array')
+var isNDArrayLike = require('./util/is-ndarray')
 var arrayTypes = require('./constants/arraytypes.json')
 var bufferTypes = require('./constants/dtypes.json')
-var values = require('./values')
+var values = require('./util/values')
 
 var GL_STATIC_DRAW = 35044
 
@@ -461,121 +458,16 @@ module.exports = function wrapBufferState (gl) {
   }
 }
 
-},{"./constants/arraytypes.json":6,"./constants/dtypes.json":7,"./is-ndarray":16,"./is-typed-array":17,"./values":31}],3:[function(require,module,exports){
-/* globals performance */
-module.exports =
-  (typeof performance !== 'undefined' && performance.now)
-  ? function () { return performance.now() }
-  : function () { return +(new Date()) }
+},{"./constants/arraytypes.json":4,"./constants/dtypes.json":5,"./util/is-ndarray":24,"./util/is-typed-array":25,"./util/values":31}],3:[function(require,module,exports){
 
-},{}],4:[function(require,module,exports){
-var extend = require('./extend')
-
-function slice (x) {
-  return Array.prototype.slice.call(x)
-}
-
-module.exports = function createEnvironment () {
-  // Unique variable id counter
-  var varCounter = 0
-
-  // Linked values are passed from this scope into the generated code block
-  // Calling link() passes a value into the generated scope and returns
-  // the variable name which it is bound to
-  var linkedNames = []
-  var linkedValues = []
-  function link (value) {
-    var name = 'g' + (varCounter++)
-    linkedNames.push(name)
-    linkedValues.push(value)
-    return name
-  }
-
-  // create a code block
-  function block () {
-    var code = []
-    function push () {
-      code.push.apply(code, slice(arguments))
-    }
-
-    var vars = []
-    function def () {
-      var name = 'v' + (varCounter++)
-      vars.push(name)
-
-      if (arguments.length > 0) {
-        code.push(name, '=')
-        code.push.apply(code, slice(arguments))
-        code.push(';')
-      }
-
-      return name
-    }
-
-    return extend(push, {
-      def: def,
-      toString: function () {
-        return [
-          (vars.length > 0 ? 'var ' + vars + ';' : ''),
-          code.join('')
-        ].join('')
-      }
-    })
-  }
-
-  // procedure list
-  var procedures = {}
-  function proc (name) {
-    var args = []
-    function arg () {
-      var name = 'a' + (varCounter++)
-      args.push(name)
-      return name
-    }
-
-    var body = block()
-    var bodyToString = body.toString
-
-    var result = procedures[name] = extend(body, {
-      arg: arg,
-      toString: function () {
-        return [
-          'function(', args.join(), '){',
-          bodyToString(),
-          '}'
-        ].join('')
-      }
-    })
-
-    return result
-  }
-
-  function compile () {
-    var code = ['"use strict";return {']
-    Object.keys(procedures).forEach(function (name) {
-      code.push('"', name, '":', procedures[name].toString(), ',')
-    })
-    code.push('}')
-    var proc = Function.apply(null, linkedNames.concat([code.join('')]))
-    return proc.apply(null, linkedValues)
-  }
-
-  return {
-    link: link,
-    block: block,
-    proc: proc,
-    compile: compile
-  }
-}
-
-},{"./extend":13}],5:[function(require,module,exports){
-
-var createEnvironment = require('./codegen')
+var createEnvironment = require('./util/codegen')
 
 var primTypes = require('./constants/primitives.json')
-var glTypes = require('./constants/dtypes.json')
 
 var GL_ELEMENT_ARRAY_BUFFER = 34963
+
+var GL_FRAGMENT_SHADER = 35632
+var GL_VERTEX_SHADER = 35633
 
 var GL_FLOAT = 5126
 var GL_FLOAT_VEC2 = 35664
@@ -816,7 +708,7 @@ module.exports = function reglCompiler (
       draw(BIND_ATTRIBUTE, '(',
         attribute.location, ',',
         link(attributeState.bindings[attribute.location]), ',',
-        STACK, '.records[', STACK, '.top]', ',',
+        STACK, ',',
         typeLength(attribute.info.type), ');')
     })
 
@@ -881,16 +773,17 @@ module.exports = function reglCompiler (
     } else {
       draw(
         'if(', CUR_ELEMENTS, '){',
+        CUR_ELEMENTS, '.bind();',
         GL, '.drawElements(',
         CUR_PRIMITIVE, ',',
         CUR_COUNT, ',',
         CUR_ELEMENTS, '.type,',
-        CUR_OFFSET, ');}',
+        CUR_OFFSET, ');',
         '}else{',
         GL, '.drawArrays(',
         CUR_PRIMITIVE, ',',
         CUR_OFFSET, ',',
-        CUR_COUNT, ');}')
+        CUR_COUNT, ');}}')
     }
 
     return env.compile().draw
@@ -919,6 +812,7 @@ module.exports = function reglCompiler (
     var GL = link(gl)
     var PROGRAM = link(program.program)
     var BIND_ATTRIBUTE = link(attributeState.bind)
+    var BIND_ATTRIBUTE_RECORD = link(attributeState.bindRecord)
     var FRAME_STATE = link(frameState)
     var FRAMEBUFFER_STATE = link(framebufferState)
     var DRAW_STATE = {
@@ -983,9 +877,12 @@ module.exports = function reglCompiler (
     // retrieves the first name-matching record from an ActiveInfo list
     // -------------------------------
     function findInfo (list, name) {
-      return list.find(function (item) {
-        return item.name === name
-      })
+      for (var i = 0; i < list.length; ++i) {
+        if (list[i].name === name) {
+          return list[i]
+        }
+      }
+      return null
     }
 
     // -------------------------------
@@ -1017,14 +914,14 @@ module.exports = function reglCompiler (
     // set static attributes
     // -------------------------------
     program.attributes.forEach(function (attribute) {
-      if (attributes.name in attributes) {
+      if (attribute.name in attributes) {
         return
       }
       var STACK = link(attributeState.def(attribute.name))
       batch(BIND_ATTRIBUTE, '(',
         attribute.location, ',',
         link(attributeState.bindings[attribute.location]), ',',
-        STACK, '.records[', STACK, '.top]', ',',
+        STACK, ',',
         typeLength(attribute.info.type), ');')
     })
 
@@ -1033,11 +930,8 @@ module.exports = function reglCompiler (
     // -------------------------------
     if (!hasDynamicElements) {
       batch(
-        'if(', CUR_ELEMENTS, '){',
-        GL, '.bindBuffer(', GL_ELEMENT_ARRAY_BUFFER, ',', CUR_ELEMENTS, '.buffer.buffer);',
-        '}else{',
-        GL, '.bindBuffer(', GL_ELEMENT_ARRAY_BUFFER, ',null);',
-        '}')
+        'if(', CUR_ELEMENTS, ')',
+        GL, '.bindBuffer(', GL_ELEMENT_ARRAY_BUFFER, ',', CUR_ELEMENTS, '.buffer.buffer);')
     }
 
     // -------------------------------
@@ -1215,10 +1109,11 @@ module.exports = function reglCompiler (
             VALUE, '.h||-1);')
           break
 
-        case 'primitives':
+        case 'primitive':
         case 'offset':
         case 'count':
         case 'elements':
+        case 'instances':
           break
 
         default:
@@ -1272,11 +1167,15 @@ module.exports = function reglCompiler (
       if (!data) {
         return
       }
-      batch(BIND_ATTRIBUTE, '(',
+      var BOX = link(attributeState.box(attribute))
+      var ATTRIB_VALUE = dyn(attributes[attribute])
+      var RECORD = def(BOX + '.alloc(' + ATTRIB_VALUE + ')')
+      batch(BIND_ATTRIBUTE_RECORD, '(',
         data.location, ',',
-        link(attribute.bindings[data.location]), ',',
-        dyn(attributes[attribute]), ',',
+        link(attributeState.bindings[data.location]), ',',
+        RECORD, ',',
         typeLength(data.info.type), ');')
+      exit(BOX, '.free(', RECORD, ');')
     })
 
     // -------------------------------
@@ -1285,15 +1184,16 @@ module.exports = function reglCompiler (
 
     if (options.count) {
       batch(CUR_COUNT, '=', dyn(options.count), ';')
-    } else if (!useElementOption('count')) {
-      batch('if(', CUR_COUNT, '){')
     }
     if (options.offset) {
       batch(CUR_OFFSET, '=', dyn(options.offset), ';')
     }
     if (options.primitive) {
-      var PRIM_TYPES = link(primTypes)
-      batch(CUR_PRIMITIVE, '=', PRIM_TYPES, '[', dyn(options.primitive), '];')
+      batch(
+        CUR_PRIMITIVE, '=', link(primTypes), '[', dyn(options.primitive), '];')
+    }
+    if (instancing && options.instances) {
+      batch(CUR_INSTANCES, '=', dyn(options.instances), ';')
     }
 
     function useElementOption (x) {
@@ -1311,9 +1211,9 @@ module.exports = function reglCompiler (
     // Emit draw command
     batch('if(', CUR_ELEMENTS, '){')
     if (useElementOption('count')) {
-      batch(CUR_COUNT, '=', CUR_ELEMENTS, '.vertCount;',
-        'if(', CUR_COUNT, '>0){')
+      batch(CUR_COUNT, '=', CUR_ELEMENTS, '.vertCount;')
     }
+    batch('if(', CUR_COUNT, '>0){')
     if (useElementOption('primitive')) {
       batch(CUR_PRIMITIVE, '=', CUR_ELEMENTS, '.primType;')
     }
@@ -1325,9 +1225,6 @@ module.exports = function reglCompiler (
         CUR_ELEMENTS, '.buffer.buffer);')
     }
     if (instancing) {
-      if (options.instances) {
-        batch(CUR_INSTANCES, '=', dyn(options.instances), ';')
-      }
       batch(
         'if(', CUR_INSTANCES, '>0){',
         INSTANCE_EXT, '.drawElementsInstancedANGLE(',
@@ -1335,7 +1232,7 @@ module.exports = function reglCompiler (
         CUR_COUNT, ',',
         CUR_ELEMENTS, '.type,',
         CUR_OFFSET, ',',
-        CUR_INSTANCES, ');}else{')
+        CUR_INSTANCES, ');}else ')
     }
     batch(
       GL, '.drawElements(',
@@ -1343,13 +1240,7 @@ module.exports = function reglCompiler (
       CUR_COUNT, ',',
       CUR_ELEMENTS, '.type,',
       CUR_OFFSET, ');')
-    if (instancing) {
-      batch('}')
-    }
-    if (useElementOption('count')) {
-      batch('}')
-    }
-    batch('}else{')
+    batch('}}else if(', CUR_COUNT, '>0){')
     if (!useElementOption('count')) {
       if (useElementOption('primitive')) {
         batch(CUR_PRIMITIVE, '=', GL_TRIANGLES, ';')
@@ -1367,7 +1258,7 @@ module.exports = function reglCompiler (
         GL, '.drawArrays(',
         CUR_PRIMITIVE, ',',
         CUR_OFFSET, ',',
-        CUR_COUNT, ');}')
+        CUR_COUNT, ');')
       if (instancing) {
         batch('}')
       }
@@ -1401,10 +1292,7 @@ module.exports = function reglCompiler (
     // Common state variables
     // -------------------------------
     var GL_POLL = link(reglPoll)
-    var STRING_STORE = link(stringStore)
-    var FRAG_SHADER_STATE = link(shaderState.fragShaders)
-    var VERT_SHADER_STATE = link(shaderState.vertShaders)
-    var PROGRAM_STATE = link(shaderState.programs)
+    var SHADER_STATE = link(shaderState)
     var FRAMEBUFFER_STATE = link(framebufferState)
     var DRAW_STATE = {
       count: link(drawState.count),
@@ -1443,20 +1331,17 @@ module.exports = function reglCompiler (
       exit(STATE_STACK, '.pop();')
     }
 
-    var hasShader = false
     Object.keys(staticOptions).sort(optionPriority).forEach(function (param) {
       var value = staticOptions[param]
       switch (param) {
         case 'frag':
-          hasShader = true
-          entry(FRAG_SHADER_STATE, '.push(', link(stringStore.id(value)), ');')
-          exit(FRAG_SHADER_STATE, '.pop();')
-          break
-
         case 'vert':
-          hasShader = true
-          entry(VERT_SHADER_STATE, '.push(', link(stringStore.id(value)), ');')
-          exit(VERT_SHADER_STATE, '.pop();')
+          var shaderId = stringStore.id(value)
+          shaderState.shader(
+            param === 'frag' ? GL_FRAGMENT_SHADER : GL_VERTEX_SHADER,
+            shaderId)
+          entry(SHADER_STATE, '.', param, '.push(', shaderId, ');')
+          exit(SHADER_STATE, '.', param, '.pop();')
           break
 
         case 'framebuffer':
@@ -1740,30 +1625,6 @@ module.exports = function reglCompiler (
     })
 
     // -------------------------------
-    // update shader program
-    // -------------------------------
-    if (hasShader) {
-      if (staticOptions.frag && staticOptions.vert) {
-        var fragSrc = staticOptions.frag
-        var vertSrc = staticOptions.vert
-        entry(PROGRAM_STATE, '.push(',
-          link(shaderState.create(
-            stringStore.id(vertSrc),
-            stringStore.id(fragSrc))), ');')
-      } else {
-        var FRAG_SRC = entry.def(
-          FRAG_SHADER_STATE, '[', FRAG_SHADER_STATE, '.length-1]')
-        var VERT_SRC = entry.def(
-          VERT_SHADER_STATE, '[', VERT_SHADER_STATE, '.length-1]')
-        var LINK_PROG = link(shaderState.create)
-        entry(
-          PROGRAM_STATE, '.push(',
-          LINK_PROG, '(', VERT_SRC, ',', FRAG_SRC, '));')
-      }
-      exit(PROGRAM_STATE, '.pop();')
-    }
-
-    // -------------------------------
     // update static uniforms
     // -------------------------------
     Object.keys(staticUniforms).forEach(function (uniform) {
@@ -1785,64 +1646,11 @@ module.exports = function reglCompiler (
     // update default attributes
     // -------------------------------
     Object.keys(staticAttributes).forEach(function (attribute) {
-      var ATTRIBUTE = link(attributeState.def(attribute))
-
       var data = staticAttributes[attribute]
-      if (typeof data === 'number') {
-        entry(ATTRIBUTE, '.pushVec(', +data, ',0,0,0);')
-      } else {
-        
-
-        if (Array.isArray(data)) {
-          entry(
-            ATTRIBUTE, '.pushVec(',
-            [data[0] || 0, data[1] || 0, data[2] || 0, data[3] || 0], ');')
-        } else {
-          var buffer = bufferState.getBuffer(data)
-          var size = 0
-          var stride = 0
-          var offset = 0
-          var divisor = 0
-          var normalized = false
-          var type = GL_FLOAT
-
-          if (!buffer) {
-            
-
-            buffer = bufferState.getBuffer(data.buffer)
-            size = data.size || 0
-            stride = data.stride || 0
-            offset = data.offset || 0
-            divisor = data.divisor || 0
-            normalized = data.normalized || false
-
-            
-
-            // Check for user defined type overloading
-            type = buffer.dtype
-            if ('type' in data) {
-              
-              type = glTypes[data.type]
-            }
-          } else {
-            type = buffer.dtype
-          }
-
-          
-          
-          
-          
-          
-          
-
-          entry(
-            ATTRIBUTE, '.pushPtr(', [
-              link(buffer), size, offset, stride,
-              divisor, normalized, type
-            ].join(), ');')
-        }
-      }
-      exit(ATTRIBUTE, '.pop();')
+      var ATTRIBUTE = link(attributeState.def(attribute))
+      var BOX = link(attributeState.box(attribute).alloc(data))
+      entry(ATTRIBUTE, '.records.push(', BOX, ');')
+      exit(ATTRIBUTE, '.records.pop();')
     })
 
     // ==========================================================
@@ -2109,8 +1917,10 @@ module.exports = function reglCompiler (
     Object.keys(dynamicAttributes).forEach(function (attribute) {
       var ATTRIBUTE = link(attributeState.def(attribute))
       var VALUE = dyn(dynamicAttributes[attribute])
-      dynamicEntry(ATTRIBUTE, '.pushDyn(', VALUE, ');')
-      dynamicExit(ATTRIBUTE, '.pop();')
+      var BOX = link(attributeState.box(attribute))
+      dynamicEntry(ATTRIBUTE, '.records.push(',
+        BOX, '.alloc(', VALUE, '));')
+      dynamicExit(BOX, '.free(', ATTRIBUTE, '.records.pop());')
     })
 
     // ==========================================================
@@ -2130,21 +1940,39 @@ module.exports = function reglCompiler (
       hasDynamic ? dynamicExit : '',
       exit)
 
+    // -------------------------------
+    // update shader program only for DRAW and batch
+    // -------------------------------
+    var commonDraw = block()
+    var CURRENT_PROGRAM = commonDraw.def()
+    if (staticOptions.frag && staticOptions.vert) {
+      var fragSrc = staticOptions.frag
+      var vertSrc = staticOptions.vert
+      commonDraw(CURRENT_PROGRAM, '=', link(
+        shaderState.program(
+          stringStore.id(vertSrc),
+          stringStore.id(fragSrc))), ';')
+    } else {
+      commonDraw(CURRENT_PROGRAM, '=',
+        SHADER_STATE, '.program', '(',
+        SHADER_STATE, '.vert[', SHADER_STATE, '.vert.length-1]', ',',
+        SHADER_STATE, '.frag[', SHADER_STATE, '.frag.length-1]', ');')
+    }
+
     // ==========================================================
     // DRAW PROCEDURE
     // ==========================================================
     var draw = proc('draw')
-    draw(entry)
+    draw(entry, commonDraw)
     if (hasDynamic) {
       draw(
         DYNARGS, '=', draw.arg(), ';',
         dynamicEntry)
     }
-    var CURRENT_SHADER = stackTop(PROGRAM_STATE)
     draw(
       GL_POLL, '();',
-      'if(', CURRENT_SHADER, ')',
-      CURRENT_SHADER, '.draw(', hasDynamic ? DYNARGS : '', ');',
+      'if(', CURRENT_PROGRAM, ')',
+      CURRENT_PROGRAM, '.draw(', hasDynamic ? DYNARGS : '', ');',
       hasDynamic ? dynamicExit : '',
       exit)
 
@@ -2152,8 +1980,7 @@ module.exports = function reglCompiler (
     // BATCH DRAW
     // ==========================================================
     var batch = proc('batch')
-    batch(entry)
-    var CUR_SHADER = batch.def(stackTop(PROGRAM_STATE))
+    batch(entry, commonDraw)
     var EXEC_BATCH = link(function (program, count, args) {
       var proc = program.batchCache[callId]
       if (!proc) {
@@ -2164,10 +1991,10 @@ module.exports = function reglCompiler (
       return proc(count, args)
     })
     batch(
-      'if(', CUR_SHADER, '){',
+      'if(', CURRENT_PROGRAM, '){',
       GL_POLL, '();',
       EXEC_BATCH, '(',
-      CUR_SHADER, ',',
+      CURRENT_PROGRAM, ',',
       batch.arg(), ',',
       batch.arg(), ');')
     // Set dirty on all dynamic flags
@@ -2191,7 +2018,7 @@ module.exports = function reglCompiler (
   }
 }
 
-},{"./codegen":4,"./constants/dtypes.json":7,"./constants/primitives.json":8}],6:[function(require,module,exports){
+},{"./constants/primitives.json":6,"./util/codegen":22}],4:[function(require,module,exports){
 module.exports={
   "[object Int8Array]": 5120
 , "[object Int16Array]": 5122
@@ -2205,7 +2032,7 @@ module.exports={
 , "[object ArrayBuffer]": 5121
 }
 
-},{}],7:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 module.exports={
   "int8": 5120
 , "int16": 5122
@@ -2216,7 +2043,7 @@ module.exports={
 , "float": 5126
 }
 
-},{}],8:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 module.exports={
   "points": 0,
   "lines": 1,
@@ -2227,12 +2054,12 @@ module.exports={
   "triangle fan": 6
 }
 
-},{}],9:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 // Context and canvas creation helper functions
 /*globals HTMLElement,WebGLRenderingContext*/
 
 
-var extend = require('./extend')
+var extend = require('./util/extend')
 
 function createCanvas (element, options) {
   var canvas = document.createElement('canvas')
@@ -2349,12 +2176,12 @@ module.exports = function parseArgs (args) {
   }
 }
 
-},{"./extend":13}],10:[function(require,module,exports){
+},{"./util/extend":23}],8:[function(require,module,exports){
 var GL_TRIANGLES = 4
 
 module.exports = function wrapDrawState (gl) {
   var primitive = [ GL_TRIANGLES ]
-  var count = [ 0 ]
+  var count = [ -1 ]
   var offset = [ 0 ]
   var instances = [ 0 ]
 
@@ -2366,7 +2193,7 @@ module.exports = function wrapDrawState (gl) {
   }
 }
 
-},{}],11:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 var VARIABLE_COUNTER = 0
 
 function DynamicVariable (isFunc, data) {
@@ -2409,10 +2236,10 @@ module.exports = {
   unbox: unbox
 }
 
-},{}],12:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 
-var isTypedArray = require('./is-typed-array')
-var isNDArrayLike = require('./is-ndarray')
+var isTypedArray = require('./util/is-typed-array')
+var isNDArrayLike = require('./util/is-ndarray')
 var primTypes = require('./constants/primitives.json')
 
 var GL_POINTS = 0
@@ -2580,16 +2407,7 @@ module.exports = function wrapElementsState (gl, extensions, bufferState) {
   }
 }
 
-},{"./constants/primitives.json":8,"./is-ndarray":16,"./is-typed-array":17}],13:[function(require,module,exports){
-module.exports = function (base, opts) {
-  var keys = Object.keys(opts)
-  for (var i = 0; i < keys.length; ++i) {
-    base[keys[i]] = opts[keys[i]]
-  }
-  return base
-}
-
-},{}],14:[function(require,module,exports){
+},{"./constants/primitives.json":6,"./util/is-ndarray":24,"./util/is-typed-array":25}],11:[function(require,module,exports){
 module.exports = function createExtensionCache (gl) {
   var extensions = {}
 
@@ -2635,10 +2453,10 @@ module.exports = function createExtensionCache (gl) {
   }
 }
 
-},{}],15:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 
-var values = require('./values')
-var extend = require('./extend')
+var values = require('./util/values')
+var extend = require('./util/extend')
 
 // We store these constants so that the minifier can inline them
 var GL_FRAMEBUFFER = 0x8D40
@@ -2658,10 +2476,6 @@ var GL_FLOAT = 0x1406
 
 var GL_HALF_FLOAT_OES = 0x8D61
 
-var GL_ALPHA = 0x1906
-var GL_LUMINANCE = 0x1909
-var GL_LUMINANCE_ALPHA = 0x190A
-var GL_RGB = 0x1907
 var GL_RGBA = 0x1908
 
 var GL_RGBA4 = 0x8056
@@ -3059,8 +2873,8 @@ module.exports = function wrapFBOState (
         var colorCount = 1
         ownsColor = true
 
-        framebuffer.width = width || gl.drawingBufferWidth
-        framebuffer.height = height || gl.drawingBufferHeight
+        framebuffer.width = width = width || gl.drawingBufferWidth
+        framebuffer.height = height = height || gl.drawingBufferHeight
 
         if ('format' in options) {
           colorFormat = options.format
@@ -3369,27 +3183,7 @@ module.exports = function wrapFBOState (
   }
 }
 
-},{"./extend":13,"./values":31}],16:[function(require,module,exports){
-var isTypedArray = require('./is-typed-array')
-
-module.exports = function isNDArrayLike (obj) {
-  return (
-    typeof obj === 'object' &&
-    Array.isArray(obj.shape) &&
-    Array.isArray(obj.stride) &&
-    typeof obj.offset === 'number' &&
-    obj.shape.length === obj.stride.length &&
-    (Array.isArray(obj.data) ||
-      isTypedArray(obj.data)))
-}
-
-},{"./is-typed-array":17}],17:[function(require,module,exports){
-var dtypes = require('./constants/arraytypes.json')
-module.exports = function (x) {
-  return Object.prototype.toString.call(x) in dtypes
-}
-
-},{"./constants/arraytypes.json":6}],18:[function(require,module,exports){
+},{"./util/extend":23,"./util/values":31}],13:[function(require,module,exports){
 var GL_SUBPIXEL_BITS = 0x0D50
 var GL_RED_BITS = 0x0D52
 var GL_GREEN_BITS = 0x0D53
@@ -3483,290 +3277,9 @@ module.exports = function (gl, extensions) {
   }
 }
 
-},{}],19:[function(require,module,exports){
-/* globals document, Image, XMLHttpRequest */
+},{}],14:[function(require,module,exports){
 
-module.exports = loadTexture
-
-function getExtension (url) {
-  var parts = /\.(\w+)(\?.*)?$/.exec(url)
-  if (parts && parts[1]) {
-    return parts[1].toLowerCase()
-  }
-}
-
-function isVideoExtension (url) {
-  return [
-    'avi',
-    'asf',
-    'gifv',
-    'mov',
-    'qt',
-    'yuv',
-    'mpg',
-    'mpeg',
-    'm2v',
-    'mp4',
-    'm4p',
-    'm4v',
-    'ogg',
-    'ogv',
-    'vob',
-    'webm',
-    'wmv'
-  ].indexOf(url) >= 0
-}
-
-function isCompressedExtension (url) {
-  return [
-    'dds'
-  ].indexOf(url) >= 0
-}
-
-function loadVideo (url, crossOrigin) {
-  var video = document.createElement('video')
-  video.autoplay = true
-  video.loop = true
-  if (crossOrigin) {
-    video.crossOrigin = crossOrigin
-  }
-  video.src = url
-  return video
-}
-
-function loadCompressedTexture (url, ext, crossOrigin) {
-  var xhr = new XMLHttpRequest()
-  xhr.responseType = 'arraybuffer'
-  xhr.open('GET', url, true)
-  xhr.send()
-  return xhr
-}
-
-function loadImage (url, crossOrigin) {
-  var image = new Image()
-  if (crossOrigin) {
-    image.crossOrigin = crossOrigin
-  }
-  image.src = url
-  return image
-}
-
-// Currently this stuff only works in a DOM environment
-function loadTexture (url, crossOrigin) {
-  if (typeof document !== 'undefined') {
-    var ext = getExtension(url)
-    if (isVideoExtension(ext)) {
-      return loadVideo(url, crossOrigin)
-    }
-    if (isCompressedExtension(ext)) {
-      return loadCompressedTexture(url, ext, crossOrigin)
-    }
-    return loadImage(url, crossOrigin)
-  }
-  return null
-}
-
-},{}],20:[function(require,module,exports){
-// References:
-//
-// http://msdn.microsoft.com/en-us/library/bb943991.aspx/
-// http://blog.tojicode.com/2011/12/compressed-textures-in-webgl.html
-//
-
-
-module.exports = parseDDS
-
-var DDS_MAGIC = 0x20534444
-
-var GL_TEXTURE_2D = 0x0DE1
-var GL_TEXTURE_CUBE_MAP_POSITIVE_X = 0x8515
-
-var GL_COMPRESSED_RGB_S3TC_DXT1_EXT = 0x83F0
-var GL_COMPRESSED_RGBA_S3TC_DXT1_EXT = 0x83F1
-var GL_COMPRESSED_RGBA_S3TC_DXT3_EXT = 0x83F2
-var GL_COMPRESSED_RGBA_S3TC_DXT5_EXT = 0x83F3
-
-var GL_COMPRESSED_RGB_ETC1_WEBGL = 0x8D64
-
-var GL_UNSIGNED_BYTE = 0x1401
-// var GL_HALF_FLOAT_OES = 0x8D61
-// var GL_FLOAT = 0x1406
-
-var DDSD_MIPMAPCOUNT = 0x20000
-
-var DDSCAPS2_CUBEMAP = 0x200
-var DDSCAPS2_CUBEMAP_POSITIVEX = 0x400
-var DDSCAPS2_CUBEMAP_NEGATIVEX = 0x800
-var DDSCAPS2_CUBEMAP_POSITIVEY = 0x1000
-var DDSCAPS2_CUBEMAP_NEGATIVEY = 0x2000
-var DDSCAPS2_CUBEMAP_POSITIVEZ = 0x4000
-var DDSCAPS2_CUBEMAP_NEGATIVEZ = 0x8000
-
-var CUBEMAP_COMPLETE_FACES = (
-  DDSCAPS2_CUBEMAP_POSITIVEX |
-  DDSCAPS2_CUBEMAP_NEGATIVEX |
-  DDSCAPS2_CUBEMAP_POSITIVEY |
-  DDSCAPS2_CUBEMAP_NEGATIVEY |
-  DDSCAPS2_CUBEMAP_POSITIVEZ |
-  DDSCAPS2_CUBEMAP_NEGATIVEZ)
-
-var DDPF_FOURCC = 0x4
-var DDPF_RGB = 0x40
-
-var FOURCC_DXT1 = 0x31545844
-var FOURCC_DXT3 = 0x33545844
-var FOURCC_DXT5 = 0x35545844
-var FOURCC_ETC1 = 0x31435445
-
-// DDS_HEADER {
-var OFF_SIZE = 1        // int32 dwSize
-var OFF_FLAGS = 2       // int32 dwFlags
-var OFF_HEIGHT = 3      // int32 dwHeight
-var OFF_WIDTH = 4       // int32 dwWidth
-// var OFF_PITCH = 5       // int32 dwPitchOrLinearSize
-// var OFF_DEPTH = 6       // int32 dwDepth
-var OFF_MIPMAP = 7      // int32 dwMipMapCount; // offset: 7
-// int32[11] dwReserved1
-// DDS_PIXELFORMAT {
-// var OFF_PF_SIZE = 19    // int32 dwSize; // offset: 19
-var OFF_PF_FLAGS = 20   // int32 dwFlags
-var OFF_FOURCC = 21     // char[4] dwFourCC
-// var OFF_RGBA_BITS = 22  // int32 dwRGBBitCount
-// var OFF_RED_MASK = 23   // int32 dwRBitMask
-// var OFF_GREEN_MASK = 24 // int32 dwGBitMask
-// var OFF_BLUE_MASK = 25  // int32 dwBBitMask
-// var OFF_ALPHA_MASK = 26 // int32 dwABitMask; // offset: 26
-// }
-// var OFF_CAPS = 27       // int32 dwCaps; // offset: 27
-var OFF_CAPS2 = 28      // int32 dwCaps2
-// var OFF_CAPS3 = 29      // int32 dwCaps3
-// var OFF_CAPS4 = 30      // int32 dwCaps4
-// int32 dwReserved2 // offset 31
-
-function parseDDS (arrayBuffer) {
-  var header = new Int32Array(arrayBuffer)
-  
-
-  var flags = header[OFF_FLAGS]
-  
-
-  var width = header[OFF_WIDTH]
-  var height = header[OFF_HEIGHT]
-
-  var type = GL_UNSIGNED_BYTE
-  var format = 0
-  var blockBytes = 0
-  var channels = 4
-  switch (header[OFF_FOURCC]) {
-    case FOURCC_DXT1:
-      blockBytes = 8
-      if (flags & DDPF_RGB) {
-        channels = 3
-        format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT
-      } else {
-        format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
-      }
-      break
-
-    case FOURCC_DXT3:
-      blockBytes = 16
-      format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
-      break
-
-    case FOURCC_DXT5:
-      blockBytes = 16
-      format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
-      break
-
-    case FOURCC_ETC1:
-      blockBytes = 8
-      format = GL_COMPRESSED_RGB_ETC1_WEBGL
-      break
-
-    // TODO: Implement hdr and uncompressed textures
-
-    default:
-      // Handle uncompressed data here
-      
-  }
-
-  var pixelFlags = header[OFF_PF_FLAGS]
-
-  var mipmapCount = 1
-  if (pixelFlags & DDSD_MIPMAPCOUNT) {
-    mipmapCount = Math.max(1, header[OFF_MIPMAP])
-  }
-
-  var ptr = header[OFF_SIZE] + 4
-
-  var result = {
-    width: width,
-    height: height,
-    channels: channels,
-    format: format,
-    type: type,
-    compressed: true,
-    cube: false,
-    pixels: []
-  }
-
-  function parseMips (target) {
-    var mipWidth = width
-    var mipHeight = height
-
-    for (var i = 0; i < mipmapCount; ++i) {
-      var size =
-        Math.max(1, (mipWidth + 3) >> 2) *
-        Math.max(1, (mipHeight + 3) >> 2) *
-        blockBytes
-      result.pixels.push({
-        target: target,
-        miplevel: i,
-        width: mipWidth,
-        height: mipHeight,
-        data: new Uint8Array(arrayBuffer, ptr, size)
-      })
-      ptr += size
-      mipWidth >>= 1
-      mipHeight >>= 1
-    }
-  }
-
-  var caps2 = header[OFF_CAPS2]
-  var cubemap = !!(caps2 & DDSCAPS2_CUBEMAP)
-  if (cubemap) {
-    
-    result.cube = true
-    for (var i = 0; i < 6; ++i) {
-      parseMips(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i)
-    }
-  } else {
-    parseMips(GL_TEXTURE_2D)
-  }
-
-  return result
-}
-
-},{}],21:[function(require,module,exports){
-/* globals requestAnimationFrame, cancelAnimationFrame */
-if (typeof requestAnimationFrame === 'function' &&
-    typeof cancelAnimationFrame === 'function') {
-  module.exports = {
-    next: function (x) { return requestAnimationFrame(x) },
-    cancel: function (x) { return cancelAnimationFrame(x) }
-  }
-} else {
-  module.exports = {
-    next: function (cb) {
-      setTimeout(cb, 30)
-    },
-    cancel: clearTimeout
-  }
-}
-
-},{}],22:[function(require,module,exports){
-
-var isTypedArray = require('./is-typed-array')
+var isTypedArray = require('./util/is-typed-array')
 
 var GL_RGBA = 6408
 var GL_UNSIGNED_BYTE = 5121
@@ -3817,9 +3330,9 @@ module.exports = function wrapReadPixels (gl, reglPoll, viewportState) {
   return readPixels
 }
 
-},{"./is-typed-array":17}],23:[function(require,module,exports){
+},{"./util/is-typed-array":25}],15:[function(require,module,exports){
 
-var values = require('./values')
+var values = require('./util/values')
 
 var GL_RENDERBUFFER = 0x8D41
 
@@ -3972,12 +3485,9 @@ module.exports = function (gl, extensions, limits) {
   }
 }
 
-},{"./values":31}],24:[function(require,module,exports){
+},{"./util/values":31}],16:[function(require,module,exports){
 
-var values = require('./values')
-
-var DEFAULT_FRAG_SHADER = 'void main(){gl_FragColor=vec4(0,0,0,0);}'
-var DEFAULT_VERT_SHADER = 'void main(){gl_Position=vec4(0,0,0,0);}'
+var values = require('./util/values')
 
 var GL_FRAGMENT_SHADER = 35632
 var GL_VERTEX_SHADER = 35633
@@ -3985,8 +3495,9 @@ var GL_VERTEX_SHADER = 35633
 var GL_ACTIVE_UNIFORMS = 0x8B86
 var GL_ACTIVE_ATTRIBUTES = 0x8B89
 
-function ActiveInfo (name, location, info) {
+function ActiveInfo (name, id, location, info) {
   this.name = name
+  this.id = id
   this.location = location
   this.info = info
 }
@@ -4065,6 +3576,7 @@ module.exports = function wrapShaderState (
             uniformState.def(name)
             uniforms.push(new ActiveInfo(
               name,
+              stringStore.id(name),
               gl.getUniformLocation(program, name),
               info))
           }
@@ -4072,6 +3584,7 @@ module.exports = function wrapShaderState (
           uniformState.def(info.name)
           uniforms.push(new ActiveInfo(
             info.name,
+            stringStore.id(info.name),
             gl.getUniformLocation(program, info.name),
             info))
         }
@@ -4089,6 +3602,7 @@ module.exports = function wrapShaderState (
         attributeState.def(info.name)
         attributes.push(new ActiveInfo(
           info.name,
+          stringStore.id(info.name),
           gl.getAttribLocation(program, info.name),
           info))
       }
@@ -4101,24 +3615,10 @@ module.exports = function wrapShaderState (
     desc.batchCache = {}
   }
 
-  function getProgram (vertId, fragId) {
-    var cache = programCache[fragId]
-    if (!cache) {
-      cache = programCache[fragId] = {}
-    }
-    var program = cache[vertId]
-    if (!program) {
-      program = new REGLProgram(fragId, vertId)
-      linkProgram(program)
-      cache[vertId] = program
-      programList.push(program)
-    }
-    return program
-  }
+  var fragShaderStack = [ -1 ]
+  var vertShaderStack = [ -1 ]
 
   return {
-    create: getProgram,
-
     clear: function () {
       var deleteShader = gl.deleteShader.bind(gl)
       values(fragShaders).forEach(deleteShader)
@@ -4139,83 +3639,34 @@ module.exports = function wrapShaderState (
       programList.forEach(linkProgram)
     },
 
-    programs: [ null ],
-    fragShaders: [ stringStore.id(DEFAULT_FRAG_SHADER) ],
-    vertShaders: [ stringStore.id(DEFAULT_VERT_SHADER) ]
+    program: function (vertId, fragId) {
+      
+      
+
+      var cache = programCache[fragId]
+      if (!cache) {
+        cache = programCache[fragId] = {}
+      }
+      var program = cache[vertId]
+      if (!program) {
+        program = new REGLProgram(fragId, vertId)
+        linkProgram(program)
+        cache[vertId] = program
+        programList.push(program)
+      }
+      return program
+    },
+
+    shader: getShader,
+
+    frag: fragShaderStack,
+    vert: vertShaderStack
   }
 }
 
-},{"./values":31}],25:[function(require,module,exports){
-// A stack for managing the state of a scalar/vector parameter
-
-module.exports = function createStack (init, onChange) {
-  var n = init.length
-  var stack = init.slice()
-  var current = init.slice()
-  var dirty = false
-  var forceDirty = true
-
-  function poll () {
-    var ptr = stack.length - n
-    if (dirty || forceDirty) {
-      switch (n) {
-        case 1:
-          onChange(stack[ptr])
-          break
-        case 2:
-          onChange(stack[ptr], stack[ptr + 1])
-          break
-        case 3:
-          onChange(stack[ptr], stack[ptr + 1], stack[ptr + 2])
-          break
-        case 4:
-          onChange(stack[ptr], stack[ptr + 1], stack[ptr + 2], stack[ptr + 3])
-          break
-        case 5:
-          onChange(stack[ptr], stack[ptr + 1], stack[ptr + 2], stack[ptr + 3], stack[ptr + 4])
-          break
-        case 6:
-          onChange(stack[ptr], stack[ptr + 1], stack[ptr + 2], stack[ptr + 3], stack[ptr + 4], stack[ptr + 5])
-          break
-        default:
-          onChange.apply(null, stack.slice(ptr, stack.length))
-      }
-      for (var i = 0; i < n; ++i) {
-        current[i] = stack[ptr + i]
-      }
-      forceDirty = dirty = false
-    }
-  }
-
-  return {
-    push: function () {
-      dirty = false
-      for (var i = 0; i < n; ++i) {
-        var x = arguments[i]
-        dirty = dirty || (x !== current[i])
-        stack.push(x)
-      }
-    },
-
-    pop: function () {
-      dirty = false
-      stack.length -= n
-      for (var i = 0; i < n; ++i) {
-        dirty = dirty || (stack[stack.length - n + i] !== current[i])
-      }
-    },
-
-    poll: poll,
-
-    setDirty: function () {
-      forceDirty = true
-    }
-  }
-}
-
-},{}],26:[function(require,module,exports){
-var createStack = require('./stack')
-var createEnvironment = require('./codegen')
+},{"./util/values":31}],17:[function(require,module,exports){
+var createStack = require('./util/stack')
+var createEnvironment = require('./util/codegen')
 
 // WebGL constants
 var GL_CULL_FACE = 0x0B44
@@ -4408,9 +3859,9 @@ module.exports = function wrapContextState (gl, framebufferState, viewportState)
   }
 }
 
-},{"./codegen":4,"./stack":25}],27:[function(require,module,exports){
-module.exports = function createStringStore() {
-  var stringIds = {}
+},{"./util/codegen":22,"./util/stack":29}],18:[function(require,module,exports){
+module.exports = function createStringStore () {
+  var stringIds = {'': 0}
   var stringValues = ['']
   return {
     id: function (str) {
@@ -4429,15 +3880,15 @@ module.exports = function createStringStore() {
   }
 }
 
-},{}],28:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 
-var extend = require('./extend')
-var values = require('./values')
-var isTypedArray = require('./is-typed-array')
-var isNDArrayLike = require('./is-ndarray')
-var loadTexture = require('./load-texture')
-var convertToHalfFloat = require('./to-half-float')
-var parseDDS = require('./parse-dds')
+var extend = require('./util/extend')
+var values = require('./util/values')
+var isTypedArray = require('./util/is-typed-array')
+var isNDArrayLike = require('./util/is-ndarray')
+var loadTexture = require('./util/load-texture')
+var convertToHalfFloat = require('./util/to-half-float')
+var parseDDS = require('./util/parse-dds')
 
 var GL_COMPRESSED_TEXTURE_FORMATS = 0x86A3
 
@@ -5001,8 +4452,8 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
         this.xhr = data
         this.needsListeners = true
       } else if (isRectArray(data)) {
-        var w = data.length
-        var h = data[0].length
+        var w = data[0].length
+        var h = data.length
         var c = 1
         var i, j, k, p
         if (Array.isArray(data[0][0])) {
@@ -5013,7 +4464,7 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
           for (j = 0; j < h; ++j) {
             for (i = 0; i < w; ++i) {
               for (k = 0; k < c; ++k) {
-                array[p++] = data[i][j][k]
+                array[p++] = data[j][i][k]
               }
             }
           }
@@ -5022,7 +4473,7 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
           p = 0
           for (j = 0; j < h; ++j) {
             for (i = 0; i < w; ++i) {
-              array[p++] = data[i][j]
+              array[p++] = data[j][i]
             }
           }
         }
@@ -5791,7 +5242,7 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
     reglTexture.destroy = function () {
       texture.decRef()
     }
-  
+
     return reglTexture
   }
 
@@ -5833,7 +5284,511 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
   }
 }
 
-},{"./extend":13,"./is-ndarray":16,"./is-typed-array":17,"./load-texture":19,"./parse-dds":20,"./to-half-float":29,"./values":31}],29:[function(require,module,exports){
+},{"./util/extend":23,"./util/is-ndarray":24,"./util/is-typed-array":25,"./util/load-texture":26,"./util/parse-dds":27,"./util/to-half-float":30,"./util/values":31}],20:[function(require,module,exports){
+module.exports = function wrapUniformState (stringStore) {
+  var uniformState = {}
+
+  function defUniform (name) {
+    var id = stringStore.id(name)
+    var result = uniformState[id]
+    if (!result) {
+      result = uniformState[id] = []
+    }
+    return result
+  }
+
+  return {
+    def: defUniform,
+    uniforms: uniformState
+  }
+}
+
+},{}],21:[function(require,module,exports){
+/* globals performance */
+module.exports =
+  (typeof performance !== 'undefined' && performance.now)
+  ? function () { return performance.now() }
+  : function () { return +(new Date()) }
+
+},{}],22:[function(require,module,exports){
+var extend = require('./extend')
+
+function slice (x) {
+  return Array.prototype.slice.call(x)
+}
+
+module.exports = function createEnvironment () {
+  // Unique variable id counter
+  var varCounter = 0
+
+  // Linked values are passed from this scope into the generated code block
+  // Calling link() passes a value into the generated scope and returns
+  // the variable name which it is bound to
+  var linkedNames = []
+  var linkedValues = []
+  function link (value) {
+    var name = 'g' + (varCounter++)
+    linkedNames.push(name)
+    linkedValues.push(value)
+    return name
+  }
+
+  // create a code block
+  function block () {
+    var code = []
+    function push () {
+      code.push.apply(code, slice(arguments))
+    }
+
+    var vars = []
+    function def () {
+      var name = 'v' + (varCounter++)
+      vars.push(name)
+
+      if (arguments.length > 0) {
+        code.push(name, '=')
+        code.push.apply(code, slice(arguments))
+        code.push(';')
+      }
+
+      return name
+    }
+
+    return extend(push, {
+      def: def,
+      toString: function () {
+        return [
+          (vars.length > 0 ? 'var ' + vars + ';' : ''),
+          code.join('')
+        ].join('')
+      }
+    })
+  }
+
+  // procedure list
+  var procedures = {}
+  function proc (name) {
+    var args = []
+    function arg () {
+      var name = 'a' + (varCounter++)
+      args.push(name)
+      return name
+    }
+
+    var body = block()
+    var bodyToString = body.toString
+
+    var result = procedures[name] = extend(body, {
+      arg: arg,
+      toString: function () {
+        return [
+          'function(', args.join(), '){',
+          bodyToString(),
+          '}'
+        ].join('')
+      }
+    })
+
+    return result
+  }
+
+  function compile () {
+    var code = ['"use strict";return {']
+    Object.keys(procedures).forEach(function (name) {
+      code.push('"', name, '":', procedures[name].toString(), ',')
+    })
+    code.push('}')
+    var proc = Function.apply(null, linkedNames.concat([code.join('')]))
+    return proc.apply(null, linkedValues)
+  }
+
+  return {
+    link: link,
+    block: block,
+    proc: proc,
+    compile: compile
+  }
+}
+
+},{"./extend":23}],23:[function(require,module,exports){
+module.exports = function (base, opts) {
+  var keys = Object.keys(opts)
+  for (var i = 0; i < keys.length; ++i) {
+    base[keys[i]] = opts[keys[i]]
+  }
+  return base
+}
+
+},{}],24:[function(require,module,exports){
+var isTypedArray = require('./is-typed-array')
+
+module.exports = function isNDArrayLike (obj) {
+  return (
+    typeof obj === 'object' &&
+    Array.isArray(obj.shape) &&
+    Array.isArray(obj.stride) &&
+    typeof obj.offset === 'number' &&
+    obj.shape.length === obj.stride.length &&
+    (Array.isArray(obj.data) ||
+      isTypedArray(obj.data)))
+}
+
+},{"./is-typed-array":25}],25:[function(require,module,exports){
+var dtypes = require('../constants/arraytypes.json')
+module.exports = function (x) {
+  return Object.prototype.toString.call(x) in dtypes
+}
+
+},{"../constants/arraytypes.json":4}],26:[function(require,module,exports){
+/* globals document, Image, XMLHttpRequest */
+
+module.exports = loadTexture
+
+function getExtension (url) {
+  var parts = /\.(\w+)(\?.*)?$/.exec(url)
+  if (parts && parts[1]) {
+    return parts[1].toLowerCase()
+  }
+}
+
+function isVideoExtension (url) {
+  return [
+    'avi',
+    'asf',
+    'gifv',
+    'mov',
+    'qt',
+    'yuv',
+    'mpg',
+    'mpeg',
+    'm2v',
+    'mp4',
+    'm4p',
+    'm4v',
+    'ogg',
+    'ogv',
+    'vob',
+    'webm',
+    'wmv'
+  ].indexOf(url) >= 0
+}
+
+function isCompressedExtension (url) {
+  return [
+    'dds'
+  ].indexOf(url) >= 0
+}
+
+function loadVideo (url, crossOrigin) {
+  var video = document.createElement('video')
+  video.autoplay = true
+  video.loop = true
+  if (crossOrigin) {
+    video.crossOrigin = crossOrigin
+  }
+  video.src = url
+  return video
+}
+
+function loadCompressedTexture (url, ext, crossOrigin) {
+  var xhr = new XMLHttpRequest()
+  xhr.responseType = 'arraybuffer'
+  xhr.open('GET', url, true)
+  xhr.send()
+  return xhr
+}
+
+function loadImage (url, crossOrigin) {
+  var image = new Image()
+  if (crossOrigin) {
+    image.crossOrigin = crossOrigin
+  }
+  image.src = url
+  return image
+}
+
+// Currently this stuff only works in a DOM environment
+function loadTexture (url, crossOrigin) {
+  if (typeof document !== 'undefined') {
+    var ext = getExtension(url)
+    if (isVideoExtension(ext)) {
+      return loadVideo(url, crossOrigin)
+    }
+    if (isCompressedExtension(ext)) {
+      return loadCompressedTexture(url, ext, crossOrigin)
+    }
+    return loadImage(url, crossOrigin)
+  }
+  return null
+}
+
+},{}],27:[function(require,module,exports){
+// References:
+//
+// http://msdn.microsoft.com/en-us/library/bb943991.aspx/
+// http://blog.tojicode.com/2011/12/compressed-textures-in-webgl.html
+//
+
+
+module.exports = parseDDS
+
+var DDS_MAGIC = 0x20534444
+
+var GL_TEXTURE_2D = 0x0DE1
+var GL_TEXTURE_CUBE_MAP_POSITIVE_X = 0x8515
+
+var GL_COMPRESSED_RGB_S3TC_DXT1_EXT = 0x83F0
+var GL_COMPRESSED_RGBA_S3TC_DXT1_EXT = 0x83F1
+var GL_COMPRESSED_RGBA_S3TC_DXT3_EXT = 0x83F2
+var GL_COMPRESSED_RGBA_S3TC_DXT5_EXT = 0x83F3
+
+var GL_COMPRESSED_RGB_ETC1_WEBGL = 0x8D64
+
+var GL_UNSIGNED_BYTE = 0x1401
+// var GL_HALF_FLOAT_OES = 0x8D61
+// var GL_FLOAT = 0x1406
+
+var DDSD_MIPMAPCOUNT = 0x20000
+
+var DDSCAPS2_CUBEMAP = 0x200
+var DDSCAPS2_CUBEMAP_POSITIVEX = 0x400
+var DDSCAPS2_CUBEMAP_NEGATIVEX = 0x800
+var DDSCAPS2_CUBEMAP_POSITIVEY = 0x1000
+var DDSCAPS2_CUBEMAP_NEGATIVEY = 0x2000
+var DDSCAPS2_CUBEMAP_POSITIVEZ = 0x4000
+var DDSCAPS2_CUBEMAP_NEGATIVEZ = 0x8000
+
+var CUBEMAP_COMPLETE_FACES = (
+  DDSCAPS2_CUBEMAP_POSITIVEX |
+  DDSCAPS2_CUBEMAP_NEGATIVEX |
+  DDSCAPS2_CUBEMAP_POSITIVEY |
+  DDSCAPS2_CUBEMAP_NEGATIVEY |
+  DDSCAPS2_CUBEMAP_POSITIVEZ |
+  DDSCAPS2_CUBEMAP_NEGATIVEZ)
+
+var DDPF_FOURCC = 0x4
+var DDPF_RGB = 0x40
+
+var FOURCC_DXT1 = 0x31545844
+var FOURCC_DXT3 = 0x33545844
+var FOURCC_DXT5 = 0x35545844
+var FOURCC_ETC1 = 0x31435445
+
+// DDS_HEADER {
+var OFF_SIZE = 1        // int32 dwSize
+var OFF_FLAGS = 2       // int32 dwFlags
+var OFF_HEIGHT = 3      // int32 dwHeight
+var OFF_WIDTH = 4       // int32 dwWidth
+// var OFF_PITCH = 5       // int32 dwPitchOrLinearSize
+// var OFF_DEPTH = 6       // int32 dwDepth
+var OFF_MIPMAP = 7      // int32 dwMipMapCount; // offset: 7
+// int32[11] dwReserved1
+// DDS_PIXELFORMAT {
+// var OFF_PF_SIZE = 19    // int32 dwSize; // offset: 19
+var OFF_PF_FLAGS = 20   // int32 dwFlags
+var OFF_FOURCC = 21     // char[4] dwFourCC
+// var OFF_RGBA_BITS = 22  // int32 dwRGBBitCount
+// var OFF_RED_MASK = 23   // int32 dwRBitMask
+// var OFF_GREEN_MASK = 24 // int32 dwGBitMask
+// var OFF_BLUE_MASK = 25  // int32 dwBBitMask
+// var OFF_ALPHA_MASK = 26 // int32 dwABitMask; // offset: 26
+// }
+// var OFF_CAPS = 27       // int32 dwCaps; // offset: 27
+var OFF_CAPS2 = 28      // int32 dwCaps2
+// var OFF_CAPS3 = 29      // int32 dwCaps3
+// var OFF_CAPS4 = 30      // int32 dwCaps4
+// int32 dwReserved2 // offset 31
+
+function parseDDS (arrayBuffer) {
+  var header = new Int32Array(arrayBuffer)
+  
+
+  var flags = header[OFF_FLAGS]
+  
+
+  var width = header[OFF_WIDTH]
+  var height = header[OFF_HEIGHT]
+
+  var type = GL_UNSIGNED_BYTE
+  var format = 0
+  var blockBytes = 0
+  var channels = 4
+  switch (header[OFF_FOURCC]) {
+    case FOURCC_DXT1:
+      blockBytes = 8
+      if (flags & DDPF_RGB) {
+        channels = 3
+        format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT
+      } else {
+        format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
+      }
+      break
+
+    case FOURCC_DXT3:
+      blockBytes = 16
+      format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
+      break
+
+    case FOURCC_DXT5:
+      blockBytes = 16
+      format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+      break
+
+    case FOURCC_ETC1:
+      blockBytes = 8
+      format = GL_COMPRESSED_RGB_ETC1_WEBGL
+      break
+
+    // TODO: Implement hdr and uncompressed textures
+
+    default:
+      // Handle uncompressed data here
+      
+  }
+
+  var pixelFlags = header[OFF_PF_FLAGS]
+
+  var mipmapCount = 1
+  if (pixelFlags & DDSD_MIPMAPCOUNT) {
+    mipmapCount = Math.max(1, header[OFF_MIPMAP])
+  }
+
+  var ptr = header[OFF_SIZE] + 4
+
+  var result = {
+    width: width,
+    height: height,
+    channels: channels,
+    format: format,
+    type: type,
+    compressed: true,
+    cube: false,
+    pixels: []
+  }
+
+  function parseMips (target) {
+    var mipWidth = width
+    var mipHeight = height
+
+    for (var i = 0; i < mipmapCount; ++i) {
+      var size =
+        Math.max(1, (mipWidth + 3) >> 2) *
+        Math.max(1, (mipHeight + 3) >> 2) *
+        blockBytes
+      result.pixels.push({
+        target: target,
+        miplevel: i,
+        width: mipWidth,
+        height: mipHeight,
+        data: new Uint8Array(arrayBuffer, ptr, size)
+      })
+      ptr += size
+      mipWidth >>= 1
+      mipHeight >>= 1
+    }
+  }
+
+  var caps2 = header[OFF_CAPS2]
+  var cubemap = !!(caps2 & DDSCAPS2_CUBEMAP)
+  if (cubemap) {
+    
+    result.cube = true
+    for (var i = 0; i < 6; ++i) {
+      parseMips(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i)
+    }
+  } else {
+    parseMips(GL_TEXTURE_2D)
+  }
+
+  return result
+}
+
+},{}],28:[function(require,module,exports){
+/* globals requestAnimationFrame, cancelAnimationFrame */
+if (typeof requestAnimationFrame === 'function' &&
+    typeof cancelAnimationFrame === 'function') {
+  module.exports = {
+    next: function (x) { return requestAnimationFrame(x) },
+    cancel: function (x) { return cancelAnimationFrame(x) }
+  }
+} else {
+  module.exports = {
+    next: function (cb) {
+      setTimeout(cb, 30)
+    },
+    cancel: clearTimeout
+  }
+}
+
+},{}],29:[function(require,module,exports){
+// A stack for managing the state of a scalar/vector parameter
+
+module.exports = function createStack (init, onChange) {
+  var n = init.length
+  var stack = init.slice()
+  var current = init.slice()
+  var dirty = false
+  var forceDirty = true
+
+  function poll () {
+    var ptr = stack.length - n
+    if (dirty || forceDirty) {
+      switch (n) {
+        case 1:
+          onChange(stack[ptr])
+          break
+        case 2:
+          onChange(stack[ptr], stack[ptr + 1])
+          break
+        case 3:
+          onChange(stack[ptr], stack[ptr + 1], stack[ptr + 2])
+          break
+        case 4:
+          onChange(stack[ptr], stack[ptr + 1], stack[ptr + 2], stack[ptr + 3])
+          break
+        case 5:
+          onChange(stack[ptr], stack[ptr + 1], stack[ptr + 2], stack[ptr + 3], stack[ptr + 4])
+          break
+        case 6:
+          onChange(stack[ptr], stack[ptr + 1], stack[ptr + 2], stack[ptr + 3], stack[ptr + 4], stack[ptr + 5])
+          break
+        default:
+          onChange.apply(null, stack.slice(ptr, stack.length))
+      }
+      for (var i = 0; i < n; ++i) {
+        current[i] = stack[ptr + i]
+      }
+      forceDirty = dirty = false
+    }
+  }
+
+  return {
+    push: function () {
+      dirty = false
+      for (var i = 0; i < n; ++i) {
+        var x = arguments[i]
+        dirty = dirty || (x !== current[i])
+        stack.push(x)
+      }
+    },
+
+    pop: function () {
+      dirty = false
+      stack.length -= n
+      for (var i = 0; i < n; ++i) {
+        dirty = dirty || (stack[stack.length - n + i] !== current[i])
+      }
+    },
+
+    poll: poll,
+
+    setDirty: function () {
+      forceDirty = true
+    }
+  }
+}
+
+},{}],30:[function(require,module,exports){
 module.exports = function convertToHalfFloat (array) {
   var floats = new Float32Array(array)
   var uints = new Uint32Array(floats.buffer)
@@ -5873,26 +5828,6 @@ module.exports = function convertToHalfFloat (array) {
   return ushorts
 }
 
-},{}],30:[function(require,module,exports){
-module.exports = function wrapUniformState (stringStore) {
-  var uniformState = {}
-
-  function defUniform (name) {
-    var id = stringStore.id(name)
-    var result = uniformState[id]
-    if (!result) {
-      result = uniformState[id] = [
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-      ]
-    }
-    return result
-  }
-
-  return {
-    def: defUniform
-  }
-}
-
 },{}],31:[function(require,module,exports){
 module.exports = function (obj) {
   return Object.keys(obj).map(function (key) { return obj[key] })
@@ -5900,7 +5835,7 @@ module.exports = function (obj) {
 
 },{}],32:[function(require,module,exports){
 
-var extend = require('./lib/extend')
+var extend = require('./lib/util/extend')
 var getContext = require('./lib/context')
 var createStringStore = require('./lib/strings')
 var wrapExtensions = require('./lib/extension')
@@ -5918,8 +5853,8 @@ var wrapContext = require('./lib/state')
 var createCompiler = require('./lib/compile')
 var wrapRead = require('./lib/read')
 var dynamic = require('./lib/dynamic')
-var raf = require('./lib/raf')
-var clock = require('./lib/clock')
+var raf = require('./lib/util/raf')
+var clock = require('./lib/util/clock')
 
 var GL_COLOR_BUFFER_BIT = 16384
 var GL_DEPTH_BUFFER_BIT = 256
@@ -5937,7 +5872,6 @@ module.exports = function wrapREGL () {
   var gl = args.gl
   var options = args.options
 
-  // Use string store to track string ids
   var stringStore = createStringStore()
 
   var extensionState = wrapExtensions(gl)
@@ -6038,7 +5972,6 @@ module.exports = function wrapREGL () {
 
   var canvas = gl.canvas
 
-  // raf stuff
   var rafCallbacks = []
   var activeRAF = 0
   function handleRAF () {
@@ -6106,7 +6039,6 @@ module.exports = function wrapREGL () {
     canvas.addEventListener(CONTEXT_RESTORED_EVENT, handleContextRestored, false)
   }
 
-  // Resource destructuion
   function destroy () {
     stopRAF()
 
@@ -6157,7 +6089,6 @@ module.exports = function wrapREGL () {
       return result
     }
 
-    // First we separate the options into static and dynamic components
     function separateDynamic (object) {
       var staticItems = {}
       var dynamicItems = {}
@@ -6197,15 +6128,22 @@ module.exports = function wrapREGL () {
       return EMPTY_ARRAY
     }
 
+    
+
     function REGLCommand (args, body) {
+      if (typeof args === 'function') {
+        return scope(null, args)
+      } else if (typeof body === 'function') {
+        return scope(args, body)
+      }
+
+      // Runtime shader check.  Removed in production builds
+      
+
       if (typeof args === 'number') {
         return batch(args | 0, reserve(args | 0))
       } else if (Array.isArray(args)) {
         return batch(args.length, args)
-      } else if (typeof args === 'function') {
-        return scope(null, args)
-      } else if (typeof body === 'function') {
-        return scope(args, body)
       }
       return draw(args)
     }
@@ -6221,7 +6159,6 @@ module.exports = function wrapREGL () {
   function clear (options) {
     var clearFlags = 0
 
-    // Update context state
     poll()
 
     var c = options.color
@@ -6242,7 +6179,6 @@ module.exports = function wrapREGL () {
     gl.clear(clearFlags)
   }
 
-  // Registers another requestAnimationFrame callback
   function frame (cb) {
     rafCallbacks.push(cb)
 
@@ -6320,5 +6256,5 @@ module.exports = function wrapREGL () {
   })
 }
 
-},{"./lib/attribute":1,"./lib/buffer":2,"./lib/clock":3,"./lib/compile":5,"./lib/context":9,"./lib/draw":10,"./lib/dynamic":11,"./lib/elements":12,"./lib/extend":13,"./lib/extension":14,"./lib/framebuffer":15,"./lib/limits":18,"./lib/raf":21,"./lib/read":22,"./lib/renderbuffer":23,"./lib/shader":24,"./lib/state":26,"./lib/strings":27,"./lib/texture":28,"./lib/uniform":30}]},{},[32])(32)
+},{"./lib/attribute":1,"./lib/buffer":2,"./lib/compile":3,"./lib/context":7,"./lib/draw":8,"./lib/dynamic":9,"./lib/elements":10,"./lib/extension":11,"./lib/framebuffer":12,"./lib/limits":13,"./lib/read":14,"./lib/renderbuffer":15,"./lib/shader":16,"./lib/state":17,"./lib/strings":18,"./lib/texture":19,"./lib/uniform":20,"./lib/util/clock":21,"./lib/util/extend":23,"./lib/util/raf":28}]},{},[32])(32)
 });
