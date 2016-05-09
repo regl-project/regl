@@ -102,10 +102,14 @@ tape('batch', function (t) {
           var hit = !!find(points, function (p) {
             return p[0] === i && p[1] === j
           })
-          t.equals(pixels[ptr], hit ? 0 : 255, hit && 'hit')
-          t.equals(pixels[ptr + 1], 0)
-          t.equals(pixels[ptr + 2], hit ? 255 : 0, hit && '')
-          t.equals(pixels[ptr + 3], 255)
+          var actual = [
+            pixels[ptr],
+            pixels[ptr + 1],
+            pixels[ptr + 2],
+            pixels[ptr + 3]
+          ]
+          var expected = hit ? [0, 0, 255, 255] : [255, 0, 0, 255]
+          t.same(actual, expected, (hit ? '*' : '_') + ' @ ' + [i, j])
         }
       }
     }
