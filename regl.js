@@ -292,7 +292,7 @@ module.exports = function wrapREGL () {
       return EMPTY_ARRAY
     }
 
-    check.saveDrawInfo(opts, uniforms, stringStore)
+    check.saveDrawInfo(opts, uniforms, attributes, stringStore)
 
     function REGLCommand (args, body) {
       if (typeof args === 'function') {
@@ -306,10 +306,12 @@ module.exports = function wrapREGL () {
         drawState,
         shaderState,
         uniformState,
+        attributeState,
         opts._commandRef,
         opts._fragId,
         opts._vertId,
         opts._uniformSet,
+        opts._attributeSet,
         opts._hasCount)
 
       if (typeof args === 'number') {
