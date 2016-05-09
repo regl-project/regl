@@ -2,6 +2,14 @@ var createContext = require('./util/create-context')
 var createREGL = require('../../regl')
 var tape = require('tape')
 
+function find (array, pred) {
+  for (var i = 0; i < array.length; ++i) {
+    if (pred(array[i])) {
+      return array[i]
+    }
+  }
+}
+
 tape('batch', function (t) {
   setTimeout(function () {
     var regl = createREGL(createContext(16, 16))
@@ -87,7 +95,7 @@ tape('batch', function (t) {
       for (var i = 0; i < 16; ++i) {
         for (var j = 0; j < 16; ++j) {
           var ptr = 4 * (16 * i + j)
-          var hit = !!points.find(function (p) {
+          var hit = !!find(points, function (p) {
             return p[0] === i && p[1] === j
           })
           t.equals(pixels[ptr], hit ? 0 : 255, hit && 'hit')
