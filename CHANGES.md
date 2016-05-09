@@ -3,6 +3,7 @@
 ## Planned
 
 * Fix CI problems
+* Add a mechanism for requiring/selectively disabling extensions
 * Upgrade vertex pointer format, allow for implicit conversion from arrays
 * Improve validation of vertex attributes
 * Refactor attributeState, some names are inconsistent and code is too complex
