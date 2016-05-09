@@ -2,19 +2,20 @@
 
 ## Planned
 
-* Implicit coercion for vertex buffers
-* Improve readability of generated code
-* Change buffer and texture APIs to separate data from rest of options (?)
+* Fix CI problems
+* Upgrade vertex pointer format, allow for implicit conversion from arrays
+* Improve validation of vertex attributes
+* Refactor attributeState, some names are inconsistent and code is too complex
+* Optimize generated code
+* Change buffer and texture APIs to separate data from rest of options (or maybe not?)
 * Add in place update methods to buffers and textures
 * Add support for polling buffers and animated GIFs (useful for web audio)
 * Support more DDS texture formats (HDR, PVRTC, etc.)
 * Cubic framebuffer objects
 * Benchmark suite
 * More unit tests
-* Fix CI problems
-* Reduce file size
-* Web site
-* Consider some strategy for
+* Optimize bundle size, remove string constants
+* Build a website (@freeman-lab is on it!)
 * Recipe book/example set
     + Minecraft example
     + Globe
