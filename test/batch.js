@@ -12,7 +12,15 @@ function find (array, pred) {
 
 tape('batch', function (t) {
   setTimeout(function () {
-    var regl = createREGL(createContext(16, 16))
+    var regl = createREGL(createContext(5, 5))
+
+    var points = [
+      [2, 2],
+      [0, 2],
+      [2, 0],
+      [4, 2],
+      [2, 4]
+    ]
 
     regl.clear({
       color: [1, 0, 0, 1]
@@ -45,6 +53,8 @@ tape('batch', function (t) {
 
       count: 1,
 
+      depth: {enable: false},
+
       primitive: 'points'
     })
 
@@ -72,29 +82,23 @@ tape('batch', function (t) {
       uniforms: {
         offset: function (args, index) {
           var p = points[index]
-          return [(p[0] + 1) / 8 - 1.0, (p[1] + 1) / 8 - 1.0]
+          return [(p[0] + 0.5) / 2.25 - 1.0, (p[1] + 0.5) / 2.25 - 1.0]
         }
       },
 
       count: 1,
 
+      depth: {enable: false},
+
       primitive: 'points'
     })
-
-    var points = [
-      [8, 8],
-      [0, 8],
-      [8, 0],
-      [15, 8],
-      [8, 15]
-    ]
 
     function runTest () {
       var pixels = regl.read()
 
-      for (var i = 0; i < 16; ++i) {
-        for (var j = 0; j < 16; ++j) {
-          var ptr = 4 * (16 * i + j)
+      for (var i = 0; i < 5; ++i) {
+        for (var j = 0; j < 5; ++j) {
+          var ptr = 4 * (5 * i + j)
           var hit = !!find(points, function (p) {
             return p[0] === i && p[1] === j
           })
@@ -108,7 +112,7 @@ tape('batch', function (t) {
 
     drawBatch(points.map(function (p) {
       return {
-        offset: [(p[0] + 1) / 8 - 1.0, (p[1] + 1) / 8 - 1.0]
+        offset: [(p[0] + 0.5) / 2.25 - 1.0, (p[1] + 0.5) / 2.25 - 1.0]
       }
     }))
     runTest()
