@@ -13,20 +13,23 @@ tape('framebuffer', function (t) {
 
   var setFramebufferDynamic = regl({
     framebuffer: regl.prop('framebuffer'),
-    frag: `
-    precision mediump float;
-    uniform vec4 color;
-    void main() {
-      gl_FragColor = color;
-    }
-    `,
-    vert: `
-    precision mediump float;
-    attribute vec4 position;
-    void main() {
-      gl_Position = position;
-    }
-    `,
+
+    frag: [
+      'precision mediump float;',
+      'uniform vec4 color;',
+      'void main() {',
+      '  gl_FragColor = color;',
+      '}'
+    ].join('\n'),
+
+    vert: [
+      'precision mediump float;',
+      'attribute vec4 position;',
+      'void main() {',
+      '  gl_Position = position;',
+      '}'
+    ].join('\n'),
+
     attributes: {
       position: regl.buffer([
         [-4, 0, 0, 1],
