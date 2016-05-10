@@ -30,6 +30,8 @@
 
 ## Next
 
+* Pass `this` to draw commands so that they can be stored as members
+
 ## 0.4.0
 
 * Circle CI finally passes!

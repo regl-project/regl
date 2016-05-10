@@ -296,9 +296,9 @@ module.exports = function wrapREGL () {
 
     function REGLCommand (args, body) {
       if (typeof args === 'function') {
-        return scope(null, args)
+        return scope.call(this, null, args)
       } else if (typeof body === 'function') {
-        return scope(args, body)
+        return scope.call(this, args, body)
       }
 
       // Runtime shader check.  Removed in production builds
@@ -315,11 +315,11 @@ module.exports = function wrapREGL () {
         opts._hasCount)
 
       if (typeof args === 'number') {
-        return batch(args | 0, reserve(args | 0))
+        return batch.call(this, args | 0, reserve(args | 0))
       } else if (Array.isArray(args)) {
-        return batch(args.length, args)
+        return batch.call(this, args.length, args)
       }
-      return draw(args)
+      return draw.call(this, args)
     }
 
     return REGLCommand
