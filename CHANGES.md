@@ -2,21 +2,44 @@
 
 ## Planned
 
+* Environment variables
+* Use `this` argument effectively
+    * Should pass this to dynamic attributes and scope
+* Make scopes and dynamic attributes take same argument
+* Allow for batch scopes
+* Support fixed scopes as arguments
 * Add a mechanism for requiring/selectively disabling extensions
-* Upgrade vertex pointer format, allow for implicit conversion from arrays
-* Improve validation of vertex attributes
-* Refactor attributeState, some names are inconsistent and code is too complex
-* Change buffer and texture APIs to separate data from rest of options (or maybe not?)
-* Add in place update methods to buffers and textures
-* Add support for polling buffers and animated GIFs (useful for web audio)
-* Cubic framebuffer objects
-* More unit tests, improve code coverage
-* Kill all garbage collection
+* Support directly constructing elements and attributes from arrays
+
+* Resource API improvements
+    + Add in place update methods to buffers and textures
+    + Add support for polling buffers and animated GIFs (useful for web audio)
+* Cubic frame buffer objects
+* WebVR support and integration (need to think how this will work)
+* Documentation
+    + Rewrite resource section, bring individual resources to the top
+* Code quality and management
+    + Refactor attributeState, some names are inconsistent and code is too complex
+    + Update development documentation
+    + Add contributing guidelines and code of conduct
+* Error reporting
+    + All error messages should link to command/resource declaration
+    + Improve validation of vertex attributes
+    + Improve validation of dynamic properties
+* Testing
+    + Complete coverage for all code generation pathways
+    + Test weird invocation sequences
 * Benchmark suite
-* Optimize generated code
-* Optimize bundle size, remove string constants
+    + Dashboard for test cases and benchmarks
+    + Create some more typical drawing examples
+* Optimization
+    + Kill all VM bailouts on all major platforms
+    + Kill all garbage collection
+    + Optimize generated code
+    + Optimize bundle size, remove string constants
 * Support more DDS texture formats (HDR, PVRTC, etc.)
 * Build a website (@freeman-lab is on it!)
+* Render to glTF (maybe?), could be useful for dumping previews
 * Recipe book/example set
     + Minecraft example
     + Globe
