@@ -1,12 +1,9 @@
 require('tap-browser-color')()
-/*
 require('../accessor')
 require('../clear')
 require('../buffer')
 require('../element-parse')
-*/
 require('../context')
-/*
 require('../triangle')
 require('../elements')
 require('../line')
@@ -29,4 +26,3 @@ require('../texture-parse')
 require('../renderbuffer')
 require('../framebuffer-parse')
 require('../framebuffer')
-*/
