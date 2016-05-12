@@ -1,6 +1,6 @@
 var check = require('./lib/util/check')
 var extend = require('./lib/util/extend')
-var getContext = require('./lib/context')
+var initWebGL = require('./lib/webgl')
 var createStringStore = require('./lib/strings')
 var wrapExtensions = require('./lib/extension')
 var wrapLimits = require('./lib/limits')
@@ -36,7 +36,7 @@ var DYN_CONTEXT = 2
 var DYN_STATE = 3
 
 module.exports = function wrapREGL () {
-  var args = getContext(Array.prototype.slice.call(arguments))
+  var args = initWebGL(Array.prototype.slice.call(arguments))
   var gl = args.gl
   var options = args.options
 
