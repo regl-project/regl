@@ -5,7 +5,6 @@
 * Environment variables
 * Use `this` argument effectively
     * Should pass this to dynamic attributes and scope
-* Make scopes and dynamic attributes take same argument
 * Allow for batch scopes
 * Support fixed scopes as arguments
 * Add a mechanism for requiring/selectively disabling extensions
@@ -55,6 +54,8 @@
 
 ## Next
 
+* Make scopes and dynamic attributes take same argument
+* Combine batchId with stats argument
 * Pass `this` to draw commands so that they can be stored as members
 
 ## 0.4.0
