@@ -1,4 +1,6 @@
 require('tap-browser-color')()
+/*
+require('../accessor')
 require('../clear')
 require('../buffer')
 require('../element-parse')
@@ -9,6 +11,9 @@ require('../batch')
 require('../draw')
 require('../batch-attributes')
 require('../dynamic-elements')
+*/
+require('../this')
+/*
 require('../scope')
 require('../depth')
 require('../blend')
@@ -23,3 +28,4 @@ require('../texture-parse')
 require('../renderbuffer')
 require('../framebuffer-parse')
 require('../framebuffer')
+*/

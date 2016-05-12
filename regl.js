@@ -31,6 +31,10 @@ var GL_TEXTURE_CUBE_MAP = 0x8513
 var CONTEXT_LOST_EVENT = 'webglcontextlost'
 var CONTEXT_RESTORED_EVENT = 'webglcontextrestored'
 
+var DYN_PROP = 1
+var DYN_CONTEXT = 2
+var DYN_STATE = 3
+
 module.exports = function wrapREGL () {
   var args = getContext(Array.prototype.slice.call(arguments))
   var gl = args.gl
@@ -380,8 +384,10 @@ module.exports = function wrapREGL () {
     // Clear current FBO
     clear: clear,
 
-    // Short cut for prop binding
-    prop: dynamic.define,
+    // Short cuts for dynamic variables
+    prop: dynamic.define.bind(null, DYN_PROP),
+    context: dynamic.define.bind(null, DYN_CONTEXT),
+    this: dynamic.define.bind(null, DYN_STATE),
 
     // executes an empty draw command
     draw: compileProcedure({}),

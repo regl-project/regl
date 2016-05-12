@@ -17,6 +17,7 @@
 * Cubic frame buffer objects
 * WebVR support and integration (need to think how this will work)
 * Documentation
+    + Write "regl for react programmers"
     + Rewrite resource section, bring individual resources to the top
 * Code quality and management
     + Refactor attributeState, some names are inconsistent and code is too complex
@@ -33,6 +34,7 @@
     + Dashboard for test cases and benchmarks
     + Create some more typical drawing examples
 * Optimization
+    + Save environment and this variables across batch mode invocations
     + Kill all VM bailouts on all major platforms
     + Kill all garbage collection
     + Optimize generated code
