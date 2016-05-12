@@ -1,12 +1,12 @@
-var regl = require('../regl')()
-var mat4 = require('gl-mat4')
-var hsv2rgb = require('hsv2rgb')
+const regl = require('../regl')()
+const mat4 = require('gl-mat4')
+const hsv2rgb = require('hsv2rgb')
 
-var NUM_POINTS = 1e4
-var VERT_SIZE = 4 * (4 + 4 + 3)
+const NUM_POINTS = 1e4
+const VERT_SIZE = 4 * (4 + 4 + 3)
 
-var pointBuffer = regl.buffer(Array(NUM_POINTS).fill().map(function () {
-  var color = hsv2rgb(Math.random() * 360, 0.6, 1)
+const pointBuffer = regl.buffer(Array(NUM_POINTS).fill().map(function () {
+  const color = hsv2rgb(Math.random() * 360, 0.6, 1)
   return [
     // freq
     Math.random() * 10,
@@ -23,7 +23,7 @@ var pointBuffer = regl.buffer(Array(NUM_POINTS).fill().map(function () {
   ]
 }))
 
-var drawParticles = regl({
+const drawParticles = regl({
   vert: `
   precision mediump float;
   attribute vec4 freq, phase;
@@ -67,22 +67,22 @@ var drawParticles = regl({
   },
 
   uniforms: {
-    view: function (args, batchId, stats) {
-      var t = 0.01 * stats.count
+    view: (props, {count}) => {
+      const t = 0.01 * count
       return mat4.lookAt([],
         [30 * Math.cos(t), 2.5, 30 * Math.sin(t)],
         [0, 0, 0],
         [0, 1, 0])
     },
-    projection: function (args, batchId, stats) {
+    projection: (props, {viewportWidth, viewportHeight}) => {
       return mat4.perspective([],
         Math.PI / 4,
-        stats.width / stats.height,
+        viewportWidth / viewportHeight,
         0.01,
         1000)
     },
-    time: function (args, batchId, stats) {
-      return stats.count * 0.001
+    time: (props, {count}) => {
+      return count * 0.001
     }
   },
 
@@ -91,7 +91,7 @@ var drawParticles = regl({
   primitive: 'points'
 })
 
-regl.frame(function () {
+regl.frame((props, context) => {
   regl.clear({
     depth: 1,
     color: [0, 0, 0, 1]

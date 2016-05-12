@@ -114,17 +114,17 @@ const drawBunnyWithLOD = regl({
 
   uniforms: {
     // This is a standard perspective camera
-    projection: (args, batchId, stats) => {
+    projection: (props, {viewportWidth, viewportHeight}) => {
       return mat4.perspective([],
         Math.PI / 4,
-        stats.width / stats.height,
+        viewportWidth / viewportHeight,
         0.01,
         1000)
     },
 
     // We slowly rotate the camera around the center of the bunny
-    view: (args, batchId, stats) => {
-      const t = 0.004 * stats.count
+    view: (props, {count}) => {
+      const t = 0.004 * count
       return mat4.lookAt([],
         [20 * Math.cos(t), 10, 20 * Math.sin(t)],
         [0, 2.5, 0],

@@ -1,4 +1,4 @@
-var regl = require('../regl')()
+const regl = require('../regl')()
 
 regl.clear({
   color: [0, 0, 0, 1],
@@ -29,7 +29,7 @@ regl({
   },
 
   count: 3
-})(function () {
+})(() => {
   regl({
     uniforms: {
       color: [1, 0, 0, 1],

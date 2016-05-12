@@ -103,15 +103,29 @@ module.exports = function wrapREGL () {
     textureState,
     renderbufferState)
 
+  var startTime = clock()
+
   var frameState = {
     count: 0,
-    start: clock(),
+    start: startTime,
     dt: 0,
-    t: clock(),
+    t: startTime,
     renderTime: 0,
     width: gl.drawingBufferWidth,
     height: gl.drawingBufferHeight,
     pixelRatio: options.pixelRatio
+  }
+
+  var context = {
+    count: 0,
+    batchId: 0,
+    deltaTime: 0,
+    time: 0,
+    viewportWidth: frameState.width,
+    viewportHeight: frameState.height,
+    drawingBufferWidth: frameState.width,
+    drawingBufferHeight: frameState.height,
+    pixelRatio: frameState.pixelRatio
   }
 
   var glState = wrapContext(
@@ -135,7 +149,7 @@ module.exports = function wrapREGL () {
     attributeState,
     shaderState,
     drawState,
-    frameState,
+    context,
     poll)
 
   var canvas = gl.canvas
@@ -145,11 +159,16 @@ module.exports = function wrapREGL () {
   function handleRAF () {
     activeRAF = raf.next(handleRAF)
     frameState.count += 1
+    context.count = frameState.count
 
     if (frameState.width !== gl.drawingBufferWidth ||
         frameState.height !== gl.drawingBufferHeight) {
-      frameState.width = gl.drawingBufferWidth
-      frameState.height = gl.drawingBufferHeight
+      context.viewportWidth =
+        context.drawingBufferWidth =
+        frameState.width = gl.drawingBufferWidth
+      context.viewportHeight =
+        context.drawingBufferHeight =
+        frameState.height = gl.drawingBufferHeight
       glState.notifyViewportChanged()
     }
 
@@ -157,11 +176,14 @@ module.exports = function wrapREGL () {
     frameState.dt = now - frameState.t
     frameState.t = now
 
+    context.deltaTime = frameState.dt / 1000.0
+    context.time = (now - startTime) / 1000.0
+
     textureState.poll()
 
     for (var i = 0; i < rafCallbacks.length; ++i) {
       var cb = rafCallbacks[i]
-      cb(frameState.count, frameState.t, frameState.dt)
+      cb(null, context)
     }
     frameState.renderTime = clock() - now
   }

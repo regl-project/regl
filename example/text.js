@@ -41,7 +41,7 @@ const drawFeedback = regl({
 
   uniforms: {
     texture: feedBackTexture,
-    t: (args, id, stats) => 0.001 * stats.count
+    t: (props, {count}) => 0.001 * count
   },
 
   depth: {enable: false},
@@ -75,20 +75,20 @@ const drawText = regl({
   elements: regl.elements(textMesh.edges),
 
   uniforms: {
-    t: (args, batchId, stats) => 0.01 * stats.count,
+    t: (props, {count}) => 0.01 * count,
 
-    view: (args, batchId, stats) => {
-      var t = 0.01 * stats.count
+    view: (props, {count}) => {
+      const t = 0.01 * count
       return lookAt([],
         [5 * Math.sin(t), 0, -5 * Math.cos(t)],
         [0, 0, 0],
         [0, -1, 0])
     },
 
-    projection: (args, batchId, stats) =>
+    projection: (props, {viewportWidth, viewportHeight}) =>
       perspective([],
         Math.PI / 4,
-        stats.width / stats.height,
+        viewportWidth / viewportHeight,
         0.01,
         1000)
   },
@@ -96,7 +96,7 @@ const drawText = regl({
   depth: {enable: false}
 })
 
-regl.frame(() => {
+regl.frame((props, context) => {
   drawFeedback()
   drawText()
   feedBackTexture({
