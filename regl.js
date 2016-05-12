@@ -258,6 +258,7 @@ module.exports = function wrapREGL () {
       var result = extend({}, options)
       delete result.uniforms
       delete result.attributes
+      delete result.context
 
       function merge (name) {
         if (name in result) {
@@ -297,6 +298,8 @@ module.exports = function wrapREGL () {
       }
     }
 
+    // Treat context variables separate from other dynamic variables
+    var context = separateDynamic(options.context || {})
     var uniforms = separateDynamic(options.uniforms || {})
     var attributes = separateDynamic(options.attributes || {})
     var opts = separateDynamic(flattenNestedOptions(options))
@@ -304,7 +307,7 @@ module.exports = function wrapREGL () {
     var compiled = compiler.command(
       opts.static, uniforms.static, attributes.static,
       opts.dynamic, uniforms.dynamic, attributes.dynamic,
-      hasDynamic)
+      context, hasDynamic)
 
     var draw = compiled.draw
     var batch = compiled.batch
