@@ -1,6 +1,6 @@
 // This example is a simple demonstration of how to use regl.
 // The default method exposed by the module wraps a canvas element
-var regl = require('../regl')()
+const regl = require('../regl')()
 
 // This clears the color buffer to black and the depth buffer to 1
 regl.clear({
@@ -15,21 +15,19 @@ regl.clear({
 regl({
 
   // In a draw call, we can pass the shader source code to regl
-  frag: [
-    'precision mediump float;',
-    'uniform vec4 color;',
-    'void main() {',
-    '  gl_FragColor = color;',
-    '}'
-  ].join('\n'),
+  frag: `
+  precision mediump float;
+  uniform vec4 color;
+  void main () {
+    gl_FragColor = color;
+  }`,
 
-  vert: [
-    'precision mediump float;',
-    'attribute vec2 position;',
-    'void main() {',
-    '  gl_Position = vec4(position, 0, 1);',
-    '}'
-  ].join('\n'),
+  vert: `
+  precision mediump float;
+  attribute vec2 position;
+  void main () {
+    gl_Position = vec4(position, 0, 1);
+  }`,
 
   attributes: {
     position: regl.buffer([

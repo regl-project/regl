@@ -1,9 +1,9 @@
-var regl = require('../regl')()
-var normals = require('angle-normals')
-var mat4 = require('gl-mat4')
-var bunny = require('bunny')
+const regl = require('../regl')()
+const normals = require('angle-normals')
+const mat4 = require('gl-mat4')
+const bunny = require('bunny')
 
-var drawBunny = regl({
+const drawBunny = regl({
   vert: `
   precision mediump float;
   attribute vec3 position, normal;
@@ -42,17 +42,17 @@ var drawBunny = regl({
   elements: regl.elements(bunny.cells),
 
   uniforms: {
-    view: function (args, batchId, stats) {
-      var t = 0.01 * stats.count
+    view: (props, {count}) => {
+      const t = 0.01 * count
       return mat4.lookAt([],
         [30 * Math.cos(t), 2.5, 30 * Math.sin(t)],
         [0, 2.5, 0],
         [0, 1, 0])
     },
-    projection: function (args, batchId, stats) {
+    projection: (props, {viewportWidth, viewportHeight}) => {
       return mat4.perspective([],
         Math.PI / 4,
-        stats.width / stats.height,
+        viewportWidth / viewportHeight,
         0.01,
         1000)
     },
@@ -60,32 +60,32 @@ var drawBunny = regl({
     'lights[1].color': [0, 1, 0],
     'lights[2].color': [0, 0, 1],
     'lights[3].color': [1, 1, 0],
-    'lights[0].position': function (args, batchId, stats) {
-      var t = 0.1 * stats.count
+    'lights[0].position': (props, {count}) => {
+      const t = 0.1 * count
       return [
         10 * Math.cos(t),
         10 * Math.sin(2 * t),
         10 * Math.cos(3 * t)
       ]
     },
-    'lights[1].position': function (args, batchId, stats) {
-      var t = 0.1 * stats.count
+    'lights[1].position': (props, {count}) => {
+      const t = 0.1 * count
       return [
         10 * Math.cos(5 * t + 1),
         10 * Math.sin(4 * t),
         10 * Math.cos(0.1 * t)
       ]
     },
-    'lights[2].position': function (args, batchId, stats) {
-      var t = 0.1 * stats.count
+    'lights[2].position': (props, {count}) => {
+      const t = 0.1 * count
       return [
         10 * Math.cos(9 * t),
         10 * Math.sin(0.25 * t),
         10 * Math.cos(4 * t)
       ]
     },
-    'lights[3].position': function (args, batchId, stats) {
-      var t = 0.1 * stats.count
+    'lights[3].position': (props, {count}) => {
+      const t = 0.1 * count
       return [
         10 * Math.cos(0.3 * t),
         10 * Math.sin(2.1 * t),
@@ -95,7 +95,7 @@ var drawBunny = regl({
   }
 })
 
-regl.frame(function () {
+regl.frame((props, count) => {
   regl.clear({
     depth: 1,
     color: [0, 0, 0, 1]

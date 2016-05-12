@@ -45,13 +45,10 @@ const drawDoggie = regl({
   uniforms: {
     texture: regl.texture('assets/doggie-chromakey.ogv'),
 
-    screenShape: function (args, batchId, stats) {
-      return [stats.width, stats.height]
-    },
+    screenShape: (props, {viewportWidth, viewportHeight}) =>
+      [viewportWidth, viewportHeight],
 
-    time: function (args, batchId, stats) {
-      return 0.01 * stats.count
-    }
+    time: regl.context('time')
   },
 
   count: 3

@@ -1,8 +1,8 @@
-var regl = require('../regl')()
-var mat4 = require('gl-mat4')
-var bunny = require('bunny')
+const regl = require('../regl')()
+const mat4 = require('gl-mat4')
+const bunny = require('bunny')
 
-var drawBunny = regl({
+const drawBunny = regl({
   vert: `
   precision mediump float;
   attribute vec3 position;
@@ -25,24 +25,24 @@ var drawBunny = regl({
 
   uniforms: {
     model: mat4.identity([]),
-    view: function (args, batchId, stats) {
-      var t = 0.01 * stats.count
+    view: (props, context) => {
+      var t = 0.01 * context.count
       return mat4.lookAt([],
         [30 * Math.cos(t), 2.5, 30 * Math.sin(t)],
         [0, 2.5, 0],
         [0, 1, 0])
     },
-    projection: function (args, batchId, stats) {
+    projection: (props, context) => {
       return mat4.perspective([],
         Math.PI / 4,
-        stats.width / stats.height,
+        context.viewportWidth / context.viewportHeight,
         0.01,
         1000)
     }
   }
 })
 
-regl.frame(function () {
+regl.frame(function (props, context) {
   regl.clear({
     depth: 1,
     color: [0, 0, 0, 1]

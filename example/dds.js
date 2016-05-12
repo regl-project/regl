@@ -1,6 +1,6 @@
-var regl = require('../regl')()
+const regl = require('../regl')()
 
-var draw = regl({
+const draw = regl({
   frag: `
   precision mediump float;
   uniform sampler2D specular, normals, diffuse;
@@ -51,8 +51,8 @@ var draw = regl({
       data: 'assets/alpine_cliff_a_norm.png'
     }),
     diffuse: regl.texture('assets/alpine_cliff_a.dds'),
-    lightPosition: function (args, id, stats) {
-      var t = 0.025 * stats.count
+    lightPosition: (props, context) => {
+      var t = 0.025 * context.count
       return [2.0 * Math.cos(t), 2.0 * Math.sin(t)]
     }
   },

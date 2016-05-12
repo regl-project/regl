@@ -32,7 +32,7 @@ const drawCheckerboard = regl({
   },
 
   uniforms: {
-    tick: (args, batchId, {count}) => 0.005 * count,
+    tick: (props, {count}) => 0.005 * count,
 
     texture: regl.texture({
       min: 'nearest mipmap linear',
@@ -54,6 +54,6 @@ const drawCheckerboard = regl({
   count: 3
 })
 
-regl.frame(() => {
+regl.frame((props, context) => {
   drawCheckerboard()
 })

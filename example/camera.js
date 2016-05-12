@@ -1,14 +1,14 @@
-var mat4 = require('gl-mat4')
-var bunny = require('bunny')
-var fit = require('canvas-fit')
-var normals = require('angle-normals')
+const mat4 = require('gl-mat4')
+const bunny = require('bunny')
+const fit = require('canvas-fit')
+const normals = require('angle-normals')
 
-var canvas = document.body.appendChild(document.createElement('canvas'))
-var regl = require('../regl')(canvas)
-var camera = require('canvas-orbit-camera')(canvas)
+const canvas = document.body.appendChild(document.createElement('canvas'))
+const regl = require('../regl')(canvas)
+const camera = require('canvas-orbit-camera')(canvas)
 window.addEventListener('resize', fit(canvas), false)
 
-var cube = regl({
+const cube = regl({
   frag: `
     precision mediump float;
     varying vec3 vnormal;
@@ -39,7 +39,7 @@ var cube = regl({
   }
 })
 
-regl.frame(function (count) {
+regl.frame(function (props, count) {
   regl.clear({
     color: [0, 0, 0, 1]
   })

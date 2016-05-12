@@ -23,10 +23,10 @@ const setupEnvMap = regl({
 
     view: regl.prop('view'),
 
-    projection: (args, batchId, {width, height}) =>
+    projection: (props, {viewportWidth, viewportHeight}) =>
       mat4.perspective([],
         Math.PI / 4,
-        width / height,
+        viewportWidth / viewportHeight,
         0.01,
         1000),
 
@@ -82,8 +82,8 @@ const drawBunny = regl({
   elements: regl.elements(bunny.cells)
 })
 
-regl.frame(() => {
-  const t = 0.01 * regl.stats.count
+regl.frame((props, {count}) => {
+  const t = 0.01 * count
 
   setupEnvMap({
     view: mat4.lookAt([],

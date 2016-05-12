@@ -1,9 +1,9 @@
-var regl = require('../regl')()
-var mouse = require('mouse-change')(function () {})
+const regl = require('../regl')()
+const mouse = require('mouse-change')()
 
-var pixels = regl.texture()
+const pixels = regl.texture()
 
-var drawFeedback = regl({
+const drawFeedback = regl({
   frag: `
   precision mediump float;
   uniform sampler2D texture;
@@ -39,11 +39,11 @@ var drawFeedback = regl({
 
   uniforms: {
     texture: pixels,
-    mouse: (args, batchId, {pixelRatio, height}) => [
+    mouse: (props, {pixelRatio, height}) => [
       mouse.x * pixelRatio,
       height - mouse.y * pixelRatio
     ],
-    t: (args, batchId, {count}) => 0.01 * count
+    t: (props, {count}) => 0.01 * count
   },
 
   count: 3

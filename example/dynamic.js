@@ -1,6 +1,6 @@
-var regl = require('../regl')()
+const regl = require('../regl')()
 
-var draw = regl({
+const draw = regl({
   frag: `
     precision mediump float;
     uniform vec4 color;
@@ -27,8 +27,8 @@ var draw = regl({
 
   uniforms: {
     color: regl.prop('color'),
-    angle: function (args, batchId, stats) {
-      return 0.01 * stats.count
+    angle: function (props, context) {
+      return 0.01 * context.count
     }
   },
 
@@ -39,7 +39,9 @@ var draw = regl({
   count: 3
 })
 
-regl.frame(function (count) {
+regl.frame(function (props, context) {
+  const count = context.count
+
   regl.clear({
     color: [0, 0, 0, 1]
   })

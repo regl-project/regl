@@ -40,14 +40,13 @@ const drawBackground = regl({
   count: 6
 })
 
-regl.frame(() => {
+regl.frame((props, {viewportWidth, viewportHeight}) => {
   const {x, y} = mouse
-  const {width, height} = regl.stats
 
-  const boxX = MAP[0].length * x / width
-  const boxY = MAP.length * y / height
+  const boxX = MAP[0].length * x / viewportWidth
+  const boxY = MAP.length * y / viewportHeight
   const boxH = 10
-  const boxW = width / height * boxH
+  const boxW = viewportWidth / viewportHeight * boxH
 
   drawBackground({
     view: [
