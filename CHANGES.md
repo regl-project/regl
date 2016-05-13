@@ -2,15 +2,24 @@
 
 ## Planned
 
-* Code generation rewrite
-* Allow for batch scopes
 * Support fixed scopes as arguments
 * Support directly constructing elements and attributes from arrays
 
-* Add a mechanism for requiring/selectively disabling extensions
+* Code generation rewrite
+    + per-batch contexts
+    + Allow for batch scopes
+    + Stop using stacks for managing states, save state locally in command
+* Error reporting
+    + All error messages should link to command/resource declaration
+    + Improve validation of vertex attributes
+    + Improve validation of dynamic properties
 * Resource API improvements
     + Add in place update methods to buffers and textures
     + Add support for polling buffers and animated GIFs (useful for web audio)
+* Implement a standard method for handling context creation errors
+* Add a mechanism for managing webgl extensions
+    + Should be able to report errors when extensions are missing
+    + Allow users to disable extensions for testing/mocking
 * Cubic frame buffer objects
 * WebVR support and integration (need to think how this will work)
 * Documentation
@@ -20,10 +29,6 @@
     + Refactor attributeState, some names are inconsistent and code is too complex
     + Update development documentation
     + Add contributing guidelines and code of conduct
-* Error reporting
-    + All error messages should link to command/resource declaration
-    + Improve validation of vertex attributes
-    + Improve validation of dynamic properties
 * Testing
     + Complete coverage for all code generation pathways
     + Test weird invocation sequences

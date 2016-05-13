@@ -54,7 +54,7 @@ module.exports = function wrapREGL () {
     gl,
     extensions)
 
-  var bufferState = wrapBuffers(gl)
+  var bufferState = wrapBuffers(gl, unbindBuffer)
 
   var elementState = wrapElements(
     gl,
@@ -151,6 +151,18 @@ module.exports = function wrapREGL () {
     drawState,
     context,
     poll)
+
+  function unbindBuffer (buffer) {
+    for (var i = 0; i < attributeState.bindings.length; ++i) {
+      var attr = attributeState.bindings[i]
+      if (attr.pointer && attr.buffer === buffer) {
+        attr.pointer = false
+        attr.buffer = null
+        attr.x = attr.y = attr.z = attr.w = NaN
+        gl.disableVertexAttribArray(i)
+      }
+    }
+  }
 
   var canvas = gl.canvas
 
