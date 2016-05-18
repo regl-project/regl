@@ -38,10 +38,9 @@
     "vectorize-text": "^3.0.2"
   },
   "scripts": {
-    "test": "standard | snazzy && tape test/*.js | faucet",
+    "test": "standard | snazzy && tape test/util/index.js | faucet",
     "test-browser": "budo test/util/browser.js --open",
-    "cover": "istanbul cover test/util/node.js",
-    "codacy": "npm run cover && codacy-coverage < ./coverage/lcov.info",
+    "cover": "istanbul cover test/util/index.js",
     "bench": "budo bench/index.js --open",
     "build": "npm run build-script && npm run build-min && npm run build-bench && npm run build-gallery",
     "build-script": "browserify regl.js --standalone reglInit > dist/regl.js",
