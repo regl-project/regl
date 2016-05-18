@@ -1,2 +1,2 @@
 require('tap-browser-color')()
-require('./node')
+require('./index')
