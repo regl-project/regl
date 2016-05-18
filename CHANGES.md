@@ -64,6 +64,8 @@
 
 ## Next
 
+## 0.5.0
+
 * Context variables
 * Use `this` argument effectively
     * Should pass this to dynamic attributes and scope
