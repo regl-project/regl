@@ -30,6 +30,13 @@
     + Update development documentation
     + Add contributing guidelines and code of conduct
 * Testing
+    + Instancing
+    + Texture generation
+    + Framebuffers
+    + Element buffer rendering primitives
+    + Constant attributes
+    + Viewport change notifications
+    + RAF/frame behavior
     + Complete coverage for all code generation pathways
     + Test weird invocation sequences
 * Benchmark suite
