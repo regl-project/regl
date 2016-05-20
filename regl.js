@@ -9,11 +9,9 @@ var wrapElements = require('./lib/elements')
 var wrapTextures = require('./lib/texture')
 var wrapRenderbuffers = require('./lib/renderbuffer')
 var wrapFramebuffers = require('./lib/framebuffer')
-var wrapUniforms = require('./lib/uniform')
 var wrapAttributes = require('./lib/attribute')
 var wrapShaders = require('./lib/shader')
-var wrapDraw = require('./lib/draw')
-var wrapContext = require('./lib/state')
+var wrapGLState = require('./lib/state')
 var createCompiler = require('./lib/compile')
 var wrapRead = require('./lib/read')
 var dynamic = require('./lib/dynamic')
@@ -45,9 +43,23 @@ module.exports = function wrapREGL () {
   var extensionState = wrapExtensions(gl)
   var extensions = extensionState.extensions
 
-  var viewportState = {
-    width: gl.drawingBufferWidth,
-    height: gl.drawingBufferHeight
+  var START_TIME = clock()
+  var LAST_TIME = START_TIME
+  var WIDTH = gl.drawingBufferWidth
+  var HEIGHT = gl.drawingBufferHeight
+
+  var contextState = {
+    count: 0,
+    batchId: 0,
+    deltaTime: 0,
+    time: 0,
+    viewportWidth: WIDTH,
+    viewportHeight: HEIGHT,
+    framebufferWidth: WIDTH,
+    framebufferHeight: HEIGHT,
+    drawingBufferWidth: WIDTH,
+    drawingBufferHeight: HEIGHT,
+    pixelRatio: options.pixelRatio
   }
 
   var limits = wrapLimits(
@@ -61,7 +73,7 @@ module.exports = function wrapREGL () {
     extensions,
     bufferState)
 
-  var uniformState = wrapUniforms(stringStore)
+  var uniformState = {}
 
   var attributeState = wrapAttributes(
     gl,
@@ -74,22 +86,21 @@ module.exports = function wrapREGL () {
     gl,
     attributeState,
     uniformState,
-    function (program) {
-      return compiler.draw(program)
-    },
     stringStore)
 
-  var drawState = wrapDraw(
-    gl,
-    extensions,
-    bufferState)
+  var drawState = {
+    primitive: 4, // GL_TRIANGLES
+    count: -1,
+    offset: 0,
+    instances: 0
+  }
 
   var textureState = wrapTextures(
     gl,
     extensions,
     limits,
     poll,
-    viewportState)
+    contextState)
 
   var renderbufferState = wrapRenderbuffers(
     gl,
@@ -103,39 +114,13 @@ module.exports = function wrapREGL () {
     textureState,
     renderbufferState)
 
-  var startTime = clock()
-
-  var frameState = {
-    count: 0,
-    start: startTime,
-    dt: 0,
-    t: startTime,
-    renderTime: 0,
-    width: gl.drawingBufferWidth,
-    height: gl.drawingBufferHeight,
-    pixelRatio: options.pixelRatio
-  }
-
-  var context = {
-    count: 0,
-    batchId: 0,
-    deltaTime: 0,
-    time: 0,
-    viewportWidth: frameState.width,
-    viewportHeight: frameState.height,
-    drawingBufferWidth: frameState.width,
-    drawingBufferHeight: frameState.height,
-    pixelRatio: frameState.pixelRatio
-  }
-
-  var glState = wrapContext(
+  var glState = wrapGLState(
     gl,
-    framebufferState,
-    viewportState)
+    contextState)
 
-  var readPixels = wrapRead(gl, poll, viewportState)
+  var readPixels = wrapRead(gl, poll, contextState)
 
-  var compiler = createCompiler(
+  var compileCommand = createCompiler(
     gl,
     stringStore,
     extensions,
@@ -149,7 +134,7 @@ module.exports = function wrapREGL () {
     attributeState,
     shaderState,
     drawState,
-    context,
+    contextState,
     poll)
 
   function unbindBuffer (buffer) {
@@ -169,35 +154,39 @@ module.exports = function wrapREGL () {
   var rafCallbacks = []
   var activeRAF = 0
   function handleRAF () {
+    // schedule next animation frame
     activeRAF = raf.next(handleRAF)
-    frameState.count += 1
-    context.count = frameState.count
 
-    if (frameState.width !== gl.drawingBufferWidth ||
-        frameState.height !== gl.drawingBufferHeight) {
-      context.viewportWidth =
-        context.drawingBufferWidth =
-        frameState.width = gl.drawingBufferWidth
-      context.viewportHeight =
-        context.drawingBufferHeight =
-        frameState.height = gl.drawingBufferHeight
+    // increment frame coun
+    contextState.count += 1
+
+    // update viewport dimensions if viewport changed
+    var curWidth = gl.drawingBufferWidth
+    var curHeight = gl.drawingBufferHeight
+    if (WIDTH !== curWidth ||
+        HEIGHT !== curHeight) {
+      contextState.viewportWidth =
+        contextState.frameBufferWidth =
+        contextState.drawingBufferWidth =
+        WIDTH = curWidth
+      contextState.viewportHeight =
+        contextState.frameBufferWidth =
+        contextState.drawingBufferHeight =
+        HEIGHT = curHeight
       glState.notifyViewportChanged()
     }
 
     var now = clock()
-    frameState.dt = now - frameState.t
-    frameState.t = now
-
-    context.deltaTime = frameState.dt / 1000.0
-    context.time = (now - startTime) / 1000.0
+    contextState.deltaTime = (now - LAST_TIME) / 1000.0
+    contextState.time = (now - START_TIME) / 1000.0
+    LAST_TIME = now
 
     textureState.poll()
 
     for (var i = 0; i < rafCallbacks.length; ++i) {
       var cb = rafCallbacks[i]
-      cb(null, context)
+      cb(null, contextState)
     }
-    frameState.renderTime = clock() - now
   }
 
   function startRAF () {
@@ -264,8 +253,6 @@ module.exports = function wrapREGL () {
     check(!!options, 'invalid args to regl({...})')
     check.type(options, 'object', 'invalid args to regl({...})')
 
-    var hasDynamic = false
-
     function flattenNestedOptions (options) {
       var result = extend({}, options)
       delete result.uniforms
@@ -298,7 +285,6 @@ module.exports = function wrapREGL () {
       Object.keys(object).forEach(function (option) {
         var value = object[option]
         if (dynamic.isDynamic(value)) {
-          hasDynamic = true
           dynamicItems[option] = dynamic.unbox(value, option)
         } else {
           staticItems[option] = value
@@ -316,10 +302,7 @@ module.exports = function wrapREGL () {
     var attributes = separateDynamic(options.attributes || {})
     var opts = separateDynamic(flattenNestedOptions(options))
 
-    var compiled = compiler.command(
-      opts.static, uniforms.static, attributes.static,
-      opts.dynamic, uniforms.dynamic, attributes.dynamic,
-      context, hasDynamic)
+    var compiled = compileCommand(opts, uniforms, attributes, context)
 
     var draw = compiled.draw
     var batch = compiled.batch
@@ -460,7 +443,6 @@ module.exports = function wrapREGL () {
 
     // Frame rendering
     frame: frame,
-    stats: frameState,
 
     // System limits
     limits: limits,

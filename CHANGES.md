@@ -14,6 +14,7 @@
     + Improve validation of vertex attributes
     + Improve validation of dynamic properties
 * Resource API improvements
+    + Support dynamic variables (context and props) in resource constructors
     + Add in place update methods to buffers and textures
     + Add support for polling buffers and animated GIFs (useful for web audio)
 * Implement a standard method for handling context creation errors
