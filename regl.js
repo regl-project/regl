@@ -160,21 +160,20 @@ module.exports = function wrapREGL () {
     // increment frame coun
     contextState.count += 1
 
-    // update viewport dimensions if viewport changed
-    var curWidth = gl.drawingBufferWidth
-    var curHeight = gl.drawingBufferHeight
-    if (WIDTH !== curWidth ||
-        HEIGHT !== curHeight) {
-      contextState.viewportWidth =
-        contextState.frameBufferWidth =
-        contextState.drawingBufferWidth =
-        WIDTH = curWidth
-      contextState.viewportHeight =
-        contextState.frameBufferWidth =
-        contextState.drawingBufferHeight =
-        HEIGHT = curHeight
-      glState.notifyViewportChanged()
-    }
+    var viewport = glState.next.viewport
+    var scissorBox = glState.next['scissor.box']
+    viewport[0] = viewport[1] = scissorBox[0] = scissorBox[1] = 0
+
+    contextState.viewportWidth =
+      contextState.frameBufferWidth =
+      contextState.drawingBufferWidth =
+      viewport[2] =
+      scissorBox[2] = gl.drawingBufferWidth
+    contextState.viewportHeight =
+      contextState.frameBufferWidth =
+      contextState.drawingBufferHeight =
+      viewport[3] =
+      scissorBox[3] = HEIGHT
 
     var now = clock()
     contextState.deltaTime = (now - LAST_TIME) / 1000.0
