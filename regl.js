@@ -311,11 +311,16 @@ module.exports = function wrapREGL () {
         opts._hasCount)
 
       if (typeof args === 'number') {
-        return batch.call(this, reserve(args | 0), args | 0)
+        if (args > 0) {
+          return batch.call(this, reserve(args | 0), args | 0)
+        }
       } else if (Array.isArray(args)) {
-        return batch.call(this, args, args.length)
+        if (args.length) {
+          return batch.call(this, args, args.length)
+        }
+      } else {
+        return draw.call(this, args)
       }
-      return draw.call(this, args)
     }
 
     return REGLCommand
