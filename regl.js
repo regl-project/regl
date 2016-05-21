@@ -1,7 +1,10 @@
 var check = require('./lib/util/check')
 var extend = require('./lib/util/extend')
-var initWebGL = require('./lib/webgl')
+var dynamic = require('./lib/dynamic')
+var raf = require('./lib/util/raf')
+var clock = require('./lib/util/clock')
 var createStringStore = require('./lib/strings')
+var initWebGL = require('./lib/webgl')
 var wrapExtensions = require('./lib/extension')
 var wrapLimits = require('./lib/limits')
 var wrapBuffers = require('./lib/buffer')
@@ -11,12 +14,8 @@ var wrapRenderbuffers = require('./lib/renderbuffer')
 var wrapFramebuffers = require('./lib/framebuffer')
 var wrapAttributes = require('./lib/attribute')
 var wrapShaders = require('./lib/shader')
-var wrapGLState = require('./lib/state')
-var createCompiler = require('./lib/compile')
 var wrapRead = require('./lib/read')
-var dynamic = require('./lib/dynamic')
-var raf = require('./lib/util/raf')
-var clock = require('./lib/util/clock')
+var createCore = require('./lib/core')
 
 var GL_COLOR_BUFFER_BIT = 16384
 var GL_DEPTH_BUFFER_BIT = 256
@@ -61,13 +60,7 @@ module.exports = function wrapREGL () {
     drawingBufferHeight: HEIGHT,
     pixelRatio: options.pixelRatio
   }, gl.getContextAttributes())
-
-  var limits = wrapLimits(gl, extensions)
-  var bufferState = wrapBuffers(gl, unbindBuffer)
-  var elementState = wrapElements(gl, extensions, bufferState)
-
   var uniformState = {}
-
   var drawState = {
     primitive: 4, // GL_TRIANGLES
     count: -1,
@@ -75,38 +68,32 @@ module.exports = function wrapREGL () {
     instances: 0
   }
 
+  var limits = wrapLimits(gl, extensions)
+  var bufferState = wrapBuffers(gl, unbindBuffer)
+  var elementState = wrapElements(gl, extensions, bufferState)
   var attributeState = wrapAttributes(
     gl,
     extensions,
     limits,
     bufferState,
     stringStore)
-
   var shaderState = wrapShaders(gl, stringStore)
-
   var textureState = wrapTextures(
     gl,
     extensions,
     limits,
     poll,
     contextState)
-
   var renderbufferState = wrapRenderbuffers(gl, extensions, limits)
-
   var framebufferState = wrapFramebuffers(
     gl,
     extensions,
     limits,
     textureState,
     renderbufferState)
-
-  var glState = wrapGLState(
-    gl,
-    contextState)
-
   var readPixels = wrapRead(gl, poll, contextState)
 
-  var compileCommand = createCompiler(
+  var core = createCore(
     gl,
     stringStore,
     extensions,
@@ -115,14 +102,13 @@ module.exports = function wrapREGL () {
     elementState,
     textureState,
     framebufferState,
-    glState,
     uniformState,
     attributeState,
     shaderState,
     drawState,
-    contextState,
-    poll)
+    contextState)
 
+  // TODO: is this necessary still?
   function unbindBuffer (buffer) {
     for (var i = 0; i < attributeState.bindings.length; ++i) {
       var attr = attributeState.bindings[i]
@@ -135,6 +121,7 @@ module.exports = function wrapREGL () {
     }
   }
 
+  var nextState = core.next
   var canvas = gl.canvas
 
   var rafCallbacks = []
@@ -146,8 +133,8 @@ module.exports = function wrapREGL () {
     // increment frame coun
     contextState.count += 1
 
-    var viewport = glState.next.viewport
-    var scissorBox = glState.next['scissor.box']
+    var viewport = nextState.viewport
+    var scissorBox = nextState.scissor_box
     viewport[0] = viewport[1] = scissorBox[0] = scissorBox[1] = 0
 
     contextState.viewportWidth =
@@ -203,7 +190,7 @@ module.exports = function wrapREGL () {
     renderbufferState.refresh()
     framebufferState.refresh()
     shaderState.refresh()
-    glState.refresh()
+    core.procs.refresh()
     if (options.onContextRestored) {
       options.onContextRestored()
     }
@@ -287,7 +274,7 @@ module.exports = function wrapREGL () {
     var attributes = separateDynamic(options.attributes || {})
     var opts = separateDynamic(flattenNestedOptions(options))
 
-    var compiled = compileCommand(opts, uniforms, attributes, context)
+    var compiled = core.compile(opts, uniforms, attributes, context)
 
     var draw = compiled.draw
     var batch = compiled.batch
@@ -336,7 +323,7 @@ module.exports = function wrapREGL () {
 
   function poll () {
     framebufferState.poll()
-    glState.poll()
+    core.procs.poll()
   }
 
   function clear (options) {
