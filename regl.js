@@ -48,7 +48,7 @@ module.exports = function wrapREGL () {
   var WIDTH = gl.drawingBufferWidth
   var HEIGHT = gl.drawingBufferHeight
 
-  var contextState = {
+  var contextState = extend({
     count: 0,
     batchId: 0,
     deltaTime: 0,
@@ -60,33 +60,13 @@ module.exports = function wrapREGL () {
     drawingBufferWidth: WIDTH,
     drawingBufferHeight: HEIGHT,
     pixelRatio: options.pixelRatio
-  }
+  }, gl.getContextAttributes())
 
-  var limits = wrapLimits(
-    gl,
-    extensions)
-
+  var limits = wrapLimits(gl, extensions)
   var bufferState = wrapBuffers(gl, unbindBuffer)
-
-  var elementState = wrapElements(
-    gl,
-    extensions,
-    bufferState)
+  var elementState = wrapElements(gl, extensions, bufferState)
 
   var uniformState = {}
-
-  var attributeState = wrapAttributes(
-    gl,
-    extensions,
-    limits,
-    bufferState,
-    stringStore)
-
-  var shaderState = wrapShaders(
-    gl,
-    attributeState,
-    uniformState,
-    stringStore)
 
   var drawState = {
     primitive: 4, // GL_TRIANGLES
@@ -95,6 +75,15 @@ module.exports = function wrapREGL () {
     instances: 0
   }
 
+  var attributeState = wrapAttributes(
+    gl,
+    extensions,
+    limits,
+    bufferState,
+    stringStore)
+
+  var shaderState = wrapShaders(gl, stringStore)
+
   var textureState = wrapTextures(
     gl,
     extensions,
@@ -102,10 +91,7 @@ module.exports = function wrapREGL () {
     poll,
     contextState)
 
-  var renderbufferState = wrapRenderbuffers(
-    gl,
-    extensions,
-    limits)
+  var renderbufferState = wrapRenderbuffers(gl, extensions, limits)
 
   var framebufferState = wrapFramebuffers(
     gl,
