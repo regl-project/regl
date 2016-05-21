@@ -2,9 +2,7 @@
 
 ## Planned
 
-* Support fixed scopes as arguments
 * Support directly constructing elements and attributes from arrays
-
 * Code generation rewrite
     + per-batch contexts
     + Allow for batch scopes
@@ -13,6 +11,20 @@
     + All error messages should link to command/resource declaration
     + Improve validation of vertex attributes
     + Improve validation of dynamic properties
+* Code quality and contributing
+    + Refactor attributeState, some names are inconsistent and code is too complex
+    + Update development documentation
+    + Add contributing guidelines and code of conduct
+* Optimization
+    + Save environment and this variables across batch mode invocations
+    + Kill all VM bailouts on all major platforms
+    + Kill all garbage collection
+    + Optimize generated code
+    + Optimize bundle size, remove string constants
+* Expose limits for shader precision
+* Support fixed scopes as arguments
+
+
 * Resource API improvements
     + Support dynamic variables (context and props) in resource constructors
     + Add in place update methods to buffers and textures
@@ -26,10 +38,6 @@
 * Documentation
     + Write "regl for react programmers"
     + Rewrite resource section, bring individual resources to the top
-* Code quality and management
-    + Refactor attributeState, some names are inconsistent and code is too complex
-    + Update development documentation
-    + Add contributing guidelines and code of conduct
 * Testing
     + Instancing
     + Texture generation
@@ -43,12 +51,6 @@
 * Benchmark suite
     + Dashboard for test cases and benchmarks
     + Create some more typical drawing examples
-* Optimization
-    + Save environment and this variables across batch mode invocations
-    + Kill all VM bailouts on all major platforms
-    + Kill all garbage collection
-    + Optimize generated code
-    + Optimize bundle size, remove string constants
 * Support more DDS texture formats (HDR, PVRTC, etc.)
 * Build a website (@freeman-lab is on it!)
 * Render to glTF (maybe?), could be useful for dumping previews
