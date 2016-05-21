@@ -338,9 +338,9 @@ module.exports = function wrapREGL () {
         opts._hasCount)
 
       if (typeof args === 'number') {
-        return batch.call(this, args | 0, reserve(args | 0))
+        return batch.call(this, reserve(args | 0), args | 0)
       } else if (Array.isArray(args)) {
-        return batch.call(this, args.length, args)
+        return batch.call(this, args, args.length)
       }
       return draw.call(this, args)
     }
