@@ -69,7 +69,7 @@ module.exports = function wrapREGL () {
   }
 
   var limits = wrapLimits(gl, extensions)
-  var bufferState = wrapBuffers(gl, unbindBuffer)
+  var bufferState = wrapBuffers(gl)
   var elementState = wrapElements(gl, extensions, bufferState)
   var attributeState = wrapAttributes(
     gl,
@@ -107,19 +107,6 @@ module.exports = function wrapREGL () {
     shaderState,
     drawState,
     contextState)
-
-  // TODO: is this necessary still?
-  function unbindBuffer (buffer) {
-    for (var i = 0; i < attributeState.bindings.length; ++i) {
-      var attr = attributeState.bindings[i]
-      if (attr.pointer && attr.buffer === buffer) {
-        attr.pointer = false
-        attr.buffer = null
-        attr.x = attr.y = attr.z = attr.w = NaN
-        gl.disableVertexAttribArray(i)
-      }
-    }
-  }
 
   var nextState = core.next
   var canvas = gl.canvas
@@ -274,7 +261,7 @@ module.exports = function wrapREGL () {
     var attributes = separateDynamic(options.attributes || {})
     var opts = separateDynamic(flattenNestedOptions(options))
 
-    var compiled = core.compile(opts, uniforms, attributes, context)
+    var compiled = core.compile(opts, attributes, uniforms, context)
 
     var draw = compiled.draw
     var batch = compiled.batch
