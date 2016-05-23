@@ -24,7 +24,7 @@
 * Expose limits for shader precision
 * Support fixed scopes as arguments
 
-
+* Allow individual attribute properties to be dynamic (eg buffers, offsets, etc.)
 * Resource API improvements
     + Support dynamic variables (context and props) in resource constructors
     + Add in place update methods to buffers and textures
