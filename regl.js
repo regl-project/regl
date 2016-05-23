@@ -62,10 +62,11 @@ module.exports = function wrapREGL () {
   }, gl.getContextAttributes())
   var uniformState = {}
   var drawState = {
+    elements: null,
     primitive: 4, // GL_TRIANGLES
     count: -1,
     offset: 0,
-    instances: 0
+    instances: -1
   }
 
   var limits = wrapLimits(gl, extensions)
