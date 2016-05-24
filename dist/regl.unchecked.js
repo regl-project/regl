@@ -41,7 +41,7 @@ module.exports = function wrapAttributeState (
         left.buffer === right.buffer &&
         left.size === size &&
         left.normalized === right.normalized &&
-        left.type === right.type &&
+        left.type === (right.type || right.buffer.dtype || GL_FLOAT) &&
         left.offset === right.offset &&
         left.stride === right.stride &&
         left.divisor === right.divisor
@@ -54,7 +54,7 @@ module.exports = function wrapAttributeState (
       left.buffer = right.buffer
       left.size = size
       left.normalized = right.normalized
-      left.type = right.type
+      left.type = right.type || right.buffer.dtype || GL_FLOAT
       left.offset = right.offset
       left.stride = right.stride
       left.divisor = right.divisor
@@ -91,21 +91,15 @@ module.exports = function wrapAttributeState (
       return
     }
     if (!next.pointer) {
-      if (current.pointer) {
-        gl.disableVertexAttribArray(index)
-      }
+      gl.disableVertexAttribArray(index)
       gl.vertexAttrib4f(index, next.x, next.y, next.z, next.w)
     } else {
-      if (!current.pointer) {
-        gl.enableVertexAttribArray(index)
-      }
-      if (current.buffer !== next.buffer) {
-        next.buffer.bind()
-      }
+      gl.enableVertexAttribArray(index)
+      next.buffer.bind()
       gl.vertexAttribPointer(
         index,
         size,
-        next.type,
+        next.type || next.buffer.dtype || GL_FLOAT,
         next.normalized,
         next.stride,
         next.offset)
@@ -163,7 +157,7 @@ module.exports = function wrapAttributeState (
         var offset = 0
         var divisor = 0
         var normalized = false
-        var type = GL_FLOAT
+        var type = 0
         if (!buffer) {
           buffer = bufferState.getBuffer(data.buffer)
           
@@ -172,12 +166,10 @@ module.exports = function wrapAttributeState (
           offset = data.offset || 0
           divisor = data.divisor || 0
           normalized = data.normalized || false
-          type = buffer.dtype
+          type = 0
           if ('type' in data) {
             type = glTypes[data.type]
           }
-        } else {
-          type = buffer.dtype
         }
         box.pointer = true
         box.buffer = buffer
@@ -281,7 +273,7 @@ function transpose (result, data, shapeX, shapeY, strideX, strideY, offset) {
   return result
 }
 
-module.exports = function wrapBufferState (gl) {
+module.exports = function wrapBufferState (gl, unbindBuffer) {
   var bufferCount = 0
   var bufferSet = {}
 
@@ -301,6 +293,7 @@ module.exports = function wrapBufferState (gl) {
   }
 
   function refresh (buffer) {
+    unbindBuffer(buffer)
     if (!gl.isBuffer(buffer.buffer)) {
       buffer.buffer = gl.createBuffer()
     }
@@ -311,6 +304,7 @@ module.exports = function wrapBufferState (gl) {
   function destroy (buffer) {
     var handle = buffer.buffer
     
+    unbindBuffer(buffer)
     if (gl.isBuffer(handle)) {
       gl.deleteBuffer(handle)
     }
@@ -458,7 +452,7 @@ module.exports = function wrapBufferState (gl) {
   }
 }
 
-},{"./constants/arraytypes.json":4,"./constants/dtypes.json":5,"./util/is-ndarray":24,"./util/is-typed-array":25,"./util/values":31}],3:[function(require,module,exports){
+},{"./constants/arraytypes.json":4,"./constants/dtypes.json":5,"./util/is-ndarray":23,"./util/is-typed-array":24,"./util/values":30}],3:[function(require,module,exports){
 
 var createEnvironment = require('./util/codegen')
 
@@ -507,6 +501,11 @@ var GL_CCW = 0x0901
 
 var GL_MIN_EXT = 0x8007
 var GL_MAX_EXT = 0x8008
+
+var DYN_FUNC = 0
+var DYN_PROP = 1
+var DYN_CONTEXT = 2
+var DYN_STATE = 3
 
 var blendFuncs = {
   '0': 0,
@@ -660,7 +659,7 @@ module.exports = function reglCompiler (
   attributeState,
   shaderState,
   drawState,
-  frameState,
+  context,
   reglPoll) {
   var contextState = glState.contextState
 
@@ -813,7 +812,7 @@ module.exports = function reglCompiler (
     var PROGRAM = link(program.program)
     var BIND_ATTRIBUTE = link(attributeState.bind)
     var BIND_ATTRIBUTE_RECORD = link(attributeState.bindRecord)
-    var FRAME_STATE = link(frameState)
+    var CONTEXT = link(context)
     var FRAMEBUFFER_STATE = link(framebufferState)
     var DRAW_STATE = {
       count: link(drawState.count),
@@ -863,12 +862,23 @@ module.exports = function reglCompiler (
       if (result) {
         return result
       }
-      if (x.func) {
-        result = batch.def(
-          link(x.data), '(', ARG, ',', BATCH_ID, ',', FRAME_STATE, ')')
-      } else {
-        result = batch.def(ARG, '.', x.data)
+
+      switch (x.type) {
+        case DYN_FUNC:
+          result = batch.def(
+            link(x.data), '.call(this,', ARG, ',', CONTEXT, ')')
+          break
+        case DYN_PROP:
+          result = batch.def(ARG, x.data)
+          break
+        case DYN_CONTEXT:
+          result = batch.def(CONTEXT, x.data)
+          break
+        case DYN_STATE:
+          result = batch.def('this', x.data)
+          break
       }
+
       dynamicVars[id] = result
       return result
     }
@@ -939,7 +949,8 @@ module.exports = function reglCompiler (
     // -------------------------------
     batch(
       'for(', BATCH_ID, '=0;', BATCH_ID, '<', NUM_ARGS, ';++', BATCH_ID, '){',
-      ARG, '=', ARGS, '[', BATCH_ID, '];')
+      ARG, '=', ARGS, '[', BATCH_ID, '];',
+      CONTEXT, '.batchId=', BATCH_ID, ';')
 
     // -------------------------------
     // set dynamic flags
@@ -1271,15 +1282,15 @@ module.exports = function reglCompiler (
     return env.compile().batch
   }
 
-  // ===================================================
-  // ===================================================
+  // ===========================================================================
+  // ===========================================================================
   // MAIN DRAW COMMAND
-  // ===================================================
-  // ===================================================
+  // ===========================================================================
+  // ===========================================================================
   function compileCommand (
     staticOptions, staticUniforms, staticAttributes,
     dynamicOptions, dynamicUniforms, dynamicAttributes,
-    hasDynamic) {
+    contextVars, hasDynamic) {
     // Create code generation environment
     var env = createEnvironment()
     var link = env.link
@@ -1304,6 +1315,7 @@ module.exports = function reglCompiler (
     var PRIM_TYPES = link(primTypes)
     var COMPARE_FUNCS = link(compareFuncs)
     var STENCIL_OPS = link(stencilOps)
+    var CONTEXT = link(context)
 
     var CONTEXT_STATE = {}
     function linkContext (x) {
@@ -1321,6 +1333,49 @@ module.exports = function reglCompiler (
     // Code blocks for the static sections
     var entry = block()
     var exit = block()
+
+    var DYNARGS
+    if (hasDynamic) {
+      DYNARGS = entry.def()
+    }
+
+    // -------------------------------
+    // update context variables
+    // -------------------------------
+    // Initialize batch id
+    entry(CONTEXT, '.batchId=0;')
+    var contextEnter = block()
+
+    Object.keys(contextVars.static).forEach(function (contextVar) {
+      var PREV_VALUE = entry.def(CONTEXT, '.', contextVar)
+      contextEnter(CONTEXT, '.', contextVar, '=',
+        link(contextVars.static[contextVar]), ';')
+      exit(CONTEXT, '.', contextVar, '=', PREV_VALUE, ';')
+    })
+
+    Object.keys(contextVars.dynamic).forEach(function (contextVar) {
+      var PREV_VALUE = entry.def(CONTEXT, '.', contextVar)
+      var NEXT_VALUE = entry.def()
+      var x = contextVars.dynamic[contextVar]
+      contextEnter(CONTEXT, '.', contextVar, '=', NEXT_VALUE, ';')
+      switch (x.type) {
+        case DYN_FUNC:
+          entry(NEXT_VALUE, '=', link(x.data), '.call(this,', DYNARGS, ',', CONTEXT, ');')
+          break
+        case DYN_PROP:
+          entry(NEXT_VALUE, '=', DYNARGS, x.data, ';')
+          break
+        case DYN_CONTEXT:
+          entry(NEXT_VALUE, '=', CONTEXT, x.data, ';')
+          break
+        case DYN_STATE:
+          entry(NEXT_VALUE, '=', 'this', x.data, ';')
+          break
+      }
+      exit(CONTEXT, '.', contextVar, '=', PREV_VALUE, ';')
+    })
+
+    entry(contextEnter)
 
     // -------------------------------
     // update default context state variables
@@ -1660,13 +1715,6 @@ module.exports = function reglCompiler (
     var dynamicEntry = env.block()
     var dynamicExit = env.block()
 
-    var FRAMESTATE
-    var DYNARGS
-    if (hasDynamic) {
-      FRAMESTATE = link(frameState)
-      DYNARGS = entry.def()
-    }
-
     var dynamicVars = {}
     function dyn (x) {
       var id = x.id
@@ -1674,11 +1722,20 @@ module.exports = function reglCompiler (
       if (result) {
         return result
       }
-      if (x.func) {
-        result = dynamicEntry.def(
-          link(x.data), '(', DYNARGS, ',0,', FRAMESTATE, ')')
-      } else {
-        result = dynamicEntry.def(DYNARGS, '.', x.data)
+      switch (x.type) {
+        case DYN_FUNC:
+          result = dynamicEntry.def(
+            link(x.data), '.call(this,', DYNARGS, ',', CONTEXT, ')')
+          break
+        case DYN_PROP:
+          result = dynamicEntry.def(DYNARGS, x.data)
+          break
+        case DYN_CONTEXT:
+          result = dynamicEntry.def(CONTEXT, x.data)
+          break
+        case DYN_STATE:
+          result = dynamicEntry.def('this', x.data)
+          break
       }
       dynamicVars[id] = result
       return result
@@ -1929,14 +1986,15 @@ module.exports = function reglCompiler (
     var scope = proc('scope')
     var SCOPE_ARGS = scope.arg()
     var SCOPE_BODY = scope.arg()
+    if (hasDynamic) {
+      scope(DYNARGS, '=', SCOPE_ARGS, ';')
+    }
     scope(entry)
     if (hasDynamic) {
-      scope(
-        DYNARGS, '=', SCOPE_ARGS, ';',
-        dynamicEntry)
+      scope(dynamicEntry)
     }
     scope(
-      SCOPE_BODY, '();',
+      SCOPE_BODY, '(', SCOPE_ARGS, ',', CONTEXT, ');',
       hasDynamic ? dynamicExit : '',
       exit)
 
@@ -1963,16 +2021,17 @@ module.exports = function reglCompiler (
     // DRAW PROCEDURE
     // ==========================================================
     var draw = proc('draw')
+    if (hasDynamic) {
+      draw(DYNARGS, '=', draw.arg(), ';')
+    }
     draw(entry, commonDraw)
     if (hasDynamic) {
-      draw(
-        DYNARGS, '=', draw.arg(), ';',
-        dynamicEntry)
+      draw(dynamicEntry)
     }
     draw(
       GL_POLL, '();',
       'if(', CURRENT_PROGRAM, ')',
-      CURRENT_PROGRAM, '.draw(', hasDynamic ? DYNARGS : '', ');',
+      CURRENT_PROGRAM, '.draw.call(this', hasDynamic ? ',' + DYNARGS : '', ');',
       hasDynamic ? dynamicExit : '',
       exit)
 
@@ -1980,6 +2039,11 @@ module.exports = function reglCompiler (
     // BATCH DRAW
     // ==========================================================
     var batch = proc('batch')
+    var BATCH_COUNT = batch.arg()
+    var BATCH_ARGS = batch.arg()
+    if (hasDynamic) {
+      batch(DYNARGS, '=', BATCH_ARGS, '[0];')
+    }
     batch(entry, commonDraw)
     var EXEC_BATCH = link(function (program, count, args) {
       var proc = program.batchCache[callId]
@@ -1988,15 +2052,15 @@ module.exports = function reglCompiler (
           program, dynamicOptions, dynamicUniforms, dynamicAttributes,
           staticOptions)
       }
-      return proc(count, args)
+      return proc.call(this, count, args)
     })
     batch(
       'if(', CURRENT_PROGRAM, '){',
       GL_POLL, '();',
-      EXEC_BATCH, '(',
+      EXEC_BATCH, '.call(this,',
       CURRENT_PROGRAM, ',',
-      batch.arg(), ',',
-      batch.arg(), ');')
+      BATCH_COUNT, ',',
+      BATCH_ARGS, ');')
     // Set dirty on all dynamic flags
     Object.keys(dynamicOptions).forEach(function (option) {
       var STATE = CONTEXT_STATE[option]
@@ -2018,7 +2082,7 @@ module.exports = function reglCompiler (
   }
 }
 
-},{"./constants/primitives.json":6,"./util/codegen":22}],4:[function(require,module,exports){
+},{"./constants/primitives.json":6,"./util/codegen":21}],4:[function(require,module,exports){
 module.exports={
   "[object Int8Array]": 5120
 , "[object Int16Array]": 5122
@@ -2055,128 +2119,6 @@ module.exports={
 }
 
 },{}],7:[function(require,module,exports){
-// Context and canvas creation helper functions
-/*globals HTMLElement,WebGLRenderingContext*/
-
-
-var extend = require('./util/extend')
-
-function createCanvas (element, options) {
-  var canvas = document.createElement('canvas')
-  var args = getContext(canvas, options)
-
-  extend(canvas.style, {
-    border: 0,
-    margin: 0,
-    padding: 0,
-    top: 0,
-    left: 0
-  })
-  element.appendChild(canvas)
-
-  if (element === document.body) {
-    canvas.style.position = 'absolute'
-    extend(element.style, {
-      margin: 0,
-      padding: 0
-    })
-  }
-
-  var scale = +args.options.pixelRatio
-  function resize () {
-    var w = window.innerWidth
-    var h = window.innerHeight
-    if (element !== document.body) {
-      var bounds = element.getBoundingClientRect()
-      w = bounds.right - bounds.left
-      h = bounds.top - bounds.bottom
-    }
-    canvas.width = scale * w
-    canvas.height = scale * h
-    extend(canvas.style, {
-      width: w + 'px',
-      height: h + 'px'
-    })
-  }
-
-  window.addEventListener('resize', resize, false)
-
-  var prevDestroy = args.options.onDestroy
-  args.options = extend(extend({}, args.options), {
-    onDestroy: function () {
-      window.removeEventListener('resize', resize)
-      element.removeChild(canvas)
-      prevDestroy && prevDestroy()
-    }
-  })
-
-  resize()
-
-  return args
-}
-
-function getContext (canvas, options) {
-  var glOptions = options.glOptions || {}
-
-  function get (name) {
-    try {
-      return canvas.getContext(name, glOptions)
-    } catch (e) {
-      return null
-    }
-  }
-
-  var gl = get('webgl') ||
-           get('experimental-webgl') ||
-           get('webgl-experimental')
-
-  
-
-  return {
-    gl: gl,
-    options: extend({
-      pixelRatio: window.devicePixelRatio
-    }, options)
-  }
-}
-
-module.exports = function parseArgs (args) {
-  if (typeof document === 'undefined' ||
-      typeof HTMLElement === 'undefined') {
-    return {
-      gl: args[0],
-      options: args[1] || {}
-    }
-  }
-
-  var element = document.body
-  var options = args[1] || {}
-
-  if (typeof args[0] === 'string') {
-    element = document.querySelector(args[0]) || document.body
-  } else if (typeof args[0] === 'object') {
-    if (args[0] instanceof HTMLElement) {
-      element = args[0]
-    } else if (args[0] instanceof WebGLRenderingContext) {
-      return {
-        gl: args[0],
-        options: extend({
-          pixelRatio: 1
-        }, options)
-      }
-    } else {
-      options = args[0]
-    }
-  }
-
-  if (element.nodeName && element.nodeName.toUpperCase() === 'CANVAS') {
-    return getContext(element, options)
-  } else {
-    return createCanvas(element, options)
-  }
-}
-
-},{"./util/extend":23}],8:[function(require,module,exports){
 var GL_TRIANGLES = 4
 
 module.exports = function wrapDrawState (gl) {
@@ -2193,25 +2135,75 @@ module.exports = function wrapDrawState (gl) {
   }
 }
 
-},{}],9:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
+
+
 var VARIABLE_COUNTER = 0
 
-function DynamicVariable (isFunc, data) {
+var DYN_FUNC = 0
+var DYN_PENDING_FLAG = 128
+
+function DynamicVariable (type, data) {
   this.id = (VARIABLE_COUNTER++)
-  this.func = isFunc
+  this.type = type
   this.data = data
 }
 
-function defineDynamic (data, path) {
+function escapeStr (str) {
+  return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+}
+
+function splitParts (str) {
+  if (str.length === 0) {
+    return []
+  }
+
+  var firstChar = str.charAt(0)
+  var lastChar = str.charAt(str.length - 1)
+
+  if (str.length > 1 &&
+      firstChar === lastChar &&
+      (firstChar === '"' || firstChar === "'")) {
+    return ['"' + escapeStr(str.substr(1, str.length - 2)) + '"']
+  }
+
+  var parts = /\[(false|true|null|\d+|'[^']*'|"[^"]*")\]/.exec(str)
+  if (parts) {
+    return (
+      splitParts(str.substr(0, parts.index))
+      .concat(splitParts(parts[1]))
+      .concat(splitParts(str.substr(parts.index + parts[0].length)))
+    )
+  }
+
+  var subparts = str.split('.')
+  if (subparts.length === 1) {
+    return ['"' + escapeStr(str) + '"']
+  }
+
+  var result = []
+  for (var i = 0; i < subparts.length; ++i) {
+    result = result.concat(splitParts(subparts[i]))
+  }
+  return result
+}
+
+function toAccessorString (str) {
+  return '[' + splitParts(str).join('][') + ']'
+}
+
+function defineDynamic (type, data) {
   switch (typeof data) {
     case 'boolean':
     case 'number':
     case 'string':
-      return new DynamicVariable(false, data)
-    case 'function':
-      return new DynamicVariable(true, data)
+      return new DynamicVariable(type, toAccessorString(data + ''))
+
+    case 'undefined':
+      return new DynamicVariable(type | DYN_PENDING_FLAG, null)
+
     default:
-      return defineDynamic
+      
   }
 }
 
@@ -2222,21 +2214,25 @@ function isDynamic (x) {
 
 function unbox (x, path) {
   if (x instanceof DynamicVariable) {
-    return x
-  } else if (typeof x === 'function' &&
-             x !== defineDynamic) {
-    return new DynamicVariable(true, x)
+    if (x.type & DYN_PENDING_FLAG) {
+      return new DynamicVariable(
+        x.type & ~DYN_PENDING_FLAG,
+        toAccessorString(path))
+    }
+  } else if (typeof x === 'function') {
+    return new DynamicVariable(DYN_FUNC, x)
   }
-  return new DynamicVariable(false, path)
+  return x
 }
 
 module.exports = {
   define: defineDynamic,
   isDynamic: isDynamic,
-  unbox: unbox
+  unbox: unbox,
+  accessor: toAccessorString
 }
 
-},{}],10:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 
 var isTypedArray = require('./util/is-typed-array')
 var isNDArrayLike = require('./util/is-ndarray')
@@ -2407,7 +2403,7 @@ module.exports = function wrapElementsState (gl, extensions, bufferState) {
   }
 }
 
-},{"./constants/primitives.json":6,"./util/is-ndarray":24,"./util/is-typed-array":25}],11:[function(require,module,exports){
+},{"./constants/primitives.json":6,"./util/is-ndarray":23,"./util/is-typed-array":24}],10:[function(require,module,exports){
 module.exports = function createExtensionCache (gl) {
   var extensions = {}
 
@@ -2453,7 +2449,7 @@ module.exports = function createExtensionCache (gl) {
   }
 }
 
-},{}],12:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 
 var values = require('./util/values')
 var extend = require('./util/extend')
@@ -3183,7 +3179,7 @@ module.exports = function wrapFBOState (
   }
 }
 
-},{"./util/extend":23,"./util/values":31}],13:[function(require,module,exports){
+},{"./util/extend":22,"./util/values":30}],12:[function(require,module,exports){
 var GL_SUBPIXEL_BITS = 0x0D50
 var GL_RED_BITS = 0x0D52
 var GL_GREEN_BITS = 0x0D53
@@ -3277,7 +3273,7 @@ module.exports = function (gl, extensions) {
   }
 }
 
-},{}],14:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 
 var isTypedArray = require('./util/is-typed-array')
 
@@ -3330,7 +3326,7 @@ module.exports = function wrapReadPixels (gl, reglPoll, viewportState) {
   return readPixels
 }
 
-},{"./util/is-typed-array":25}],15:[function(require,module,exports){
+},{"./util/is-typed-array":24}],14:[function(require,module,exports){
 
 var values = require('./util/values')
 
@@ -3485,7 +3481,7 @@ module.exports = function (gl, extensions, limits) {
   }
 }
 
-},{"./util/values":31}],16:[function(require,module,exports){
+},{"./util/values":30}],15:[function(require,module,exports){
 
 var values = require('./util/values')
 
@@ -3664,7 +3660,7 @@ module.exports = function wrapShaderState (
   }
 }
 
-},{"./util/values":31}],17:[function(require,module,exports){
+},{"./util/values":30}],16:[function(require,module,exports){
 var createStack = require('./util/stack')
 var createEnvironment = require('./util/codegen')
 
@@ -3859,7 +3855,7 @@ module.exports = function wrapContextState (gl, framebufferState, viewportState)
   }
 }
 
-},{"./util/codegen":22,"./util/stack":29}],18:[function(require,module,exports){
+},{"./util/codegen":21,"./util/stack":28}],17:[function(require,module,exports){
 module.exports = function createStringStore () {
   var stringIds = {'': 0}
   var stringValues = ['']
@@ -3880,7 +3876,7 @@ module.exports = function createStringStore () {
   }
 }
 
-},{}],19:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 
 var extend = require('./util/extend')
 var values = require('./util/values')
@@ -5284,7 +5280,7 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, vi
   }
 }
 
-},{"./util/extend":23,"./util/is-ndarray":24,"./util/is-typed-array":25,"./util/load-texture":26,"./util/parse-dds":27,"./util/to-half-float":30,"./util/values":31}],20:[function(require,module,exports){
+},{"./util/extend":22,"./util/is-ndarray":23,"./util/is-typed-array":24,"./util/load-texture":25,"./util/parse-dds":26,"./util/to-half-float":29,"./util/values":30}],19:[function(require,module,exports){
 module.exports = function wrapUniformState (stringStore) {
   var uniformState = {}
 
@@ -5303,14 +5299,14 @@ module.exports = function wrapUniformState (stringStore) {
   }
 }
 
-},{}],21:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 /* globals performance */
 module.exports =
   (typeof performance !== 'undefined' && performance.now)
   ? function () { return performance.now() }
   : function () { return +(new Date()) }
 
-},{}],22:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var extend = require('./extend')
 
 function slice (x) {
@@ -5410,7 +5406,7 @@ module.exports = function createEnvironment () {
   }
 }
 
-},{"./extend":23}],23:[function(require,module,exports){
+},{"./extend":22}],22:[function(require,module,exports){
 module.exports = function (base, opts) {
   var keys = Object.keys(opts)
   for (var i = 0; i < keys.length; ++i) {
@@ -5419,11 +5415,12 @@ module.exports = function (base, opts) {
   return base
 }
 
-},{}],24:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var isTypedArray = require('./is-typed-array')
 
 module.exports = function isNDArrayLike (obj) {
   return (
+    !!obj &&
     typeof obj === 'object' &&
     Array.isArray(obj.shape) &&
     Array.isArray(obj.stride) &&
@@ -5433,13 +5430,13 @@ module.exports = function isNDArrayLike (obj) {
       isTypedArray(obj.data)))
 }
 
-},{"./is-typed-array":25}],25:[function(require,module,exports){
+},{"./is-typed-array":24}],24:[function(require,module,exports){
 var dtypes = require('../constants/arraytypes.json')
 module.exports = function (x) {
   return Object.prototype.toString.call(x) in dtypes
 }
 
-},{"../constants/arraytypes.json":4}],26:[function(require,module,exports){
+},{"../constants/arraytypes.json":4}],25:[function(require,module,exports){
 /* globals document, Image, XMLHttpRequest */
 
 module.exports = loadTexture
@@ -5522,7 +5519,7 @@ function loadTexture (url, crossOrigin) {
   return null
 }
 
-},{}],27:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 // References:
 //
 // http://msdn.microsoft.com/en-us/library/bb943991.aspx/
@@ -5703,7 +5700,7 @@ function parseDDS (arrayBuffer) {
   return result
 }
 
-},{}],28:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
     typeof cancelAnimationFrame === 'function') {
@@ -5720,7 +5717,7 @@ if (typeof requestAnimationFrame === 'function' &&
   }
 }
 
-},{}],29:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 // A stack for managing the state of a scalar/vector parameter
 
 module.exports = function createStack (init, onChange) {
@@ -5788,7 +5785,7 @@ module.exports = function createStack (init, onChange) {
   }
 }
 
-},{}],30:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 module.exports = function convertToHalfFloat (array) {
   var floats = new Float32Array(array)
   var uints = new Uint32Array(floats.buffer)
@@ -5828,15 +5825,137 @@ module.exports = function convertToHalfFloat (array) {
   return ushorts
 }
 
-},{}],31:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 module.exports = function (obj) {
   return Object.keys(obj).map(function (key) { return obj[key] })
 }
 
-},{}],32:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
+// Context and canvas creation helper functions
+/*globals HTMLElement,WebGLRenderingContext*/
+
+
+var extend = require('./util/extend')
+
+function createCanvas (element, options) {
+  var canvas = document.createElement('canvas')
+  var args = getContext(canvas, options)
+
+  extend(canvas.style, {
+    border: 0,
+    margin: 0,
+    padding: 0,
+    top: 0,
+    left: 0
+  })
+  element.appendChild(canvas)
+
+  if (element === document.body) {
+    canvas.style.position = 'absolute'
+    extend(element.style, {
+      margin: 0,
+      padding: 0
+    })
+  }
+
+  var scale = +args.options.pixelRatio
+  function resize () {
+    var w = window.innerWidth
+    var h = window.innerHeight
+    if (element !== document.body) {
+      var bounds = element.getBoundingClientRect()
+      w = bounds.right - bounds.left
+      h = bounds.top - bounds.bottom
+    }
+    canvas.width = scale * w
+    canvas.height = scale * h
+    extend(canvas.style, {
+      width: w + 'px',
+      height: h + 'px'
+    })
+  }
+
+  window.addEventListener('resize', resize, false)
+
+  var prevDestroy = args.options.onDestroy
+  args.options = extend(extend({}, args.options), {
+    onDestroy: function () {
+      window.removeEventListener('resize', resize)
+      element.removeChild(canvas)
+      prevDestroy && prevDestroy()
+    }
+  })
+
+  resize()
+
+  return args
+}
+
+function getContext (canvas, options) {
+  var glOptions = options.glOptions || {}
+
+  function get (name) {
+    try {
+      return canvas.getContext(name, glOptions)
+    } catch (e) {
+      return null
+    }
+  }
+
+  var gl = get('webgl') ||
+           get('experimental-webgl') ||
+           get('webgl-experimental')
+
+  
+
+  return {
+    gl: gl,
+    options: extend({
+      pixelRatio: window.devicePixelRatio
+    }, options)
+  }
+}
+
+module.exports = function parseArgs (args) {
+  if (typeof document === 'undefined' ||
+      typeof HTMLElement === 'undefined') {
+    return {
+      gl: args[0],
+      options: args[1] || {}
+    }
+  }
+
+  var element = document.body
+  var options = args[1] || {}
+
+  if (typeof args[0] === 'string') {
+    element = document.querySelector(args[0]) || document.body
+  } else if (typeof args[0] === 'object') {
+    if (args[0] instanceof HTMLElement) {
+      element = args[0]
+    } else if (args[0] instanceof WebGLRenderingContext) {
+      return {
+        gl: args[0],
+        options: extend({
+          pixelRatio: 1
+        }, options)
+      }
+    } else {
+      options = args[0]
+    }
+  }
+
+  if (element.nodeName && element.nodeName.toUpperCase() === 'CANVAS') {
+    return getContext(element, options)
+  } else {
+    return createCanvas(element, options)
+  }
+}
+
+},{"./util/extend":22}],32:[function(require,module,exports){
 
 var extend = require('./lib/util/extend')
-var getContext = require('./lib/context')
+var initWebGL = require('./lib/webgl')
 var createStringStore = require('./lib/strings')
 var wrapExtensions = require('./lib/extension')
 var wrapLimits = require('./lib/limits')
@@ -5867,8 +5986,12 @@ var GL_TEXTURE_CUBE_MAP = 0x8513
 var CONTEXT_LOST_EVENT = 'webglcontextlost'
 var CONTEXT_RESTORED_EVENT = 'webglcontextrestored'
 
+var DYN_PROP = 1
+var DYN_CONTEXT = 2
+var DYN_STATE = 3
+
 module.exports = function wrapREGL () {
-  var args = getContext(Array.prototype.slice.call(arguments))
+  var args = initWebGL(Array.prototype.slice.call(arguments))
   var gl = args.gl
   var options = args.options
 
@@ -5886,7 +6009,7 @@ module.exports = function wrapREGL () {
     gl,
     extensions)
 
-  var bufferState = wrapBuffers(gl)
+  var bufferState = wrapBuffers(gl, unbindBuffer)
 
   var elementState = wrapElements(
     gl,
@@ -5935,15 +6058,29 @@ module.exports = function wrapREGL () {
     textureState,
     renderbufferState)
 
+  var startTime = clock()
+
   var frameState = {
     count: 0,
-    start: clock(),
+    start: startTime,
     dt: 0,
-    t: clock(),
+    t: startTime,
     renderTime: 0,
     width: gl.drawingBufferWidth,
     height: gl.drawingBufferHeight,
     pixelRatio: options.pixelRatio
+  }
+
+  var context = {
+    count: 0,
+    batchId: 0,
+    deltaTime: 0,
+    time: 0,
+    viewportWidth: frameState.width,
+    viewportHeight: frameState.height,
+    drawingBufferWidth: frameState.width,
+    drawingBufferHeight: frameState.height,
+    pixelRatio: frameState.pixelRatio
   }
 
   var glState = wrapContext(
@@ -5967,8 +6104,20 @@ module.exports = function wrapREGL () {
     attributeState,
     shaderState,
     drawState,
-    frameState,
+    context,
     poll)
+
+  function unbindBuffer (buffer) {
+    for (var i = 0; i < attributeState.bindings.length; ++i) {
+      var attr = attributeState.bindings[i]
+      if (attr.pointer && attr.buffer === buffer) {
+        attr.pointer = false
+        attr.buffer = null
+        attr.x = attr.y = attr.z = attr.w = NaN
+        gl.disableVertexAttribArray(i)
+      }
+    }
+  }
 
   var canvas = gl.canvas
 
@@ -5977,11 +6126,16 @@ module.exports = function wrapREGL () {
   function handleRAF () {
     activeRAF = raf.next(handleRAF)
     frameState.count += 1
+    context.count = frameState.count
 
     if (frameState.width !== gl.drawingBufferWidth ||
         frameState.height !== gl.drawingBufferHeight) {
-      frameState.width = gl.drawingBufferWidth
-      frameState.height = gl.drawingBufferHeight
+      context.viewportWidth =
+        context.drawingBufferWidth =
+        frameState.width = gl.drawingBufferWidth
+      context.viewportHeight =
+        context.drawingBufferHeight =
+        frameState.height = gl.drawingBufferHeight
       glState.notifyViewportChanged()
     }
 
@@ -5989,11 +6143,14 @@ module.exports = function wrapREGL () {
     frameState.dt = now - frameState.t
     frameState.t = now
 
+    context.deltaTime = frameState.dt / 1000.0
+    context.time = (now - startTime) / 1000.0
+
     textureState.poll()
 
     for (var i = 0; i < rafCallbacks.length; ++i) {
       var cb = rafCallbacks[i]
-      cb(frameState.count, frameState.t, frameState.dt)
+      cb(null, context)
     }
     frameState.renderTime = clock() - now
   }
@@ -6068,6 +6225,7 @@ module.exports = function wrapREGL () {
       var result = extend({}, options)
       delete result.uniforms
       delete result.attributes
+      delete result.context
 
       function merge (name) {
         if (name in result) {
@@ -6107,6 +6265,8 @@ module.exports = function wrapREGL () {
       }
     }
 
+    // Treat context variables separate from other dynamic variables
+    var context = separateDynamic(options.context || {})
     var uniforms = separateDynamic(options.uniforms || {})
     var attributes = separateDynamic(options.attributes || {})
     var opts = separateDynamic(flattenNestedOptions(options))
@@ -6114,7 +6274,7 @@ module.exports = function wrapREGL () {
     var compiled = compiler.command(
       opts.static, uniforms.static, attributes.static,
       opts.dynamic, uniforms.dynamic, attributes.dynamic,
-      hasDynamic)
+      context, hasDynamic)
 
     var draw = compiled.draw
     var batch = compiled.batch
@@ -6132,20 +6292,20 @@ module.exports = function wrapREGL () {
 
     function REGLCommand (args, body) {
       if (typeof args === 'function') {
-        return scope(null, args)
+        return scope.call(this, null, args)
       } else if (typeof body === 'function') {
-        return scope(args, body)
+        return scope.call(this, args, body)
       }
 
       // Runtime shader check.  Removed in production builds
       
 
       if (typeof args === 'number') {
-        return batch(args | 0, reserve(args | 0))
+        return batch.call(this, args | 0, reserve(args | 0))
       } else if (Array.isArray(args)) {
-        return batch(args.length, args)
+        return batch.call(this, args.length, args)
       }
-      return draw(args)
+      return draw.call(this, args)
     }
 
     return REGLCommand
@@ -6206,8 +6366,10 @@ module.exports = function wrapREGL () {
     // Clear current FBO
     clear: clear,
 
-    // Short cut for prop binding
-    prop: dynamic.define,
+    // Short cuts for dynamic variables
+    prop: dynamic.define.bind(null, DYN_PROP),
+    context: dynamic.define.bind(null, DYN_CONTEXT),
+    this: dynamic.define.bind(null, DYN_STATE),
 
     // executes an empty draw command
     draw: compileProcedure({}),
@@ -6256,5 +6418,5 @@ module.exports = function wrapREGL () {
   })
 }
 
-},{"./lib/attribute":1,"./lib/buffer":2,"./lib/compile":3,"./lib/context":7,"./lib/draw":8,"./lib/dynamic":9,"./lib/elements":10,"./lib/extension":11,"./lib/framebuffer":12,"./lib/limits":13,"./lib/read":14,"./lib/renderbuffer":15,"./lib/shader":16,"./lib/state":17,"./lib/strings":18,"./lib/texture":19,"./lib/uniform":20,"./lib/util/clock":21,"./lib/util/extend":23,"./lib/util/raf":28}]},{},[32])(32)
+},{"./lib/attribute":1,"./lib/buffer":2,"./lib/compile":3,"./lib/draw":7,"./lib/dynamic":8,"./lib/elements":9,"./lib/extension":10,"./lib/framebuffer":11,"./lib/limits":12,"./lib/read":13,"./lib/renderbuffer":14,"./lib/shader":15,"./lib/state":16,"./lib/strings":17,"./lib/texture":18,"./lib/uniform":19,"./lib/util/clock":20,"./lib/util/extend":22,"./lib/util/raf":27,"./lib/webgl":31}]},{},[32])(32)
 });
