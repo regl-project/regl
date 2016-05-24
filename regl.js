@@ -141,6 +141,7 @@ module.exports = function wrapREGL () {
     contextState.time = (now - START_TIME) / 1000.0
     LAST_TIME = now
 
+    core.procs.refresh()
     textureState.poll()
 
     for (var i = 0; i < rafCallbacks.length; ++i) {
@@ -173,12 +174,12 @@ module.exports = function wrapREGL () {
   function handleContextRestored (event) {
     gl.getError()
     extensionState.refresh()
+    core.procs.refresh()
     bufferState.refresh()
     textureState.refresh()
     renderbufferState.refresh()
     framebufferState.refresh()
     shaderState.refresh()
-    core.procs.refresh()
     if (options.onContextRestored) {
       options.onContextRestored()
     }
@@ -315,7 +316,6 @@ module.exports = function wrapREGL () {
   }
 
   function poll () {
-    framebufferState.poll()
     core.procs.poll()
   }
 
@@ -364,6 +364,8 @@ module.exports = function wrapREGL () {
       cancel: cancel
     }
   }
+
+  core.procs.refresh()
 
   return extend(compileProcedure, {
     // Clear current FBO
