@@ -39,9 +39,9 @@ const drawFeedback = regl({
 
   uniforms: {
     texture: pixels,
-    mouse: (props, {pixelRatio, height}) => [
+    mouse: (props, {pixelRatio, viewportHeight}) => [
       mouse.x * pixelRatio,
-      height - mouse.y * pixelRatio
+      viewportHeight - mouse.y * pixelRatio
     ],
     t: (props, {count}) => 0.01 * count
   },
