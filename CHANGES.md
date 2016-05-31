@@ -2,6 +2,12 @@
 
 ## Planned
 
+* Switch order of arguments to dynamic functions, from (props, context) to (context, props)
+    + functions without a props argument become batch static
+* Implement non-batch constant context, framebuffer and viewport
+* Batched scope rendering
+
+* Allow for dynamic properties in viewport, scissor box and attributes
 * Resource API improvements
     + Support dynamic variables (context and props) in resource constructors
     + Add in place update methods to buffers and textures
@@ -11,6 +17,7 @@
     + Should be able to report errors when extensions are missing
     + Allow users to disable extensions for testing/mocking
 * Cubic frame buffer objects
+* Performance monitoring hooks
 * WebVR integration (need to think how this will work)
 * Documentation
     + Write "regl for react programmers"
