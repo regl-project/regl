@@ -47,9 +47,8 @@ module.exports = function wrapREGL () {
   var WIDTH = gl.drawingBufferWidth
   var HEIGHT = gl.drawingBufferHeight
 
-  var contextState = extend({
+  var contextState = {
     count: 0,
-    batchId: 0,
     deltaTime: 0,
     time: 0,
     viewportWidth: WIDTH,
@@ -59,7 +58,7 @@ module.exports = function wrapREGL () {
     drawingBufferWidth: WIDTH,
     drawingBufferHeight: HEIGHT,
     pixelRatio: options.pixelRatio
-  }, gl.getContextAttributes())
+  }
   var uniformState = {}
   var drawState = {
     elements: null,
@@ -146,7 +145,7 @@ module.exports = function wrapREGL () {
 
     for (var i = 0; i < rafCallbacks.length; ++i) {
       var cb = rafCallbacks[i]
-      cb(null, contextState)
+      cb(contextState, null, 0)
     }
   }
 
@@ -408,6 +407,9 @@ module.exports = function wrapREGL () {
       check.raise('framebuffer cube not yet implemented')
     },
 
+    // Expose context attributes
+    attributes: gl.getContextAttributes(),
+
     // Frame rendering
     frame: frame,
 
@@ -418,6 +420,12 @@ module.exports = function wrapREGL () {
     read: readPixels,
 
     // Destroy regl and all associated resources
-    destroy: destroy
+    destroy: destroy,
+
+    // Direct GL state manipulation
+    _gl: gl,
+    _refresh: function () {
+      core.procs.refresh()
+    }
   })
 }

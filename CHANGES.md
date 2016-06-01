@@ -51,6 +51,8 @@
 
 ## Next
 
+* Switch order of props and context variables for dynamic function args
+* function invocation now takes batch id as separate parameter
 * Support directly constructing elements and attributes from arrays
 * Allow individual attribute properties to be dynamic (eg buffers, offsets, etc.)
 * Code generation rewrite
