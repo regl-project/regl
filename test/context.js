@@ -7,7 +7,7 @@ tape('context', function (t) {
 
   var simpleScope = regl({
     context: {
-      a: function (props, context) {
+      a: function (context, props) {
         t.equals(context.a, undefined)
         t.equals(context.b, undefined)
         t.equals(context.c, undefined)
@@ -26,7 +26,7 @@ tape('context', function (t) {
     bbb: 3
   }, {
     ddd: 7
-  }, function (props, context) {
+  }, function (context, props) {
     t.equals(context.a, 1)
     t.equals(context.b, 3)
     t.equals(context.c, 16)
