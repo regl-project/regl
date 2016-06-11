@@ -2,12 +2,8 @@
 
 ## Planned
 
-* Switch order of arguments to dynamic functions, from (props, context) to (context, props)
-    + functions without a props argument become batch static
-* Implement non-batch constant context, framebuffer and viewport
-* Batched scope rendering
-
-* Allow for dynamic properties in viewport, scissor box and attributes
+* Optimize buffer creation, reduce memory allocation
+* Pool stream buffers
 * Resource API improvements
     + Support dynamic variables (context and props) in resource constructors
     + Add in place update methods to buffers and textures
@@ -51,6 +47,11 @@
 
 ## Next
 
+* Allow for dynamic properties in viewport, scissor box and attributes
+* Switch order of arguments to dynamic functions, from (props, context) to (context, props)
+    + functions without a props argument become batch static
+* Implement non-batch constant context, framebuffer and viewport
+* Batched scope rendering
 * Switch order of props and context variables for dynamic function args
 * function invocation now takes batch id as separate parameter
 * Support directly constructing elements and attributes from arrays

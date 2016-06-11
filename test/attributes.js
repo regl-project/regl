@@ -101,11 +101,29 @@ tape('attributes', function (t) {
       ]),
 
       count: 3
+    },
+
+    buffer: {
+      expected: [
+        1, 0, 1, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 1, 0
+      ],
+
+      data: regl.buffer(new Uint8Array([
+        0, 0,
+        2, 0,
+        3, 4
+      ])),
+
+      count: 3
     }
   }
 
-  var constructors = {
-    constant: function (data, count) {
+  var baseConstructors = {
+    constant: function (frag, vert, data, count) {
       var cmd = regl({
         frag: frag,
         vert: vert,
@@ -120,7 +138,7 @@ tape('attributes', function (t) {
       return cmd
     },
 
-    prop: function (data, count) {
+    prop: function (frag, vert, data, count) {
       var cmd = regl({
         frag: frag,
         vert: vert,
@@ -135,7 +153,7 @@ tape('attributes', function (t) {
       return cmd
     },
 
-    context: function (data, count) {
+    context: function (frag, vert, data, count) {
       var cmd = regl({
         context: {
           data: data
@@ -153,7 +171,7 @@ tape('attributes', function (t) {
       return cmd
     },
 
-    this: function (data, count) {
+    this: function (frag, vert, data, count) {
       var cmd = regl({
         frag: frag,
         vert: vert,
@@ -172,7 +190,7 @@ tape('attributes', function (t) {
       return cmd.bind(obj)
     },
 
-    dynamicProp: function (data, count) {
+    dynamicProp: function (frag, vert, data, count) {
       return regl({
         frag: frag,
         vert: vert,
@@ -187,7 +205,7 @@ tape('attributes', function (t) {
       })
     },
 
-    dynamicContext: function (data, count) {
+    dynamicContext: function (frag, vert, data, count) {
       var cmd = regl({
         context: {
           data: data
@@ -206,6 +224,31 @@ tape('attributes', function (t) {
       return cmd
     }
   }
+
+  var constructors = {}
+
+  Object.keys(baseConstructors).forEach(function (name) {
+    var base = baseConstructors[name]
+    constructors[name + '(const shader)'] = function (data, count) {
+      return base(frag, vert, data, count)
+    }
+
+    constructors[name + '(dyn shader)'] = function (data, count) {
+      return base(function () {
+        return frag
+      }, function () {
+        return vert
+      }, data, count)
+    }
+
+    constructors[name + '(prop shader)'] = function (data, count) {
+      return base(function (a, b) {
+        return frag
+      }, function (a, b) {
+        return vert
+      }, data, count)
+    }
+  })
 
   function checkPixels (expected) {
     var actual = regl.read()
@@ -239,6 +282,14 @@ tape('attributes', function (t) {
       regl.draw()
     })
     t.ok(checkPixels(input.expected), prefix + ' - scope')
+
+    regl.clear({
+      color: [0, 0, 0, 0]
+    })
+    cmd({ data: input.data }, function () {
+      regl.draw(1)
+    })
+    t.ok(checkPixels(input.expected), prefix + ' - scope(batch)')
   }
 
   Object.keys(constructors).forEach(function (cname) {
