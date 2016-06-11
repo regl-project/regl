@@ -276,29 +276,25 @@ module.exports = function wrapREGL () {
       return EMPTY_ARRAY
     }
 
-    check.saveDrawInfo(opts, uniforms, attributes, stringStore)
-
     function REGLCommand (args, body) {
+      var i
       if (typeof args === 'function') {
-        return scope.call(this, null, args)
+        return scope.call(this, null, args, 0)
       } else if (typeof body === 'function') {
-        return scope.call(this, args, body)
-      }
-
-      // Runtime shader check.  Removed in production builds
-      check.drawOk(
-        drawState,
-        shaderState,
-        uniformState,
-        attributeState,
-        opts._commandRef,
-        opts._fragId,
-        opts._vertId,
-        opts._uniformSet,
-        opts._attributeSet,
-        opts._hasCount)
-
-      if (typeof args === 'number') {
+        if (typeof args === 'number') {
+          for (i = 0; i < args; ++i) {
+            scope.call(this, null, body, i)
+          }
+          return
+        } else if (Array.isArray(args)) {
+          for (i = 0; i < args.length; ++i) {
+            scope.call(this, args[i], body, i)
+          }
+          return
+        } else {
+          return scope.call(this, args, body, 0)
+        }
+      } else if (typeof args === 'number') {
         if (args > 0) {
           return batch.call(this, reserve(args | 0), args | 0)
         }
