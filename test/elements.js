@@ -9,8 +9,6 @@ tape('elements', function (t) {
     [1, 3]
   ])
 
-  // TODO: test scoped elements and then setting to null
-
   var drawStatic = regl({
     frag: [
       'precision mediump float;',
@@ -44,37 +42,6 @@ tape('elements', function (t) {
       color: regl.prop('c')
     }
   })
-
-  /*
-  var drawDynamicWithCount = regl({
-    frag: [
-      'precision mediump float;',
-      'void main() {',
-      '  gl_FragColor = vec4(0, 0, 1, 1);',
-      '}'
-    ].join('\n'),
-
-    vert: [
-      'attribute vec2 position;',
-      'void main() {',
-      '  gl_Position = vec4(position, 0, 1);',
-      '}'
-    ].join('\n'),
-
-    attributes: {
-      position: regl.buffer([
-        [-2, 0],
-        [0, -2],
-        [2, 0],
-        [0, 2]
-      ])
-    },
-
-    depth: {enable: false},
-
-    elements: regl.prop('elements')
-  })
-  */
 
   var drawDynamic = regl({
     frag: [
