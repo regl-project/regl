@@ -1,3 +1,5 @@
+// This example shows how to pass props to draw commands
+
 const regl = require('../regl')()
 
 const draw = regl({
@@ -19,17 +21,15 @@ const draw = regl({
     }`,
 
   attributes: {
-    position: regl.buffer([
+    position: [
       -1, 0,
       0, -1,
-      1, 1])
+      1, 1]
   },
 
   uniforms: {
     color: regl.prop('color'),
-    angle: function (props, context) {
-      return 0.01 * context.count
-    }
+    angle: ({count}) => 0.01 * count
   },
 
   depth: {
@@ -39,9 +39,7 @@ const draw = regl({
   count: 3
 })
 
-regl.frame(function (props, context) {
-  const count = context.count
-
+regl.frame(({count}) => {
   regl.clear({
     color: [0, 0, 0, 1]
   })
