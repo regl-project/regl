@@ -208,12 +208,12 @@ The latest changes in `regl` can be found in the [CHANGELOG](CHANGES.md).
 
 [For info on how to build and test headless, see the contributing guide here](DEVELOPING.md)
 
-## Credits
+### License
 All code (c) 2016 MIT License
 
 Development supported by the [Freeman Lab](https://www.janelia.org/lab/freeman-lab) and the Howard Hughes Medical Institute ([@freeman-lab](https://github.com/freeman-lab) on GitHub)
 
-### Asset licenses
+#### Asset licenses
 Many examples use creative commons or public domain artwork for illustrative purposes.  These assets are not included in any of the redistributable packages of regl.
 
 * Test video (doggie-chromakey.ogv) by [L0ckergn0me](https://archive.org/details/L0ckergn0me-PixieGreenScreen446), used under creative commons license
