@@ -33,7 +33,7 @@ const updateLife = regl({
     }
   }`,
 
-  framebuffer: (props, {count}) => state[(count + 1) % 2]
+  framebuffer: ({count}) => state[(count + 1) % 2]
 })
 
 const setupQuad = regl({
@@ -56,11 +56,11 @@ const setupQuad = regl({
   }`,
 
   attributes: {
-    position: regl.buffer([ -4, -4, 4, -4, 0, 4 ])
+    position: [ -4, -4, 4, -4, 0, 4 ]
   },
 
   uniforms: {
-    prevState: (props, {count}) => state[count % 2].color[0]
+    prevState: ({count}) => state[count % 2].color[0]
   },
 
   depth: { enable: false },
