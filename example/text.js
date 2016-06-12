@@ -36,12 +36,12 @@ const drawFeedback = regl({
   }`,
 
   attributes: {
-    position: regl.buffer([-2, 0, 0, -2, 2, 2])
+    position: [-2, 0, 0, -2, 2, 2]
   },
 
   uniforms: {
     texture: feedBackTexture,
-    t: (props, {count}) => 0.001 * count
+    t: ({count}) => 0.001 * count
   },
 
   depth: {enable: false},
@@ -69,15 +69,15 @@ const drawText = regl({
   }`,
 
   attributes: {
-    position: regl.buffer(textMesh.positions)
+    position: textMesh.positions
   },
 
-  elements: regl.elements(textMesh.edges),
+  elements: textMesh.edges,
 
   uniforms: {
-    t: (props, {count}) => 0.01 * count,
+    t: ({count}) => 0.01 * count,
 
-    view: (props, {count}) => {
+    view: ({count}) => {
       const t = 0.01 * count
       return lookAt([],
         [5 * Math.sin(t), 0, -5 * Math.cos(t)],
@@ -85,7 +85,7 @@ const drawText = regl({
         [0, -1, 0])
     },
 
-    projection: (props, {viewportWidth, viewportHeight}) =>
+    projection: ({viewportWidth, viewportHeight}) =>
       perspective([],
         Math.PI / 4,
         viewportWidth / viewportHeight,
@@ -96,7 +96,7 @@ const drawText = regl({
   depth: {enable: false}
 })
 
-regl.frame((props, context) => {
+regl.frame(() => {
   drawFeedback()
   drawText()
   feedBackTexture({

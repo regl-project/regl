@@ -80,8 +80,8 @@ tape('batch', function (t) {
       },
 
       uniforms: {
-        offset: function (props, context) {
-          var p = points[context.batchId]
+        offset: function (context, props, batchId) {
+          var p = points[batchId]
           return [(p[0] - 2.0) / 2.1, (p[1] - 2.0) / 2.1]
         }
       },

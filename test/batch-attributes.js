@@ -54,7 +54,7 @@ tape('batch mode attributes', function (t) {
     primitive: 'points',
     count: 1,
     offset: 0,
-    instances: 0
+    instances: -1
   }, [
     1, 0, 0, 0, 0,
     0, 0, 0, 0, 0,
@@ -69,7 +69,7 @@ tape('batch mode attributes', function (t) {
     primitive: 'points',
     count: 1,
     offset: 0,
-    instances: 0
+    instances: -1
   }, [
     0, 0, 0, 0, 0,
     0, 0, 0, 1, 0,
@@ -84,13 +84,13 @@ tape('batch mode attributes', function (t) {
     primitive: 'points',
     count: 1,
     offset: 0,
-    instances: 0
+    instances: -1
   }, {
     position: regl.buffer([2, 2, 2, 4]),
     primitive: 'points',
     count: 2,
     offset: 0,
-    instances: 0
+    instances: -1
   }], [
     1, 0, 0, 0, 0,
     0, 0, 0, 0, 0,
@@ -104,7 +104,7 @@ tape('batch mode attributes', function (t) {
     primitive: 'line strip',
     count: 4,
     offset: 0,
-    instances: 0
+    instances: -1
   }], [
     1, 1, 1, 1, 1,
     0, 0, 0, 0, 1,
@@ -119,7 +119,7 @@ tape('batch mode attributes', function (t) {
     primitive: 'point',
     count: 1,
     offset: 1,
-    instances: 0
+    instances: -1
   }, [
     0, 1, 0, 0, 0,
     0, 0, 0, 0, 0,
@@ -133,7 +133,7 @@ tape('batch mode attributes', function (t) {
     primitive: 'point',
     count: 1,
     offset: 1,
-    instances: 0
+    instances: -1
   }], [
     0, 1, 0, 0, 0,
     0, 0, 0, 0, 0,

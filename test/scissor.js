@@ -13,24 +13,24 @@ tape('scissor', function (t) {
     var box = gl.getParameter(gl.SCISSOR_BOX)
     var fbox = flags.box
     if ('x' in fbox) {
-      t.equals(box[0], fbox.x, 'box.x')
+      t.equals(box[0], fbox.x, prefix + 'box.x')
     } else {
-      t.equals(box[0], 0, 'box.x')
+      t.equals(box[0], 0, prefix + 'box.x')
     }
     if ('y' in fbox) {
-      t.equals(box[1], fbox.y, 'box.y')
+      t.equals(box[1], fbox.y, prefix + 'box.y')
     } else {
-      t.equals(box[1], 0, 'box.y')
+      t.equals(box[1], 0, prefix + 'box.y')
     }
     if ('w' in fbox) {
-      t.equals(box[2], fbox.w, 'box.w')
+      t.equals(box[2], fbox.w, prefix + 'box.w')
     } else {
-      t.equals(box[2], gl.drawingBufferWidth - box[0], 'box.w')
+      t.equals(box[2], gl.drawingBufferWidth - box[0], prefix + 'box.w')
     }
     if ('h' in fbox) {
-      t.equals(box[3], fbox.h, 'box.h')
+      t.equals(box[3], fbox.h, prefix + 'box.h')
     } else {
-      t.equals(box[3], gl.drawingBufferHeight - box[1], 'box.h')
+      t.equals(box[3], gl.drawingBufferHeight - box[1], prefix + 'box.h')
     }
   }
 

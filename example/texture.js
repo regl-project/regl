@@ -1,5 +1,5 @@
-var regl = require('../regl')()
-var baboon = require('baboon-image')
+const regl = require('../regl')()
+const baboon = require('baboon-image')
 
 regl({
   frag: `
@@ -20,10 +20,10 @@ regl({
   }`,
 
   attributes: {
-    position: regl.buffer([
+    position: [
       -2, 0,
       0, -2,
-      2, 2])
+      2, 2]
   },
 
   uniforms: {

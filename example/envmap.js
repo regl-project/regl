@@ -4,6 +4,15 @@ const bunny = require('bunny')
 const normals = require('angle-normals')
 
 const setupEnvMap = regl({
+  context: {
+    view: ({count}) => {
+      const t = 0.01 * count
+      return mat4.lookAt([],
+        [30 * Math.cos(t), 2.5, 30 * Math.sin(t)],
+        [0, 2.5, 0],
+        [0, 1, 0])
+    }
+  },
   frag: `
   precision mediump float;
   uniform samplerCube envmap;
@@ -11,7 +20,6 @@ const setupEnvMap = regl({
   void main () {
     gl_FragColor = textureCube(envmap, reflectDir);
   }`,
-
   uniforms: {
     envmap: regl.cube(
       'assets/posx.jpg',
@@ -20,16 +28,13 @@ const setupEnvMap = regl({
       'assets/negy.jpg',
       'assets/posz.jpg',
       'assets/negz.jpg'),
-
-    view: regl.prop('view'),
-
-    projection: (props, {viewportWidth, viewportHeight}) =>
+    view: regl.context('view'),
+    projection: ({viewportWidth, viewportHeight}) =>
       mat4.perspective([],
         Math.PI / 4,
         viewportWidth / viewportHeight,
         0.01,
         1000),
-
     invView: ({view}) => mat4.invert([], view)
   }
 })
@@ -44,19 +49,16 @@ const drawBackground = regl({
     reflectDir = (view * vec4(position, 1, 0)).xyz;
     gl_Position = vec4(position, 0, 1);
   }`,
-
   attributes: {
-    position: regl.buffer([
+    position: [
       -4, -4,
       -4, 4,
-      8, 0])
+      8, 0]
   },
-
   depth: {
     mask: false,
     enable: false
   },
-
   count: 3
 })
 
@@ -73,24 +75,15 @@ const drawBunny = regl({
       normal);
     gl_Position = projection * view * vec4(position, 1);
   }`,
-
   attributes: {
-    position: regl.buffer(bunny.positions),
-    normal: regl.buffer(normals(bunny.cells, bunny.positions))
+    position: bunny.positions,
+    normal: normals(bunny.cells, bunny.positions)
   },
-
-  elements: regl.elements(bunny.cells)
+  elements: bunny.cells
 })
 
-regl.frame((props, {count}) => {
-  const t = 0.01 * count
-
-  setupEnvMap({
-    view: mat4.lookAt([],
-      [30 * Math.cos(t), 2.5, 30 * Math.sin(t)],
-      [0, 2.5, 0],
-      [0, 1, 0])
-  }, () => {
+regl.frame(() => {
+  setupEnvMap(() => {
     drawBackground()
     drawBunny()
   })

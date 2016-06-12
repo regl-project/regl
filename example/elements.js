@@ -21,17 +21,17 @@ regl({
     }`,
 
   attributes: {
-    position: regl.buffer((new Array(5)).fill().map(function (x, i) {
+    position: (new Array(5)).fill().map((x, i) => {
       var theta = 2.0 * Math.PI * i / 5
       return [ Math.sin(theta), Math.cos(theta) ]
-    }))
+    })
   },
 
   uniforms: {
     color: [1, 0, 0, 1]
   },
 
-  elements: regl.elements([
+  elements: [
     [0, 1],
     [0, 2],
     [0, 3],
@@ -42,7 +42,7 @@ regl({
     [2, 3],
     [2, 4],
     [3, 4]
-  ]),
+  ],
 
   lineWidth: 3
 })()

@@ -34,13 +34,13 @@ const drawBackground = regl({
   },
 
   attributes: {
-    position: regl.buffer([ -1, -1, 1, -1, -1, 1, 1, 1, -1, 1, 1, -1 ])
+    position: [ -1, -1, 1, -1, -1, 1, 1, 1, -1, 1, 1, -1 ]
   },
 
   count: 6
 })
 
-regl.frame((props, {viewportWidth, viewportHeight}) => {
+regl.frame(({viewportWidth, viewportHeight}) => {
   const {x, y} = mouse
 
   const boxX = MAP[0].length * x / viewportWidth
