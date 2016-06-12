@@ -2,7 +2,7 @@
  [![Join the chat at https://gitter.im/ark-lang/ark](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/mikolalysenko/regl) [![Circle CI](https://circleci.com/gh/mikolalysenko/regl.svg?style=shield)](https://circleci.com/gh/mikolalysenko/regl) [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com/)
  [![npm version](https://badge.fury.io/js/regl.svg)](https://badge.fury.io/js/regl) ![file size](https://badge-size.herokuapp.com/mikolalysenko/regl/gh-pages/dist/regl.min.js.svg?compression=gzip)
 
-`regl` is a functional reactive abstraction for WebGL that does not compromise on performance.  
+`regl` is a functional reactive abstraction for WebGL that does not compromise on performance.
 
 ## Example
 
@@ -204,7 +204,8 @@ You can run benchmarks locally using `npm run bench` or check them out here:
   + [Debug vs release](API.md#debug-vs-release)
   + [Context loss mitigation](API.md#context-loss-mitigation)
 
-## Contributing
+## Development
+The latest changes in `regl` can be found in the [CHANGELOG](CHANGES.md).
 
 [For info on how to build and test headless, see the contributing guide here](DEVELOPING.md)
 
