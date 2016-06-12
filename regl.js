@@ -120,6 +120,7 @@ module.exports = function wrapREGL () {
     // increment frame coun
     contextState.count += 1
 
+    // reset viewport
     var viewport = nextState.viewport
     var scissorBox = nextState.scissor_box
     viewport[0] = viewport[1] = scissorBox[0] = scissorBox[1] = 0
@@ -133,7 +134,7 @@ module.exports = function wrapREGL () {
       contextState.frameBufferWidth =
       contextState.drawingBufferHeight =
       viewport[3] =
-      scissorBox[3] = HEIGHT
+      scissorBox[3] = gl.drawingBufferHeight
 
     var now = clock()
     contextState.deltaTime = (now - LAST_TIME) / 1000.0
