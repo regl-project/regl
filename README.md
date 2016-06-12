@@ -2,7 +2,7 @@
  [![Join the chat at https://gitter.im/ark-lang/ark](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/mikolalysenko/regl) [![Circle CI](https://circleci.com/gh/mikolalysenko/regl.svg?style=shield)](https://circleci.com/gh/mikolalysenko/regl) [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com/)
  [![npm version](https://badge.fury.io/js/regl.svg)](https://badge.fury.io/js/regl) ![file size](https://badge-size.herokuapp.com/mikolalysenko/regl/gh-pages/dist/regl.min.js.svg?compression=gzip)
 
-`regl` is a functional reactive abstraction for WebGL that does not compromise on performance.
+`regl` is a fast functional reactive abstraction for WebGL.
 
 ## Example
 
@@ -116,6 +116,7 @@ You can also use `regl` as a standalone script if you are really stubborn.  The 
 
 * vs WebGL
 * vs gl-* modules from stack.gl
+* gl-react
 * vs TWGL
 * vs THREE.js
 
