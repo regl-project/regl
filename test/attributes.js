@@ -119,6 +119,31 @@ tape('attributes', function (t) {
       ])),
 
       count: 3
+    },
+
+    pointer: {
+      expected: [
+        0, 1, 0, 1, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 1, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0
+      ],
+
+      data: {
+        buffer: regl.buffer(new Uint8Array([
+          0, 0,
+          1, 0,
+          2, 0,
+          3, 0,
+          4, 0,
+          2, 2
+        ])),
+        offset: 2,
+        stride: 4
+      },
+
+      count: 3
     }
   }
 
