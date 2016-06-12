@@ -2,18 +2,10 @@
 
 ## Planned
 
-* Support fixed scopes as arguments
-* Support directly constructing elements and attributes from arrays
-
-* Code generation rewrite
-    + per-batch contexts
-    + Allow for batch scopes
-    + Stop using stacks for managing states, save state locally in command
-* Error reporting
-    + All error messages should link to command/resource declaration
-    + Improve validation of vertex attributes
-    + Improve validation of dynamic properties
+* Optimize buffer creation, reduce memory allocation
+* Pool stream buffers
 * Resource API improvements
+    + Support dynamic variables (context and props) in resource constructors
     + Add in place update methods to buffers and textures
     + Add support for polling buffers and animated GIFs (useful for web audio)
 * Implement a standard method for handling context creation errors
@@ -21,14 +13,11 @@
     + Should be able to report errors when extensions are missing
     + Allow users to disable extensions for testing/mocking
 * Cubic frame buffer objects
-* WebVR support and integration (need to think how this will work)
+* Performance monitoring hooks
+* WebVR integration (need to think how this will work)
 * Documentation
     + Write "regl for react programmers"
     + Rewrite resource section, bring individual resources to the top
-* Code quality and management
-    + Refactor attributeState, some names are inconsistent and code is too complex
-    + Update development documentation
-    + Add contributing guidelines and code of conduct
 * Testing
     + Instancing
     + Texture generation
@@ -42,12 +31,6 @@
 * Benchmark suite
     + Dashboard for test cases and benchmarks
     + Create some more typical drawing examples
-* Optimization
-    + Save environment and this variables across batch mode invocations
-    + Kill all VM bailouts on all major platforms
-    + Kill all garbage collection
-    + Optimize generated code
-    + Optimize bundle size, remove string constants
 * Support more DDS texture formats (HDR, PVRTC, etc.)
 * Build a website (@freeman-lab is on it!)
 * Render to glTF (maybe?), could be useful for dumping previews
@@ -63,6 +46,31 @@
     + Asset loading (obj, ply, etc.)
 
 ## Next
+
+* Allow for dynamic properties in viewport, scissor box and attributes
+* Switch order of arguments to dynamic functions, from (props, context) to (context, props)
+    + functions without a props argument become batch static
+* Implement non-batch constant context, framebuffer and viewport
+* Batched scope rendering
+* Switch order of props and context variables for dynamic function args
+* function invocation now takes batch id as separate parameter
+* Support directly constructing elements and attributes from arrays
+* Allow individual attribute properties to be dynamic (eg buffers, offsets, etc.)
+* Code generation rewrite
+    + State flag polling is now inlined
+    + draw and batch inlined for static shaders
+    + constants are inlined
+    + fewer arguments passed to generated code
+    + Stop using separate arrays for stacks to manage state, instead state is saved onto the call stack
+* Error reporting
+    + All error messages should link to command/resource declaration
+    + Improve validation of vertex attributes
+    + Improve validation of dynamic properties
+* Code quality and contributing
+    + Combined lib/state.js and lib/compile.js into lib/core.js
+    + Delete most of lib/attribute.js
+    + Update development documentation
+* Expose limits for shader precision
 
 ## 0.5.0
 

@@ -35,10 +35,11 @@ const draw = regl({
   }`,
 
   attributes: {
-    position: regl.buffer([
+    position: [
       -2, 0,
       0, -2,
-      2, 2])
+      2, 2
+    ]
   },
 
   uniforms: {
@@ -51,8 +52,8 @@ const draw = regl({
       data: 'assets/alpine_cliff_a_norm.png'
     }),
     diffuse: regl.texture('assets/alpine_cliff_a.dds'),
-    lightPosition: (props, context) => {
-      var t = 0.025 * context.count
+    lightPosition: ({count}) => {
+      var t = 0.025 * count
       return [2.0 * Math.cos(t), 2.0 * Math.sin(t)]
     }
   },
@@ -60,6 +61,6 @@ const draw = regl({
   count: 3
 })
 
-regl.frame(function () {
+regl.frame(() => {
   draw()
 })

@@ -28,14 +28,19 @@ const cube = regl({
       gl_Position = proj * view * model * vec4(position, 1.0);
     }`,
   attributes: {
-    position: regl.buffer(bunny.positions),
-    normal: regl.buffer(normals(bunny.cells, bunny.positions))
+    position: bunny.positions,
+    normal: normals(bunny.cells, bunny.positions)
   },
-  elements: regl.elements(bunny.cells),
+  elements: bunny.cells,
   uniforms: {
-    proj: mat4.perspective([], Math.PI / 2, window.innerWidth / window.innerHeight, 0.01, 1000),
+    proj: ({viewportWidth, viewportHeight}) =>
+      mat4.perspective([],
+        Math.PI / 2,
+        viewportWidth / viewportHeight,
+        0.01,
+        1000),
     model: mat4.identity([]),
-    view: regl.prop('view')
+    view: () => camera.view()
   }
 })
 
@@ -44,7 +49,5 @@ regl.frame(function (props, count) {
     color: [0, 0, 0, 1]
   })
   camera.tick()
-  cube({
-    view: camera.view()
-  })
+  cube()
 })

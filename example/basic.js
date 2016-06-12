@@ -30,10 +30,11 @@ regl({
   }`,
 
   attributes: {
-    position: regl.buffer([
-      -1, 0,
-      0, -1,
-      1, 1])
+    position: [
+      [-1, 0],
+      [0, -1],
+      [1, 1]
+    ]
   },
 
   uniforms: {

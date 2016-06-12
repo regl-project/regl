@@ -1,7 +1,10 @@
 var check = require('./lib/util/check')
 var extend = require('./lib/util/extend')
-var initWebGL = require('./lib/webgl')
+var dynamic = require('./lib/dynamic')
+var raf = require('./lib/util/raf')
+var clock = require('./lib/util/clock')
 var createStringStore = require('./lib/strings')
+var initWebGL = require('./lib/webgl')
 var wrapExtensions = require('./lib/extension')
 var wrapLimits = require('./lib/limits')
 var wrapBuffers = require('./lib/buffer')
@@ -9,16 +12,10 @@ var wrapElements = require('./lib/elements')
 var wrapTextures = require('./lib/texture')
 var wrapRenderbuffers = require('./lib/renderbuffer')
 var wrapFramebuffers = require('./lib/framebuffer')
-var wrapUniforms = require('./lib/uniform')
 var wrapAttributes = require('./lib/attribute')
 var wrapShaders = require('./lib/shader')
-var wrapDraw = require('./lib/draw')
-var wrapContext = require('./lib/state')
-var createCompiler = require('./lib/compile')
 var wrapRead = require('./lib/read')
-var dynamic = require('./lib/dynamic')
-var raf = require('./lib/util/raf')
-var clock = require('./lib/util/clock')
+var createCore = require('./lib/core')
 
 var GL_COLOR_BUFFER_BIT = 16384
 var GL_DEPTH_BUFFER_BIT = 256
@@ -45,97 +42,58 @@ module.exports = function wrapREGL () {
   var extensionState = wrapExtensions(gl)
   var extensions = extensionState.extensions
 
-  var viewportState = {
-    width: gl.drawingBufferWidth,
-    height: gl.drawingBufferHeight
+  var START_TIME = clock()
+  var LAST_TIME = START_TIME
+  var WIDTH = gl.drawingBufferWidth
+  var HEIGHT = gl.drawingBufferHeight
+
+  var contextState = {
+    count: 0,
+    deltaTime: 0,
+    time: 0,
+    viewportWidth: WIDTH,
+    viewportHeight: HEIGHT,
+    framebufferWidth: WIDTH,
+    framebufferHeight: HEIGHT,
+    drawingBufferWidth: WIDTH,
+    drawingBufferHeight: HEIGHT,
+    pixelRatio: options.pixelRatio
+  }
+  var uniformState = {}
+  var drawState = {
+    elements: null,
+    primitive: 4, // GL_TRIANGLES
+    count: -1,
+    offset: 0,
+    instances: -1
   }
 
-  var limits = wrapLimits(
-    gl,
-    extensions)
-
-  var bufferState = wrapBuffers(gl, unbindBuffer)
-
-  var elementState = wrapElements(
-    gl,
-    extensions,
-    bufferState)
-
-  var uniformState = wrapUniforms(stringStore)
-
+  var limits = wrapLimits(gl, extensions)
+  var bufferState = wrapBuffers(gl)
+  var elementState = wrapElements(gl, extensions, bufferState)
   var attributeState = wrapAttributes(
     gl,
     extensions,
     limits,
     bufferState,
     stringStore)
-
-  var shaderState = wrapShaders(
-    gl,
-    attributeState,
-    uniformState,
-    function (program) {
-      return compiler.draw(program)
-    },
-    stringStore)
-
-  var drawState = wrapDraw(
-    gl,
-    extensions,
-    bufferState)
-
+  var shaderState = wrapShaders(gl, stringStore)
   var textureState = wrapTextures(
     gl,
     extensions,
     limits,
     poll,
-    viewportState)
-
-  var renderbufferState = wrapRenderbuffers(
-    gl,
-    extensions,
-    limits)
-
+    contextState)
+  var renderbufferState = wrapRenderbuffers(gl, extensions, limits)
   var framebufferState = wrapFramebuffers(
     gl,
     extensions,
     limits,
     textureState,
     renderbufferState)
+  var readPixels = wrapRead(gl, poll, contextState)
 
-  var startTime = clock()
-
-  var frameState = {
-    count: 0,
-    start: startTime,
-    dt: 0,
-    t: startTime,
-    renderTime: 0,
-    width: gl.drawingBufferWidth,
-    height: gl.drawingBufferHeight,
-    pixelRatio: options.pixelRatio
-  }
-
-  var context = {
-    count: 0,
-    batchId: 0,
-    deltaTime: 0,
-    time: 0,
-    viewportWidth: frameState.width,
-    viewportHeight: frameState.height,
-    drawingBufferWidth: frameState.width,
-    drawingBufferHeight: frameState.height,
-    pixelRatio: frameState.pixelRatio
-  }
-
-  var glState = wrapContext(
-    gl,
-    framebufferState,
-    viewportState)
-
-  var readPixels = wrapRead(gl, poll, viewportState)
-
-  var compiler = createCompiler(
+  var core = createCore(
     gl,
     stringStore,
     extensions,
@@ -144,60 +102,52 @@ module.exports = function wrapREGL () {
     elementState,
     textureState,
     framebufferState,
-    glState,
     uniformState,
     attributeState,
     shaderState,
     drawState,
-    context,
-    poll)
+    contextState)
 
-  function unbindBuffer (buffer) {
-    for (var i = 0; i < attributeState.bindings.length; ++i) {
-      var attr = attributeState.bindings[i]
-      if (attr.pointer && attr.buffer === buffer) {
-        attr.pointer = false
-        attr.buffer = null
-        attr.x = attr.y = attr.z = attr.w = NaN
-        gl.disableVertexAttribArray(i)
-      }
-    }
-  }
-
+  var nextState = core.next
   var canvas = gl.canvas
 
   var rafCallbacks = []
   var activeRAF = 0
   function handleRAF () {
+    // schedule next animation frame
     activeRAF = raf.next(handleRAF)
-    frameState.count += 1
-    context.count = frameState.count
 
-    if (frameState.width !== gl.drawingBufferWidth ||
-        frameState.height !== gl.drawingBufferHeight) {
-      context.viewportWidth =
-        context.drawingBufferWidth =
-        frameState.width = gl.drawingBufferWidth
-      context.viewportHeight =
-        context.drawingBufferHeight =
-        frameState.height = gl.drawingBufferHeight
-      glState.notifyViewportChanged()
-    }
+    // increment frame coun
+    contextState.count += 1
+
+    // reset viewport
+    var viewport = nextState.viewport
+    var scissorBox = nextState.scissor_box
+    viewport[0] = viewport[1] = scissorBox[0] = scissorBox[1] = 0
+
+    contextState.viewportWidth =
+      contextState.frameBufferWidth =
+      contextState.drawingBufferWidth =
+      viewport[2] =
+      scissorBox[2] = gl.drawingBufferWidth
+    contextState.viewportHeight =
+      contextState.frameBufferWidth =
+      contextState.drawingBufferHeight =
+      viewport[3] =
+      scissorBox[3] = gl.drawingBufferHeight
 
     var now = clock()
-    frameState.dt = now - frameState.t
-    frameState.t = now
+    contextState.deltaTime = (now - LAST_TIME) / 1000.0
+    contextState.time = (now - START_TIME) / 1000.0
+    LAST_TIME = now
 
-    context.deltaTime = frameState.dt / 1000.0
-    context.time = (now - startTime) / 1000.0
-
+    core.procs.refresh()
     textureState.poll()
 
     for (var i = 0; i < rafCallbacks.length; ++i) {
       var cb = rafCallbacks[i]
-      cb(null, context)
+      cb(contextState, null, 0)
     }
-    frameState.renderTime = clock() - now
   }
 
   function startRAF () {
@@ -224,12 +174,12 @@ module.exports = function wrapREGL () {
   function handleContextRestored (event) {
     gl.getError()
     extensionState.refresh()
+    core.procs.refresh()
     bufferState.refresh()
     textureState.refresh()
     renderbufferState.refresh()
     framebufferState.refresh()
     shaderState.refresh()
-    glState.refresh()
     if (options.onContextRestored) {
       options.onContextRestored()
     }
@@ -264,8 +214,6 @@ module.exports = function wrapREGL () {
     check(!!options, 'invalid args to regl({...})')
     check.type(options, 'object', 'invalid args to regl({...})')
 
-    var hasDynamic = false
-
     function flattenNestedOptions (options) {
       var result = extend({}, options)
       delete result.uniforms
@@ -298,7 +246,6 @@ module.exports = function wrapREGL () {
       Object.keys(object).forEach(function (option) {
         var value = object[option]
         if (dynamic.isDynamic(value)) {
-          hasDynamic = true
           dynamicItems[option] = dynamic.unbox(value, option)
         } else {
           staticItems[option] = value
@@ -316,10 +263,7 @@ module.exports = function wrapREGL () {
     var attributes = separateDynamic(options.attributes || {})
     var opts = separateDynamic(flattenNestedOptions(options))
 
-    var compiled = compiler.command(
-      opts.static, uniforms.static, attributes.static,
-      opts.dynamic, uniforms.dynamic, attributes.dynamic,
-      context, hasDynamic)
+    var compiled = core.compile(opts, attributes, uniforms, context)
 
     var draw = compiled.draw
     var batch = compiled.batch
@@ -333,42 +277,42 @@ module.exports = function wrapREGL () {
       return EMPTY_ARRAY
     }
 
-    check.saveDrawInfo(opts, uniforms, attributes, stringStore)
-
     function REGLCommand (args, body) {
+      var i
       if (typeof args === 'function') {
-        return scope.call(this, null, args)
+        return scope.call(this, null, args, 0)
       } else if (typeof body === 'function') {
-        return scope.call(this, args, body)
-      }
-
-      // Runtime shader check.  Removed in production builds
-      check.drawOk(
-        drawState,
-        shaderState,
-        uniformState,
-        attributeState,
-        opts._commandRef,
-        opts._fragId,
-        opts._vertId,
-        opts._uniformSet,
-        opts._attributeSet,
-        opts._hasCount)
-
-      if (typeof args === 'number') {
-        return batch.call(this, args | 0, reserve(args | 0))
+        if (typeof args === 'number') {
+          for (i = 0; i < args; ++i) {
+            scope.call(this, null, body, i)
+          }
+          return
+        } else if (Array.isArray(args)) {
+          for (i = 0; i < args.length; ++i) {
+            scope.call(this, args[i], body, i)
+          }
+          return
+        } else {
+          return scope.call(this, args, body, 0)
+        }
+      } else if (typeof args === 'number') {
+        if (args > 0) {
+          return batch.call(this, reserve(args | 0), args | 0)
+        }
       } else if (Array.isArray(args)) {
-        return batch.call(this, args.length, args)
+        if (args.length) {
+          return batch.call(this, args, args.length)
+        }
+      } else {
+        return draw.call(this, args)
       }
-      return draw.call(this, args)
     }
 
     return REGLCommand
   }
 
   function poll () {
-    framebufferState.poll()
-    glState.poll()
+    core.procs.poll()
   }
 
   function clear (options) {
@@ -417,6 +361,8 @@ module.exports = function wrapREGL () {
     }
   }
 
+  core.procs.refresh()
+
   return extend(compileProcedure, {
     // Clear current FBO
     clear: clear,
@@ -458,9 +404,11 @@ module.exports = function wrapREGL () {
       check.raise('framebuffer cube not yet implemented')
     },
 
+    // Expose context attributes
+    attributes: gl.getContextAttributes(),
+
     // Frame rendering
     frame: frame,
-    stats: frameState,
 
     // System limits
     limits: limits,
@@ -469,6 +417,12 @@ module.exports = function wrapREGL () {
     read: readPixels,
 
     // Destroy regl and all associated resources
-    destroy: destroy
+    destroy: destroy,
+
+    // Direct GL state manipulation
+    _gl: gl,
+    _refresh: function () {
+      core.procs.refresh()
+    }
   })
 }

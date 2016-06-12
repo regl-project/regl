@@ -36,16 +36,16 @@ const drawDoggie = regl({
   }`,
 
   attributes: {
-    position: regl.buffer([
+    position: [
       -2, 0,
       0, -2,
-      2, 2])
+      2, 2]
   },
 
   uniforms: {
     texture: regl.texture('assets/doggie-chromakey.ogv'),
 
-    screenShape: (props, {viewportWidth, viewportHeight}) =>
+    screenShape: ({viewportWidth, viewportHeight}) =>
       [viewportWidth, viewportHeight],
 
     time: regl.context('time')
