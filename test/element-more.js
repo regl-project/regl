@@ -351,13 +351,6 @@ tape('elements - more', function (t) {
 
   runSuite('')
 
-  Object.keys(inputs).forEach(function (iname) {
-    var cmd = (constructors['constant(const shader)'])(inputs[iname].data)
-    cmd(function () {
-      runSuite('scope[' + iname + ']')
-    })
-  })
-
   regl.destroy()
   t.end()
 })
