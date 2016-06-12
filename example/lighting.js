@@ -35,32 +35,31 @@ const drawBunny = regl({
   }`,
 
   attributes: {
-    position: regl.buffer(bunny.positions),
-    normal: regl.buffer(normals(bunny.cells, bunny.positions))
+    position: bunny.positions,
+    normal: normals(bunny.cells, bunny.positions)
   },
 
-  elements: regl.elements(bunny.cells),
+  elements: bunny.cells,
 
   uniforms: {
-    view: (props, {count}) => {
+    view: ({count}) => {
       const t = 0.01 * count
       return mat4.lookAt([],
         [30 * Math.cos(t), 2.5, 30 * Math.sin(t)],
         [0, 2.5, 0],
         [0, 1, 0])
     },
-    projection: (props, {viewportWidth, viewportHeight}) => {
-      return mat4.perspective([],
+    projection: ({viewportWidth, viewportHeight}) =>
+      mat4.perspective([],
         Math.PI / 4,
         viewportWidth / viewportHeight,
         0.01,
-        1000)
-    },
+        1000),
     'lights[0].color': [1, 0, 0],
     'lights[1].color': [0, 1, 0],
     'lights[2].color': [0, 0, 1],
     'lights[3].color': [1, 1, 0],
-    'lights[0].position': (props, {count}) => {
+    'lights[0].position': ({count}) => {
       const t = 0.1 * count
       return [
         10 * Math.cos(t),
@@ -68,7 +67,7 @@ const drawBunny = regl({
         10 * Math.cos(3 * t)
       ]
     },
-    'lights[1].position': (props, {count}) => {
+    'lights[1].position': ({count}) => {
       const t = 0.1 * count
       return [
         10 * Math.cos(5 * t + 1),
@@ -76,7 +75,7 @@ const drawBunny = regl({
         10 * Math.cos(0.1 * t)
       ]
     },
-    'lights[2].position': (props, {count}) => {
+    'lights[2].position': ({count}) => {
       const t = 0.1 * count
       return [
         10 * Math.cos(9 * t),
@@ -84,7 +83,7 @@ const drawBunny = regl({
         10 * Math.cos(4 * t)
       ]
     },
-    'lights[3].position': (props, {count}) => {
+    'lights[3].position': ({count}) => {
       const t = 0.1 * count
       return [
         10 * Math.cos(0.3 * t),
@@ -95,7 +94,7 @@ const drawBunny = regl({
   }
 })
 
-regl.frame((props, count) => {
+regl.frame(() => {
   regl.clear({
     depth: 1,
     color: [0, 0, 0, 1]
