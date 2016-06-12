@@ -104,26 +104,24 @@ const drawBunnyWithLOD = regl({
   // We take the two LOD attributes directly above and below the current
   // fractional LOD
   attributes: {
-    p0: ({lod}) => lodBuffers[Math.floor(lod)],
-    p1: ({lod}) => lodBuffers[Math.ceil(lod)]
+    p0: (_, {lod}) => lodBuffers[Math.floor(lod)],
+    p1: (_, {lod}) => lodBuffers[Math.ceil(lod)]
   },
 
   // For the elements we use the LOD-orderd array of edges that we computed
   // earlier.  regl automatically infers the primitive type from this data.
-  elements: regl.elements(lodCells),
+  elements: lodCells,
 
   uniforms: {
     // This is a standard perspective camera
-    projection: (props, {viewportWidth, viewportHeight}) => {
-      return mat4.perspective([],
-        Math.PI / 4,
-        viewportWidth / viewportHeight,
-        0.01,
-        1000)
-    },
+    projection: ({viewportWidth, viewportHeight}) => mat4.perspective([],
+      Math.PI / 4,
+      viewportWidth / viewportHeight,
+      0.01,
+      1000),
 
     // We slowly rotate the camera around the center of the bunny
-    view: (props, {count}) => {
+    view: ({count}) => {
       const t = 0.004 * count
       return mat4.lookAt([],
         [20 * Math.cos(t), 10, 20 * Math.sin(t)],
@@ -132,14 +130,14 @@ const drawBunnyWithLOD = regl({
     },
 
     // We set the lod uniform to be the fractional LOD
-    lod: ({lod}) => lod - Math.floor(lod)
+    lod: (_, {lod}) => lod - Math.floor(lod)
   },
 
   // Finally we only draw as many primitives as are present in the finest LOD
-  count: ({lod}) => 2 * lodOffsets[Math.floor(lod)]
+  count: (_, {lod}) => 2 * lodOffsets[Math.floor(lod)]
 })
 
-regl.frame((count) => {
+regl.frame(({count}) => {
   regl.clear({
     depth: 1,
     color: [0, 0, 0, 1]
