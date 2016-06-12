@@ -28,14 +28,14 @@ const setupEnvMap = regl({
 
     view: regl.prop('view'),
 
-    projection: (props, {viewportWidth, viewportHeight}) =>
+    projection: ({viewportWidth, viewportHeight}) =>
       mat4.perspective([],
         Math.PI / 4,
         viewportWidth / viewportHeight,
         0.01,
         1000),
 
-    invView: ({view}) => mat4.invert([], view)
+    invView: (context, {view}) => mat4.invert([], view)
   }
 })
 
@@ -51,10 +51,10 @@ const drawBackground = regl({
   }`,
 
   attributes: {
-    position: regl.buffer([
+    position: [
       -4, -4,
       -4, 4,
-      8, 0])
+      8, 0]
   },
 
   depth: {
@@ -79,14 +79,14 @@ const drawBunny = regl({
   }`,
 
   attributes: {
-    position: regl.buffer(bunny.positions),
-    normal: regl.buffer(normals(bunny.cells, bunny.positions))
+    position: bunny.positions,
+    normal: normals(bunny.cells, bunny.positions)
   },
 
-  elements: regl.elements(bunny.cells)
+  elements: bunny.cells
 })
 
-regl.frame((props, {count}) => {
+regl.frame(({count}) => {
   const t = 0.01 * count
 
   setupEnvMap({
