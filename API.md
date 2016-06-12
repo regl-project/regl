@@ -1,5 +1,83 @@
 # REGL API
 
+* [Initialization](#initialization)
+      * [As a fullscreen canvas](#as-a-fullscreen-canvas)
+      * [From a container div](#from-a-container-div)
+      * [From a canvas](#from-a-canvas)
+      * [From a WebGL context](#from-a-webgl-context)
+  + [Initialization options](#initialization-options)
+* [Commands](#commands)
+  + [Dynamic properties](#dynamic-properties)
+  + [Executing commands](#executing-commands)
+    - [One-shot rendering](#one-shot-rendering)
+    - [Batch rendering](#batch-rendering)
+    - [Scoped commands](#scoped-commands)
+  + [Inputs](#inputs)
+    - [Context](#context)
+    - [Props](#props)
+    - [`this`](#-this-)
+  + [Parameters](#parameters)
+    - [Shaders](#shaders)
+    - [Uniforms](#uniforms)
+    - [Attributes](#attributes)
+    - [Drawing](#drawing)
+    - [Render target](#render-target)
+    - [Depth buffer](#depth-buffer)
+    - [Blending](#blending)
+    - [Stencil](#stencil)
+    - [Polygon offset](#polygon-offset)
+    - [Culling](#culling)
+    - [Front face](#front-face)
+    - [Dithering](#dithering)
+    - [Line width](#line-width)
+    - [Color mask](#color-mask)
+    - [Sample coverage](#sample-coverage)
+    - [Scissor](#scissor)
+    - [Viewport](#viewport)
+* [Resources](#resources)
+  + [Buffers](#buffers)
+    - [Constructor](#constructor)
+    - [Update](#update)
+    - [Destroy](#destroy)
+  + [Elements](#elements)
+    - [Constructor](#constructor-1)
+    - [Update](#update-1)
+    - [Destroy](#destroy-1)
+  + [Textures](#textures)
+    - [Constructor](#constructor-2)
+    - [Update](#update-2)
+    - [Destroy](#destroy-2)
+  + [Cube maps](#cube-maps)
+    - [Constructor](#constructor-3)
+    - [Update](#update-3)
+    - [Destroy](#destroy-3)
+  + [Render buffers](#render-buffers)
+    - [Constructor](#constructor-4)
+    - [Update](#update-4)
+    - [Destroy](#destroy-4)
+  + [Frame buffers](#frame-buffers)
+    - [Constructor](#constructor-5)
+    - [Update](#update-5)
+    - [Destroy](#destroy-5)
+  + [Cubic frame buffers](#cubic-frame-buffers)
+    - [Constructor](#constructor-6)
+    - [Update](#update-6)
+    - [Destroy](#destroy-6)
+* [Other features](#other-features)
+  + [Clear the draw buffer](#clear-the-draw-buffer)
+  + [Reading pixels](#reading-pixels)
+  + [Per-frame callbacks](#per-frame-callbacks)
+  + [Device capabilities and limits](#device-capabilities-and-limits)
+  + [Performance metrics](#performance-metrics)
+  + [Clean up](#clean-up)
+  + [Context loss](#context-loss)
+  + [Unsafe escape hatch](#unsafe-escape-hatch)
+* [Tips](#tips)
+  + [Reuse resources (buffers, elements, textures, etc.)](#reuse-resources--buffers--elements--textures--etc-)
+  + [Preallocate memory](#preallocate-memory)
+  + [Debug vs release](#debug-vs-release)
+  + [Context loss mitigation](#context-loss-mitigation)
+
 ---------------------------------------
 ## Initialization
 
@@ -1706,3 +1784,17 @@ regl._refresh()
 ```
 
 Note that you must call `regl._refresh()` if you have changed the WebGL state.
+
+---------------------------------------
+## Tips
+
+### Reuse resources (buffers, elements, textures, etc.)
+
+### Preallocate memory
+
+### Debug vs release
+
+* Debug mode inserts many checks
+* Compiling in release mode removes these assertions, improves performance and reduces bundle size
+
+### Context loss mitigation

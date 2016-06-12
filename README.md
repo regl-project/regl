@@ -2,9 +2,9 @@
  [![Join the chat at https://gitter.im/ark-lang/ark](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/mikolalysenko/regl) [![Circle CI](https://circleci.com/gh/mikolalysenko/regl.svg?style=shield)](https://circleci.com/gh/mikolalysenko/regl) [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com/)
  [![npm version](https://badge.fury.io/js/regl.svg)](https://badge.fury.io/js/regl) ![file size](https://badge-size.herokuapp.com/mikolalysenko/regl/gh-pages/dist/regl.min.js.svg?compression=gzip)
 
-`regl` is an efficient functional reactive abstraction for WebGL.  It lets you create WebGL applications without managing large chunks of shared mutable state or awkward data binding.
+`regl` is a functional reactive abstraction for WebGL that does not compromise on performance.  
 
-## Simple example
+## Example
 
 In `regl`, there are two fundamental abstractions, **resources** and **commands**:
 
@@ -77,7 +77,7 @@ regl.frame(() => {
 })
 ```
 
-## More examples
+#### More examples
 
 [Check out the demo gallery](https://mikolalysenko.github.io/regl/www/gallery.html)
 
@@ -107,16 +107,19 @@ You can also use `regl` as a standalone script if you are really stubborn.  The 
 <script src="[some cdn tbd]/regl.min.js"></script>
 ```
 
-## Comparisons
+## Why use `regl`?
+`regl` is basically all of WebGL without all of the shared state.  You can do anything you could in regular WebGL with little overhead and way less debugging.
 
-TODO implement spinning textured cube in each of the following frameworks
+### Comparisons
+
+**TODO** implement spinning textured cube in each of the following frameworks
 
 * vs WebGL
 * vs gl-* modules from stack.gl
 * vs TWGL
 * vs THREE.js
 
-## Benchmarks
+### Benchmarks
 You can run benchmarks locally using `npm run bench` or check them out here:
 
 * [Interactive benchmarks](https://mikolalysenko.github.io/regl/www/bench.html)
@@ -134,7 +137,11 @@ You can run benchmarks locally using `npm run bench` or check them out here:
   + [Executing commands](API.md#executing-commands)
     - [One-shot rendering](API.md#one-shot-rendering)
     - [Batch rendering](API.md#batch-rendering)
-    - [Scoped parameters](API.md#scoped-parameters)
+    - [Scoped commands](API.md#scoped-commands)
+  + [Inputs](API.md#inputs)
+    - [Context](API.md#context)
+    - [Props](API.md#props)
+    - [`this`](API.md#-this-)
   + [Parameters](API.md#parameters)
     - [Shaders](API.md#shaders)
     - [Uniforms](API.md#uniforms)
@@ -154,23 +161,48 @@ You can run benchmarks locally using `npm run bench` or check them out here:
     - [Scissor](API.md#scissor)
     - [Viewport](API.md#viewport)
 * [Resources](API.md#resources)
-  + [Basic usage](API.md#basic-usage)
-    - [Updating a resource](API.md#updating-a-resource)
-    - [Destroying a resource](API.md#destroying-a-resource)
-  + [Types](API.md#types)
-    - [Buffers](API.md#buffers)
-    - [Elements](API.md#elements)
-    - [Textures](API.md#textures)
-    - [Render buffers](API.md#render-buffers)
-    - [Frame buffers](API.md#frame-buffers)
+  + [Buffers](API.md#buffers)
+    - [Constructor](API.md#constructor)
+    - [Update](API.md#update)
+    - [Destroy](API.md#destroy)
+  + [Elements](API.md#elements)
+    - [Constructor](API.md#constructor-1)
+    - [Update](API.md#update-1)
+    - [Destroy](API.md#destroy-1)
+  + [Textures](API.md#textures)
+    - [Constructor](API.md#constructor-2)
+    - [Update](API.md#update-2)
+    - [Destroy](API.md#destroy-2)
+  + [Cube maps](API.md#cube-maps)
+    - [Constructor](API.md#constructor-3)
+    - [Update](API.md#update-3)
+    - [Destroy](API.md#destroy-3)
+  + [Render buffers](API.md#render-buffers)
+    - [Constructor](API.md#constructor-4)
+    - [Update](API.md#update-4)
+    - [Destroy](API.md#destroy-4)
+  + [Frame buffers](API.md#frame-buffers)
+    - [Constructor](API.md#constructor-5)
+    - [Update](API.md#update-5)
+    - [Destroy](API.md#destroy-5)
+  + [Cubic frame buffers](API.md#cubic-frame-buffers)
+    - [Constructor](API.md#constructor-6)
+    - [Update](API.md#update-6)
+    - [Destroy](API.md#destroy-6)
 * [Other features](API.md#other-features)
   + [Clear the draw buffer](API.md#clear-the-draw-buffer)
   + [Reading pixels](API.md#reading-pixels)
   + [Per-frame callbacks](API.md#per-frame-callbacks)
-  + [Frame stats](API.md#frame-stats)
-  + [Limits](API.md#limits)
+  + [Device capabilities and limits](API.md#device-capabilities-and-limits)
+  + [Performance metrics](API.md#performance-metrics)
   + [Clean up](API.md#clean-up)
   + [Context loss](API.md#context-loss)
+  + [Unsafe escape hatch](API.md#unsafe-escape-hatch)
+* [Tips](API.md#tips)
+  + [Reuse resources (buffers, elements, textures, etc.)](API.md#reuse-resources--buffers--elements--textures--etc-)
+  + [Preallocate memory](API.md#preallocate-memory)
+  + [Debug vs release](API.md#debug-vs-release)
+  + [Context loss mitigation](API.md#context-loss-mitigation)
 
 ## Contributing
 
