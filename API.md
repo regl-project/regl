@@ -7,7 +7,6 @@
       * [From a WebGL context](#from-a-webgl-context)
   + [Initialization options](#initialization-options)
 * [Commands](#commands)
-  + [Dynamic properties](#dynamic-properties)
   + [Executing commands](#executing-commands)
     - [One-shot rendering](#one-shot-rendering)
     - [Batch rendering](#batch-rendering)
@@ -151,9 +150,57 @@ To execute a command you call it just like you would any function,
 ```javascript
 drawTriangle()
 ```
+
 ---------------------------------------
-### Dynamic properties
-Some parameters can be made dynamic by passing in a function,
+### Executing commands
+There are 3 ways to execute a command,
+
+#### One-shot rendering
+In one shot rendering the command is executed once and immediately,
+
+```javascript
+// Executes command immediately with no arguments
+command()
+
+// Executes a command using the specified arguments
+command(props)
+```
+
+#### Batch rendering
+A command can also be executed multiple times by passing a non-negative integer or an array as the first argument.  The `batchId` is initially `0` and incremented for each executed,
+
+```javascript
+// Executes the command `count`-times
+command(count)
+
+// Executes the command once for each args
+command([props0, props1, props2, ..., propsn])
+```
+
+#### Scoped commands
+Commands can be nested using scoping.  If the argument to the command is a function then the command is evaluated and the state variables are saved as the defaults for all commands executed within its scope,
+
+```javascript
+command(function (context) {
+  // ... execute sub commands
+})
+
+command(props, function (context) {
+  // ... execute sub commands
+})
+```
+
+---------------------------------------
+### Inputs
+Inputs to `regl` commands can come from one of three sources,
+
+* Context: Context variables are not used directly in commands, but can be passed into
+* Props: props are arguments which are passed into commands
+* `this`: `this` variables are indexed from the `this` variable that the command was called with
+
+If you are familiar with Facebook's [react](https://github.com/facebook/react), these are roughly analogous to a component's [context](https://facebook.github.io/react/docs/context.html), [props](https://facebook.github.io/react/docs/transferring-props.html) and [state](https://facebook.github.io/react/docs/component-api.html#setstate) variables respectively.
+
+#### Example
 
 ```javascript
 var drawSpinningStretchyTriangle = regl({
@@ -243,57 +290,6 @@ drawSpinningStretchyTriangle([
   }
 ])
 ```
-
-For more info on the frame stats [check out the below section](#frame-stats).
-
----------------------------------------
-### Executing commands
-There are 3 ways to execute a command,
-
-#### One-shot rendering
-In one shot rendering the command is executed once and immediately,
-
-```javascript
-// Executes command immediately with no arguments
-command()
-
-// Executes a command using the specified arguments
-command(props)
-```
-
-#### Batch rendering
-A command can also be executed multiple times by passing a non-negative integer or an array as the first argument.  The `batchId` is initially `0` and incremented for each executed,
-
-```javascript
-// Executes the command `count`-times
-command(count)
-
-// Executes the command once for each args
-command([props0, props1, props2, ..., propsn])
-```
-
-#### Scoped commands
-Commands can be nested using scoping.  If the argument to the command is a function then the command is evaluated and the state variables are saved as the defaults for all commands executed within its scope,
-
-```javascript
-command(function (context) {
-  // ... execute sub commands
-})
-
-command(props, function (context) {
-  // ... execute sub commands
-})
-```
-
----------------------------------------
-### Inputs
-Inputs to `regl` commands can come from one of three sources,
-
-* Context: Context variables are not used directly in commands, but can be passed into
-* Props:
-* `this`: `this` variables come from the object which th
-
-If you are familiar with Facebook's [react](https://github.com/facebook/react), these are roughly analogous to a component's [context](https://facebook.github.io/react/docs/context.html), [props](https://facebook.github.io/react/docs/transferring-props.html) and [state](https://facebook.github.io/react/docs/component-api.html#setstate) variables respectively.
 
 #### Context
 Context variables in `regl` are computed before any other parameters and can also be passed from a scoped command to any sub-commands.  `regl` defines the following default context variables:
@@ -1214,10 +1210,10 @@ var starElements = regl.elements({
 | Property | Description | Default |
 |----------|-------------|---------|
 | `data` | The data of the element buffer | `null` |
-| `length` | | `0` |
-| `usage` | | `'static'` |
-| `primitive` | | `'triangles'` |
-| `count` | | `0` |
+| `usage` | Usage hint (see `gl.bufferData`) | `'static'` |
+| `length` | Length of the element buffer in bytes | `0` * |
+| `primitive` | Default primitive type for element buffer | `'triangles'` * |
+| `count` | Vertex count for element buffer | `0` * |
 
 * `usage` must take on one of the following values
 
@@ -1238,6 +1234,10 @@ var starElements = regl.elements({
 | `'triangles` | `gl.TRIANGLES` |
 | `'triangle strip'` | `gl.TRIANGLE_STRIP` |
 | `'triangle fan'` | `gl.TRIANGLE_FAN` |
+
+**Notes**
+
+* `primitive`, `count` and `length` are inferred from from the vertex data
 
 **Relevant WebGL APIs**
 
@@ -1586,10 +1586,10 @@ var fbo = regl.framebuffer({
 | `depth` | Toggles whether or not a depth buffer is included | `true` |
 | `stencil` | Toggles whether or not to use a stencil buffer | `false` |
 | `depthTexture` | Toggles whether depth/stencil attachments should be in texture | `false` |
-| `colorBuffers` | List of color buffers | |
-| `depthBuffer` | | |
-| `stencilBuffer` | | |
-| `depthStencilBuffer` | | |
+| `colorBuffers` | List of color buffer attachments | |
+| `depthBuffer` | The depth buffer attachment | |
+| `stencilBuffer` | The stencil buffer attachment | |
+| `depthStencilBuffer` | The depth-stencil attachment | |
 
 | Color format | Description | Attachment |
 |--------------|-------------|------------|
@@ -1685,10 +1685,10 @@ var pixels = regl.read([options])
 | Property | Description | Default |
 |----------|-------------|---------|
 | `data` | An optional `ArrayBufferView` which gets the result of reading the pixels | `null` |
-| `x` | | `0` |
-| `y` | | `0` |
-| `width` | | viewport.width |
-| `height` | | viewport.height |
+| `x` | The x-offset of the upper-left corner of the rectangle in pixels | `0` |
+| `y` | The y-offset of the upper-left corner of the rectangle in pixels | `0` |
+| `width` | The width of the rectangle in pixels | viewport.width |
+| `height` | The height of the rectangle in pixels | viewport.height |
 
 **Relevant WebGL APIs**
 

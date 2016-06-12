@@ -133,7 +133,6 @@ You can run benchmarks locally using `npm run bench` or check them out here:
       * [From a WebGL context](API.md#from-a-webgl-context)
   + [Initialization options](API.md#initialization-options)
 * [Commands](API.md#commands)
-  + [Dynamic properties](API.md#dynamic-properties)
   + [Executing commands](API.md#executing-commands)
     - [One-shot rendering](API.md#one-shot-rendering)
     - [Batch rendering](API.md#batch-rendering)
