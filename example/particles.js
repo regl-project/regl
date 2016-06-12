@@ -67,23 +67,20 @@ const drawParticles = regl({
   },
 
   uniforms: {
-    view: (props, {count}) => {
+    view: ({count}) => {
       const t = 0.01 * count
       return mat4.lookAt([],
         [30 * Math.cos(t), 2.5, 30 * Math.sin(t)],
         [0, 0, 0],
         [0, 1, 0])
     },
-    projection: (props, {viewportWidth, viewportHeight}) => {
-      return mat4.perspective([],
+    projection: ({viewportWidth, viewportHeight}) =>
+      mat4.perspective([],
         Math.PI / 4,
         viewportWidth / viewportHeight,
         0.01,
-        1000)
-    },
-    time: (props, {count}) => {
-      return count * 0.001
-    }
+        1000),
+    time: ({count}) => count * 0.001
   },
 
   count: NUM_POINTS,
@@ -91,7 +88,7 @@ const drawParticles = regl({
   primitive: 'points'
 })
 
-regl.frame((props, context) => {
+regl.frame(() => {
   regl.clear({
     depth: 1,
     color: [0, 0, 0, 1]
