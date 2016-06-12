@@ -1,3 +1,5 @@
+// This example shows how to draw a mesh with regl
+
 const regl = require('../regl')()
 const mat4 = require('gl-mat4')
 const bunny = require('bunny')
@@ -17,32 +19,33 @@ const drawBunny = regl({
     gl_FragColor = vec4(1, 1, 1, 1);
   }`,
 
+  // this converts the vertices of the mesh into the position attribute
   attributes: {
-    position: regl.buffer(bunny.positions)
+    position: bunny.positions
   },
 
-  elements: regl.elements(bunny.cells),
+  // and this converts the faces fo the mesh into elements
+  elements: bunny.cells,
 
   uniforms: {
     model: mat4.identity([]),
-    view: (props, context) => {
-      var t = 0.01 * context.count
+    view: ({count}) => {
+      const t = 0.01 * count
       return mat4.lookAt([],
         [30 * Math.cos(t), 2.5, 30 * Math.sin(t)],
         [0, 2.5, 0],
         [0, 1, 0])
     },
-    projection: (props, context) => {
-      return mat4.perspective([],
+    projection: ({viewportWidth, viewportHeight}) =>
+      mat4.perspective([],
         Math.PI / 4,
-        context.viewportWidth / context.viewportHeight,
+        viewportWidth / viewportHeight,
         0.01,
         1000)
-    }
   }
 })
 
-regl.frame(function (props, context) {
+regl.frame(() => {
   regl.clear({
     depth: 1,
     color: [0, 0, 0, 1]
