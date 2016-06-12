@@ -2,18 +2,7 @@
  [![Join the chat at https://gitter.im/ark-lang/ark](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/mikolalysenko/regl) [![Circle CI](https://circleci.com/gh/mikolalysenko/regl.svg?style=shield)](https://circleci.com/gh/mikolalysenko/regl) [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com/)
  [![npm version](https://badge.fury.io/js/regl.svg)](https://badge.fury.io/js/regl) ![file size](https://badge-size.herokuapp.com/mikolalysenko/regl/gh-pages/dist/regl.min.js.svg?compression=gzip)
 
-This repo is an attempt at building new functional abstractions for working with WebGL.  It is still **experimental**, so expect things to change a lot in the near future! If you want to know more about why I am writing this thing and why it looks the way it does, take a look at the [rationale](RATIONALE.md).
-
-### Why use regl
-
-`regl` offers the following advantages over raw WebGL code:
-
-* **Less state** Draw commands in regl are self contained, so you don't have to worry about some other weird subroutine breaking your rendering code
-* **No `bind()`** In regl, shaders, buffers, textures and fbos are specified declaratively, so there is no need to ever `bind()` them or unbind them.
-* **Fewer silent failures** If you pass incorrect parameters to some WebGL method, the default behavior is to set an error code and continue on. Because `regl` commands have more structure, we can do more validation up front without the run time performance cost.
-* **Sane defaults** Many WebGL APIs have redundant or outright broken parameters (for example `border` in `gl.texImage2D` or `transpose` in `gl.uniformMatrix4fv`). `regl` wraps these APIs in such a way that you will never have to see this mess.
-* **Low overhead** regl uses caching and code generation to minimize overhead from
-* **Still just WebGL** regl exposes the full power of the WebGL API, no features are removed or hidden.
+`regl` is an efficient functional reactive abstraction for WebGL.  It lets you create WebGL applications without managing large chunks of shared mutable state or awkward data binding.
 
 ## Simple example
 
@@ -68,6 +57,7 @@ const drawTriangle = regl({
   count: 3
 })
 
+// regl.frame() wraps requestAnimationFrame and also handles viewport changes
 regl.frame(() => {
   // clear contents of the drawing buffer
   regl.clear({
