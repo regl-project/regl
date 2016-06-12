@@ -1,54 +1,5 @@
 # REGL API
 
-* [Initialization](#initialization)
-      * [As a fullscreen canvas](#as-a-fullscreen-canvas)
-      * [From a container div](#from-a-container-div)
-      * [From a canvas](#from-a-canvas)
-      * [From a WebGL context](#from-a-webgl-context)
-  + [Initialization options](#initialization-options)
-* [Commands](#commands)
-  + [Dynamic properties](#dynamic-properties)
-  + [Executing commands](#executing-commands)
-    - [One-shot rendering](#one-shot-rendering)
-    - [Batch rendering](#batch-rendering)
-    - [Scoped parameters](#scoped-parameters)
-  + [Parameters](#parameters)
-    - [Shaders](#shaders)
-    - [Uniforms](#uniforms)
-    - [Attributes](#attributes)
-    - [Drawing](#drawing)
-    - [Render target](#render-target)
-    - [Depth buffer](#depth-buffer)
-    - [Blending](#blending)
-    - [Stencil](#stencil)
-    - [Polygon offset](#polygon-offset)
-    - [Culling](#culling)
-    - [Front face](#front-face)
-    - [Dithering](#dithering)
-    - [Line width](#line-width)
-    - [Color mask](#color-mask)
-    - [Sample coverage](#sample-coverage)
-    - [Scissor](#scissor)
-    - [Viewport](#viewport)
-* [Resources](#resources)
-  + [Basic usage](#basic-usage)
-    - [Updating a resource](#updating-a-resource)
-    - [Destroying a resource](#destroying-a-resource)
-  + [Types](#types)
-    - [Buffers](#buffers)
-    - [Elements](#elements)
-    - [Textures](#textures)
-    - [Render buffers](#render-buffers)
-    - [Frame buffers](#frame-buffers)
-* [Other features](#other-features)
-  + [Clear the draw buffer](#clear-the-draw-buffer)
-  + [Reading pixels](#reading-pixels)
-  + [Per-frame callbacks](#per-frame-callbacks)
-  + [Frame stats](#frame-stats)
-  + [Limits](#limits)
-  + [Clean up](#clean-up)
-  + [Context loss](#context-loss)
-
 ---------------------------------------
 ## Initialization
 
@@ -110,7 +61,7 @@ const drawTriangle = regl({
   }`,
 
   attributes: {
-    position: regl.buffer([[0, -1], [-1, 0], [1, 1]])
+    position: [[0, -1], [-1, 0], [1, 1]]
   },
 
   count: 3
@@ -135,41 +86,53 @@ var drawSpinningStretchyTriangle = regl({
 
   vert: `
   attribute vec2 position;
-  uniform float angle, scale;
+  uniform float angle, scale, width, height;
   void main() {
+    float aspect = width / height;
     gl_Position = vec4(
       scale * (cos(angle) * position.x - sin(angle) * position.y),
-      scale * (sin(angle) * position.x + cos(angle) * position.y),
+      aspect * scale * (sin(angle) * position.x + cos(angle) * position.y),
       0,
       1.0);
   }`,
 
   attributes: {
-    position: regl.buffer([[0, -1], [-1, 0], [1, 1]])
+    position: [[0, -1], [-1, 0], [1, 1]]
   },
 
   uniforms: {
     //
     // Dynamic properties can be functions.  Each function gets passed:
     //
-    //  * args: which is a user specified object
+    //  * context: which contains data about the current regl environment
+    //  * props: which are user specified arguments
     //  * batchId: which is the index of the draw command in the batch
-    //  * stats: which are frame stats (see below)
     //
-    angle: function (args, batchId, stats) {
+    angle: function (context, props, batchId) {
       return args.speed * stats.count + 0.01 * batchId
     },
 
     // As a shortcut/optimization we can also just read out a property
     // from the args.  For example, this
     //
-    scale: regl.prop('scale')
+    scale: regl.prop('scale'),
     //
     // is semantically equivalent to
     //
-    //  scale: function (args) {
-    //    return args.scale
+    //  scale: function (context, props) {
+    //    return props.scale
     //  }
+    //
+
+    // Similarly there are shortcuts for accessing context variables
+    width: regl.context('viewportWidth'),
+    height: regl.context('viewportHeight'),
+    //
+    // which is the same as writing:
+    //
+    // width: function (context) {
+    //    return context.viewportWidth
+    // }
     //
   },
 
@@ -217,7 +180,7 @@ In one shot rendering the command is executed once and immediately,
 command()
 
 // Executes a command using the specified arguments
-command(args)
+command(props)
 ```
 
 #### Batch rendering
@@ -228,25 +191,172 @@ A command can also be executed multiple times by passing a non-negative integer 
 command(count)
 
 // Executes the command once for each args
-command([args0, args1, args2, ..., argsn])
+command([props0, props1, props2, ..., propsn])
 ```
 
-#### Scoped parameters
+#### Scoped commands
 Commands can be nested using scoping.  If the argument to the command is a function then the command is evaluated and the state variables are saved as the defaults for all commands executed within its scope,
 
 ```javascript
-command(function () {
+command(function (context) {
   // ... execute sub commands
 })
 
-command(args, function () {
+command(props, function (context) {
   // ... execute sub commands
 })
 ```
 
 ---------------------------------------
+### Inputs
+Inputs to `regl` commands can come from one of three sources,
+
+* Context: Context variables are not used directly in commands, but can be passed into
+* Props:
+* `this`: `this` variables come from the object which th
+
+If you are familiar with Facebook's [react](https://github.com/facebook/react), these are roughly analogous to a component's [context](https://facebook.github.io/react/docs/context.html), [props](https://facebook.github.io/react/docs/transferring-props.html) and [state](https://facebook.github.io/react/docs/component-api.html#setstate) variables respectively.
+
+#### Context
+Context variables in `regl` are computed before any other parameters and can also be passed from a scoped command to any sub-commands.  `regl` defines the following default context variables:
+
+| Name | Description |
+|------|-------------|
+| `frameCount` | The number of frames rendered |
+| `deltaTime` | Time since the last frame was rendered in seconds |
+| `time` | Total time elapsed since the regl was initialized in seconds |
+| `viewportWidth` | Width of the current viewport in pixels |
+| `viewportHeight` | Height of the current viewport in pixels |
+| `framebufferWidth` | Width of the current framebuffer in pixels |
+| `framebufferHeight` | Height of the current framebuffer in pixels |
+| `drawingBufferWidth` | Width of the WebGL context drawing buffer |
+| `drawingBufferHeight` | Height of the WebGL context drawing buffer |
+| `pixelRatio` | The pixel ratio of the drawing buffer |
+
+You can define context variables in the `context` block of a command.  For example, here is how you can use context variables to set up a camera:
+
+```javascript
+// This scoped command sets up the camera parameters
+var setupCamera = regl({
+  context: {
+    projection: function (context) {
+      return mat4.perspective([],
+        Math.PI / 4,
+        context.viewportWidth / context.viewportHeight,
+        0.01,
+        1000.0)
+    },
+
+    view: function (context, props) {
+      return mat4.lookAt([],
+        props.eye,
+        props.target,
+        [0, 1, 0])
+    },
+
+    eye: regl.props('eye')
+  },
+
+  uniforms: {
+    view: regl.context('view'),
+    invView: function (context) {
+      return mat4.inverse([], context.view)
+    },
+    projection: regl.context('projection')
+  }
+})
+
+// ... do stuff
+
+// In the render function:
+setupCamera({
+  eye: [10, 0, 0],
+  target: [0, 0, 0]
+}, function () {
+
+  // draw stuff
+})
+```
+
+#### Props
+The most common way to pass data into regl is via props.  The props for a render command are declared
+
+#### `this`
+While `regl` strives to provide a stateless API, there are a few cases where it can be useful to cache state locally to a specific command.  One way to achieve this is to use objects.  When a regl command is executed as a member function of an object, the `this` parameter is set to the object on which it was called and is passed to all computed parameters. For example, this shows how to use regl to create a simple reusable mesh object,
+
+```javascript
+// First we create a constructor
+function Mesh (center, {positions, cells}) {
+  this.center = center
+  this.positions = regl.buffer(positions)
+  this.cells = regl.buffer(cells)
+}
+
+// Then we assign regl commands directly to the prototype of the class
+Mesh.prototype.draw = regl({
+  vert: `
+  uniform mat4 projection, view, model;
+  attribute vec3 position;
+  void main () {
+    gl_Position = projection * view * model * vec4(position, 1);
+  }`,
+
+  frag: `
+  void main () {
+    gl_FragColor = vec4(1, 0, 0, 1);
+  }`,
+
+  uniforms: {
+    // dynamic properties are invoked with the same `this` as the command
+    model: function () => {
+      var c = this.center
+      return [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        -c[0], -c[1], -c[2], 1
+      ]
+    },
+
+    view: regl.prop('view'),
+    projection: regl.prop('projection')
+  }
+
+  attributes: {
+    // here we are using 'positions' proeprty of the mesh
+    position: regl.this('positions')
+  },
+
+  // and same for the cells
+  elements: regl.this('cells')
+})
+```
+
+Once defined, we could then use these mesh objects as follows:
+
+```javascript
+// Initialize meshes
+var bunnyMesh = new Mesh([5, 2, 1], require('bunny'))
+var teapotMesh = new Mesh([0, -3, 0], require('teapot'))
+
+// ... set up rest of scene, compute matrices etc.
+var view, projection
+
+// Now draw meshes:
+bunnyMesh.draw({
+  view: view,
+  projection: projection
+})
+
+teapotMesh.draw({
+  view: view,
+  projection: projection
+})
+```
+
+---------------------------------------
 ### Parameters
-The input to a command declaration is a complete description of the WebGL state machine.
+The input to a command declaration is a complete description of the WebGL state machine in the form of an object.  The properties of this object are parameters which specify how values in the WebGL state machine are to be computed.
 
 ---------------------------------------
 #### Shaders
@@ -275,8 +385,6 @@ var command = regl({
 |----------|-------------|
 | `vert` | Source code of vertex shader |
 | `frag` | Source code of fragment shader |
-
-**Note** Dynamic shaders are not allowed
 
 **Related WebGL APIs**
 
@@ -335,12 +443,7 @@ var command = regl({
   // ...
 
   attributes: {
-    position: regl.buffer([
-      0, 1, 2,
-      2, 3, 4,
-      ...
-    ]),
-
+    // Attributes can be declared explicitly
     normals: {
       buffer: regl.buffer([
         // ...
@@ -348,11 +451,22 @@ var command = regl({
       offset: 0,
       stride: 12,
       normalized: false,
-      divisor: 0,
-      size: 0
+
+      // divisor is only used if instancing is enabled
+      divisor: 0
     },
 
-    color: [1, 0, 1, 1]
+    // A regl.buffer or the arguments to regl.buffer may also be specified
+    position: [
+      0, 1, 2,
+      2, 3, 4,
+      ...
+    ],
+
+    // Finally, attributes may be initialized with a constant value
+    color: {
+      constant: [1, 0, 1, 1]
+    }
   },
 
   // ...
@@ -373,6 +487,7 @@ Each attribute can have any of the following optional properties,
 **Notes**
 * Attribute size is inferred from the shader vertex attribute if not specified
 * If a buffer is passed for an attribute then all pointer info is inferred
+* If the arguments to `regl.buffer` are passed, then a buffer is constructed
 * If an array is passed to an attribute, then the vertex attribute is set to a constant
 * `divisor` is only supported if the `ANGLE_instanced_arrays` extension is available
 
@@ -392,8 +507,8 @@ var command = regl({
   // ...
 
   primitive: 'triangles',
-
-  count: 6,
+  offset: 0,
+  count: 6
 })
 ```
 
@@ -408,6 +523,7 @@ var command = regl({
 **Notes**
 
 * If `elements` is specified while `primitive`, `count` and `offset` are not, then these values may be inferred from the state of the element array buffer.
+* `elements` must be either an instance of `regl.elements` or else the arguments to `regl.elements`
 * `instances` is only applicable if the `ANGLE_instanced_arrays` extension is present.
 * `primitive` can take on the following values
 
@@ -430,8 +546,23 @@ var command = regl({
 
 ---------------------------------------
 #### Render target
+A `regl.framebuffer` object may also be specified to allow for rendering to offscreen locations.
 
-TODO
+```javascript
+var command = regl({
+  framebuffer: fbo
+})
+```
+
+**Notes**
+
+* `framebuffer` must be a `regl.framebuffer` object
+* Passing `null` sets the framebuffer to the drawing buffer
+* Updating the render target will modify the viewport
+
+**Related WebGL APIs**
+
+* [`gl.bindFramebuffer`](https://www.opengl.org/sdk/docs/man4/html/glBindFramebuffer.xhtml)
 
 ---------------------------------------
 #### Depth buffer
@@ -889,6 +1020,7 @@ var command = regl({
 **Notes**
 
 * Like `scissor.box`, `viewport` is a bounding box with properties `x,y,w,h`
+* Updating `viewport` will modify the context variables `viewportWidth` and `viewportHeight`
 
 **Relevant WebGL APIs**
 
@@ -898,28 +1030,11 @@ var command = regl({
 ## Resources
 Besides commands, the other major component of regl are resources.  Resources are GPU resident objects which are managed explicitly by the programmer.  Each resource follows a the same life cycle of create/read/update/delete.
 
-### Basic usage
-
 ---------------------------------------
-#### Updating a resource
+### Buffers
+`regl.buffer` wraps WebGL array buffer objects.
 
-```javascript
-resource(options)
-```
-
----------------------------------------
-#### Destroying a resource
-
-```javascript
-resource.destroy()
-```
-
----------------------------------------
-### Types
-
----------------------------------------
-#### Buffers
-Examples,
+#### Constructor
 
 ```javascript
 // Creates an empty length 100 buffer
@@ -957,12 +1072,53 @@ var positionBuffer = regl.buffer([
 **Relevant WebGL APIs**
 
 * [`gl.createBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateBuffer.xml)
-* [`gl.deleteBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteBuffer.xml)
 * [`gl.bufferData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferData.xml)
 
+
+#### Update
+Reinitialize a buffer in place, we call the buffer as a function:
+
+```javascript
+// First we create a buffer
+var myBuffer = regl.buffer(5)
+
+// ... do stuff ...
+
+// Now reinitialize myBuffer
+myBuffer({
+  data: [
+    1, 2, 3, 4, 5
+  ]
+})
+```
+
+The arguments to the update pathway are the same as the constructor.
+
+**Relevant WebGL APIs**
+
+* [`gl.bufferData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferData.xml)
+* [`gl.bufferData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferData.xml)
+
+
+#### Destroy
+Calling `.destroy()` on a buffer releases all resources associated to the buffer:
+
+```javascript
+// Create a buffer
+var myBuffer = regl.buffer(10)
+
+// destroys the buffer
+myBuffer.destroy()
+```
+
+* [`gl.deleteBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteBuffer.xml)
+
+
 ---------------------------------------
-#### Elements
-Examples,
+### Elements
+`regl.elements` wraps WebGL element array buffer objects.  Each `regl.elements` object stores a buffer object as well as the primitive type and vertex count.
+
+#### Constructor
 
 ```javascript
 var triElements = regl.elements([
@@ -979,7 +1135,7 @@ var starElements = regl.elements({
 
 | Property | Description | Default |
 |----------|-------------|---------|
-| `data` | | `null` |
+| `data` | The data of the element buffer | `null` |
 | `length` | | `0` |
 | `usage` | | `'static'` |
 | `primitive` | | `'triangles'` |
@@ -1008,12 +1164,48 @@ var starElements = regl.elements({
 **Relevant WebGL APIs**
 
 * [`gl.createBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateBuffer.xml)
-* [`gl.deleteBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteBuffer.xml)
 * [`gl.bufferData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferData.xml)
 * [`gl.drawElements`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDrawElements.xml)
 
+
+#### Update
+
+```javascript
+// First we create an element buffer
+var myElements = regl.elements({ ... })
+
+// Then we update it by calling it directly
+myElements({
+  data: [
+    [1, 2, 3],
+    [0, 2, 1]
+  ]
+})
+```
+
+**Relevant WebGL APIs**
+
+* [`gl.bufferData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferData.xml)
+
+#### Destroy
+
+```javascript
+// First we create an element buffer
+var myElements = regl.elements({ ... })
+
+// Calling .destroy() on a
+myElements.destroy()
+```
+
+**Relevant WebGL APIs**
+
+* [`gl.deleteBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteBuffer.xml)
+
 ---------------------------------------
-#### Textures
+### Textures
+
+#### Constructor
+
 There are many ways to upload data to a texture in WebGL.  As with drawing commands, regl consolidates all of these crazy configuration parameters into one function.  Here are some examples of how to create a texture,
 
 ```javascript
@@ -1190,7 +1382,6 @@ A data source from an image can be one of the following types:
 **Relevant WebGL APIs**
 
 * [`gl.createTexture`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateTexture.xml)
-*  [`gl.deleteTexture`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteTexture.xml)
 * [`gl.texParameter`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexParameter.xml)
 *  [`gl.pixelStorei`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glPixelStorei.xml)
 * [`gl.texImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexImage2D.xml)
@@ -1199,8 +1390,26 @@ A data source from an image can be one of the following types:
 * [`gl.copyTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexImage2D.xml)
 * [`gl.generateMipmap`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGenerateMipmap.xml)
 
+#### Update
+
+**TODO**
+
+#### Destroy
+
+```javascript
+var myTexture = regl.texture({ ... })
+
+myTexture.destroy()
+```
+
+**Relevant WebGL APIs**
+
+*  [`gl.deleteTexture`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteTexture.xml)
+
 ---------------------------------------
-#### Cube maps
+### Cube maps
+
+#### Constructor
 Cube maps follow similar syntax to textures.  They are created using `regl.cube()`
 
 ```javascript
@@ -1213,11 +1422,23 @@ var cubeMap = regl.cube(
   'negz.jpg')
 ```
 
+#### Update
+**TODO**
+
+#### Destroy
+
+```javascript
+cubeMap.destroy()
+```
+
+**Relevant WebGL APIs**
+
+*  [`gl.deleteTexture`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteTexture.xml)
+
 ---------------------------------------
-#### Render buffers
+### Render buffers
 
-Example,
-
+#### Constructor
 ```javascript
 var rb = regl.renderbuffer({
   width: 16,
@@ -1248,8 +1469,24 @@ var rb = regl.renderbuffer({
 * [`gl.renderbufferStorage`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glRenderbufferStorage.xml)
 * [`gl.bindRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBindRenderbuffer.xml)
 
+#### Update
+
+**TODO**
+
+#### Destroy
+
+```javascript
+rb.destroy()
+```
+
+**Relevant WebGL APIs**
+
+* [`gl.deleteRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteRenderbuffer.xml)
+
 ---------------------------------------
-#### Frame buffers
+### Frame buffers
+
+#### Constructor
 Example,
 
 ```javascript
@@ -1302,6 +1539,32 @@ var fbo = regl.framebuffer({
 * [`gl.framebufferRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glFramebufferRenderbuffer.xml)
 * [`gl.framebufferTexture2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glFramebufferTexture2D.xml)
 * [`gl.bindFramebuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBindFramebuffer.xml)
+
+
+#### Update
+
+**TODO**
+
+#### Destroy
+
+```javascript
+fbo.destroy()
+```
+
+**Relevant WebGL APIs**
+
+* [`gl.deleteFramebuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteFramebuffer.xml)
+
+---------------------------------------
+### Cubic frame buffers
+
+**TODO**
+
+#### Constructor
+
+#### Update
+
+#### Destroy
 
 ---------------------------------------
 ## Other features
@@ -1360,7 +1623,10 @@ var pixels = regl.read([options])
 
 ```javascript
 // Hook a callback to execute each frame
-var tick = regl.frame(function (count) {
+var tick = regl.frame(function (context) {
+
+  // context is the default state of the regl context variables
+
   // ...
 })
 
@@ -1369,21 +1635,7 @@ tick.cancel()
 ```
 
 ---------------------------------------
-### Frame stats
-`regl` also tracks a few simple performance and timing stats to simplify benchmarks and animations.  These are all accessible via the `regl.stats` object,
-
-| Property | Description |
-|----------|-------------|
-| `width` | Width of the drawing buffer |
-| `height` | Height of the drawing buffer |
-| `count` | Total number frames rendered |
-| `start` | Wall clock time when `regl` was started |
-| `t` | Time of last `frame()` event |
-| `dt` | Time between last two `frame()` events |
-| `renderTime` | Time spent rendering last frame |
-
----------------------------------------
-### Limits
+### Device capabilities and limits
 regl exposes info about the WebGL context limits and capabilities via the `regl.limits` object.  The following properties are supported,
 
 | Property | Description |
@@ -1419,7 +1671,13 @@ regl exposes info about the WebGL context limits and capabilities via the `regl.
 * [`gl.getParameter`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGetParameter.xml)
 
 ---------------------------------------
+### Performance metrics
+
+**TODO**
+
+---------------------------------------
 ### Clean up
+When a `regl` context is no longer needed, it can be destroyed releasing all associated resources with the following command:
 
 ```javascript
 regl.destroy()
@@ -1428,3 +1686,23 @@ regl.destroy()
 ---------------------------------------
 ### Context loss
 `regl` makes a best faith effort to handle context loss by default.  This means that buffers and textures are reinitialized on a context restore with their contents.
+
+**TODO**
+
+---------------------------------------
+### Unsafe escape hatch
+**WARNING**: `regl` is designed in such a way that you should never have to directly access the underlying WebGL context. However, if you really absolutely need to do this for some reason (for example to interface with an external library), you can still get a reference to the WebGL context.  Note though that if you do this you will need to restore the `regl` state in order to prevent rendering errors.  This can be done with the following unsafe methods:
+
+```javascript
+// This retrieves a reference to the underlying WebGL context (don't do this!)
+var gl = regl._gl
+
+//  ... do some crazy direct manipulation here
+
+// now restore the regl state
+regl._refresh()
+
+// Resume using regl as normal
+```
+
+Note that you must call `regl._refresh()` if you have changed the WebGL state.
