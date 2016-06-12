@@ -1,3 +1,5 @@
+// This example shows how to use copyTexImage2D to implement feedback effects
+
 const regl = require('../regl')()
 const mouse = require('mouse-change')()
 
@@ -31,19 +33,19 @@ const drawFeedback = regl({
   }`,
 
   attributes: {
-    position: regl.buffer([
+    position: [
       -2, 0,
       0, -2,
-      2, 2])
+      2, 2]
   },
 
   uniforms: {
     texture: pixels,
-    mouse: (props, {pixelRatio, height}) => [
+    mouse: ({pixelRatio, viewportHeight}) => [
       mouse.x * pixelRatio,
-      height - mouse.y * pixelRatio
+      viewportHeight - mouse.y * pixelRatio
     ],
-    t: (props, {count}) => 0.01 * count
+    t: ({count}) => 0.01 * count
   },
 
   count: 3
