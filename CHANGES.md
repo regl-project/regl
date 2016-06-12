@@ -47,6 +47,8 @@
 
 ## Next
 
+## 0.6.0
+
 * Allow for dynamic properties in viewport, scissor box and attributes
 * Switch order of arguments to dynamic functions, from (props, context) to (context, props)
     + functions without a props argument become batch static
