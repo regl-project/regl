@@ -2,22 +2,29 @@
 
 ## Planned
 
-* Optimize buffer creation, reduce memory allocation
-* Pool stream buffers
 * Resource API improvements
     + Support dynamic variables (context and props) in resource constructors
     + Add in place update methods to buffers and textures
     + Add support for polling buffers and animated GIFs (useful for web audio)
+* Cubic frame buffer objects
+* Optimize buffer creation, reduce memory allocation
+* Pool stream buffers
+* Rewrite resource section of API, bring individual resources to the top
+* More test cases for textures
+* More test cases for framebuffers
+
 * Implement a standard method for handling context creation errors
 * Add a mechanism for managing webgl extensions
     + Should be able to report errors when extensions are missing
     + Allow users to disable extensions for testing/mocking
-* Cubic frame buffer objects
+
 * Performance monitoring hooks
-* WebVR integration (need to think how this will work)
+* Benchmark suite
+    + Dashboard for test cases and benchmarks
+    + Create some more typical drawing examples
+
 * Documentation
     + Write "regl for react programmers"
-    + Rewrite resource section, bring individual resources to the top
 * Testing
     + Instancing
     + Texture generation
@@ -28,12 +35,10 @@
     + RAF/frame behavior
     + Complete coverage for all code generation pathways
     + Test weird invocation sequences
-* Benchmark suite
-    + Dashboard for test cases and benchmarks
-    + Create some more typical drawing examples
+
+* Create comparisons between
 * Support more DDS texture formats (HDR, PVRTC, etc.)
 * Build a website (@freeman-lab is on it!)
-* Render to glTF (maybe?), could be useful for dumping previews
 * Recipe book/example set
     + Minecraft example
     + Globe
