@@ -164,14 +164,17 @@ module.exports = function wrapREGL () {
   }
 
   function handleContextLoss (event) {
+    /*
     stopRAF()
     event.preventDefault()
     if (options.onContextLost) {
       options.onContextLost()
     }
+    */
   }
 
   function handleContextRestored (event) {
+    /*
     gl.getError()
     extensionState.refresh()
     core.procs.refresh()
@@ -184,6 +187,7 @@ module.exports = function wrapREGL () {
       options.onContextRestored()
     }
     handleRAF()
+    */
   }
 
   if (canvas) {

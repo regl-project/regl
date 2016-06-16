@@ -9,6 +9,9 @@ tape('buffer arg parsing', function (t) {
   function checkProperties (buffer, props, prefix) {
     var bufferProps = buffer._buffer
     Object.keys(props).forEach(function (prop) {
+      if (prop === 'data') {
+        return
+      }
       t.same(bufferProps[prop], props[prop], prefix + '.' + prop)
     })
     gl.bindBuffer(gl.ARRAY_BUFFER, bufferProps.buffer)
