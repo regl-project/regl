@@ -2,12 +2,12 @@
 
 ## Planned
 
+
 * Resource API improvements
     + Support dynamic variables (context and props) in resource constructors
     + Add in place update methods to buffers and textures
     + Add support for polling buffers and animated GIFs (useful for web audio)
 * Cubic frame buffer objects
-* Optimize buffer creation, reduce memory allocation
 * Pool stream buffers
 * Rewrite resource section of API, bring individual resources to the top
 * More test cases for textures
@@ -22,6 +22,8 @@
 * Benchmark suite
     + Dashboard for test cases and benchmarks
     + Create some more typical drawing examples
+
+* Context loss handling
 
 * Documentation
     + Write "regl for react programmers"
@@ -51,6 +53,8 @@
     + Asset loading (obj, ply, etc.)
 
 ## Next
+
+* Optimized buffer creation, no more memory allocation
 
 ## 0.6.0
 
