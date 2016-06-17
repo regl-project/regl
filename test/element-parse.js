@@ -23,7 +23,7 @@ tape('element arg parsing', function (t) {
   checkProperties(
     regl.elements(),
     {
-      primType: gl.POINTS,
+      primType: gl.TRIANGLES,
       vertCount: 0,
       type: gl.UNSIGNED_BYTE,
       usage: gl.STATIC_DRAW,
@@ -36,7 +36,7 @@ tape('element arg parsing', function (t) {
   checkProperties(
     regl.elements(10),
     {
-      primType: gl.POINTS,
+      primType: gl.TRIANGLES,
       vertCount: 10,
       type: gl.UNSIGNED_BYTE,
       usage: gl.STATIC_DRAW,
@@ -84,7 +84,7 @@ tape('element arg parsing', function (t) {
       type: gl.UNSIGNED_BYTE,
       usage: gl.DYNAMIC_DRAW,
       byteLength: 5,
-      dimension: 1,
+      dimension: 3,
       data: new Uint8Array([
         1, 2, 3, 4, 5
       ])

@@ -46,7 +46,7 @@ tape('dynamic elements', function (t) {
 
   checkPixmap({
     position: regl.buffer([2, 2]),
-    elements: regl.elements([0])
+    elements: regl.elements([[0]])
   }, [
     0, 0, 0, 0, 0,
     0, 0, 0, 0, 0,
@@ -57,7 +57,7 @@ tape('dynamic elements', function (t) {
 
   checkPixmap([{
     position: regl.buffer([2, 2]),
-    elements: regl.elements([0])
+    elements: regl.elements([[0]])
   },
   {
     position: regl.buffer([4, 0, 0, 4, 4, 5]),

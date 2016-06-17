@@ -2,7 +2,6 @@
 
 ## Planned
 
-
 * Resource API improvements
     + Support dynamic variables (context and props) in resource constructors
     + Add in place update methods to buffers and textures
@@ -54,7 +53,7 @@
 
 ## Next
 
-* Optimized buffer creation, no more memory allocation
+* Optimized buffer and elements creation, no more memory allocation
 
 ## 0.6.0
 
