@@ -1,10 +1,10 @@
 # REGL API
 
 * [Initialization](#initialization)
-      * [As a fullscreen canvas](#as-a-fullscreen-canvas)
-      * [From a container div](#from-a-container-div)
-      * [From a canvas](#from-a-canvas)
-      * [From a WebGL context](#from-a-webgl-context)
+    - [As a fullscreen canvas](#as-a-fullscreen-canvas)
+    - [From a container div](#from-a-container-div)
+    - [From a canvas](#from-a-canvas)
+    - [From a WebGL context](#from-a-webgl-context)
   + [Initialization options](#initialization-options)
 * [Commands](#commands)
   + [Executing commands](#executing-commands)
