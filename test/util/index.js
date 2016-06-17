@@ -1,3 +1,6 @@
+require('../subdata')
+
+/*
 require('../accessor')
 require('../clear')
 require('../buffer')
@@ -27,3 +30,4 @@ require('../texture-parse')
 require('../renderbuffer')
 require('../framebuffer-parse')
 require('../framebuffer')
+*/
