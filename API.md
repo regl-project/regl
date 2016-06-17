@@ -1150,7 +1150,7 @@ var positionBuffer = regl.buffer([
 
 
 #### Update
-Reinitialize a buffer in place, we call the buffer as a function:
+To reinitialize a buffer in place, we can call the buffer as a function:
 
 ```javascript
 // First we create a buffer
@@ -1166,12 +1166,45 @@ myBuffer({
 })
 ```
 
-The arguments to the update pathway are the same as the constructor.
+The arguments to the update pathway are the same as the constructor and the returned value will be a reference to the buffer.  
 
 **Relevant WebGL APIs**
 
 * [`gl.bufferData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferData.xml)
-* [`gl.bufferData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferData.xml)
+
+##### In place update
+For performance reasons we may sometimes want to update just a portion of
+We can also update a portion of the buffer using the `subdata` method.  This can be useful if you are dealing with frequently changing or streaming vertex data.  Here is an example:
+
+```javascript
+// First we preallocate a buffer with 100 bytes of data
+var myBuffer = regl.buffer({
+  usage: 'dynamic',  // give the WebGL driver a hint that this buffer may change
+  type: 'float',
+  length: 100
+})
+
+// Now we initialize the head of the buffer with the following data
+myBuffer.subdata([ 0, 1, 2, 3, 4, 5 ])
+//
+// untyped arrays and arrays-of-arrays are converted to the same data type as
+// the buffer.  typedarrays are copied bit-for-bit into the buffer
+// with no type conversion.
+//
+
+// We can also update the buffer at some byte offset by passing this as
+// the second argument to subdata
+myBuffer.subdata([[7, 8], [9, 10]], 8)
+//
+// now the contents of myBuffer are:
+//
+//  new Float32Array([0, 1, 7, 8, 9, 10, 0, 0, 0, .... ])
+//
+```
+
+**Relevant WebGL APIs**
+
+* [`gl.bufferSubData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferSubData.xml)
 
 
 #### Destroy
@@ -1247,10 +1280,11 @@ var starElements = regl.elements({
 
 
 #### Update
+As in the case of buffers, calling an element buffer as a function reinitializes an element buffer in place.  The arguments are the same as for the constructor.  For example:
 
 ```javascript
 // First we create an element buffer
-var myElements = regl.elements({ ... })
+var myElements = regl.elements()
 
 // Then we update it by calling it directly
 myElements({
@@ -1265,13 +1299,37 @@ myElements({
 
 * [`gl.bufferData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferData.xml)
 
+##### In-place update
+Again like buffers it is possible to preallocate an element buffer and update regions of the elements using the `subdata` command.
+
+```javascript
+// First we preallocate the element buffer
+var myElements = regl.elements({
+  primitive: 'triangles',
+  usage: 'dynamic',
+  type: 'uint16',
+  length: 4096,
+  count: 0
+})
+
+// Then we can update into ranges of the element buffer using subdata
+myElements.subdata(
+  [ [0, 1, 2],
+    [2, 1, 3] ])
+```
+
+**Relevant WebGL APIs**
+
+* [`gl.bufferSubData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferSubData.xml)
+
 #### Destroy
 
 ```javascript
 // First we create an element buffer
 var myElements = regl.elements({ ... })
 
-// Calling .destroy() on a
+// Calling .destroy() on an element buffer releases all resources associated to
+// it
 myElements.destroy()
 ```
 

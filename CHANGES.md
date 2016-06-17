@@ -2,13 +2,9 @@
 
 ## Planned
 
-* Resource API improvements
-    + Support dynamic variables (context and props) in resource constructors
-    + Add in place update methods to buffers and textures
-    + Add support for polling buffers and animated GIFs (useful for web audio)
+* subimage updates for textures
+* Optimize constructors/updates for textures, renderbuffers and framebuffers
 * Cubic frame buffer objects
-* Pool stream buffers
-* Rewrite resource section of API, bring individual resources to the top
 * More test cases for textures
 * More test cases for framebuffers
 
@@ -53,6 +49,9 @@
 
 ## Next
 
+* Add in place update methods to buffers and elements via `buffer.subdata` and `elements.subdata`
+* Pool stream buffers
+* Rewrite resource section of API, bring individual resources to the top
 * Optimized buffer and elements creation, no more memory allocation
 
 ## 0.6.0
