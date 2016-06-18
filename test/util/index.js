@@ -1,6 +1,3 @@
-require('../subdata')
-
-/*
 require('../accessor')
 require('../clear')
 require('../buffer')
@@ -8,6 +5,7 @@ require('../element-parse')
 require('../context')
 require('../triangle')
 require('../elements')
+require('../subdata')
 require('../line')
 require('../batch')
 require('../draw')
@@ -30,4 +28,3 @@ require('../texture-parse')
 require('../renderbuffer')
 require('../framebuffer-parse')
 require('../framebuffer')
-*/
