@@ -32,7 +32,7 @@
     + Dashboard for test cases and benchmarks
     + Create some more typical drawing examples
 * Support more DDS texture formats (HDR, PVRTC, etc.)
-* Build a website (@freeman-lab is on it!)
+* Build a website (preview at [regl.party](http://regl.party)
 * Render to glTF (maybe?), could be useful for dumping previews
 * Recipe book/example set
     + Minecraft example
