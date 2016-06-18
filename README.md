@@ -77,19 +77,18 @@ regl.frame(() => {
 })
 ```
 
+See this example [live](http://regl.party/examples/?basic)
+
 #### More examples
 
-[Check out the demo gallery](https://mikolalysenko.github.io/regl/www/gallery.html)
+Check out the [gallery](http://regl.party/examples).
 
 ## Setup
 
 regl has no dependencies, so setting it up is pretty easy
 
 #### Live editing
-To try out regl right away, you can use [RequireBin](http://requirebin.com/) or [codepen](http://codepen.io/).  The following links should help get you started:
-
-* requirebin
-* codepen
+To try out regl right away, you can use the live editor in the [gallery](http://regl.party.examples).
 
 #### npm
 The easiest way to use `regl` in a project is via [npm](http://npmjs.com).  Once you have node set up, you can install and use `regl` in your project using the following command:
