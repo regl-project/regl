@@ -36,7 +36,11 @@
 
 * Create comparisons
 
-* Build a website (@freeman-lab is on it!)
+* Benchmark suite
+    + Dashboard for test cases and benchmarks
+    + Create some more typical drawing examples
+* Support more DDS texture formats (HDR, PVRTC, etc.)
+* Build a website (preview at [regl.party](http://regl.party))
 * Recipe book/example set
     + Minecraft example
     + Globe
