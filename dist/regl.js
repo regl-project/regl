@@ -38,75 +38,32 @@ module.exports = function wrapAttributeState (
 }
 
 },{}],2:[function(require,module,exports){
-// Array and element buffer creation
 var check = require('./util/check')
 var isTypedArray = require('./util/is-typed-array')
 var isNDArrayLike = require('./util/is-ndarray')
+var values = require('./util/values')
+var flatten = require('./util/flatten')
+var transpose = require('./util/transpose')
+var pool = require('./util/pool')
+
 var arrayTypes = require('./constants/arraytypes.json')
 var bufferTypes = require('./constants/dtypes.json')
-var values = require('./util/values')
+var usageTypes = require('./constants/usage.json')
 
-var GL_STATIC_DRAW = 35044
+var GL_STATIC_DRAW = 0x88E4
+var GL_STREAM_DRAW = 0x88E0
 
-var GL_ARRAY_BUFFER = 34962
-
-var GL_BYTE = 5120
 var GL_UNSIGNED_BYTE = 5121
-var GL_SHORT = 5122
-var GL_UNSIGNED_SHORT = 5123
-var GL_INT = 5124
-var GL_UNSIGNED_INT = 5125
 var GL_FLOAT = 5126
-
-var usageTypes = {
-  'static': 35044,
-  'dynamic': 35048,
-  'stream': 35040
-}
 
 function typedArrayCode (data) {
   return arrayTypes[Object.prototype.toString.call(data)] | 0
 }
 
-function makeTypedArray (dtype, args) {
-  switch (dtype) {
-    case GL_UNSIGNED_BYTE:
-      return new Uint8Array(args)
-    case GL_UNSIGNED_SHORT:
-      return new Uint16Array(args)
-    case GL_UNSIGNED_INT:
-      return new Uint32Array(args)
-    case GL_BYTE:
-      return new Int8Array(args)
-    case GL_SHORT:
-      return new Int16Array(args)
-    case GL_INT:
-      return new Int32Array(args)
-    case GL_FLOAT:
-      return new Float32Array(args)
-    default:
-      return null
+function copyArray (out, inp) {
+  for (var i = 0; i < inp.length; ++i) {
+    out[i] = inp[i]
   }
-}
-
-function flatten (result, data, dimension) {
-  var ptr = 0
-  for (var i = 0; i < data.length; ++i) {
-    var v = data[i]
-    for (var j = 0; j < dimension; ++j) {
-      result[ptr++] = v[j]
-    }
-  }
-}
-
-function transpose (result, data, shapeX, shapeY, strideX, strideY, offset) {
-  var ptr = 0
-  for (var i = 0; i < shapeX; ++i) {
-    for (var j = 0; j < shapeY; ++j) {
-      result[ptr++] = data[strideX * i + strideY * j + offset]
-    }
-  }
-  return result
 }
 
 module.exports = function wrapBufferState (gl) {
@@ -115,12 +72,11 @@ module.exports = function wrapBufferState (gl) {
 
   function REGLBuffer (type) {
     this.id = bufferCount++
-    this.buffer = null
+    this.buffer = gl.createBuffer()
     this.type = type
     this.usage = GL_STATIC_DRAW
     this.byteLength = 0
     this.dimension = 1
-    this.data = null
     this.dtype = GL_UNSIGNED_BYTE
   }
 
@@ -128,12 +84,88 @@ module.exports = function wrapBufferState (gl) {
     gl.bindBuffer(this.type, this.buffer)
   }
 
-  function refresh (buffer) {
-    if (!gl.isBuffer(buffer.buffer)) {
+  var streamPool = []
+
+  function createStream (type, data) {
+    var buffer = streamPool.pop()
+    if (!buffer) {
+      buffer = new REGLBuffer(type)
       buffer.buffer = gl.createBuffer()
     }
     buffer.bind()
-    gl.bufferData(buffer.type, buffer.data || buffer.byteLength, buffer.usage)
+    initBufferFromData(buffer, data, GL_STREAM_DRAW, 0, 1)
+    return buffer
+  }
+
+  function destroyStream (stream) {
+    streamPool.push(stream)
+  }
+
+  function initBufferFromTypedArray (buffer, data, usage) {
+    buffer.byteLength = data.byteLength
+    gl.bufferData(buffer.type, data, usage)
+  }
+
+  function initBufferFromData (buffer, data, usage, dtype, dimension) {
+    buffer.usage = usage
+    if (Array.isArray(data)) {
+      buffer.dtype = dtype || GL_FLOAT
+      if (data.length > 0 && Array.isArray(data[0])) {
+        buffer.dimension = data[0].length
+        var flatData = pool.allocType(
+          buffer.dtype,
+          data.length * buffer.dimension)
+        flatten(flatData, data, buffer.dimension)
+        initBufferFromTypedArray(buffer, flatData, usage)
+        pool.freeType(flatData)
+      } else {
+        buffer.dimension = dimension
+        var typedData = pool.allocType(buffer.dtype, data.length)
+        copyArray(typedData, data)
+        initBufferFromTypedArray(buffer, typedData, usage)
+        pool.freeType(typedData)
+      }
+    } else if (isTypedArray(data)) {
+      buffer.dtype = dtype || typedArrayCode(data)
+      buffer.dimension = dimension
+      initBufferFromTypedArray(buffer, data, usage)
+    } else if (isNDArrayLike(data)) {
+      var shape = data.shape
+      var stride = data.stride
+      var offset = data.offset
+
+      var shapeX = 0
+      var shapeY = 0
+      var strideX = 0
+      var strideY = 0
+      if (shape.length === 1) {
+        shapeX = shape[0]
+        shapeY = 1
+        strideX = stride[0]
+        strideY = 0
+      } else if (shape.length === 2) {
+        shapeX = shape[0]
+        shapeY = shape[1]
+        strideX = stride[0]
+        strideY = stride[1]
+      } else {
+        check.raise('invalid shape')
+      }
+
+      buffer.dtype = dtype || typedArrayCode(data.data) || GL_FLOAT
+      buffer.dimension = shapeY
+
+      var transposeData = pool.allocType(buffer.dtype, shapeX * shapeY)
+      transpose(transposeData,
+        data.data,
+        shapeX, shapeY,
+        strideX, strideY,
+        offset)
+      initBufferFromTypedArray(buffer, transposeData, usage)
+      pool.freeType(transposeData)
+    } else {
+      check.raise('invalid buffer data')
+    }
   }
 
   function destroy (buffer) {
@@ -146,127 +178,132 @@ module.exports = function wrapBufferState (gl) {
     delete bufferSet[buffer.id]
   }
 
-  // TODO Implement pooled allocator for stream buffers
-  function createStream (data) {
-    var result = createBuffer({
-      data: data,
-      usage: 'stream'
-    },
-    GL_ARRAY_BUFFER,
-    false)
-    return result._buffer
-  }
-
-  function destroyStream (stream) {
-    destroy(stream)
-  }
-
   function createBuffer (options, type, deferInit) {
     var buffer = new REGLBuffer(type)
     bufferSet[buffer.id] = buffer
 
-    function reglBuffer (input) {
-      var options = input || {}
+    function reglBuffer (options) {
+      var usage = GL_STATIC_DRAW
+      var data = null
+      var byteLength = 0
+      var dtype = 0
+      var dimension = 1
       if (Array.isArray(options) ||
           isTypedArray(options) ||
           isNDArrayLike(options)) {
-        options = {
-          data: options
-        }
+        data = options
       } else if (typeof options === 'number') {
-        options = {
-          length: options | 0
+        byteLength = options | 0
+      } else if (options) {
+        check.type(
+          options, 'object',
+          'buffer arguments must be an object, a number or an array')
+
+        if ('data' in options) {
+          check(
+            data === null ||
+            Array.isArray(data) ||
+            isTypedArray(data) ||
+            isNDArrayLike(data),
+            'invalid data for buffer')
+          data = options.data
         }
-      } else if (options === null || options === void 0) {
-        options = {}
-      }
 
-      check.type(
-        options, 'object',
-        'buffer arguments must be an object, a number or an array')
+        if ('usage' in options) {
+          check.parameter(options.usage, usageTypes, 'invalid buffer usage')
+          usage = usageTypes[options.usage]
+        }
 
-      if ('usage' in options) {
-        var usage = options.usage
-        check.parameter(usage, usageTypes, 'invalid buffer usage')
-        buffer.usage = usageTypes[options.usage]
-      } else {
-        buffer.usage = GL_STATIC_DRAW
-      }
+        if ('type' in options) {
+          check.parameter(options.type, bufferTypes, 'invalid buffer type')
+          dtype = bufferTypes[options.type]
+        }
 
-      var dtype = 0
-      if ('type' in options) {
-        check.parameter(options.type, bufferTypes, 'invalid buffer type')
-        dtype = bufferTypes[options.type]
-      }
+        if ('dimension' in options) {
+          check.type(options.dimension, 'number', 'invalid dimension')
+          dimension = options.dimension | 0
+        }
 
-      var dimension = (options.dimension | 0) || 1
-      var byteLength = 0
-      var data = null
-      if ('data' in options) {
-        data = options.data
-        if (data === null) {
+        if ('length' in options) {
+          check.nni(byteLength, 'buffer length must be a nonnegative integer')
           byteLength = options.length | 0
-        } else {
-          if (isNDArrayLike(data)) {
-            var shape = data.shape
-            var stride = data.stride
-            var offset = data.offset
-
-            var shapeX = 0
-            var shapeY = 0
-            var strideX = 0
-            var strideY = 0
-            if (shape.length === 1) {
-              shapeX = shape[0]
-              shapeY = 1
-              strideX = stride[0]
-              strideY = 0
-            } else if (shape.length === 2) {
-              shapeX = shape[0]
-              shapeY = shape[1]
-              strideX = stride[0]
-              strideY = stride[1]
-            } else {
-              check.raise('invalid shape')
-            }
-
-            dtype = dtype || typedArrayCode(data.data) || GL_FLOAT
-            dimension = shapeY
-            data = transpose(
-              makeTypedArray(dtype, shapeX * shapeY),
-              data.data,
-              shapeX, shapeY,
-              strideX, strideY,
-              offset)
-          } else if (Array.isArray(data)) {
-            if (data.length > 0 && Array.isArray(data[0])) {
-              dimension = data[0].length
-              dtype = dtype || GL_FLOAT
-              var result = makeTypedArray(dtype, data.length * dimension)
-              data = flatten(result, data, dimension)
-              data = result
-            } else {
-              dtype = dtype || GL_FLOAT
-              data = makeTypedArray(dtype, data)
-            }
-          } else {
-            check.isTypedArray(data, 'invalid data type buffer data')
-            dtype = dtype || typedArrayCode(data)
-          }
-          byteLength = data.byteLength
         }
-      } else if ('length' in options) {
-        byteLength = options.length | 0
-        check.nni(byteLength, 'buffer length must be a nonnegative integer')
       }
 
-      buffer.data = data
-      buffer.dtype = dtype || GL_UNSIGNED_BYTE
-      buffer.byteLength = byteLength
-      buffer.dimension = dimension
+      buffer.bind()
+      if (!data) {
+        gl.bufferData(buffer.type, byteLength, usage)
+        buffer.dtype = dtype || GL_UNSIGNED_BYTE
+        buffer.usage = usage
+        buffer.dimension = dimension
+        buffer.byteLength = byteLength
+      } else {
+        initBufferFromData(buffer, data, usage, dtype, dimension)
+      }
 
-      refresh(buffer)
+      return reglBuffer
+    }
 
+    function setSubData (data, offset) {
+      check(offset + data.byteLength <= buffer.byteLength,
+        'invalid buffer subdata call, buffer is too small')
+      gl.bufferSubData(buffer.type, offset, data)
+    }
+
+    function subdata (data, offset_) {
+      var offset = (offset_ || 0) | 0
+      buffer.bind()
+      if (Array.isArray(data)) {
+        if (data.length > 0 && Array.isArray(data[0])) {
+          var dimension = data[0].length
+          var flatData = pool.allocType(buffer.dtype, data.length * dimension)
+          flatten(flatData, data, dimension)
+          setSubData(flatData, offset)
+          pool.freeType(flatData)
+        } else {
+          var converted = pool.allocType(buffer.dtype, data.length)
+          copyArray(converted, data)
+          setSubData(converted, offset)
+          pool.freeType(converted)
+        }
+      } else if (isTypedArray(data)) {
+        setSubData(data, offset)
+      } else if (isNDArrayLike(data)) {
+        var shape = data.shape
+        var stride = data.stride
+
+        var shapeX = 0
+        var shapeY = 0
+        var strideX = 0
+        var strideY = 0
+        if (shape.length === 1) {
+          shapeX = shape[0]
+          shapeY = 1
+          strideX = stride[0]
+          strideY = 0
+        } else if (shape.length === 2) {
+          shapeX = shape[0]
+          shapeY = shape[1]
+          strideX = stride[0]
+          strideY = stride[1]
+        } else {
+          check.raise('invalid shape')
+        }
+        var dtype = Array.isArray(data.data)
+          ? buffer.dtype
+          : typedArrayCode(data.data)
+
+        var transposeData = pool.allocType(dtype, shapeX * shapeY)
+        transpose(transposeData,
+          data.data,
+          shapeX, shapeY,
+          strideX, strideY,
+          data.offset)
+        setSubData(transposeData, offset)
+        pool.freeType(transposeData)
+      } else {
+        check.raise('invalid data for buffer subdata')
+      }
       return reglBuffer
     }
 
@@ -276,6 +313,7 @@ module.exports = function wrapBufferState (gl) {
 
     reglBuffer._reglType = 'buffer'
     reglBuffer._buffer = buffer
+    reglBuffer.subdata = subdata
     reglBuffer.destroy = function () { destroy(buffer) }
 
     return reglBuffer
@@ -291,20 +329,18 @@ module.exports = function wrapBufferState (gl) {
       values(bufferSet).forEach(destroy)
     },
 
-    refresh: function () {
-      values(bufferSet).forEach(refresh)
-    },
-
     getBuffer: function (wrapper) {
       if (wrapper && wrapper._buffer instanceof REGLBuffer) {
         return wrapper._buffer
       }
       return null
-    }
+    },
+
+    _initBuffer: initBufferFromData
   }
 }
 
-},{"./constants/arraytypes.json":3,"./constants/dtypes.json":4,"./util/check":17,"./util/is-ndarray":21,"./util/is-typed-array":22,"./util/values":28}],3:[function(require,module,exports){
+},{"./constants/arraytypes.json":3,"./constants/dtypes.json":4,"./constants/usage.json":6,"./util/check":18,"./util/flatten":22,"./util/is-ndarray":23,"./util/is-typed-array":24,"./util/pool":28,"./util/transpose":31,"./util/values":32}],3:[function(require,module,exports){
 module.exports={
   "[object Int8Array]": 5120
 , "[object Int16Array]": 5122
@@ -344,6 +380,13 @@ module.exports={
 }
 
 },{}],6:[function(require,module,exports){
+module.exports={
+  "static": 35044,
+  "dynamic": 35048,
+  "stream": 35040
+}
+
+},{}],7:[function(require,module,exports){
 var check = require('./util/check')
 var createEnvironment = require('./util/codegen')
 var loop = require('./util/loop')
@@ -1819,6 +1862,8 @@ module.exports = function reglCore (
     var dynamicOptions = options.dynamic
 
     check.optional(function () {
+      var command = check.guessCommand()
+
       var KEY_NAMES = [
         S_FRAMEBUFFER,
         S_VERT,
@@ -1834,7 +1879,8 @@ module.exports = function reglCore (
         Object.keys(dict).forEach(function (key) {
           check.command(
             KEY_NAMES.indexOf(key) >= 0,
-            'invalid option ' + key)
+            'unknown parameter "' + key + '"',
+            command)
         })
       }
 
@@ -1961,27 +2007,21 @@ module.exports = function reglCore (
             }
           } else {
             buffer = bufferState.getBuffer(value.buffer)
-            check.command(!!buffer, 'missing buffer for attribute ' + attribute)
+            check.command(!!buffer, 'missing buffer for attribute "' + attribute + '"')
 
             var offset = value.offset | 0
-            check.command(offset === value.offset && offset >= 0,
-              'invalid offset for attribute ' + attribute)
+            check.command(offset >= 0,
+              'invalid offset for attribute "' + attribute + '"')
 
             var stride = value.stride | 0
-            check.command(stride === value.stride && stride >= 0 && stride < 256,
-              'invalid stride for attribute ' + attribute + ', must be integer betweeen [0, 255]')
+            check.command(stride >= 0 && stride < 256,
+              'invalid stride for attribute "' + attribute + '", must be integer betweeen [0, 255]')
 
             var size = value.size | 0
-            if ('size' in value) {
-              check.command(size === value.size && size > 0 && size <= 4,
-                'invalid size for attribute ' + attribute + ', must be 1,2,3,4')
-            }
+            check.command(!('size' in value) || (size > 0 && size <= 4),
+              'invalid size for attribute "' + attribute + '", must be 1,2,3,4')
 
             var normalized = !!value.normalized
-            if ('normalized' in value) {
-              check.commandType(value.normalized, 'boolean',
-                'invalid normalized flag for attribute ' + attribute)
-            }
 
             var type = 0
             if ('type' in value) {
@@ -1993,10 +2033,32 @@ module.exports = function reglCore (
 
             var divisor = value.divisor | 0
             if ('divisor' in value) {
-              check.command(extInstancing, 'instancing not supported')
-              check.command(divisor === value.divisor && divisor >= 0,
-                'invalid divisor for attribute ' + attribute)
+              check.command(divisor === 0 || extInstancing,
+                'cannot specify divisor for attribute "' + attribute + '", instancing not supported')
+              check.command(divisor >= 0,
+                'invalid divisor for attribute "' + attribute + '"')
             }
+
+            check.optional(function () {
+              var command = check.guessCommand()
+
+              var VALID_KEYS = [
+                'buffer',
+                'offset',
+                'divisor',
+                'normalized',
+                'type',
+                'size',
+                'stride'
+              ]
+
+              Object.keys(value).forEach(function (prop) {
+                check.command(
+                  VALID_KEYS.indexOf(prop) >= 0,
+                  'unknown parameter "' + prop + '" for attribute pointer "' + attribute + '" (valid parameters are ' + VALID_KEYS + ')',
+                  command)
+              })
+            })
 
             record.buffer = buffer
             record.state = ATTRIB_STATE_POINTER
@@ -2069,7 +2131,7 @@ module.exports = function reglCore (
         block(
           'if(', IS_BUFFER_ARGS, '(', VALUE, ')){',
           result.isStream, '=true;',
-          BUFFER, '=', BUFFER_STATE, '.createStream(', VALUE, ');',
+          BUFFER, '=', BUFFER_STATE, '.createStream(', GL_ARRAY_BUFFER, ',', VALUE, ');',
           TYPE, '=', BUFFER, '.dtype;',
           '}else{',
           BUFFER, '=', BUFFER_STATE, '.getBuffer(', VALUE, ');',
@@ -3348,7 +3410,7 @@ module.exports = function reglCore (
   }
 }
 
-},{"./constants/dtypes.json":4,"./constants/primitives.json":5,"./util/check":17,"./util/codegen":19,"./util/is-ndarray":21,"./util/is-typed-array":22,"./util/loop":24}],7:[function(require,module,exports){
+},{"./constants/dtypes.json":4,"./constants/primitives.json":5,"./util/check":18,"./util/codegen":20,"./util/is-ndarray":23,"./util/is-typed-array":24,"./util/loop":26}],8:[function(require,module,exports){
 var check = require('./util/check')
 
 var VARIABLE_COUNTER = 0
@@ -3445,11 +3507,13 @@ module.exports = {
   accessor: toAccessorString
 }
 
-},{"./util/check":17}],8:[function(require,module,exports){
+},{"./util/check":18}],9:[function(require,module,exports){
 var check = require('./util/check')
 var isTypedArray = require('./util/is-typed-array')
 var isNDArrayLike = require('./util/is-ndarray')
+
 var primTypes = require('./constants/primitives.json')
+var usageTypes = require('./constants/usage.json')
 
 var GL_POINTS = 0
 var GL_LINES = 1
@@ -3464,9 +3528,21 @@ var GL_UNSIGNED_INT = 5125
 
 var GL_ELEMENT_ARRAY_BUFFER = 34963
 
+var GL_STREAM_DRAW = 0x88E0
+var GL_STATIC_DRAW = 0x88E4
+
 module.exports = function wrapElementsState (gl, extensions, bufferState) {
-  function REGLElementBuffer () {
-    this.buffer = null
+  var elementTypes = {
+    'uint8': GL_UNSIGNED_BYTE,
+    'uint16': GL_UNSIGNED_SHORT
+  }
+
+  if (extensions.oes_element_index_uint) {
+    elementTypes.uint32 = GL_UNSIGNED_INT
+  }
+
+  function REGLElementBuffer (buffer) {
+    this.buffer = buffer
     this.primType = GL_TRIANGLES
     this.vertCount = 0
     this.type = 0
@@ -3476,109 +3552,192 @@ module.exports = function wrapElementsState (gl, extensions, bufferState) {
     this.buffer.bind()
   }
 
+  var bufferPool = []
+
+  function createElementStream (data) {
+    var result = bufferPool.pop()
+    if (!result) {
+      result = new REGLElementBuffer(bufferState.create(
+        null,
+        GL_ELEMENT_ARRAY_BUFFER,
+        true)._buffer)
+    }
+    initElements(result, data, GL_STREAM_DRAW, -1, -1, 0, 0)
+    return result
+  }
+
+  function destroyElementStream (elements) {
+    bufferPool.push(elements)
+  }
+
+  function initElements (
+    elements,
+    data,
+    usage,
+    prim,
+    count,
+    byteLength,
+    type) {
+    var predictedType = type
+    if (!type && (
+        !isTypedArray(data) ||
+       (isNDArrayLike(data) && !isTypedArray(data.data)))) {
+      predictedType = extensions.oes_element_index_uint
+        ? GL_UNSIGNED_INT
+        : GL_UNSIGNED_SHORT
+    }
+    elements.buffer.bind()
+    bufferState._initBuffer(
+      elements.buffer,
+      data,
+      usage,
+      predictedType,
+      3)
+
+    var dtype = type
+    if (!type) {
+      switch (elements.buffer.dtype) {
+        case GL_UNSIGNED_BYTE:
+        case GL_BYTE:
+          dtype = GL_UNSIGNED_BYTE
+          break
+
+        case GL_UNSIGNED_SHORT:
+        case GL_SHORT:
+          dtype = GL_UNSIGNED_SHORT
+          break
+
+        case GL_UNSIGNED_INT:
+        case GL_INT:
+          dtype = GL_UNSIGNED_INT
+          break
+
+        default:
+          check.raise('unsupported type for element array')
+      }
+      elements.buffer.dtype = dtype
+    }
+    elements.type = dtype
+
+    // Check oes_element_index_uint extension
+    check(
+      dtype !== GL_UNSIGNED_INT ||
+      !!extensions.oes_element_index_uint,
+      '32 bit element buffers not supported, enable oes_element_index_uint first')
+
+    // try to guess default primitive type and arguments
+    var vertCount = count
+    if (vertCount < 0) {
+      vertCount = elements.buffer.byteLength
+      if (dtype === GL_UNSIGNED_SHORT) {
+        vertCount >>= 1
+      } else if (dtype === GL_UNSIGNED_INT) {
+        vertCount >>= 2
+      }
+    }
+    elements.vertCount = vertCount
+
+    // try to guess primitive type from cell dimension
+    var primType = prim
+    if (prim < 0) {
+      primType = GL_TRIANGLES
+      var dimension = elements.buffer.dimension
+      if (dimension === 1) primType = GL_POINTS
+      if (dimension === 2) primType = GL_LINES
+      if (dimension === 3) primType = GL_TRIANGLES
+    }
+    elements.primType = primType
+  }
+
   function createElements (options) {
-    var elements = new REGLElementBuffer()
     var buffer = bufferState.create(null, GL_ELEMENT_ARRAY_BUFFER, true)
-    elements.buffer = buffer._buffer
+    var elements = new REGLElementBuffer(buffer._buffer)
 
-    function reglElements (input) {
-      var options = input
-      var ext32bit = extensions.oes_element_index_uint
-
-      // Upload data to vertex buffer
+    function reglElements (options) {
       if (!options) {
         buffer()
+        elements.primType = GL_TRIANGLES
+        elements.vertCount = 0
+        elements.type = GL_UNSIGNED_BYTE
       } else if (typeof options === 'number') {
         buffer(options)
+        elements.primType = GL_TRIANGLES
+        elements.vertCount = options | 0
+        elements.type = GL_UNSIGNED_BYTE
       } else {
         var data = null
-        var usage = 'static'
-        if (
-          Array.isArray(options) ||
-          isTypedArray(options) ||
-          isNDArrayLike(options)) {
+        var usage = GL_STATIC_DRAW
+        var primType = -1
+        var vertCount = -1
+        var byteLength = 0
+        var dtype = 0
+        if (Array.isArray(options) ||
+            isTypedArray(options) ||
+            isNDArrayLike(options)) {
           data = options
         } else {
           check.type(options, 'object', 'invalid arguments for elements')
           if ('data' in options) {
             data = options.data
+            check(
+                Array.isArray(data) ||
+                isTypedArray(data) ||
+                isNDArrayLike(data),
+                'invalid data for element buffer')
           }
           if ('usage' in options) {
-            usage = options.usage
+            check.parameter(
+              options.usage,
+              usageTypes,
+              'invalid element buffer usage')
+            usage = usageTypes[options.usage]
+          }
+          if ('primitive' in options) {
+            check.parameter(
+              options.primitive,
+              primTypes,
+              'invalid element buffer primitive')
+            primType = primTypes[options.primitive]
+          }
+          if ('count' in options) {
+            check(
+              typeof options.count === 'number' && options.count >= 0,
+              'invalid vertex count for elements')
+            vertCount = options.count | 0
+          }
+          if ('length' in options) {
+            byteLength = options.length | 0
+          }
+          if ('type' in options) {
+            check.parameter(
+              options.type,
+              elementTypes,
+              'invalid buffer type')
+            dtype = elementTypes[options.type]
           }
         }
-        if (Array.isArray(data) ||
-            (isNDArrayLike(data) && Array.isArray(data.data)) ||
-            'type' in options) {
-          buffer({
-            type: options.type ||
-              (ext32bit
-                ? 'uint32'
-                : 'uint16'),
-            usage: usage,
-            data: data
-          })
+        if (data) {
+          initElements(
+            elements,
+            data,
+            usage,
+            primType,
+            vertCount,
+            byteLength,
+            dtype)
         } else {
-          buffer({
-            usage: usage,
-            data: data
-          })
-        }
-        if (Array.isArray(data) || isTypedArray(data)) {
-          buffer.dimension = 3
-        }
-      }
-
-      // try to guess default primitive type and arguments
-      var vertCount = elements.buffer.byteLength
-      var type = 0
-      switch (elements.buffer.dtype) {
-        case GL_UNSIGNED_BYTE:
-        case GL_BYTE:
-          type = GL_UNSIGNED_BYTE
-          break
-
-        case GL_UNSIGNED_SHORT:
-        case GL_SHORT:
-          type = GL_UNSIGNED_SHORT
-          vertCount >>= 1
-          break
-
-        case GL_UNSIGNED_INT:
-        case GL_INT:
-          check(ext32bit, '32 bit element buffers not supported')
-          type = GL_UNSIGNED_INT
-          vertCount >>= 2
-          break
-
-        default:
-          check.raise('invalid element buffer type')
-      }
-
-      // try to guess primitive type from cell dimension
-      var primType = GL_TRIANGLES
-      var dimension = elements.buffer.dimension
-      if (dimension === 1) primType = GL_POINTS
-      if (dimension === 2) primType = GL_LINES
-      if (dimension === 3) primType = GL_TRIANGLES
-
-      // if manual override present, use that
-      if (typeof options === 'object') {
-        if ('primitive' in options) {
-          var primitive = options.primitive
-          check.parameter(primitive, primTypes)
-          primType = primTypes[primitive]
-        }
-
-        if ('count' in options) {
-          vertCount = options.vertCount | 0
+          var _buffer = elements.buffer
+          _buffer.bind()
+          gl.bufferData(GL_ELEMENT_ARRAY_BUFFER, byteLength, usage)
+          _buffer.dtype = dtype || GL_UNSIGNED_BYTE
+          _buffer.usage = usage
+          _buffer.dimension = 3
+          _buffer.byteLength = byteLength
+          elements.primType = primType < 0 ? GL_TRIANGLES : primType
+          elements.vertCount = vertCount < 0 ? 0 : vertCount
+          elements.type = _buffer.dtype
         }
       }
-
-      // update properties for element buffer
-      elements.primType = primType
-      elements.vertCount = vertCount
-      elements.type = type
 
       return reglElements
     }
@@ -3587,6 +3746,10 @@ module.exports = function wrapElementsState (gl, extensions, bufferState) {
 
     reglElements._reglType = 'elements'
     reglElements._elements = elements
+    reglElements.subdata = function (data, offset) {
+      buffer.subdata(data, offset)
+      return reglElements
+    }
     reglElements.destroy = function () {
       check(elements.buffer !== null, 'must not double destroy elements')
       buffer.destroy()
@@ -3594,18 +3757,6 @@ module.exports = function wrapElementsState (gl, extensions, bufferState) {
     }
 
     return reglElements
-  }
-
-  // TODO implemented pooled allocator for element buffer streams
-  function createElementStream (data) {
-    return createElements({
-      usage: 'stream',
-      data: data
-    })._elements
-  }
-
-  function destroyElementStream (elements) {
-    bufferState.destroyStream(elements.buffer)
   }
 
   return {
@@ -3622,7 +3773,7 @@ module.exports = function wrapElementsState (gl, extensions, bufferState) {
   }
 }
 
-},{"./constants/primitives.json":5,"./util/check":17,"./util/is-ndarray":21,"./util/is-typed-array":22}],9:[function(require,module,exports){
+},{"./constants/primitives.json":5,"./constants/usage.json":6,"./util/check":18,"./util/is-ndarray":23,"./util/is-typed-array":24}],10:[function(require,module,exports){
 module.exports = function createExtensionCache (gl) {
   var extensions = {}
 
@@ -3668,7 +3819,7 @@ module.exports = function createExtensionCache (gl) {
   }
 }
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 var check = require('./util/check')
 var values = require('./util/values')
 var extend = require('./util/extend')
@@ -4363,7 +4514,7 @@ module.exports = function wrapFBOState (
   })
 }
 
-},{"./util/check":17,"./util/extend":20,"./util/values":28}],11:[function(require,module,exports){
+},{"./util/check":18,"./util/extend":21,"./util/values":32}],12:[function(require,module,exports){
 var GL_SUBPIXEL_BITS = 0x0D50
 var GL_RED_BITS = 0x0D52
 var GL_GREEN_BITS = 0x0D53
@@ -4457,7 +4608,7 @@ module.exports = function (gl, extensions) {
   }
 }
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var check = require('./util/check')
 var isTypedArray = require('./util/is-typed-array')
 
@@ -4510,7 +4661,7 @@ module.exports = function wrapReadPixels (gl, reglPoll, context) {
   return readPixels
 }
 
-},{"./util/check":17,"./util/is-typed-array":22}],13:[function(require,module,exports){
+},{"./util/check":18,"./util/is-typed-array":24}],14:[function(require,module,exports){
 var check = require('./util/check')
 var values = require('./util/values')
 
@@ -4667,7 +4818,7 @@ module.exports = function (gl, extensions, limits) {
   }
 }
 
-},{"./util/check":17,"./util/values":28}],14:[function(require,module,exports){
+},{"./util/check":18,"./util/values":32}],15:[function(require,module,exports){
 var check = require('./util/check')
 var values = require('./util/values')
 
@@ -4844,7 +4995,7 @@ module.exports = function wrapShaderState (gl, stringStore) {
   }
 }
 
-},{"./util/check":17,"./util/values":28}],15:[function(require,module,exports){
+},{"./util/check":18,"./util/values":32}],16:[function(require,module,exports){
 module.exports = function createStringStore () {
   var stringIds = {'': 0}
   var stringValues = ['']
@@ -4865,7 +5016,7 @@ module.exports = function createStringStore () {
   }
 }
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 var check = require('./util/check')
 var extend = require('./util/extend')
 var values = require('./util/values')
@@ -6301,7 +6452,7 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, co
   }
 }
 
-},{"./util/check":17,"./util/extend":20,"./util/is-ndarray":21,"./util/is-typed-array":22,"./util/load-texture":23,"./util/parse-dds":25,"./util/to-half-float":27,"./util/values":28}],17:[function(require,module,exports){
+},{"./util/check":18,"./util/extend":21,"./util/is-ndarray":23,"./util/is-typed-array":24,"./util/load-texture":25,"./util/parse-dds":27,"./util/to-half-float":30,"./util/values":32}],18:[function(require,module,exports){
 // Error checking and parameter validation.
 //
 // Statements for the form `check.someProcedure(...)` get removed by
@@ -6708,14 +6859,14 @@ module.exports = extend(check, {
   guessCommand: guessCommand
 })
 
-},{"./extend":20,"./is-typed-array":22}],18:[function(require,module,exports){
+},{"./extend":21,"./is-typed-array":24}],19:[function(require,module,exports){
 /* globals performance */
 module.exports =
   (typeof performance !== 'undefined' && performance.now)
   ? function () { return performance.now() }
   : function () { return +(new Date()) }
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 var extend = require('./extend')
 
 function slice (x) {
@@ -6896,7 +7047,7 @@ module.exports = function createEnvironment () {
   }
 }
 
-},{"./extend":20}],20:[function(require,module,exports){
+},{"./extend":21}],21:[function(require,module,exports){
 module.exports = function (base, opts) {
   var keys = Object.keys(opts)
   for (var i = 0; i < keys.length; ++i) {
@@ -6905,7 +7056,18 @@ module.exports = function (base, opts) {
   return base
 }
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
+module.exports = function flatten (result, data, dimension) {
+  var ptr = 0
+  for (var i = 0; i < data.length; ++i) {
+    var v = data[i]
+    for (var j = 0; j < dimension; ++j) {
+      result[ptr++] = v[j]
+    }
+  }
+}
+
+},{}],23:[function(require,module,exports){
 var isTypedArray = require('./is-typed-array')
 
 module.exports = function isNDArrayLike (obj) {
@@ -6920,13 +7082,13 @@ module.exports = function isNDArrayLike (obj) {
       isTypedArray(obj.data)))
 }
 
-},{"./is-typed-array":22}],22:[function(require,module,exports){
+},{"./is-typed-array":24}],24:[function(require,module,exports){
 var dtypes = require('../constants/arraytypes.json')
 module.exports = function (x) {
   return Object.prototype.toString.call(x) in dtypes
 }
 
-},{"../constants/arraytypes.json":3}],23:[function(require,module,exports){
+},{"../constants/arraytypes.json":3}],25:[function(require,module,exports){
 /* globals document, Image, XMLHttpRequest */
 
 module.exports = loadTexture
@@ -7009,7 +7171,7 @@ function loadTexture (url, crossOrigin) {
   return null
 }
 
-},{}],24:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 module.exports = function loop (n, f) {
   var result = Array(n)
   for (var i = 0; i < n; ++i) {
@@ -7018,7 +7180,7 @@ module.exports = function loop (n, f) {
   return result
 }
 
-},{}],25:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 // References:
 //
 // http://msdn.microsoft.com/en-us/library/bb943991.aspx/
@@ -7203,7 +7365,89 @@ function parseDDS (arrayBuffer) {
   return result
 }
 
-},{"./check":17}],26:[function(require,module,exports){
+},{"./check":18}],28:[function(require,module,exports){
+var loop = require('./loop')
+
+var GL_BYTE = 5120
+var GL_UNSIGNED_BYTE = 5121
+var GL_SHORT = 5122
+var GL_UNSIGNED_SHORT = 5123
+var GL_INT = 5124
+var GL_UNSIGNED_INT = 5125
+var GL_FLOAT = 5126
+
+var bufferPool = loop(8, function () {
+  return []
+})
+
+function nextPow16 (v) {
+  for (var i = 16; i <= (1 << 28); i *= 16) {
+    if (v <= i) {
+      return i
+    }
+  }
+  return 0
+}
+
+function log2 (v) {
+  var r, shift
+  r = (v > 0xFFFF) << 4
+  v >>>= r
+  shift = (v > 0xFF) << 3
+  v >>>= shift; r |= shift
+  shift = (v > 0xF) << 2
+  v >>>= shift; r |= shift
+  shift = (v > 0x3) << 1
+  v >>>= shift; r |= shift
+  return r | (v >> 1)
+}
+
+function alloc (n) {
+  var sz = nextPow16(n)
+  var bin = bufferPool[log2(sz) >> 2]
+  if (bin.length > 0) {
+    return bin.pop()
+  }
+  return new ArrayBuffer(sz)
+}
+
+function free (buf) {
+  bufferPool[log2(buf.byteLength) >> 2].push(buf)
+}
+
+function allocType (type, n) {
+  switch (type) {
+    case GL_BYTE:
+      return new Int8Array(alloc(n), 0, n)
+    case GL_UNSIGNED_BYTE:
+      return new Uint8Array(alloc(n), 0, n)
+    case GL_SHORT:
+      return new Int16Array(alloc(2 * n), 0, n)
+    case GL_UNSIGNED_SHORT:
+      return new Uint16Array(alloc(2 * n), 0, n)
+    case GL_INT:
+      return new Int32Array(alloc(4 * n), 0, n)
+    case GL_UNSIGNED_INT:
+      return new Uint32Array(alloc(4 * n), 0, n)
+    case GL_FLOAT:
+      return new Float32Array(alloc(4 * n), 0, n)
+    default:
+      return null
+  }
+}
+
+function freeType (array) {
+  free(array.buffer)
+}
+
+module.exports = {
+  alloc: alloc,
+  free: free,
+  allocType: allocType,
+  freeType: freeType
+}
+
+},{"./loop":26}],29:[function(require,module,exports){
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
     typeof cancelAnimationFrame === 'function') {
@@ -7220,7 +7464,7 @@ if (typeof requestAnimationFrame === 'function' &&
   }
 }
 
-},{}],27:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 module.exports = function convertToHalfFloat (array) {
   var floats = new Float32Array(array)
   var uints = new Uint32Array(floats.buffer)
@@ -7260,12 +7504,23 @@ module.exports = function convertToHalfFloat (array) {
   return ushorts
 }
 
-},{}],28:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
+module.exports = function (
+  result, data, shapeX, shapeY, strideX, strideY, offset) {
+  var ptr = 0
+  for (var i = 0; i < shapeX; ++i) {
+    for (var j = 0; j < shapeY; ++j) {
+      result[ptr++] = data[strideX * i + strideY * j + offset]
+    }
+  }
+}
+
+},{}],32:[function(require,module,exports){
 module.exports = function (obj) {
   return Object.keys(obj).map(function (key) { return obj[key] })
 }
 
-},{}],29:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 // Context and canvas creation helper functions
 /*globals HTMLElement,WebGLRenderingContext*/
 
@@ -7387,7 +7642,7 @@ module.exports = function parseArgs (args) {
   }
 }
 
-},{"./util/check":17,"./util/extend":20}],30:[function(require,module,exports){
+},{"./util/check":18,"./util/extend":21}],34:[function(require,module,exports){
 var check = require('./lib/util/check')
 var extend = require('./lib/util/extend')
 var dynamic = require('./lib/dynamic')
@@ -7554,14 +7809,17 @@ module.exports = function wrapREGL () {
   }
 
   function handleContextLoss (event) {
+    /*
     stopRAF()
     event.preventDefault()
     if (options.onContextLost) {
       options.onContextLost()
     }
+    */
   }
 
   function handleContextRestored (event) {
+    /*
     gl.getError()
     extensionState.refresh()
     core.procs.refresh()
@@ -7574,6 +7832,7 @@ module.exports = function wrapREGL () {
       options.onContextRestored()
     }
     handleRAF()
+    */
   }
 
   if (canvas) {
@@ -7817,5 +8076,5 @@ module.exports = function wrapREGL () {
   })
 }
 
-},{"./lib/attribute":1,"./lib/buffer":2,"./lib/core":6,"./lib/dynamic":7,"./lib/elements":8,"./lib/extension":9,"./lib/framebuffer":10,"./lib/limits":11,"./lib/read":12,"./lib/renderbuffer":13,"./lib/shader":14,"./lib/strings":15,"./lib/texture":16,"./lib/util/check":17,"./lib/util/clock":18,"./lib/util/extend":20,"./lib/util/raf":26,"./lib/webgl":29}]},{},[30])(30)
+},{"./lib/attribute":1,"./lib/buffer":2,"./lib/core":7,"./lib/dynamic":8,"./lib/elements":9,"./lib/extension":10,"./lib/framebuffer":11,"./lib/limits":12,"./lib/read":13,"./lib/renderbuffer":14,"./lib/shader":15,"./lib/strings":16,"./lib/texture":17,"./lib/util/check":18,"./lib/util/clock":19,"./lib/util/extend":21,"./lib/util/raf":29,"./lib/webgl":33}]},{},[34])(34)
 });
