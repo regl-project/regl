@@ -4,6 +4,7 @@
 
 * subimage updates for textures
 * Optimize constructors/updates for textures, renderbuffers and framebuffers
+* Remove DDS parsing
 * Cubic frame buffer objects
 * More test cases for textures
 * More test cases for framebuffers
@@ -33,8 +34,8 @@
     + Complete coverage for all code generation pathways
     + Test weird invocation sequences
 
-* Create comparisons between
-* Support more DDS texture formats (HDR, PVRTC, etc.)
+* Create comparisons
+
 * Build a website (@freeman-lab is on it!)
 * Recipe book/example set
     + Minecraft example
@@ -48,6 +49,8 @@
     + Asset loading (obj, ply, etc.)
 
 ## Next
+
+## 0.7.0
 
 * Add in place update methods to buffers and elements via `buffer.subdata` and `elements.subdata`
 * Pool stream buffers
