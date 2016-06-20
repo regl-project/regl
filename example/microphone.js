@@ -19,6 +19,7 @@ require('getusermedia')({audio: true}, function (err, stream) {
   const frequencies = new Uint8Array(fftSize)
   const fftBuffer = regl.buffer({
     length: fftSize,
+    type: 'uint8',
     usage: 'dynamic'
   })
 
