@@ -17,7 +17,10 @@ require('getusermedia')({audio: true}, function (err, stream) {
   // Here we preallocate buffers for streaming audio data
   const fftSize = analyser.frequencyBinCount
   const frequencies = new Uint8Array(fftSize)
-  const fftBuffer = regl.buffer(frequencies)
+  const fftBuffer = regl.buffer({
+    length: fftSize,
+    usage: 'dynamic'
+  })
 
   // This command draws the spectrogram
   const drawSpectrum = regl({
