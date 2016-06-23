@@ -21,13 +21,7 @@ const setupEnvMap = regl({
     gl_FragColor = textureCube(envmap, reflectDir);
   }`,
   uniforms: {
-    envmap: regl.cube(
-      'assets/posx.jpg',
-      'assets/negx.jpg',
-      'assets/posy.jpg',
-      'assets/negy.jpg',
-      'assets/posz.jpg',
-      'assets/negz.jpg'),
+    envmap: regl.prop('cube'),
     view: regl.context('view'),
     projection: ({viewportWidth, viewportHeight}) =>
       mat4.perspective([],
@@ -82,9 +76,51 @@ const drawBunny = regl({
   elements: bunny.cells
 })
 
-regl.frame(() => {
-  setupEnvMap(() => {
-    drawBackground()
-    drawBunny()
-  })
+require('resl')({
+  manifest: {
+    posx: {
+      type: 'image',
+      src: 'assets/posx.jpg'
+    },
+    negx: {
+      type: 'image',
+      src: 'assets/negx.jpg'
+    },
+    posy: {
+      type: 'image',
+      src: 'assets/posy.jpg'
+    },
+    negy: {
+      type: 'image',
+      src: 'assets/negy.jpg'
+    },
+    posz: {
+      type: 'image',
+      src: 'assets/posz.jpg'
+    },
+    negz: {
+      type: 'image',
+      src: 'assets/negz.jpg'
+    }
+  },
+
+  onDone: ({ posx, negx, posy, negy, posz, negz }) => {
+    const cube = regl.cube(
+      posx, negx,
+      posy, negy,
+      posz, negz)
+    regl.frame(() => {
+      setupEnvMap({ cube }, () => {
+        drawBackground()
+        drawBunny()
+      })
+    })
+  },
+
+  onProgress: (fraction) => {
+    const intensity = 1.0 - fraction
+    regl.clear({
+      color: [intensity, intensity, intensity, 1]
+    })
+  }
 })

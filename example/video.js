@@ -43,7 +43,7 @@ const drawDoggie = regl({
   },
 
   uniforms: {
-    texture: regl.texture('assets/doggie-chromakey.ogv'),
+    texture: regl.prop('video'),
 
     screenShape: ({viewportWidth, viewportHeight}) =>
       [viewportWidth, viewportHeight],
@@ -54,6 +54,23 @@ const drawDoggie = regl({
   count: 3
 })
 
-regl.frame(() => {
-  drawDoggie()
+require('resl')({
+  manifest: {
+    video: {
+      type: 'video',
+      src: 'assets/doggie-chromakey.ogv',
+      stream: true
+    }
+  },
+
+  onDone: ({video}) => {
+    video.autoplay = true
+    video.loop = true
+    video.play()
+
+    const texture = regl.texture(video)
+    regl.frame(() => {
+      drawDoggie({ video: texture })
+    })
+  }
 })
