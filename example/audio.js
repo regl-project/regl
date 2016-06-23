@@ -69,8 +69,8 @@ require('resl')({
           1.0));
 
         curvature =
-          (dot(WEIGHT2, hx) - 30.0 * h0) +
-          (dot(WEIGHT2, hy) - 30.0 * h0);
+          max((dot(WEIGHT2, hx) - 30.0 * h0),
+              (dot(WEIGHT2, hy) - 30.0 * h0));
 
         gl_Position = projection * view * vec4(uv, h0, 1);
       }`,
@@ -86,7 +86,7 @@ require('resl')({
 
       void main () {
         float ao = max(1.0 - 0.8 * max(curvature, 0.0), 0.25);
-        float light = ao * max(dot(normalize(lightDir), normalize(grad)), 0.0);
+        float light = ao;
         gl_FragColor = vec4(light * color, 1);
       }`,
 
