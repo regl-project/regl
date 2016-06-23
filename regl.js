@@ -320,6 +320,10 @@ module.exports = function wrapREGL () {
   }
 
   function clear (options) {
+    check(
+      typeof options === 'object' && options,
+      'regl.clear() takes an object as input')
+
     var clearFlags = 0
 
     poll()
@@ -343,6 +347,8 @@ module.exports = function wrapREGL () {
   }
 
   function frame (cb) {
+    check.type(cb, 'function', 'regl.frame() callback must be a function')
+
     rafCallbacks.push(cb)
 
     function cancel () {
