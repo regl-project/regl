@@ -3,6 +3,8 @@ const mat4 = require('gl-mat4')
 const bunny = require('bunny')
 const normals = require('angle-normals')
 
+const envmap = regl.texture()
+
 const setupEnvMap = regl({
   frag: `
   precision mediump float;
@@ -24,7 +26,7 @@ const setupEnvMap = regl({
   }`,
 
   uniforms: {
-    envmap: regl.texture('assets/ogd-oregon-360.jpg'),
+    envmap: envmap,
 
     view: regl.prop('view'),
 
@@ -86,16 +88,33 @@ const drawBunny = regl({
   elements: bunny.cells
 })
 
-regl.frame(({count}) => {
-  const t = 0.01 * count
-
-  setupEnvMap({
-    view: mat4.lookAt([],
-      [30 * Math.cos(t), 2.5, 30 * Math.sin(t)],
-      [0, 2.5, 0],
-      [0, 1, 0])
-  }, () => {
-    drawBackground()
-    drawBunny()
-  })
+require('resl')({
+  manifest: {
+    envmap: {
+      type: 'image',
+      stream: true,
+      src: 'assets/ogd-oregon-360.jpg',
+      parser: envmap
+    }
+  },
+  onDone: () => {
+    regl.frame(({count}) => {
+      const t = 0.01 * count
+      setupEnvMap({
+        view: mat4.lookAt([],
+          [30 * Math.cos(t), 2.5, 30 * Math.sin(t)],
+          [0, 2.5, 0],
+          [0, 1, 0])
+      }, () => {
+        drawBackground()
+        drawBunny()
+      })
+    })
+  },
+  onProgress: (fraction) => {
+    const intensity = 1.0 - fraction
+    regl.clear({
+      color: [intensity, intensity, intensity, 1]
+    })
+  }
 })
