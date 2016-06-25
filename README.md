@@ -44,7 +44,7 @@ const drawTriangle = regl({
       [-2, -2],   // no need to flatten nested arrays, regl automatically
       [4, -2],    // unrolls them into a typedarray (default Float32)
       [4,  4]
-    ]))
+    ])
     // regl automatically infers sane defaults for the vertex attribute pointers
   },
 
