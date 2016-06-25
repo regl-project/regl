@@ -78,8 +78,7 @@ require('resl')({
       frag: `
       precision highp float;
 
-      uniform vec3 lightDir;
-      uniform vec3 color;
+      uniform vec3 lightDir, color;
 
       varying vec3 grad;
       varying float curvature;

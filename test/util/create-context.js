@@ -17,6 +17,21 @@ if (typeof document !== 'undefined') {
     canvas.height = height
     return context
   }
+
+  module.exports.resize = function (gl, w, h) {
+    canvas.width = w
+    canvas.height = h
+  }
+
+  module.exports.destroy = function (gl) { }
 } else {
   module.exports = require('gl')
+
+  module.exports.resize = function (gl, w, h) {
+    gl.getExtension('STACKGL_resize_drawingbuffer').resize(w, h)
+  }
+
+  module.exports.destroy = function (gl) {
+    gl.getExtension('STACKGL_destroy_context').destroy()
+  }
 }
