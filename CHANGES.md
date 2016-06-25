@@ -2,9 +2,7 @@
 
 ## Planned
 
-* subimage updates for textures
 * Optimize constructors/updates for textures, renderbuffers and framebuffers
-* Remove DDS parsing
 * Cubic frame buffer objects
 * More test cases for textures
 * More test cases for framebuffers
@@ -53,6 +51,11 @@
     + Asset loading (obj, ply, etc.)
 
 ## Next
+
+* Optimize texture constructor
+* Subimage updates for textures
+* Remove DDS parsing
+* Remove URL loader for textures
 
 ## 0.7.0
 
