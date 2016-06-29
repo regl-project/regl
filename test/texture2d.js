@@ -10,7 +10,6 @@ tape('texture validation', function (t) {
     vert: `
     attribute vec2 position;
     void main() {
-
       gl_Position = vec4(position, 0, 1);
     }`,
 
@@ -40,6 +39,88 @@ tape('texture validation', function (t) {
     count: 3
   })
 
+  var renderFloatTexture = regl({
+    vert: `
+    attribute vec2 position;
+    void main() {
+      gl_Position = vec4(position, 0, 1);
+    }`,
+
+    frag: `
+    precision highp float;
+    uniform sampler2D texture;
+    uniform vec2 shape;
+    uniform vec4 component;
+
+    #define FLOAT_MAX  1.70141184e38
+    #define FLOAT_MIN  1.17549435e-38
+
+    lowp vec4 encode_float(highp float v) {
+      highp float av = abs(v);
+
+      //Handle special cases
+      if(av < FLOAT_MIN) {
+        return vec4(0.0, 0.0, 0.0, 0.0);
+      } else if(v > FLOAT_MAX) {
+        return vec4(127.0, 128.0, 0.0, 0.0) / 255.0;
+      } else if(v < -FLOAT_MAX) {
+        return vec4(255.0, 128.0, 0.0, 0.0) / 255.0;
+      }
+
+      highp vec4 c = vec4(0,0,0,0);
+
+      //Compute exponent and mantissa
+      highp float e = floor(log2(av));
+      highp float m = av * pow(2.0, -e) - 1.0;
+
+      //Unpack mantissa
+      c[1] = floor(128.0 * m);
+      m -= c[1] / 128.0;
+      c[2] = floor(32768.0 * m);
+      m -= c[2] / 32768.0;
+      c[3] = floor(8388608.0 * m);
+
+      //Unpack exponent
+      highp float ebias = e + 127.0;
+      c[0] = floor(ebias / 2.0);
+      ebias -= c[0] * 2.0;
+      c[1] += floor(ebias) * 128.0;
+
+      //Unpack sign bit
+      c[0] += 128.0 * step(0.0, -v);
+
+      //Scale back to range
+      return c / 255.0;
+    }
+
+    void main() {
+      float c = dot(component, texture2D(texture, gl_FragCoord.xy / shape));
+      gl_FragColor = encode_float(c).wzyx;
+    }`,
+
+    attributes: {
+      position: [
+        0, -4,
+        -4, 4,
+        4, 4
+      ]
+    },
+
+    uniforms: {
+      shape: regl.prop('shape'),
+      texture: regl.prop('texture'),
+      component: function (context, props) {
+        var result = [0, 0, 0, 0]
+        result[props.component] = 1
+        return result
+      }
+    },
+
+    depth: {enable: false},
+
+    count: 3
+  })
+
   function checkShouldThrow (desc, name) {
     t.throws(function () {
       regl.texture(desc)
@@ -47,18 +128,40 @@ tape('texture validation', function (t) {
   }
 
   function comparePixels (texture, width, height, expected, tolerance, name) {
+    var i
     createContext.resize(gl, width, height)
     regl._refresh()
-    renderTexture({
-      texture: texture,
-      shape: [width, height]
-    })
 
-    var actual = regl.read()
-    for (var i = 0; i < expected.length; ++i) {
-      if (!(Math.abs(actual[i] - expected[i]) <= tolerance)) {
-        t.fail(name + ' @ index ' + i + ' ' + expected[i] + ' - ' + actual[i])
-        return
+    if (expected instanceof Float32Array) {
+      for (var c = 0; c < 4; ++c) {
+        renderFloatTexture({
+          texture: texture,
+          shape: [width, height],
+          component: c
+        })
+
+        var bits = regl.read()
+        var floats = new Float32Array(bits.buffer)
+        for (i = 0; i < floats.length; ++i) {
+          if (!(Math.abs(floats[i] - expected[4 * i + c]) <= tolerance)) {
+            t.fail(name + ' @ index ' + i + '[' + c + ']' + ' ' +
+              expected[4 * i + c] + ' - ' + floats[i])
+            return
+          }
+        }
+      }
+    } else {
+      renderTexture({
+        texture: texture,
+        shape: [width, height]
+      })
+
+      var actual = regl.read()
+      for (i = 0; i < expected.length; ++i) {
+        if (!(Math.abs(actual[i] - expected[i]) <= tolerance)) {
+          t.fail(name + ' @ index ' + i + ' ' + expected[i] + ' - ' + actual[i])
+          return
+        }
       }
     }
     t.pass(name)
@@ -498,9 +601,6 @@ tape('texture validation', function (t) {
     height: 10
   }, 'copy out of bounds (shape)')
 
-  // TODO subimage
-
-  /*
   if (regl.limits.extensions.indexOf('oes_texture_float') >= 0) {
     checkProperties(
       regl.texture({
@@ -508,32 +608,20 @@ tape('texture validation', function (t) {
         height: 2,
         data: new Float32Array([
           1, 2, 3, 4,
-          5, 6, 7, 8,
-          9, 10, 11, 12,
-          13, 14, 15, 16
+          -5, -6, -7, -8,
+          1000, 10000, 100000, 1000000,
+          0, 0.25, -0.25, 0.5
         ])
       }),
       {
-        params: {
-          width: 2,
-          height: 2,
-          format: gl.RGBA,
-          type: gl.FLOAT
-        },
-        pixels: [{
-          data: new Float32Array([
-            1, 2, 3, 4,
-            5, 6, 7, 8,
-            9, 10, 11, 12,
-            13, 14, 15, 16
-          ]),
-          width: 2,
-          height: 2,
-          channels: 4,
-          format: gl.RGBA,
-          internalformat: gl.RGBA,
-          type: gl.FLOAT
-        }]
+        width: 2,
+        height: 2,
+        pixels: new Float32Array([
+          1, 2, 3, 4,
+          -5, -6, -7, -8,
+          1000, 10000, 100000, 1000000,
+          0, 0.25, -0.25, 0.5
+        ])
       },
       'float')
 
@@ -544,16 +632,20 @@ tape('texture validation', function (t) {
         data: [1, 2, 3, 4]
       }),
       {
-        params: {
-          type: gl.FLOAT
-        },
-        pixels: [{
-          data: new Float32Array([1, 2, 3, 4])
-        }]
+        width: 1,
+        height: 1,
+        pixels: new Float32Array([1, 2, 3, 4])
       },
       'float type infer')
+  } else {
+    checkShouldThrow({
+      width: 2,
+      height: 2,
+      data: new Float32Array(16)
+    }, 'float missing')
   }
-  */
+
+  // TODO subimage
 
   function runDOMTests () {
     var canvas = document.createElement('canvas')
