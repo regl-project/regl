@@ -2,9 +2,8 @@
 
 ## Planned
 
-* Optimize constructors/updates for textures, renderbuffers and framebuffers
+* Optimize constructors/updates for renderbuffers and framebuffers
 * Cubic frame buffer objects
-* More test cases for textures
 * More test cases for framebuffers
 
 * Implement a standard method for handling context creation errors
@@ -53,9 +52,10 @@
 ## Next
 
 * Optimize texture constructor
-* Subimage updates for textures
+* Add in place update method for textures via `texture.subimage`
 * Remove DDS parsing
 * Remove URL loader for textures
+* Improve texture test cases
 
 ## 0.7.0
 
@@ -63,6 +63,7 @@
 * Pool stream buffers
 * Rewrite resource section of API, bring individual resources to the top
 * Optimized buffer and elements creation, no more memory allocation
+* More test cases for textures
 
 ## 0.6.0
 
