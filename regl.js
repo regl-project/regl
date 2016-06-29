@@ -115,33 +115,15 @@ module.exports = function wrapREGL () {
     // schedule next animation frame
     activeRAF = raf.next(handleRAF)
 
-    // increment frame coun
+    // increment frame count
     contextState.count += 1
-
-    // reset viewport
-    var viewport = nextState.viewport
-    var scissorBox = nextState.scissor_box
-    viewport[0] = viewport[1] = scissorBox[0] = scissorBox[1] = 0
-
-    contextState.viewportWidth =
-      contextState.frameBufferWidth =
-      contextState.drawingBufferWidth =
-      viewport[2] =
-      scissorBox[2] = gl.drawingBufferWidth
-    contextState.viewportHeight =
-      contextState.frameBufferWidth =
-      contextState.drawingBufferHeight =
-      viewport[3] =
-      scissorBox[3] = gl.drawingBufferHeight
 
     var now = clock()
     contextState.deltaTime = (now - LAST_TIME) / 1000.0
     contextState.time = (now - START_TIME) / 1000.0
     LAST_TIME = now
 
-    // not strictly necessary, but if something messed with the gl context
-    // since last frame this will fix it
-    core.procs.refresh()
+    refresh()
 
     for (var i = 0; i < rafCallbacks.length; ++i) {
       var cb = rafCallbacks[i]
@@ -163,30 +145,11 @@ module.exports = function wrapREGL () {
   }
 
   function handleContextLoss (event) {
-    /*
-    stopRAF()
-    event.preventDefault()
-    if (options.onContextLost) {
-      options.onContextLost()
-    }
-    */
+    // TODO
   }
 
   function handleContextRestored (event) {
-    /*
-    gl.getError()
-    extensionState.refresh()
-    core.procs.refresh()
-    bufferState.refresh()
-    textureState.refresh()
-    renderbufferState.refresh()
-    framebufferState.refresh()
-    shaderState.refresh()
-    if (options.onContextRestored) {
-      options.onContextRestored()
-    }
-    handleRAF()
-    */
+    // TODO
   }
 
   if (canvas) {
@@ -370,7 +333,25 @@ module.exports = function wrapREGL () {
     }
   }
 
-  core.procs.refresh()
+  function refresh () {
+    // reset viewport
+    var viewport = nextState.viewport
+    var scissorBox = nextState.scissor_box
+    viewport[0] = viewport[1] = scissorBox[0] = scissorBox[1] = 0
+
+    contextState.viewportWidth =
+      contextState.frameBufferWidth =
+      contextState.drawingBufferWidth =
+      viewport[2] =
+      scissorBox[2] = gl.drawingBufferWidth
+    contextState.viewportHeight =
+      contextState.frameBufferWidth =
+      contextState.drawingBufferHeight =
+      viewport[3] =
+      scissorBox[3] = gl.drawingBufferHeight
+
+    core.procs.refresh()
+  }
 
   return extend(compileProcedure, {
     // Clear current FBO
@@ -417,8 +398,6 @@ module.exports = function wrapREGL () {
 
     // Direct GL state manipulation
     _gl: gl,
-    _refresh: function () {
-      core.procs.refresh()
-    }
+    _refresh: refresh
   })
 }
