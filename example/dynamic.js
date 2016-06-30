@@ -46,9 +46,9 @@ regl.frame(({count}) => {
 
   draw({
     color: [
-      Math.sin(0.02*(0.001 * count)),
-      Math.cos(0.02*(0.02 * count)),
-      Math.sin(0.02*(0.3 * count)),
+      Math.sin(0.02 * (0.001 * count)),
+      Math.cos(0.02 * (0.02 * count)),
+      Math.sin(0.02 * (0.3 * count)),
       1
     ]
   })
