@@ -36,9 +36,9 @@ const draw = regl({
   uniforms: {
     // the batchId parameter gives the index of the command
     color: ({count}, props, batchId) => [
-      Math.sin((0.1 + Math.sin(batchId)) * count + 3.0 * batchId),
-      Math.cos(0.02 * count + 0.1 * batchId),
-      Math.sin((0.3 + Math.cos(2.0 * batchId)) * count + 0.8 * batchId),
+      Math.sin(0.02 * ((0.1 + Math.sin(batchId)) * count + 3.0 * batchId)),
+      Math.cos(0.02 * (0.02 * count + 0.1 * batchId)),
+      Math.sin(0.02 * ((0.3 + Math.cos(2.0 * batchId)) * count + 0.8 * batchId)),
       1
     ],
     angle: ({count}) => 0.01 * count,
