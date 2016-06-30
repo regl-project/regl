@@ -645,7 +645,46 @@ tape('texture validation', function (t) {
     }, 'float missing')
   }
 
-  // TODO subimage
+  // test compressed textures
+
+  // test subimage
+  var baseTexture = regl.texture(5, 5)
+  baseTexture.subimage([
+    [[0, 0, 0, 255], [255, 0, 0, 0]],
+    [[0, 255, 0, 0], [0, 0, 255, 0]]
+  ])
+  checkProperties(baseTexture, {
+    width: 5,
+    height: 5,
+    pixels: new Uint8Array([
+      0, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 255, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ])
+  }, 'subimage simple')
+
+  regl.clear({
+    color: [1, 1, 0, 1]
+  })
+  baseTexture.subimage({
+    copy: true,
+    width: 2,
+    height: 2
+  }, 2, 2)
+
+  checkProperties(baseTexture, {
+    width: 5,
+    height: 5,
+    pixels: new Uint8Array([
+      0, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 255, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 255, 255, 255, 0, 255, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 255, 255, 255, 0, 255, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ])
+  }, 'copyTexSubImage')
 
   function runDOMTests () {
     var canvas = document.createElement('canvas')
@@ -709,6 +748,23 @@ tape('texture validation', function (t) {
           ]
         },
         'DOM image element')
+
+      // test texsubimage 2D
+      var bigTexture = regl.texture(5, 5)
+      bigTexture.subimage(img)
+
+      checkProperties(bigTexture, {
+        width: 5,
+        height: 5,
+        pixels: [
+          255, 0, 0, 255, 255, 255, 255, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 0,
+          255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 0,
+          0, 0, 0, 255, 0, 0, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 0, 0, 0,
+          0, 0, 0, 255, 0, 0, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 0, 0, 0,
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        ]
+      }, 'DOM image element - subimage')
+
       endTest()
     }
 
