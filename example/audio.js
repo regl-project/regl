@@ -23,9 +23,23 @@ require('resl')({
 
     song.play()
 
-    const terrainData = new Uint8Array(N * N)
-    terrainData.fill(128)
-    const terrainTexture = regl.texture()
+    const terrainTexture = regl.texture({
+      data: (new Uint8Array(N * N)).fill(128),
+      radius: N,
+      channels: 1,
+      min: 'linear',
+      mag: 'linear',
+      wrap: 'repeat'
+    })
+
+    const colorTexture = regl.texture({
+      width: N / 4,
+      height: 1,
+      channels: 4,
+      min: 'linear',
+      mag: 'linear',
+      wrap: 'repeat'
+    })
 
     const drawTerrain = regl({
       vert: `
@@ -37,15 +51,17 @@ require('resl')({
 
       attribute vec2 vertId;
 
+      uniform float t;
       uniform mat4 projection, view;
+      uniform vec3 lightPosition;
       uniform float offsetRow;
-      uniform sampler2D terrain;
+      uniform sampler2D terrain, color;
 
-      varying vec3 grad;
+      varying vec3 grad, fragColor, eyeDir, lightDir;
       varying float curvature;
 
       float f(vec2 x) {
-        return 0.5 * texture2D(terrain, x + vec2(0.0, offsetRow / N)).r;
+        return 0.025 * texture2D(terrain, x).r;
       }
 
       vec4 stencil(vec2 x, vec2 d) {
@@ -57,7 +73,7 @@ require('resl')({
       }
 
       void main () {
-        vec2 uv = vertId / N;
+        vec2 uv = (vertId + vec2(0.0, offsetRow)) / N;
 
         float h0 = f(uv);
         vec4 hx = stencil(uv, vec2(1.0 / N, 0.0));
@@ -66,40 +82,52 @@ require('resl')({
         grad = normalize(vec3(
           dot(WEIGHT1, hx),
           dot(WEIGHT1, hy),
-          1.0));
+          0.025));
 
         curvature =
-          max((dot(WEIGHT2, hx) - 30.0 * h0),
-              (dot(WEIGHT2, hy) - 30.0 * h0));
+          max(max((dot(WEIGHT2, hx) - 30.0 * h0),
+              (dot(WEIGHT2, hy) - 30.0 * h0)), 0.0);
 
-        gl_Position = projection * view * vec4(uv, h0, 1);
+        vec3 pos = vec3(vertId / N, h0 + 0.4);
+        lightDir = lightPosition - pos;
+
+        vec4 viewPos = view * vec4(pos, 1);
+        gl_Position = projection * viewPos;
+        eyeDir = viewPos.xyz / viewPos.w;
+        fragColor = 1.25 * texture2D(color, vec2(uv.y, 0)).rgb;
       }`,
 
       frag: `
       precision highp float;
 
-      uniform vec3 lightDir, color;
-
-      varying vec3 grad;
+      varying vec3 grad, fragColor, eyeDir, lightDir;
       varying float curvature;
 
       void main () {
-        float ao = max(1.0 - 0.8 * max(curvature, 0.0), 0.25);
-        float light = ao;
-        gl_FragColor = vec4(light * color, 1);
+        vec3 N = normalize(grad);
+        vec3 V = normalize(eyeDir);
+        vec3 L = normalize(lightDir);
+
+        vec3 H = normalize(V + L);
+
+        float ao = 1.0 - curvature;
+        float diffuse = max(dot(L, N), 0.0);
+        float fresnel = 0.1 + 0.5 * pow(1.0 - max(dot(H, V), 0.0), 5.0);
+        float light = 0.25 * ao + 0.8 * diffuse + fresnel;
+        gl_FragColor = vec4(light * fragColor, 1);
       }`,
 
       attributes: {
-        vertId: Array(N * N).fill().map((_, i) => {
-          const x = Math.floor(i / N)
-          const y = i % N
+        vertId: Array(4 * N * N).fill().map((_, i) => {
+          const x = 0.5 * Math.floor(i / (2 * N))
+          const y = 0.5 * (i % (2 * N))
           return [
             x, y,
-            x + 1, y,
-            x, y + 1,
-            x, y + 1,
-            x + 1, y + 1,
-            x + 1, y
+            x + 0.5, y,
+            x, y + 0.5,
+            x, y + 0.5,
+            x + 0.5, y + 0.5,
+            x + 0.5, y
           ]
         })
       },
@@ -115,16 +143,31 @@ require('resl')({
             1000),
         view: ({count}) =>
           lookAt([],
-            [0.5, 0, 0.6],
-            [0.5, 1, 0],
+            [ 0.5 + 0.2 * Math.cos(0.001 * count),
+              1,
+              0.6 + 0.1 * Math.cos(0.003 * count + 2.4) ],
+            [0.5, 0, 0],
             [0, 0, 1]),
-        lightDir: [-1, -1, 1],
-        color: [0.6, 0.4, 1.0]
+        lightPosition: ({count}) => [
+          0.5 + Math.sin(0.01 * count),
+          1.0 + Math.cos(0.01 * count),
+          1.0 + 0.6 * Math.cos(0.04 * count) ],
+        color: colorTexture,
+        t: ({count}) => 0.01 * count
       },
 
-      count: N * N * 6
+      elements: null,
+      instances: -1,
+
+      count: 4 * N * N * 6
     })
 
+    const timeSamples = {
+      width: N,
+      height: 1,
+      data: new Uint8Array(N)
+    }
+    const freqSamples = new Uint8Array(N)
     regl.frame(({count}) => {
       const offsetRow = count % N
 
@@ -135,15 +178,12 @@ require('resl')({
       })
 
       // Update texture
-      analyser.getByteTimeDomainData(
-        terrainData.subarray(offsetRow * N, (offsetRow + 1) * N))
-      terrainTexture({
-        mag: 'linear',
-        min: 'linear',
-        wrap: 'repeat',
-        shape: [N, N, 1],
-        data: terrainData
-      })
+      analyser.getByteTimeDomainData(timeSamples.data)
+      terrainTexture.subimage(timeSamples, 0, offsetRow)
+
+      // Update colors
+      analyser.getByteFrequencyData(freqSamples)
+      colorTexture.subimage(freqSamples)
 
       // Render terrain
       drawTerrain()
