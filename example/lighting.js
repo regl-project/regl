@@ -62,33 +62,33 @@ const drawBunny = regl({
     'lights[0].position': ({count}) => {
       const t = 0.1 * count
       return [
-        10 * Math.cos(t),
-        10 * Math.sin(2 * t),
-        10 * Math.cos(3 * t)
+        10 * Math.cos(0.09*(t)),
+        10 * Math.sin(0.09*(2 * t)),
+        10 * Math.cos(0.09*(3 * t))
       ]
     },
     'lights[1].position': ({count}) => {
       const t = 0.1 * count
       return [
-        10 * Math.cos(5 * t + 1),
-        10 * Math.sin(4 * t),
-        10 * Math.cos(0.1 * t)
+        10 * Math.cos(0.05*(5 * t + 1)),
+        10 * Math.sin(0.05*(4 * t)),
+        10 * Math.cos(0.05*(0.1 * t))
       ]
     },
     'lights[2].position': ({count}) => {
       const t = 0.1 * count
       return [
-        10 * Math.cos(9 * t),
-        10 * Math.sin(0.25 * t),
-        10 * Math.cos(4 * t)
+        10 * Math.cos(0.05*(9 * t)),
+        10 * Math.sin(0.05*(0.25 * t)),
+        10 * Math.cos(0.05*(4 * t))
       ]
     },
     'lights[3].position': ({count}) => {
       const t = 0.1 * count
       return [
-        10 * Math.cos(0.3 * t),
-        10 * Math.sin(2.1 * t),
-        10 * Math.cos(1.3 * t)
+        10 * Math.cos(0.1*(0.3 * t)),
+        10 * Math.sin(0.1*(2.1 * t)),
+        10 * Math.cos(0.1*(1.3 * t))
       ]
     }
   }
