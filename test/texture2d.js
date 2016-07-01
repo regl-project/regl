@@ -645,7 +645,8 @@ tape('texture 2d', function (t) {
     }, 'float missing')
   }
 
-  // test compressed textures
+  // TODO test compressed textures
+  // TODO test half float
 
   // test subimage
   var baseTexture = regl.texture(5, 5)

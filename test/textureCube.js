@@ -290,8 +290,6 @@ tape('texture cube', function (t) {
     ]
   })
 
-  // TODO mipmaps
-
   // subimage
   var cube = regl.cube(2)
   cube.subimage(0, [
@@ -350,9 +348,10 @@ tape('texture cube', function (t) {
     ]
   })
 
-  // alignment and pixel storage
-
-  // dom elements
+  // TODO mipmaps
+  // TODO alignment and pixel storage
+  // TODO float cube maps
+  // TODO dom elements
 
   regl.destroy()
   t.end()
