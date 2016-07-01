@@ -5,7 +5,6 @@ var tape = require('tape')
 tape('texture', function (t) {
   var regl = createREGL(createContext(2, 2))
 
-  // Test basic texture rendering
   var texture = regl.texture([
     [[255, 0, 0], [0, 255, 0]],
     [[0, 0, 255], [255, 255, 255]]
@@ -53,14 +52,6 @@ tape('texture', function (t) {
     255, 0, 0, 255, 0, 255, 0, 255,
     0, 0, 255, 255, 255, 255, 255, 255
   ], 'simple texture test')
-
-  // Test drawing with multiple textures
-
-  // Test texture updates
-
-  // Update in middle of draw loop
-
-  // Texture destruction
 
   regl.destroy()
   t.end()
