@@ -1406,12 +1406,11 @@ A data source from an image can be one of the following types:
 | Rectangular array of arrays | Interpreted as 2D array of arrays |
 | Typed array | A binary array of pixel values |
 | Array | Interpreted as array of pixel values with type based on the input type |
-| `ndarray` | Any object with a `shape, stride, offset, data` |
+| `ndarray` | Any object with a `shape, stride, offset, data` (see [SciJS ndarray](https://github.com/scijs/ndarray))|
 | Image | An HTML image element |
 | Video | An HTML video element |
 | Canvas | A canvas element |
 | Context 2D | A canvas 2D context |
-| String | A URL to an image or video to load |
 
 
 | Property | Description | Default |
@@ -1430,16 +1429,13 @@ A data source from an image can be one of the following types:
 | `flipY` | Flips textures vertically when uploading | `false` |
 | `alignment` | Sets unpack alignment per pixel | `1` |
 | `premultiplyAlpha` | Premultiply alpha when unpacking | `false` |
-| `colorSpace` | Sets colorspace conversion | `'browser'` |
-| `poll` | If set, then each frame check if this texture needs to be reuploaded | Depends on the element type |
+| `colorSpace` | Sets colorspace conversion | `'none'` |
 | `data` | Image data for the texture | `null` |
-| `crossOrigin` | Cross origin resource sharing URL | `null` |
 
 * `shape` can be used as an array shortcut for `[width, height, channels]` of image
 * `radius` can be specified for square images and sets both `width` and `height`
 * `data` can take one of the following values,
 * If an image element is specified and not yet loaded, then regl will upload a temporary image and hook a callback on the image
-* If a video element is specified, then regl will reupload a frame of the video element each tick unless `poll` is set to false
 * `mag` sets `gl.MAG_FILTER` for the texture and can have one of the following values
 
 | Mag filter | Description |
@@ -1527,10 +1523,63 @@ A data source from an image can be one of the following types:
 * [`gl.generateMipmap`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGenerateMipmap.xml)
 
 #### Update
+Like buffers, textures can be reinitialized in place.  Calling the texture as a function re-evaluates the constructor and initializes the texture to a new value:
 
-**TODO**
+```javascript
+// First we create a texture
+const myTexture = regl.texture()
+
+// Then we can reinitialize it
+myTexture({
+  width: 10,
+  height: 10
+})
+```
+
+Doing this lets you defer texture construction or reuse texture objects.
+
+**Relevant WebGL APIs**
+
+* [`gl.createTexture`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateTexture.xml)
+* [`gl.texParameter`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexParameter.xml)
+*  [`gl.pixelStorei`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glPixelStorei.xml)
+* [`gl.texImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexImage2D.xml)
+* [`gl.texImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexImage2D.xml)
+* [`gl.compressedTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexImage2D.xml)
+* [`gl.copyTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexImage2D.xml)
+* [`gl.generateMipmap`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGenerateMipmap.xml)
+
+##### Partial update
+It is also possible to update a subset of a texture contained in a rectangle.  This can be done using the `subimage()` method of the texture:
+
+```javascript
+const myTexture = regl.texture(4, 4)
+
+myTexture.subimage({
+  width: 1,
+  height: 1,
+  data: [255, 0, 0, 255]
+}, 1, 1)
+```
+
+For textures, `subimage` takes 4 arguments:
+```javascript
+texture.subimage(data[, x, y, level])
+```
+Where,
+* `data` is an image data object, similar to the arguments for the texture constructor
+* `x, y` is the offset of the subimage within the texture (default `0,0`)
+* `level` is the miplevel to execute the subimage within (default `0`)
+
+**Relevant WebGL APIs**
+
+* [`gl.texSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexSubImage2D.xml)
+* [`gl.copyTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexSubImage2D.xml)
+* [`gl.compressedTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexSubImage2D.xml)
+
 
 #### Destroy
+Finally, when a texture is no longer needed it can be released by calling the `destroy()` method:
 
 ```javascript
 var myTexture = regl.texture({ ... })
@@ -1549,17 +1598,68 @@ myTexture.destroy()
 Cube maps follow similar syntax to textures.  They are created using `regl.cube()`
 
 ```javascript
-var cubeMap = regl.cube(
-  'posx.jpg',
-  'negx.jpg',
-  'posy.jpg',
-  'negy.jpg',
-  'posz.jpg',
-  'negz.jpg')
+// We can allocate a cubemap by giving just the size of the an edge:
+const emptyCube = regl.cube(16)
+
+// We can also specify each face individually
+const posX = new Image()
+const negX = new Image()
+// ... etc
+const cubeMap = regl.cube(
+  posX,
+  negX,
+  posY,
+  negY,
+  posZ,
+  negZ)
+
+// Or we can initialize each face using an array
+const anotherCubeMap = regl.cube({
+  radius: 4,
+  faces: [
+    [
+      0, 0, 0, 255, 255, 0, 0, 255,
+      0, 255, 0, 255, 0, 0, 255, 255
+    ],
+    // ...
+  ]
+})
 ```
 
 #### Update
-**TODO**
+Cube maps can be reinitialized like textures or buffers:
+
+```javascript
+const cube = regl.cube(8)
+
+// Reset cube map
+cube(4)
+```
+
+##### In-place update
+Sub-rectangles of faces of cube maps can be updated again using `.subimage`.
+
+```javascript
+const cube = regl.cube(4)
+
+cube.subimage(0, [
+  0, 0, 0, 255, 0, 255, 0, 255,
+  255, 0, 0, 255, 0, 0, 255, 255
+])
+```
+
+`cube.subimage` takes the following arguments:
+
+```javascript
+cube.subimage(face, data[, x, y, miplevel])
+```
+
+**Relevant WebGL APIs**
+
+* [`gl.texSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexSubImage2D.xml)
+* [`gl.copyTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexSubImage2D.xml)
+* [`gl.compressedTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexSubImage2D.xml)
+
 
 #### Destroy
 
