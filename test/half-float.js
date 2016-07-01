@@ -46,7 +46,9 @@ tape('convertToHalfFloat', function (t) {
 
   var actual = convertToHalfFloat(input)
 
-  t.same(actual, expected, 'half float conversion')
+  for (var i = 0; i < expected.length; ++i) {
+    t.equals(actual[i], expected[i], 'half float: ' + input[i])
+  }
 
   t.end()
 })
