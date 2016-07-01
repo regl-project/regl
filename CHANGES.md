@@ -12,14 +12,17 @@
     + Allow users to disable extensions for testing/mocking
 
 * Performance monitoring hooks
+
+* Context loss handling
+
+* Write comparison suite
+
 * Benchmark suite
     + Dashboard for test cases and benchmarks
     + Create some more typical drawing examples
 
-* Context loss handling
-
 * Documentation
-    + Write "regl for react programmers"
+
 * Testing
     + Instancing
     + Texture generation
@@ -31,13 +34,8 @@
     + Complete coverage for all code generation pathways
     + Test weird invocation sequences
 
-* Create comparisons
-
-* Benchmark suite
-    + Dashboard for test cases and benchmarks
-    + Create some more typical drawing examples
-* Support more DDS texture formats (HDR, PVRTC, etc.)
 * Build a website (preview at [regl.party](http://regl.party))
+
 * Recipe book/example set
     + Minecraft example
     + Globe
@@ -51,7 +49,7 @@
 
 ## Next
 
-* Optimize texture constructor
+* Optimize texture and cubemap constructors
 * Add in place update method for textures via `texture.subimage`
 * Remove DDS parsing
 * Remove URL loader for textures
