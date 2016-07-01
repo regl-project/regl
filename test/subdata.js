@@ -98,6 +98,47 @@ tape('subdata', function (t) {
     0, 0, 0, 0, 0
   ], 'after elements.subdata')
 
+  // reset buffers using typedarrays
+  buffer([
+    new Float32Array([0, 0]),
+    new Float32Array([1, 1]),
+    new Float32Array([2, 0]),
+    new Float32Array([3, 2]),
+    new Float32Array([4, 4])
+  ])
+
+  // reset elements
+  elements({
+    data: [
+      new Uint8Array([0]),
+      new Uint8Array([1]),
+      new Uint8Array([2]),
+      new Uint8Array([3]),
+      new Uint8Array([4])
+    ],
+    usage: 'dynamic'
+  })
+
+  runTest([
+    1, 0, 1, 0, 0,
+    0, 1, 0, 0, 0,
+    0, 0, 0, 1, 0,
+    0, 0, 0, 0, 0,
+    0, 0, 0, 0, 1
+  ], 'reset using nested typedarrays')
+
+  buffer.subdata([
+    new Float32Array([2, 2])
+  ])
+
+  runTest([
+    0, 0, 1, 0, 0,
+    0, 1, 0, 0, 0,
+    0, 0, 1, 1, 0,
+    0, 0, 0, 0, 0,
+    0, 0, 0, 0, 1
+  ], 'using subdata nested typedarrays')
+
   regl.destroy()
   t.end()
 })
