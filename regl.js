@@ -353,6 +353,8 @@ module.exports = function wrapREGL () {
     core.procs.refresh()
   }
 
+  refresh()
+
   return extend(compileProcedure, {
     // Clear current FBO
     clear: clear,

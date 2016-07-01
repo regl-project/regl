@@ -1,6 +1,3 @@
-require('../textureCube')
-
-/*
 require('../accessor')
 require('../half-float')
 require('../clear')
@@ -30,7 +27,7 @@ require('../scissor')
 require('../viewport')
 require('../texture-simple')
 require('../texture2d')
+require('../textureCube')
 require('../renderbuffer')
 require('../framebuffer-parse')
 require('../framebuffer')
-*/
