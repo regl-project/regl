@@ -461,7 +461,7 @@ tape('texture 2d', function (t) {
     'rgb5 a1')
 
   // FIXME: this a bug in headless-gl
-  if (typeof document === 'undefined') {
+  if (typeof document !== 'undefined') {
     checkProperties(
       regl.texture({
         format: 'rgb565',
