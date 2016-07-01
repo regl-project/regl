@@ -7,19 +7,21 @@ tape('texture 2d', function (t) {
   var regl = createREGL(gl)
 
   var renderTexture = regl({
-    vert: `
-    attribute vec2 position;
-    void main() {
-      gl_Position = vec4(position, 0, 1);
-    }`,
+    vert: [
+      'attribute vec2 position;',
+      'void main() {',
+      '  gl_Position = vec4(position, 0, 1);',
+      '}'
+    ].join('\n'),
 
-    frag: `
-    precision highp float;
-    uniform sampler2D texture;
-    uniform vec2 shape;
-    void main() {
-      gl_FragColor = texture2D(texture, gl_FragCoord.xy / shape);
-    }`,
+    frag: [
+      'precision highp float;',
+      'uniform sampler2D tex;',
+      'uniform vec2 shape;',
+      'void main() {',
+      '  gl_FragColor = texture2D(tex, gl_FragCoord.xy / shape);',
+      '}'
+    ].join('\n'),
 
     attributes: {
       position: [
@@ -31,7 +33,7 @@ tape('texture 2d', function (t) {
 
     uniforms: {
       shape: regl.prop('shape'),
-      texture: regl.prop('texture')
+      tex: regl.prop('texture')
     },
 
     depth: {enable: false},
@@ -40,63 +42,54 @@ tape('texture 2d', function (t) {
   })
 
   var renderFloatTexture = regl({
-    vert: `
-    attribute vec2 position;
-    void main() {
-      gl_Position = vec4(position, 0, 1);
-    }`,
+    vert: [
+      'attribute vec2 position;',
+      'void main() {',
+      '  gl_Position = vec4(position, 0, 1);',
+      '}'
+    ].join('\n'),
 
-    frag: `
-    precision highp float;
-    uniform sampler2D texture;
-    uniform vec2 shape;
-    uniform vec4 component;
-
-    #define FLOAT_MAX  1.70141184e38
-    #define FLOAT_MIN  1.17549435e-38
-
-    lowp vec4 encode_float(highp float v) {
-      highp float av = abs(v);
-
-      //Handle special cases
-      if(av < FLOAT_MIN) {
-        return vec4(0.0, 0.0, 0.0, 0.0);
-      } else if(v > FLOAT_MAX) {
-        return vec4(127.0, 128.0, 0.0, 0.0) / 255.0;
-      } else if(v < -FLOAT_MAX) {
-        return vec4(255.0, 128.0, 0.0, 0.0) / 255.0;
-      }
-
-      highp vec4 c = vec4(0,0,0,0);
-
-      //Compute exponent and mantissa
-      highp float e = floor(log2(av));
-      highp float m = av * pow(2.0, -e) - 1.0;
-
-      //Unpack mantissa
-      c[1] = floor(128.0 * m);
-      m -= c[1] / 128.0;
-      c[2] = floor(32768.0 * m);
-      m -= c[2] / 32768.0;
-      c[3] = floor(8388608.0 * m);
-
-      //Unpack exponent
-      highp float ebias = e + 127.0;
-      c[0] = floor(ebias / 2.0);
-      ebias -= c[0] * 2.0;
-      c[1] += floor(ebias) * 128.0;
-
-      //Unpack sign bit
-      c[0] += 128.0 * step(0.0, -v);
-
-      //Scale back to range
-      return c / 255.0;
-    }
-
-    void main() {
-      float c = dot(component, texture2D(texture, gl_FragCoord.xy / shape));
-      gl_FragColor = encode_float(c).wzyx;
-    }`,
+    frag: [
+      'precision highp float;',
+      'uniform sampler2D tex;',
+      'uniform vec2 shape;',
+      'uniform vec4 component;',
+      '#define FLOAT_MAX  1.70141184e38',
+      '#define FLOAT_MIN  1.17549435e-38',
+      'lowp vec4 encode_float(highp float v) {',
+      '  highp float av = abs(v);',
+      'if(av < FLOAT_MIN) {',
+      '  return vec4(0.0, 0.0, 0.0, 0.0);',
+      '} else if(v > FLOAT_MAX) {',
+      '  return vec4(127.0, 128.0, 0.0, 0.0) / 255.0;',
+      '} else if(v < -FLOAT_MAX) {',
+      '  return vec4(255.0, 128.0, 0.0, 0.0) / 255.0;',
+      '}',
+      'highp vec4 c = vec4(0,0,0,0);',
+      '//Compute exponent and mantissa',
+      'highp float e = floor(log2(av));',
+      'highp float m = av * pow(2.0, -e) - 1.0;',
+      '//Unpack mantissa',
+      'c[1] = floor(128.0 * m);',
+      'm -= c[1] / 128.0;',
+      'c[2] = floor(32768.0 * m);',
+      'm -= c[2] / 32768.0;',
+      'c[3] = floor(8388608.0 * m);',
+      '//Unpack exponent',
+      'highp float ebias = e + 127.0;',
+      'c[0] = floor(ebias / 2.0);',
+      'ebias -= c[0] * 2.0;',
+      'c[1] += floor(ebias) * 128.0;',
+      '//Unpack sign bit',
+      'c[0] += 128.0 * step(0.0, -v);',
+      '//Scale back to range',
+      'return c / 255.0;',
+      '}',
+      'void main() {',
+      'float c = dot(component, texture2D(tex, gl_FragCoord.xy / shape));',
+      'gl_FragColor = encode_float(c).wzyx;',
+      '}'
+    ].join('\n'),
 
     attributes: {
       position: [
@@ -108,7 +101,7 @@ tape('texture 2d', function (t) {
 
     uniforms: {
       shape: regl.prop('shape'),
-      texture: regl.prop('texture'),
+      tex: regl.prop('texture'),
       component: function (context, props) {
         var result = [0, 0, 0, 0]
         result[props.component] = 1

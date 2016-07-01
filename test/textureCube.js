@@ -7,21 +7,23 @@ tape('texture cube', function (t) {
   var regl = createREGL(gl)
 
   var renderCubeFace = regl({
-    vert: `
-    attribute vec2 position;
-    void main() {
-      gl_Position = vec4(position, 0, 1);
-    }`,
+    vert: [
+      'attribute vec2 position;',
+      'void main() {',
+      'gl_Position = vec4(position, 0, 1);',
+      '}'
+    ].join('\n'),
 
-    frag: `
-    precision highp float;
-    uniform samplerCube texture;
-    uniform vec2 shape;
-    uniform vec3 front, up, right;
-    void main() {
-      vec2 uv = 2.0 * gl_FragCoord.xy / shape - 1.0;
-      gl_FragColor = textureCube(texture, front + uv.x * right + uv.y * up);
-    }`,
+    frag: [
+      'precision highp float;',
+      'uniform samplerCube tex;',
+      'uniform vec2 shape;',
+      'uniform vec3 front, up, right;',
+      'void main() {',
+      'vec2 uv = 2.0 * gl_FragCoord.xy / shape - 1.0;',
+      'gl_FragColor = textureCube(tex, front + uv.x * right + uv.y * up);',
+      '}'
+    ].join('\n'),
 
     attributes: {
       position: [
@@ -33,7 +35,7 @@ tape('texture cube', function (t) {
 
     uniforms: {
       shape: regl.prop('shape'),
-      texture: regl.prop('texture'),
+      tex: regl.prop('texture'),
       front: regl.prop('front'),
       up: regl.prop('up'),
       right: regl.prop('right')
