@@ -2,7 +2,7 @@ var createContext = require('./util/create-context')
 var createREGL = require('../../regl')
 var tape = require('tape')
 
-tape('texture validation', function (t) {
+tape('texture 2d', function (t) {
   var gl = createContext(16, 16)
   var regl = createREGL(gl)
 
