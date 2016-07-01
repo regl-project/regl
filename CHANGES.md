@@ -2,11 +2,8 @@
 
 ## Planned
 
-* subimage updates for textures
-* Optimize constructors/updates for textures, renderbuffers and framebuffers
-* Remove DDS parsing
+* Optimize constructors/updates for renderbuffers and framebuffers
 * Cubic frame buffer objects
-* More test cases for textures
 * More test cases for framebuffers
 
 * Implement a standard method for handling context creation errors
@@ -15,14 +12,17 @@
     + Allow users to disable extensions for testing/mocking
 
 * Performance monitoring hooks
+
+* Context loss handling
+
+* Write comparison suite
+
 * Benchmark suite
     + Dashboard for test cases and benchmarks
     + Create some more typical drawing examples
 
-* Context loss handling
-
 * Documentation
-    + Write "regl for react programmers"
+
 * Testing
     + Instancing
     + Texture generation
@@ -34,13 +34,8 @@
     + Complete coverage for all code generation pathways
     + Test weird invocation sequences
 
-* Create comparisons
-
-* Benchmark suite
-    + Dashboard for test cases and benchmarks
-    + Create some more typical drawing examples
-* Support more DDS texture formats (HDR, PVRTC, etc.)
 * Build a website (preview at [regl.party](http://regl.party))
+
 * Recipe book/example set
     + Minecraft example
     + Globe
@@ -54,12 +49,19 @@
 
 ## Next
 
+* Optimize texture and cubemap constructors
+* Add in place update method for textures via `texture.subimage`
+* Remove DDS parsing
+* Remove URL loader for textures
+* Improve texture test cases
+
 ## 0.7.0
 
 * Add in place update methods to buffers and elements via `buffer.subdata` and `elements.subdata`
 * Pool stream buffers
 * Rewrite resource section of API, bring individual resources to the top
 * Optimized buffer and elements creation, no more memory allocation
+* More test cases for textures
 
 ## 0.6.0
 

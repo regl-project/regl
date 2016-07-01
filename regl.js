@@ -22,8 +22,6 @@ var GL_DEPTH_BUFFER_BIT = 256
 var GL_STENCIL_BUFFER_BIT = 1024
 
 var GL_ARRAY_BUFFER = 34962
-var GL_TEXTURE_2D = 0x0DE1
-var GL_TEXTURE_CUBE_MAP = 0x8513
 
 var CONTEXT_LOST_EVENT = 'webglcontextlost'
 var CONTEXT_RESTORED_EVENT = 'webglcontextrestored'
@@ -117,32 +115,15 @@ module.exports = function wrapREGL () {
     // schedule next animation frame
     activeRAF = raf.next(handleRAF)
 
-    // increment frame coun
+    // increment frame count
     contextState.count += 1
-
-    // reset viewport
-    var viewport = nextState.viewport
-    var scissorBox = nextState.scissor_box
-    viewport[0] = viewport[1] = scissorBox[0] = scissorBox[1] = 0
-
-    contextState.viewportWidth =
-      contextState.frameBufferWidth =
-      contextState.drawingBufferWidth =
-      viewport[2] =
-      scissorBox[2] = gl.drawingBufferWidth
-    contextState.viewportHeight =
-      contextState.frameBufferWidth =
-      contextState.drawingBufferHeight =
-      viewport[3] =
-      scissorBox[3] = gl.drawingBufferHeight
 
     var now = clock()
     contextState.deltaTime = (now - LAST_TIME) / 1000.0
     contextState.time = (now - START_TIME) / 1000.0
     LAST_TIME = now
 
-    core.procs.refresh()
-    textureState.poll()
+    refresh()
 
     for (var i = 0; i < rafCallbacks.length; ++i) {
       var cb = rafCallbacks[i]
@@ -164,30 +145,11 @@ module.exports = function wrapREGL () {
   }
 
   function handleContextLoss (event) {
-    /*
-    stopRAF()
-    event.preventDefault()
-    if (options.onContextLost) {
-      options.onContextLost()
-    }
-    */
+    // TODO
   }
 
   function handleContextRestored (event) {
-    /*
-    gl.getError()
-    extensionState.refresh()
-    core.procs.refresh()
-    bufferState.refresh()
-    textureState.refresh()
-    renderbufferState.refresh()
-    framebufferState.refresh()
-    shaderState.refresh()
-    if (options.onContextRestored) {
-      options.onContextRestored()
-    }
-    handleRAF()
-    */
+    // TODO
   }
 
   if (canvas) {
@@ -371,7 +333,27 @@ module.exports = function wrapREGL () {
     }
   }
 
-  core.procs.refresh()
+  function refresh () {
+    // reset viewport
+    var viewport = nextState.viewport
+    var scissorBox = nextState.scissor_box
+    viewport[0] = viewport[1] = scissorBox[0] = scissorBox[1] = 0
+
+    contextState.viewportWidth =
+      contextState.frameBufferWidth =
+      contextState.drawingBufferWidth =
+      viewport[2] =
+      scissorBox[2] = gl.drawingBufferWidth
+    contextState.viewportHeight =
+      contextState.frameBufferWidth =
+      contextState.drawingBufferHeight =
+      viewport[3] =
+      scissorBox[3] = gl.drawingBufferHeight
+
+    core.procs.refresh()
+  }
+
+  refresh()
 
   return extend(compileProcedure, {
     // Clear current FBO
@@ -386,30 +368,14 @@ module.exports = function wrapREGL () {
     draw: compileProcedure({}),
 
     // Resources
-    elements: function (options) {
-      return elementState.create(options)
-    },
     buffer: function (options) {
       return bufferState.create(options, GL_ARRAY_BUFFER)
     },
-    texture: function (options) {
-      return textureState.create(options, GL_TEXTURE_2D)
-    },
-    cube: function (options) {
-      if (arguments.length === 6) {
-        return textureState.create(
-          Array.prototype.slice.call(arguments),
-          GL_TEXTURE_CUBE_MAP)
-      } else {
-        return textureState.create(options, GL_TEXTURE_CUBE_MAP)
-      }
-    },
-    renderbuffer: function (options) {
-      return renderbufferState.create(options)
-    },
-    framebuffer: function (options) {
-      return framebufferState.create(options)
-    },
+    elements: elementState.create,
+    texture: textureState.create2D,
+    cube: textureState.createCube,
+    renderbuffer: renderbufferState.create,
+    framebuffer: framebufferState.create,
     framebufferCube: function (options) {
       check.raise('framebuffer cube not yet implemented')
     },
@@ -422,6 +388,9 @@ module.exports = function wrapREGL () {
 
     // System limits
     limits: limits,
+    hasExtension: function (name) {
+      return limits.extensions.indexOf(name.toLowerCase()) >= 0
+    },
 
     // Read pixels
     read: readPixels,
@@ -431,8 +400,6 @@ module.exports = function wrapREGL () {
 
     // Direct GL state manipulation
     _gl: gl,
-    _refresh: function () {
-      core.procs.refresh()
-    }
+    _refresh: refresh
   })
 }
