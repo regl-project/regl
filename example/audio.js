@@ -1,9 +1,9 @@
 /* global AudioContext */
-const regl = require('../regl')()
+const regl = require('../regl')({devicePixelRatio: 1})
 const perspective = require('gl-mat4/perspective')
 const lookAt = require('gl-mat4/lookAt')
 
-const N = 512
+const N = 256
 
 require('resl')({
   manifest: {
@@ -20,7 +20,6 @@ require('resl')({
     const analyser = context.createAnalyser()
     source.connect(analyser)
     source.connect(context.destination)
-
     song.play()
 
     const terrainTexture = regl.texture({
@@ -61,7 +60,8 @@ require('resl')({
       varying float curvature;
 
       float f(vec2 x) {
-        return 0.025 * texture2D(terrain, x).r;
+        return 0.025 * pow(texture2D(terrain, x).r, 2.0) *
+          (1.0 + 2.5 * pow(texture2D(color, vec2(x.y, 0.0)).a, 3.0));
       }
 
       vec4 stencil(vec2 x, vec2 d) {
@@ -94,7 +94,11 @@ require('resl')({
         vec4 viewPos = view * vec4(pos, 1);
         gl_Position = projection * viewPos;
         eyeDir = viewPos.xyz / viewPos.w;
-        fragColor = 1.25 * texture2D(color, vec2(uv.y, 0)).rgb;
+
+        vec3 audioColor = texture2D(color, vec2(uv.y, 0)).rgb;
+        float minC = 0.9 * min(min(audioColor.r, audioColor.g), audioColor.b);
+        float maxC = max(max(audioColor.r, audioColor.g), audioColor.b);
+        fragColor = (audioColor - minC) / (maxC - minC);
       }`,
 
       frag: `
@@ -145,7 +149,7 @@ require('resl')({
           lookAt([],
             [ 0.5 + 0.2 * Math.cos(0.001 * count),
               1,
-              0.6 + 0.1 * Math.cos(0.003 * count + 2.4) ],
+              0.7 + 0.2 * Math.cos(0.003 * count + 2.4) ],
             [0.5, 0, 0],
             [0, 0, 1]),
         lightPosition: ({count}) => [
