@@ -9,7 +9,7 @@ const normals = require('angle-normals')
 
 // configure intial camera view.
 camera.rotate([0.0, 0.0], [0.0, -0.4])
-camera.zoom(-10.0)
+camera.zoom(300.0)
 
 // geometry arrays.
 const elements = []
@@ -23,6 +23,16 @@ var xmax = +size
 var ymin = -size
 var ymax = +size
 
+/*
+  For the terrain geometry, we create a plane with min position as (x=-0.5,z=-0.5) and max position as (x=+0.5, z=+0.5).
+
+  In the vertex shader, we enlarge this plane. And the y-values are sampled from the heightmap texture,
+
+  The uv-coordinates are computed from the positions.
+  The normals can be approximated from the heightmap texture.
+
+  So we only have to upload the x- and z-values and the heightmap texture to the GPU, and nothing else.
+  */
 var row
 var col
 for (row = 0; row <= N; ++row) {
@@ -49,7 +59,7 @@ for (row = 0; row <= (N - 1); ++row) {
 }
 
 /*
-  This functions encapsulates all the state that is common between drawTerrain and drawBunny()
+  This function encapsulates all the state that is common between drawTerrain and drawBunny()
   */
 const setupDefault = regl({
   cull: {
@@ -76,12 +86,10 @@ const drawTerrain = regl({
   frag: `
   precision mediump float;
 
-  varying vec3 vPosition;
   varying vec2 vUv;
   varying vec3 vNormal;
 
   uniform sampler2D rockTexture;
-
   uniform vec3 lightDir;
   uniform float ambientLightAmount;
   uniform float diffuseLightAmount;
@@ -114,11 +122,12 @@ const drawTerrain = regl({
   precision mediump float;
 
   attribute vec2 xzPosition;
-  uniform mat4 projection, view;
 
   varying vec3 vPosition;
   varying vec2 vUv;
   varying vec3 vNormal;
+
+  uniform mat4 projection, view;
 
   void main() {
     vec3 xyzPosition = getPosition(xzPosition);
@@ -128,7 +137,7 @@ const drawTerrain = regl({
 
     float eps = 1.0/16.0;
 
-    // approximate the normal by central differences.
+    // approximate the normal with central differences.
     vec3 va = vec3(2.0*eps,
                    getHeight(xzPosition + vec2(eps,0.0)) - getHeight(xzPosition - vec2(eps,0.0)) , 0.0 );
     vec3 vb = vec3(0.0,
@@ -152,6 +161,7 @@ const drawTerrain = regl({
 const drawBunny = regl({
   frag: `
   precision mediump float;
+
   varying vec3 vNormal;
 
   uniform vec3 lightDir;
@@ -160,21 +170,20 @@ const drawBunny = regl({
   uniform float diffuseLightAmount;
 
   void main () {
-    vec3 c = color;
-
-    vec3 ambient = ambientLightAmount * c;
-    vec3 diffuse = diffuseLightAmount * c * clamp( dot(vNormal, lightDir ), 0.0, 1.0 );
+    vec3 ambient = ambientLightAmount * color;
+    vec3 diffuse = diffuseLightAmount * color * clamp( dot(vNormal, lightDir ), 0.0, 1.0 );
 
     gl_FragColor = vec4(ambient + diffuse, 1.0);
   }`,
   vert: `
   precision mediump float;
 
-  uniform mat4 projection, model, view;
   attribute vec3 position;
   attribute vec3 normal;
 
   varying vec3 vNormal;
+
+  uniform mat4 projection, model, view;
 
   void main () {
     vNormal = normal;
@@ -186,8 +195,6 @@ const drawBunny = regl({
   },
   elements: bunny.cells,
   uniforms: {
-//    model: mat4.identity([]),
-
     model: (_, props, batchId) => {
       var m = mat4.identity([])
 
@@ -235,6 +242,7 @@ require('resl')({
 
       setupDefault({}, () => {
         drawTerrain({elements, xzPosition, heightTexture, rockTexture})
+
         drawBunny([
           {color: [0.4, 0.2, 0.1], scale: 1.7, position: [0.0, -65.0, 0.0], rotation: [0.0, 0.8, 0.0]},
           {color: [0.6, 0.2, 0.5], scale: 5.2, position: [30.0, -65.0, -80.0], rotation: [-0.5, 0.0, 0.0]},
