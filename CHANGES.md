@@ -47,7 +47,7 @@
     + Spring/cloth physics
     + Asset loading (obj, ply, etc.)
 
-## Next
+## 0.8.0
 
 * Optimize texture and cubemap constructors
 * Add in place update method for textures via `texture.subimage`
