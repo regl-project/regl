@@ -8,7 +8,7 @@ const regl = require('../regl')(canvas)
 const camera = require('canvas-orbit-camera')(canvas)
 window.addEventListener('resize', fit(canvas), false)
 
-const cube = regl({
+const drawBunny = regl({
   frag: `
     precision mediump float;
     varying vec3 vnormal;
@@ -49,5 +49,5 @@ regl.frame(function (props, count) {
     color: [0, 0, 0, 1]
   })
   camera.tick()
-  cube()
+  drawBunny()
 })
