@@ -331,7 +331,7 @@ Object.keys(CASES).map(function (caseName) {
   return result
 })
 
-},{"../lib/util/extend":28,"../regl":41,"./list":7}],7:[function(require,module,exports){
+},{"../lib/util/extend":28,"../regl":37,"./list":7}],7:[function(require,module,exports){
 module.exports = {
   'clear': require('./clear'),
   'buffer': require('./buffer'),
@@ -384,8 +384,6 @@ var check = require('./util/check')
 var isTypedArray = require('./util/is-typed-array')
 var isNDArrayLike = require('./util/is-ndarray')
 var values = require('./util/values')
-var flatten = require('./util/flatten')
-var transpose = require('./util/transpose')
 var pool = require('./util/pool')
 
 var arrayTypes = require('./constants/arraytypes.json')
@@ -405,6 +403,26 @@ function typedArrayCode (data) {
 function copyArray (out, inp) {
   for (var i = 0; i < inp.length; ++i) {
     out[i] = inp[i]
+  }
+}
+
+function transpose (
+  result, data, shapeX, shapeY, strideX, strideY, offset) {
+  var ptr = 0
+  for (var i = 0; i < shapeX; ++i) {
+    for (var j = 0; j < shapeY; ++j) {
+      result[ptr++] = data[strideX * i + strideY * j + offset]
+    }
+  }
+}
+
+function flatten (result, data, dimension) {
+  var ptr = 0
+  for (var i = 0; i < data.length; ++i) {
+    var v = data[i]
+    for (var j = 0; j < dimension; ++j) {
+      result[ptr++] = v[j]
+    }
   }
 }
 
@@ -452,20 +470,34 @@ module.exports = function wrapBufferState (gl) {
     buffer.usage = usage
     if (Array.isArray(data)) {
       buffer.dtype = dtype || GL_FLOAT
-      if (data.length > 0 && Array.isArray(data[0])) {
-        buffer.dimension = data[0].length
-        var flatData = pool.allocType(
-          buffer.dtype,
-          data.length * buffer.dimension)
-        flatten(flatData, data, buffer.dimension)
-        initBufferFromTypedArray(buffer, flatData, usage)
-        pool.freeType(flatData)
-      } else {
-        buffer.dimension = dimension
-        var typedData = pool.allocType(buffer.dtype, data.length)
-        copyArray(typedData, data)
-        initBufferFromTypedArray(buffer, typedData, usage)
-        pool.freeType(typedData)
+      if (data.length > 0) {
+        var flatData
+        if (Array.isArray(data[0])) {
+          buffer.dimension = data[0].length
+          flatData = pool.allocType(
+            buffer.dtype,
+            data.length * buffer.dimension)
+          flatten(flatData, data, buffer.dimension)
+          initBufferFromTypedArray(buffer, flatData, usage)
+          pool.freeType(flatData)
+        } else if (typeof data[0] === 'number') {
+          buffer.dimension = dimension
+          var typedData = pool.allocType(buffer.dtype, data.length)
+          copyArray(typedData, data)
+          initBufferFromTypedArray(buffer, typedData, usage)
+          pool.freeType(typedData)
+        } else if (isTypedArray(data[0])) {
+          buffer.dimension = data[0].length
+          buffer.dtype = dtype || typedArrayCode(data[0]) || GL_FLOAT
+          flatData = pool.allocType(
+            buffer.dtype,
+            data.length * buffer.dimension)
+          flatten(flatData, data, buffer.dimension)
+          initBufferFromTypedArray(buffer, flatData, usage)
+          pool.freeType(flatData)
+        } else {
+          check.raise('invalid buffer data')
+        }
       }
     } else if (isTypedArray(data)) {
       buffer.dtype = dtype || typedArrayCode(data)
@@ -588,7 +620,8 @@ module.exports = function wrapBufferState (gl) {
 
     function setSubData (data, offset) {
       check(offset + data.byteLength <= buffer.byteLength,
-        'invalid buffer subdata call, buffer is too small')
+        'invalid buffer subdata call, buffer is too small. ' + ' Can\'t write data of size ' + data.byteLength + ' starting from offset ' + offset + ' to a buffer of size ' + buffer.byteLength)
+
       gl.bufferSubData(buffer.type, offset, data)
     }
 
@@ -596,17 +629,21 @@ module.exports = function wrapBufferState (gl) {
       var offset = (offset_ || 0) | 0
       buffer.bind()
       if (Array.isArray(data)) {
-        if (data.length > 0 && Array.isArray(data[0])) {
-          var dimension = data[0].length
-          var flatData = pool.allocType(buffer.dtype, data.length * dimension)
-          flatten(flatData, data, dimension)
-          setSubData(flatData, offset)
-          pool.freeType(flatData)
-        } else {
-          var converted = pool.allocType(buffer.dtype, data.length)
-          copyArray(converted, data)
-          setSubData(converted, offset)
-          pool.freeType(converted)
+        if (data.length > 0) {
+          if (typeof data[0] === 'number') {
+            var converted = pool.allocType(buffer.dtype, data.length)
+            copyArray(converted, data)
+            setSubData(converted, offset)
+            pool.freeType(converted)
+          } else if (Array.isArray(data[0]) || isTypedArray(data[0])) {
+            var dimension = data[0].length
+            var flatData = pool.allocType(buffer.dtype, data.length * dimension)
+            flatten(flatData, data, dimension)
+            setSubData(flatData, offset)
+            pool.freeType(flatData)
+          } else {
+            check.raise('invalid buffer data')
+          }
         }
       } else if (isTypedArray(data)) {
         setSubData(data, offset)
@@ -682,7 +719,7 @@ module.exports = function wrapBufferState (gl) {
   }
 }
 
-},{"./constants/arraytypes.json":10,"./constants/dtypes.json":11,"./constants/usage.json":13,"./util/check":25,"./util/flatten":29,"./util/is-ndarray":30,"./util/is-typed-array":31,"./util/pool":35,"./util/transpose":38,"./util/values":39}],10:[function(require,module,exports){
+},{"./constants/arraytypes.json":10,"./constants/dtypes.json":11,"./constants/usage.json":13,"./util/check":25,"./util/is-ndarray":29,"./util/is-typed-array":30,"./util/pool":32,"./util/values":35}],10:[function(require,module,exports){
 module.exports={
   "[object Int8Array]": 5120
 , "[object Int16Array]": 5122
@@ -705,6 +742,7 @@ module.exports={
 , "uint16": 5123
 , "uint32": 5125
 , "float": 5126
+, "float32": 5126
 }
 
 },{}],12:[function(require,module,exports){
@@ -1127,6 +1165,9 @@ module.exports = function reglCore (
   if (extDrawBuffers) {
     sharedConstants.backBuffer = [GL_BACK]
     sharedConstants.drawBuffer = loop(limits.maxDrawbuffers, function (i) {
+      if (i === 0) {
+        return [0]
+      }
       return loop(i, function (j) {
         return GL_COLOR_ATTACHMENT0 + j
       })
@@ -2272,7 +2313,8 @@ module.exports = function reglCore (
         })
       } else if (
         typeof value === 'function' &&
-        value._reglType === 'texture') {
+        (value._reglType === 'texture2d' ||
+         value._reglTYpe === 'textureCube')) {
         result = createStaticDecl(function (env) {
           return env.link(value)
         })
@@ -2582,7 +2624,7 @@ module.exports = function reglCore (
 
     var constants = env.constants
 
-    var DRAW_BUFFERS = constants.drawBuffers
+    var DRAW_BUFFERS = constants.drawBuffer
     var BACK_BUFFER = constants.backBuffer
 
     var NEXT
@@ -3041,10 +3083,8 @@ module.exports = function reglCore (
 
       // perform type validation
       check.optional(function () {
-        var MESSAGE = env.link('uniform ' + name)
-
         function check (pred) {
-          env.assert(scope, pred, MESSAGE)
+          env.assert(scope, pred, 'invalid or missing uniform "' + name + '"')
         }
 
         function checkType (type) {
@@ -3052,14 +3092,14 @@ module.exports = function reglCore (
         }
 
         function checkVector (n, type) {
-          check(VALUE + '.length===' + n)
+          check('Array.isArray(' + VALUE + ')&&' + VALUE + '.length===' + n)
         }
 
         function checkTexture (target) {
           check(
             'typeof ' + VALUE + '==="function"&&' +
-            VALUE + '._reglType==="texture"&&' +
-            VALUE + '._texture.target===' + target)
+            VALUE + '._reglType==="texture' +
+            (target === GL_TEXTURE_2D ? '2d' : 'Cube') + '"')
         }
 
         switch (type) {
@@ -3752,7 +3792,7 @@ module.exports = function reglCore (
   }
 }
 
-},{"./constants/dtypes.json":11,"./constants/primitives.json":12,"./util/check":25,"./util/codegen":27,"./util/is-ndarray":30,"./util/is-typed-array":31,"./util/loop":33}],15:[function(require,module,exports){
+},{"./constants/dtypes.json":11,"./constants/primitives.json":12,"./util/check":25,"./util/codegen":27,"./util/is-ndarray":29,"./util/is-typed-array":30,"./util/loop":31}],15:[function(require,module,exports){
 var check = require('./util/check')
 
 var VARIABLE_COUNTER = 0
@@ -4115,7 +4155,7 @@ module.exports = function wrapElementsState (gl, extensions, bufferState) {
   }
 }
 
-},{"./constants/primitives.json":12,"./constants/usage.json":13,"./util/check":25,"./util/is-ndarray":30,"./util/is-typed-array":31}],17:[function(require,module,exports){
+},{"./constants/primitives.json":12,"./constants/usage.json":13,"./util/check":25,"./util/is-ndarray":29,"./util/is-typed-array":30}],17:[function(require,module,exports){
 module.exports = function createExtensionCache (gl) {
   var extensions = {}
 
@@ -4636,7 +4676,7 @@ module.exports = function wrapFBOState (
             colorBuffers.push(new FramebufferAttachment(
               GL_TEXTURE_2D,
               0,
-              textureState.create({
+              textureState.create2D({
                 format: colorFormat,
                 type: colorType,
                 width: width,
@@ -4856,7 +4896,7 @@ module.exports = function wrapFBOState (
   })
 }
 
-},{"./util/check":25,"./util/extend":28,"./util/values":39}],19:[function(require,module,exports){
+},{"./util/check":25,"./util/extend":28,"./util/values":35}],19:[function(require,module,exports){
 var GL_SUBPIXEL_BITS = 0x0D50
 var GL_RED_BITS = 0x0D52
 var GL_GREEN_BITS = 0x0D53
@@ -4983,6 +5023,8 @@ module.exports = function wrapReadPixels (gl, reglPoll, context) {
     var width = options.width || context.viewportWidth
     var height = options.height || context.viewportHeight
 
+    // TODO handle color buffer float
+
     // Compute size
     var size = width * height * 4
 
@@ -5003,7 +5045,7 @@ module.exports = function wrapReadPixels (gl, reglPoll, context) {
   return readPixels
 }
 
-},{"./util/check":25,"./util/is-typed-array":31}],21:[function(require,module,exports){
+},{"./util/check":25,"./util/is-typed-array":30}],21:[function(require,module,exports){
 var check = require('./util/check')
 var values = require('./util/values')
 
@@ -5160,7 +5202,7 @@ module.exports = function (gl, extensions, limits) {
   }
 }
 
-},{"./util/check":25,"./util/values":39}],22:[function(require,module,exports){
+},{"./util/check":25,"./util/values":35}],22:[function(require,module,exports){
 var check = require('./util/check')
 var values = require('./util/values')
 
@@ -5337,7 +5379,7 @@ module.exports = function wrapShaderState (gl, stringStore) {
   }
 }
 
-},{"./util/check":25,"./util/values":39}],23:[function(require,module,exports){
+},{"./util/check":25,"./util/values":35}],23:[function(require,module,exports){
 module.exports = function createStringStore () {
   var stringIds = {'': 0}
   var stringValues = ['']
@@ -5364,9 +5406,11 @@ var extend = require('./util/extend')
 var values = require('./util/values')
 var isTypedArray = require('./util/is-typed-array')
 var isNDArrayLike = require('./util/is-ndarray')
-var loadTexture = require('./util/load-texture')
+var pool = require('./util/pool')
 var convertToHalfFloat = require('./util/to-half-float')
-var parseDDS = require('./util/parse-dds')
+
+var dtypes = require('./constants/arraytypes.json')
+var arrayTypes = require('./constants/arraytypes.json')
 
 var GL_COMPRESSED_TEXTURE_FORMATS = 0x86A3
 
@@ -5458,9 +5502,45 @@ var MIPMAP_FILTERS = [
   GL_LINEAR_MIPMAP_LINEAR
 ]
 
-function isPow2 (v) {
-  return !(v & (v - 1)) && (!!v)
+var CHANNELS_FORMAT = [
+  0,
+  GL_LUMINANCE,
+  GL_LUMINANCE_ALPHA,
+  GL_RGB,
+  GL_RGBA
+]
+
+var FORMAT_CHANNELS = {}
+FORMAT_CHANNELS[GL_LUMINANCE] =
+FORMAT_CHANNELS[GL_ALPHA] =
+FORMAT_CHANNELS[GL_DEPTH_COMPONENT] = 1
+FORMAT_CHANNELS[GL_DEPTH_STENCIL] =
+FORMAT_CHANNELS[GL_LUMINANCE_ALPHA] = 2
+FORMAT_CHANNELS[GL_RGB] = 3
+FORMAT_CHANNELS[GL_RGBA] = 4
+
+var formatTypes = {}
+formatTypes[GL_RGBA4] = GL_UNSIGNED_SHORT_4_4_4_4
+formatTypes[GL_RGB565] = GL_UNSIGNED_SHORT_5_6_5
+formatTypes[GL_RGB5_A1] = GL_UNSIGNED_SHORT_5_5_5_1
+formatTypes[GL_DEPTH_COMPONENT] = GL_UNSIGNED_INT
+formatTypes[GL_DEPTH_STENCIL] = GL_UNSIGNED_INT_24_8_WEBGL
+
+function objectName (str) {
+  return '[object ' + str + ']'
 }
+
+var CANVAS_CLASS = objectName('HTMLCanvasElement')
+var CONTEXT2D_CLASS = objectName('CanvasRenderingContext2D')
+var IMAGE_CLASS = objectName('HTMLImageElement')
+var VIDEO_CLASS = objectName('HTMLVideoElement')
+
+var PIXEL_CLASSES = Object.keys(dtypes).concat([
+  CANVAS_CLASS,
+  CONTEXT2D_CLASS,
+  IMAGE_CLASS,
+  VIDEO_CLASS
+])
 
 function isNumericArray (arr) {
   return (
@@ -5493,54 +5573,135 @@ function classString (x) {
 }
 
 function isCanvasElement (object) {
-  return classString(object) === '[object HTMLCanvasElement]'
+  return classString(object) === CANVAS_CLASS
 }
 
 function isContext2D (object) {
-  return classString(object) === '[object CanvasRenderingContext2D]'
+  return classString(object) === CONTEXT2D_CLASS
 }
 
 function isImageElement (object) {
-  return classString(object) === '[object HTMLImageElement]'
+  return classString(object) === IMAGE_CLASS
 }
 
 function isVideoElement (object) {
-  return classString(object) === '[object HTMLVideoElement]'
-}
-
-function isPendingXHR (object) {
-  return classString(object) === '[object XMLHttpRequest]'
+  return classString(object) === VIDEO_CLASS
 }
 
 function isPixelData (object) {
+  if (!object) {
+    return false
+  }
+  var className = classString(object)
+  if (PIXEL_CLASSES.indexOf(className) >= 0) {
+    return true
+  }
   return (
-    typeof object === 'string' ||
-    (!!object && (
-      isTypedArray(object) ||
-      isNumericArray(object) ||
-      isNDArrayLike(object) ||
-      isCanvasElement(object) ||
-      isContext2D(object) ||
-      isImageElement(object) ||
-      isVideoElement(object) ||
-      isRectArray(object))))
+    isNumericArray(object) ||
+    isRectArray(object) ||
+    isNDArrayLike(object))
 }
 
-// Transpose an array of pixels
-function transposePixels (data, nx, ny, nc, sx, sy, sc, off) {
-  var result = new data.constructor(nx * ny * nc)
-  var ptr = 0
-  for (var i = 0; i < ny; ++i) {
-    for (var j = 0; j < nx; ++j) {
-      for (var k = 0; k < nc; ++k) {
-        result[ptr++] = data[sy * i + sx * j + sc * k + off]
+function typedArrayCode (data) {
+  return arrayTypes[Object.prototype.toString.call(data)] | 0
+}
+
+function convertData (result, data) {
+  var n = result.width * result.height * result.channels
+  check(data.length === n, 'inconsistent array length for texture')
+
+  switch (result.type) {
+    case GL_UNSIGNED_BYTE:
+    case GL_UNSIGNED_SHORT:
+    case GL_UNSIGNED_INT:
+    case GL_FLOAT:
+      var converted = pool.allocType(result.type, n)
+      converted.set(data)
+      result.data = converted
+      break
+
+    case GL_HALF_FLOAT_OES:
+      result.data = convertToHalfFloat(data)
+      break
+
+    default:
+      check.raise('unsupported texture type, must specify a typed array')
+  }
+}
+
+function preConvert (image, n) {
+  return pool.allocType(
+    image.type === GL_HALF_FLOAT_OES
+      ? GL_FLOAT
+      : image.type, n)
+}
+
+function postConvert (image, data) {
+  if (image.type === GL_HALF_FLOAT_OES) {
+    image.data = convertToHalfFloat(data)
+    pool.freeType(data)
+  } else {
+    image.data = data
+  }
+}
+
+function transposeData (image, array, strideX, strideY, strideC, offset) {
+  var w = image.width
+  var h = image.height
+  var c = image.channels
+  var n = w * h * c
+  var data = preConvert(image, n)
+
+  var p = 0
+  for (var i = 0; i < h; ++i) {
+    for (var j = 0; j < w; ++j) {
+      for (var k = 0; k < c; ++k) {
+        data[p++] = array[strideX * j + strideY * i + strideC * k + offset]
       }
     }
   }
-  return result
+
+  postConvert(image, data)
 }
 
-module.exports = function createTextureSet (gl, extensions, limits, reglPoll, contextState) {
+function flatten2DData (image, array, w, h) {
+  var n = w * h
+  var data = preConvert(image, n)
+
+  var p = 0
+  for (var i = 0; i < h; ++i) {
+    var row = array[i]
+    for (var j = 0; j < w; ++j) {
+      data[p++] = row[j]
+    }
+  }
+
+  postConvert(image, data)
+}
+
+function flatten3DData (image, array, w, h, c) {
+  var n = w * h * c
+  var data = preConvert(image, n)
+
+  var p = 0
+  for (var i = 0; i < h; ++i) {
+    var row = array[i]
+    for (var j = 0; j < w; ++j) {
+      var pixel = row[j]
+      for (var k = 0; k < c; ++k) {
+        data[p++] = pixel[k]
+      }
+    }
+  }
+
+  postConvert(image, data)
+}
+
+module.exports = function createTextureSet (
+  gl, extensions, limits, reglPoll, contextState) {
+  // -------------------------------------------------------
+  // Initialize constants and parameter tables here
+  // -------------------------------------------------------
   var mipmapHint = {
     "don't care": GL_DONT_CARE,
     'dont care': GL_DONT_CARE,
@@ -5602,7 +5763,7 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, co
   }
 
   if (extensions.oes_texture_half_float) {
-    textureTypes['half float'] = GL_HALF_FLOAT_OES
+    textureTypes['float16'] = textureTypes['half float'] = GL_HALF_FLOAT_OES
   }
 
   if (extensions.webgl_depth_texture) {
@@ -5661,6 +5822,8 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, co
   var supportedFormats = Object.keys(textureFormats)
   limits.textureFormats = supportedFormats
 
+  // colorFormats[] gives the format (channels) associated to an
+  // internalformat
   var colorFormats = supportedFormats.reduce(function (color, key) {
     var glenum = textureFormats[key]
     if (glenum === GL_LUMINANCE ||
@@ -5678,993 +5841,600 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, co
     return color
   }, {})
 
-  // Pixel storage parsing
-  function PixelInfo (target) {
-    // tex target
-    this.target = target
+  function TexFlags () {
+    // format info
+    this.internalformat = GL_RGBA
+    this.format = GL_RGBA
+    this.type = GL_UNSIGNED_BYTE
+    this.compressed = false
 
-    // pixelStorei info
-    this.flipY = false
+    // pixel storage
     this.premultiplyAlpha = false
+    this.flipY = false
     this.unpackAlignment = 1
     this.colorSpace = 0
 
-    // shape
+    // shape info
     this.width = 0
     this.height = 0
-    this.channels = 0
-
-    // format and type
-    this.format = 0
-    this.internalformat = 0
-    this.type = 0
-    this.compressed = false
-
-    // mip level
-    this.miplevel = 0
-
-    // ndarray-like parameters
-    this.strideX = 0
-    this.strideY = 0
-    this.strideC = 0
-    this.offset = 0
-
-    // copy pixels info
-    this.x = 0
-    this.y = 0
-    this.copy = false
-
-    // data sources
-    this.data = null
-    this.image = null
-    this.video = null
-    this.canvas = null
-    this.xhr = null
-
-    // CORS
-    this.crossOrigin = null
-
-    // horrible state flags
-    this.needsPoll = false
-    this.needsListeners = false
+    this.channels = 4
   }
 
-  extend(PixelInfo.prototype, {
-    parseFlags: function (options) {
-      if (typeof options !== 'object' || !options) {
-        return
+  function copyFlags (result, other) {
+    result.internalformat = other.internalformat
+    result.format = other.format
+    result.type = other.type
+    result.compressed = other.compressed
+
+    result.premultiplyAlpha = other.premultiplyAlpha
+    result.flipY = other.flipY
+    result.unpackAlignment = other.unpackAlignment
+    result.colorSpace = other.colorSpace
+
+    result.width = other.width
+    result.height = other.height
+    result.channels = other.channels
+  }
+
+  function parseFlags (flags, options) {
+    if (typeof options !== 'object' || !options) {
+      return
+    }
+
+    if ('premultiplyAlpha' in options) {
+      check.type(options.premultiplyAlpha, 'boolean',
+        'invalid premultiplyAlpha')
+      flags.premultiplyAlpha = options.premultiplyAlpha
+    }
+
+    if ('flipY' in options) {
+      check.type(options.flipY, 'boolean',
+        'invalid texture flip')
+      flags.flipY = options.flipY
+    }
+
+    if ('alignment' in options) {
+      check.oneOf(options.alignment, [1, 2, 4, 8],
+        'invalid texture unpack alignment')
+      flags.unpackAlignment = options.alignment
+    }
+
+    if ('colorSpace' in options) {
+      check.parameter(options.colorSpace, colorSpace,
+        'invalid colorSpace')
+      flags.colorSpace = colorSpace[options.colorSpace]
+    }
+
+    if ('type' in options) {
+      var type = options.type
+      check.parameter(type, textureTypes,
+        'invalid texture type')
+      flags.type = textureTypes[type]
+    }
+
+    var w = flags.width
+    var h = flags.height
+    var c = flags.channels
+    var hasChannels = false
+    if ('shape' in options) {
+      check(Array.isArray(options.shape) && options.shape.length >= 2,
+        'shape must be an array')
+      w = options.shape[0]
+      h = options.shape[1]
+      if (options.shape.length === 3) {
+        c = options.shape[2]
+        check(c > 0 && c <= 4, 'invalid number of channels')
+        hasChannels = true
       }
-
-      if ('premultiplyAlpha' in options) {
-        check.type(options.premultiplyAlpha, 'boolean',
-          'invalid premultiplyAlpha')
-        this.premultiplyAlpha = options.premultiplyAlpha
+      check(w > 0 && w <= limits.maxTextureSize, 'invalid width')
+      check(h > 0 && h <= limits.maxTextureSize, 'invalid height')
+    } else {
+      if ('radius' in options) {
+        w = h = options.radius
+        check(w > 0 && w <= limits.maxTextureSize, 'invalid radius')
       }
-
-      if ('flipY' in options) {
-        check.type(options.flipY, 'boolean',
-          'invalid texture flip')
-        this.flipY = options.flipY
+      if ('width' in options) {
+        w = options.width
+        check(w > 0 && w <= limits.maxTextureSize, 'invalid width')
       }
-
-      if ('alignment' in options) {
-        check.oneOf(options.alignment, [1, 2, 4, 8],
-          'invalid texture unpack alignment')
-        this.unpackAlignment = options.alignment
+      if ('height' in options) {
+        h = options.height
+        check(h > 0 && h <= limits.maxTextureSize, 'invalid height')
       }
-
-      if ('colorSpace' in options) {
-        check.parameter(options.colorSpace, colorSpace,
-          'invalid colorSpace')
-        this.colorSpace = colorSpace[options.colorSpace]
-      }
-
-      if ('format' in options) {
-        var format = options.format
-        check.parameter(format, textureFormats,
-          'invalid texture format')
-        this.internalformat = textureFormats[format]
-        if (format in textureTypes) {
-          this.type = textureTypes[format]
-        }
-        if (format in compressedTextureFormats) {
-          this.compressed = true
-        }
-      }
-
-      if ('type' in options) {
-        var type = options.type
-        check.parameter(type, textureTypes,
-          'invalid texture type')
-        this.type = textureTypes[type]
-      }
-
-      var w = this.width
-      var h = this.height
-      var c = this.channels
-      if ('shape' in options) {
-        check(Array.isArray(options.shape) && options.shape.length >= 2,
-          'shape must be an array')
-        w = options.shape[0]
-        h = options.shape[1]
-        if (options.shape.length === 3) {
-          c = options.shape[2]
-        }
-      } else {
-        if ('radius' in options) {
-          w = h = options.radius
-        }
-        if ('width' in options) {
-          w = options.width
-        }
-        if ('height' in options) {
-          h = options.height
-        }
-        if ('channels' in options) {
-          c = options.channels
-        }
-      }
-      this.width = w | 0
-      this.height = h | 0
-      this.channels = c | 0
-
-      if ('stride' in options) {
-        var stride = options.stride
-        check(Array.isArray(stride) && stride.length >= 2,
-          'invalid stride vector')
-        this.strideX = stride[0]
-        this.strideY = stride[1]
-        if (stride.length === 3) {
-          this.strideC = stride[2]
-        } else {
-          this.strideC = 1
-        }
-        this.needsTranspose = true
-      } else {
-        this.strideC = 1
-        this.strideX = this.strideC * c
-        this.strideY = this.strideX * w
-      }
-
-      if ('offset' in options) {
-        this.offset = options.offset | 0
-        this.needsTranspose = true
-      }
-
-      if ('crossOrigin' in options) {
-        this.crossOrigin = options.crossOrigin
-      }
-    },
-    parse: function (options, miplevel) {
-      this.miplevel = miplevel
-      this.width = this.width >> miplevel
-      this.height = this.height >> miplevel
-
-      var data = options
-      switch (typeof options) {
-        case 'string':
-          break
-        case 'object':
-          if (!options) {
-            return
-          }
-          this.parseFlags(options)
-          if (isPixelData(options.data)) {
-            data = options.data
-          }
-          break
-        case 'undefined':
-          return
-        default:
-          check.raise('invalid pixel data type')
-      }
-
-      if (typeof data === 'string') {
-        data = loadTexture(data, this.crossOrigin)
-      }
-
-      var array = null
-      var needsConvert = false
-
-      if (this.compressed) {
-        check(data instanceof Uint8Array || isPendingXHR(data),
-          'compressed texture data must be stored in a uint8array')
-      }
-
-      if (data === null) {
-        // TODO
-      } else if (isTypedArray(data)) {
-        this.data = data
-      } else if (isNumericArray(data)) {
-        array = data
-        needsConvert = true
-      } else if (isNDArrayLike(data)) {
-        if (Array.isArray(data.data)) {
-          array = data.data
-          needsConvert = true
-        } else {
-          this.data = data.data
-        }
-        var shape = data.shape
-        this.width = shape[0]
-        this.height = shape[1]
-        if (shape.length === 3) {
-          this.channels = shape[2]
-        } else {
-          this.channels = 1
-        }
-        var stride = data.stride
-        this.strideX = data.stride[0]
-        this.strideY = data.stride[1]
-        if (stride.length === 3) {
-          this.strideC = data.stride[2]
-        } else {
-          this.strideC = 1
-        }
-        this.offset = data.offset
-        this.needsTranspose = true
-      } else if (isCanvasElement(data) || isContext2D(data)) {
-        if (isCanvasElement(data)) {
-          this.canvas = data
-        } else {
-          this.canvas = data.canvas
-        }
-        this.width = this.canvas.width
-        this.height = this.canvas.height
-        this.setDefaultFormat()
-      } else if (isImageElement(data)) {
-        this.image = data
-        if (!data.complete) {
-          this.width = this.width || data.naturalWidth
-          this.height = this.height || data.naturalHeight
-          this.needsListeners = true
-        } else {
-          this.width = data.naturalWidth
-          this.height = data.naturalHeight
-        }
-        this.setDefaultFormat()
-      } else if (isVideoElement(data)) {
-        this.video = data
-        if (data.readyState > 1) {
-          this.width = data.width
-          this.height = data.height
-        } else {
-          this.width = this.width || data.width
-          this.height = this.height || data.height
-          this.needsListeners = true
-        }
-        this.needsPoll = true
-        this.setDefaultFormat()
-      } else if (isPendingXHR(data)) {
-        this.xhr = data
-        this.needsListeners = true
-      } else if (isRectArray(data)) {
-        var w = data[0].length
-        var h = data.length
-        var c = 1
-        var i, j, k, p
-        if (Array.isArray(data[0][0])) {
-          c = data[0][0].length
-          check(c >= 0 && c <= 4, 'invalid number of channels for image data')
-          array = Array(w * h * c)
-          p = 0
-          for (j = 0; j < h; ++j) {
-            for (i = 0; i < w; ++i) {
-              for (k = 0; k < c; ++k) {
-                array[p++] = data[j][i][k]
-              }
-            }
-          }
-        } else {
-          array = Array(w * h)
-          p = 0
-          for (j = 0; j < h; ++j) {
-            for (i = 0; i < w; ++i) {
-              array[p++] = data[j][i]
-            }
-          }
-        }
-        this.width = w
-        this.height = h
-        this.channels = c
-        needsConvert = true
-      } else if (options.copy) {
-        this.copy = true
-        this.x = this.x | 0
-        this.y = this.y | 0
-        this.width = (this.width || contextState.viewportWidth) | 0
-        this.height = (this.height || contextState.viewportHeight) | 0
-        this.setDefaultFormat()
-      }
-
-      // Fix up missing type info for typed arrays
-      if (!this.type && this.data) {
-        if (this.format === GL_DEPTH_COMPONENT) {
-          if (this.data instanceof Uint16Array) {
-            this.type = GL_UNSIGNED_SHORT
-          } else if (this.data instanceof Uint32Array) {
-            this.type = GL_UNSIGNED_INT
-          }
-        } else if (this.data instanceof Float32Array) {
-          this.type = GL_FLOAT
-        }
-      }
-
-      // Infer default format
-      if (!this.internalformat) {
-        var channels = this.channels = this.channels || 4
-        this.internalformat = [
-          GL_LUMINANCE,
-          GL_LUMINANCE_ALPHA,
-          GL_RGB,
-          GL_RGBA][channels - 1]
-        check(this.internalformat, 'invalid number of channels')
-      }
-
-      var format = this.internalformat
-      if (format === GL_DEPTH_COMPONENT || format === GL_DEPTH_STENCIL) {
-        check(extensions.webgl_depth_texture,
-          'depth/stencil texture not supported')
-        if (format === GL_DEPTH_COMPONENT) {
-          check(this.type === GL_UNSIGNED_SHORT || GL_UNSIGNED_INT,
-            'depth texture type must be uint16 or uint32')
-        }
-        if (format === GL_DEPTH_STENCIL) {
-          check(this.type === GL_UNSIGNED_INT_24_8_WEBGL,
-            'depth stencil texture format must match type')
-        }
-        check(
-          !this.data && !array && !this.image && !this.video && !this.canvas,
-          'depth/stencil textures are for rendering only')
-      }
-
-      // Compute color format and number of channels
-      var colorFormat = this.format = colorFormats[format]
-      if (!this.channels) {
-        switch (colorFormat) {
-          case GL_LUMINANCE:
-          case GL_ALPHA:
-          case GL_DEPTH_COMPONENT:
-            this.channels = 1
-            break
-
-          case GL_DEPTH_STENCIL:
-          case GL_LUMINANCE_ALPHA:
-            this.channels = 2
-            break
-
-          case GL_RGB:
-            this.channels = 3
-            break
-
-          default:
-            this.channels = 4
-        }
-      }
-
-      // Check that texture type is supported
-      var type = this.type
-      if (type === GL_FLOAT) {
-        check(extensions.oes_texture_float,
-          'float texture not supported')
-      } else if (type === GL_HALF_FLOAT_OES) {
-        check(extensions.oes_texture_half_float,
-          'half float texture not supported')
-      } else if (!type) {
-        if (format === GL_DEPTH_COMPONENT) {
-          type = GL_UNSIGNED_INT
-        } else {
-          type = GL_UNSIGNED_BYTE
-        }
-      }
-      this.type = type
-
-      // apply conversion
-      if (needsConvert) {
-        switch (type) {
-          case GL_UNSIGNED_BYTE:
-            this.data = new Uint8Array(array)
-            break
-          case GL_UNSIGNED_SHORT:
-            this.data = new Uint16Array(array)
-            break
-          case GL_UNSIGNED_INT:
-            this.data = new Uint32Array(array)
-            break
-          case GL_FLOAT:
-            this.data = new Float32Array(array)
-            break
-          case GL_HALF_FLOAT_OES:
-            this.data = convertToHalfFloat(array)
-            break
-
-          case GL_UNSIGNED_SHORT_5_6_5:
-          case GL_UNSIGNED_SHORT_5_5_5_1:
-          case GL_UNSIGNED_SHORT_4_4_4_4:
-          case GL_UNSIGNED_INT_24_8_WEBGL:
-            check.raise('unsupported format for automatic conversion')
-            break
-
-          default:
-            check.raise('unsupported type conversion')
-        }
-      }
-
-      if (this.data) {
-        // apply transpose
-        if (this.needsTranspose) {
-          this.data = transposePixels(
-            this.data,
-            this.width,
-            this.height,
-            this.channels,
-            this.strideX,
-            this.strideY,
-            this.strideC,
-            this.offset)
-        }
-        // check data type
-        switch (type) {
-          case GL_UNSIGNED_BYTE:
-            check(this.data instanceof Uint8Array ||
-                  this.data instanceof Uint8ClampedArray,
-                  'incompatible pixel type')
-            break
-          case GL_UNSIGNED_SHORT_5_6_5:
-          case GL_UNSIGNED_SHORT_5_5_5_1:
-          case GL_UNSIGNED_SHORT_4_4_4_4:
-          case GL_UNSIGNED_SHORT:
-          case GL_HALF_FLOAT_OES:
-            check(this.data instanceof Uint16Array,
-                  'incompatible pixel type')
-            break
-          case GL_UNSIGNED_INT:
-            check(this.data instanceof Uint32Array,
-                  'incompatible pixel type')
-            break
-
-          case GL_FLOAT:
-            check(this.data instanceof Float32Array,
-                  'incompatible pixel type')
-            break
-
-          default:
-            check.raise('bad or missing pixel type')
-        }
-      }
-
-      this.needsTranspose = false
-    },
-
-    setDefaultFormat: function () {
-      this.format = this.internalformat = GL_RGBA
-      this.type = GL_UNSIGNED_BYTE
-      this.channels = 4
-      this.compressed = false
-    },
-
-    upload: function (params) {
-      gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, this.flipY)
-      gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, this.premultiplyAlpha)
-      gl.pixelStorei(GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, this.colorSpace)
-      gl.pixelStorei(GL_UNPACK_ALIGNMENT, this.unpackAlignment)
-
-      var target = this.target
-      var miplevel = this.miplevel
-      var image = this.image
-      var canvas = this.canvas
-      var video = this.video
-      var data = this.data
-      var internalformat = this.internalformat
-      var format = this.format
-      var type = this.type
-      var width = this.width || Math.max(1, params.width >> miplevel)
-      var height = this.height || Math.max(1, params.height >> miplevel)
-      if (video && video.readyState > 2) {
-        gl.texImage2D(target, miplevel, format, format, type, video)
-      } else if (image && image.complete) {
-        gl.texImage2D(target, miplevel, format, format, type, image)
-      } else if (canvas) {
-        gl.texImage2D(target, miplevel, format, format, type, canvas)
-      } else if (this.compressed) {
-        gl.compressedTexImage2D(target, miplevel, internalformat, width, height, 0, data)
-      } else if (this.copy) {
-        reglPoll()
-        gl.copyTexImage2D(target, miplevel, format, this.x, this.y, width, height, 0)
-      } else if (data) {
-        gl.texImage2D(target, miplevel, format, width, height, 0, format, type, data)
-      } else {
-        gl.texImage2D(target, miplevel, format, width || 1, height || 1, 0, format, type, null)
+      if ('channels' in options) {
+        c = options.channels
+        check(c > 0 && c <= 4, 'invalid number of channels')
+        hasChannels = true
       }
     }
-  })
+    flags.width = w | 0
+    flags.height = h | 0
+    flags.channels = c | 0
 
-  function TexParams (target) {
-    this.target = target
+    var hasFormat = false
+    if ('format' in options) {
+      var formatStr = options.format
+      check.parameter(formatStr, textureFormats,
+        'invalid texture format')
+      var internalformat = flags.internalformat = textureFormats[formatStr]
+      flags.format = colorFormats[internalformat]
+      if (formatStr in textureTypes) {
+        if (!('type' in options)) {
+          flags.type = textureTypes[formatStr]
+        }
+      }
+      if (formatStr in compressedTextureFormats) {
+        flags.compressed = true
+      }
+      hasFormat = true
+    }
 
-    // Default image shape info
-    this.width = 0
-    this.height = 0
-    this.format = 0
-    this.internalformat = 0
-    this.type = 0
+    // Reconcile channels and format
+    if (!hasChannels && hasFormat) {
+      flags.channels = FORMAT_CHANNELS[flags.format]
+    } else if (hasChannels && !hasFormat) {
+      if (flags.channels !== CHANNELS_FORMAT[flags.format]) {
+        flags.format = flags.internalformat = CHANNELS_FORMAT[flags.channels]
+      }
+    } else if (hasFormat && hasChannels) {
+      check(
+        flags.channels === FORMAT_CHANNELS[flags.format],
+        'number of channels inconsistent with specified format')
+    }
+  }
 
-    // wrap mode
+  function setFlags (flags) {
+    gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, flags.flipY)
+    gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, flags.premultiplyAlpha)
+    gl.pixelStorei(GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, flags.colorSpace)
+    gl.pixelStorei(GL_UNPACK_ALIGNMENT, flags.unpackAlignment)
+  }
+
+  // -------------------------------------------------------
+  // Tex image data
+  // -------------------------------------------------------
+  function TexImage () {
+    TexFlags.call(this)
+
+    this.xOffset = 0
+    this.yOffset = 0
+
+    // data
+    this.data = null
+    this.needsFree = false
+
+    // html element
+    this.element = null
+
+    // copyTexImage info
+    this.needsCopy = false
+  }
+
+  function parseImage (image, options) {
+    var data = null
+    if (isPixelData(options)) {
+      data = options
+    } else if (options) {
+      check.type(options, 'object', 'invalid pixel data type')
+      parseFlags(image, options)
+      if ('x' in options) {
+        image.xOffset = options.x | 0
+      }
+      if ('y' in options) {
+        image.yOffset = options.y | 0
+      }
+      if (isPixelData(options.data)) {
+        data = options.data
+      }
+    }
+
+    check(
+      !image.compressed ||
+      data instanceof Uint8Array,
+      'compressed texture data must be stored in a uint8array')
+
+    if (options.copy) {
+      check(!data, 'can not specify copy and data field for the same texture')
+      var viewW = contextState.viewportWidth
+      var viewH = contextState.viewportHeight
+      image.width = image.width || (viewW - image.xOffset)
+      image.height = image.height || (viewH - image.yOffset)
+      image.needsCopy = true
+      check(image.xOffset >= 0 && image.xOffset < viewW &&
+            image.yOffset >= 0 && image.yOffset < viewH &&
+            image.width > 0 && image.width <= viewW &&
+            image.height > 0 && image.height <= viewH,
+            'copy texture read out of bounds')
+    } else if (!data) {
+      image.width = image.width || 1
+      image.height = image.height || 1
+    } else if (isTypedArray(data)) {
+      image.data = data
+      if (!('type' in options) && image.type === GL_UNSIGNED_BYTE) {
+        image.type = typedArrayCode(data)
+      }
+    } else if (isNumericArray(data)) {
+      convertData(image, data)
+      image.alignment = 1
+      image.needsFree = true
+    } else if (isNDArrayLike(data)) {
+      var array = data.data
+      if (!Array.isArray(array) && image.type === GL_UNSIGNED_BYTE) {
+        image.type = typedArrayCode(array)
+      }
+      var shape = data.shape
+      var stride = data.stride
+      var shapeX, shapeY, shapeC, strideX, strideY, strideC
+      if (shape.length === 3) {
+        shapeC = shape[2]
+        strideC = stride[2]
+      } else {
+        check(shape.length === 2, 'invalid ndarray pixel data, must be 2 or 3D')
+        shapeC = 1
+        strideC = 1
+      }
+      shapeX = shape[0]
+      shapeY = shape[1]
+      strideX = stride[0]
+      strideY = stride[1]
+      image.alignment = 1
+      image.width = shapeX
+      image.height = shapeY
+      image.channels = shapeC
+      image.format = image.internalformat = CHANNELS_FORMAT[shapeC]
+      image.needsFree = true
+      transposeData(image, array, strideX, strideY, strideC, data.offset)
+    } else if (isCanvasElement(data) || isContext2D(data)) {
+      if (isCanvasElement(data)) {
+        image.element = data
+      } else {
+        image.element = data.canvas
+      }
+      image.width = image.element.width
+      image.height = image.element.height
+    } else if (isImageElement(data)) {
+      image.element = data
+      image.width = data.naturalWidth
+      image.height = data.naturalHeight
+    } else if (isVideoElement(data)) {
+      image.element = data
+      image.width = data.videoWidth
+      image.height = data.videoHeight
+      image.needsPoll = true
+    } else if (isRectArray(data)) {
+      var w = data[0].length
+      var h = data.length
+      var c = 1
+      if (Array.isArray(data[0][0])) {
+        c = data[0][0].length
+        flatten3DData(image, data, w, h, c)
+      } else {
+        flatten2DData(image, data, w, h)
+      }
+      image.alignment = 1
+      image.width = w
+      image.height = h
+      image.channels = c
+      image.format = image.internalformat = CHANNELS_FORMAT[c]
+      image.needsFree = true
+    }
+
+    if (image.type === GL_FLOAT) {
+      check(limits.extenstions.indexOf('oes_texture_float') >= 0,
+        'oes_texture_float extension not enabled')
+    } else if (image.type === GL_HALF_FLOAT_OES) {
+      check(limits.extensions.indexOf('oes_texture_half_float') >= 0,
+        'oes_texture_half_float extension not enabled')
+    }
+  }
+
+  function setImage (info, target, miplevel) {
+    var element = info.element
+    var data = info.data
+    var internalformat = info.internalformat
+    var format = info.format
+    var type = info.type
+    var width = info.width
+    var height = info.height
+
+    setFlags(info)
+
+    if (element) {
+      gl.texImage2D(target, miplevel, format, format, type, element)
+    } else if (info.compressed) {
+      gl.compressedTexImage2D(target, miplevel, internalformat, width, height, 0, data)
+    } else if (info.needsCopy) {
+      reglPoll()
+      gl.copyTexImage2D(
+        target, miplevel, format, info.xOffset, info.yOffset, width, height, 0)
+    } else {
+      gl.texImage2D(
+        target, miplevel, format, width, height, 0, format, type, data)
+    }
+  }
+
+  function setSubImage (info, target, x, y, miplevel) {
+    var element = info.element
+    var data = info.data
+    var internalformat = info.internalformat
+    var format = info.format
+    var type = info.type
+    var width = info.width
+    var height = info.height
+
+    setFlags(info)
+
+    if (element) {
+      gl.texSubImage2D(
+        target, miplevel, x, y, format, type, element)
+    } else if (info.compressed) {
+      gl.compressedTexSubImage2D(
+        target, miplevel, x, y, internalformat, width, height, data)
+    } else if (info.needsCopy) {
+      reglPoll()
+      gl.copyTexSubImage2D(
+        target, miplevel, x, y, info.xOffset, info.yOffset, width, height)
+    } else {
+      gl.texSubImage2D(
+        target, miplevel, x, y, width, height, format, type, data)
+    }
+  }
+
+  // texImage pool
+  var imagePool = []
+
+  function allocImage () {
+    return imagePool.pop() || new TexImage()
+  }
+
+  function freeImage (image) {
+    if (image.needsFree) {
+      pool.freeType(image.data)
+    }
+    TexImage.call(image)
+    imagePool.push(image)
+  }
+
+  // -------------------------------------------------------
+  // Mip map
+  // -------------------------------------------------------
+  function MipMap () {
+    TexFlags.call(this)
+
+    this.genMipmaps = false
+    this.mipmapHint = GL_DONT_CARE
+    this.mipmask = 0
+    this.images = Array(16)
+  }
+
+  function parseMipMapFromShape (mipmap, width, height) {
+    var img = mipmap.images[0] = allocImage()
+    mipmap.mipmask = 1
+    img.width = mipmap.width = width
+    img.height = mipmap.height = height
+  }
+
+  function parseMipMapFromObject (mipmap, options) {
+    var imgData = null
+    if (isPixelData(options)) {
+      imgData = mipmap.images[0] = allocImage()
+      parseImage(imgData, options)
+      mipmap.mipmask = 1
+    } else {
+      parseFlags(mipmap, options)
+      if (Array.isArray(options.mipmap)) {
+        var mipData = options.mipmap
+        for (var i = 0; i < mipData.length; ++i) {
+          imgData = mipmap.images[i] = allocImage()
+          copyFlags(imgData, mipmap)
+          imgData.width >>= i
+          imgData.height >>= i
+          parseImage(imgData, mipData[i])
+          mipmap.mipmask |= (1 << i)
+        }
+      } else {
+        imgData = mipmap.images[0] = allocImage()
+        copyFlags(imgData, mipmap)
+        parseImage(imgData, options)
+        mipmap.mipmask = 1
+      }
+    }
+    copyFlags(mipmap, mipmap.images[0])
+  }
+
+  function setMipMap (mipmap, target) {
+    var images = mipmap.images
+    for (var i = 0; i < images.length; ++i) {
+      if (!images[i]) {
+        return
+      }
+      setImage(images[i], target, i)
+    }
+  }
+
+  var mipPool = []
+
+  function allocMipMap () {
+    var result = mipPool.pop() || new MipMap()
+    TexFlags.call(result)
+    result.mipmask = 0
+    for (var i = 0; i < 16; ++i) {
+      result.images[i] = null
+    }
+    return result
+  }
+
+  function freeMipMap (mipmap) {
+    var images = mipmap.images
+    for (var i = 0; i < images.length; ++i) {
+      if (images[i]) {
+        freeImage(images[i])
+      }
+      images[i] = null
+    }
+    mipPool.push(mipmap)
+  }
+
+  // -------------------------------------------------------
+  // Tex info
+  // -------------------------------------------------------
+  function TexInfo () {
+    this.minFilter = GL_NEAREST
+    this.magFilter = GL_NEAREST
+
     this.wrapS = GL_CLAMP_TO_EDGE
     this.wrapT = GL_CLAMP_TO_EDGE
 
-    // filtering
-    this.minFilter = 0
-    this.magFilter = GL_NEAREST
     this.anisotropic = 1
 
-    // mipmaps
     this.genMipmaps = false
     this.mipmapHint = GL_DONT_CARE
   }
 
-  extend(TexParams.prototype, {
-    parse: function (options) {
-      if (typeof options !== 'object' || !options) {
-        return
-      }
-
-      if ('min' in options) {
-        var minFilter = options.min
-        check.parameter(minFilter, minFilters)
-        this.minFilter = minFilters[minFilter]
-      }
-
-      if ('mag' in options) {
-        var magFilter = options.mag
-        check.parameter(magFilter, magFilters)
-        this.magFilter = magFilters[magFilter]
-      }
-
-      var wrapS = this.wrapS
-      var wrapT = this.wrapT
-      if ('wrap' in options) {
-        var wrap = options.wrap
-        if (typeof wrap === 'string') {
-          check.parameter(wrap, wrapModes)
-          wrapS = wrapT = wrapModes[wrap]
-        } else if (Array.isArray(wrap)) {
-          check.parameter(wrap[0], wrapModes)
-          check.parameter(wrap[1], wrapModes)
-          wrapS = wrapModes[wrap[0]]
-          wrapT = wrapModes[wrap[1]]
-        }
-      } else {
-        if ('wrapS' in options) {
-          var optWrapS = options.wrapS
-          check.parameter(optWrapS, wrapModes)
-          wrapS = wrapModes[optWrapS]
-        }
-        if ('wrapT' in options) {
-          var optWrapT = options.wrapT
-          check.parameter(optWrapT, wrapModes)
-          wrapT = wrapModes[optWrapT]
-        }
-      }
-      this.wrapS = wrapS
-      this.wrapT = wrapT
-
-      if ('anisotropic' in options) {
-        var anisotropic = options.anisotropic
-        check(typeof anisotropic === 'number' &&
-           anisotropic >= 1 && anisotropic <= limits.maxAnisotropic,
-          'aniso samples must be between 1 and ')
-        this.anisotropic = options.anisotropic
-      }
-
-      if ('mipmap' in options) {
-        var mipmap = options.mipmap
-        switch (typeof mipmap) {
-          case 'string':
-            check.parameter(mipmap, mipmapHint,
-              'invalid mipmap hint')
-            this.mipmapHint = mipmapHint[mipmap]
-            this.genMipmaps = true
-            break
-
-          case 'boolean':
-            this.genMipmaps = !!mipmap
-            break
-
-          case 'object':
-            break
-
-          default:
-            check.raise('invalid mipmap type')
-        }
-      }
-    },
-
-    upload: function () {
-      var target = this.target
-      gl.texParameteri(target, GL_TEXTURE_MIN_FILTER, this.minFilter)
-      gl.texParameteri(target, GL_TEXTURE_MAG_FILTER, this.magFilter)
-      gl.texParameteri(target, GL_TEXTURE_WRAP_S, this.wrapS)
-      gl.texParameteri(target, GL_TEXTURE_WRAP_T, this.wrapT)
-      if (extensions.ext_texture_filter_anisotropic) {
-        gl.texParameteri(target, GL_TEXTURE_MAX_ANISOTROPY_EXT, this.anisotropic)
-      }
-      if (this.genMipmaps) {
-        gl.hint(GL_GENERATE_MIPMAP_HINT, this.mipmapHint)
-        gl.generateMipmap(target)
-      }
-    }
-  })
-
-  // Final pass to merge params and pixel data
-  function checkTextureComplete (params, pixels) {
-    var i, pixmap
-
-    var type = 0
-    var format = 0
-    var internalformat = 0
-    var width = 0
-    var height = 0
-    var channels = 0
-    var compressed = false
-    var needsPoll = false
-    var needsListeners = false
-    var mipMask2D = 0
-    var mipMaskCube = [0, 0, 0, 0, 0, 0]
-    var cubeMask = 0
-    var hasMip = false
-    for (i = 0; i < pixels.length; ++i) {
-      pixmap = pixels[i]
-      width = width || (pixmap.width << pixmap.miplevel)
-      height = height || (pixmap.height << pixmap.miplevel)
-      type = type || pixmap.type
-      format = format || pixmap.format
-      internalformat = internalformat || pixmap.internalformat
-      channels = channels || pixmap.channels
-      needsPoll = needsPoll || pixmap.needsPoll
-      needsListeners = needsListeners || pixmap.needsListeners
-      compressed = compressed || pixmap.compressed
-
-      var miplevel = pixmap.miplevel
-      var target = pixmap.target
-      hasMip = hasMip || (miplevel > 0)
-      if (target === GL_TEXTURE_2D) {
-        mipMask2D |= (1 << miplevel)
-      } else {
-        var face = target - GL_TEXTURE_CUBE_MAP_POSITIVE_X
-        mipMaskCube[face] |= (1 << miplevel)
-        cubeMask |= (1 << face)
+  function parseTexInfo (info, options) {
+    if ('min' in options) {
+      var minFilter = options.min
+      check.parameter(minFilter, minFilters)
+      info.minFilter = minFilters[minFilter]
+      if (MIPMAP_FILTERS.indexOf(info.minFilter) >= 0) {
+        info.genMipmaps = true
       }
     }
 
-    params.needsPoll = needsPoll
-    params.needsListeners = needsListeners
-    params.width = width
-    params.height = height
-    params.format = format
-    params.internalformat = internalformat
-    params.type = type
+    if ('mag' in options) {
+      var magFilter = options.mag
+      check.parameter(magFilter, magFilters)
+      info.magFilter = magFilters[magFilter]
+    }
 
-    var mipMask = hasMip ? (width << 1) - 1 : 1
-    if (params.target === GL_TEXTURE_2D) {
-      check(cubeMask === 0,
-        'pixmap type must not contain cubemap faces')
-      check(mipMask2D === mipMask, 'missing mip map data')
+    var wrapS = info.wrapS
+    var wrapT = info.wrapT
+    if ('wrap' in options) {
+      var wrap = options.wrap
+      if (typeof wrap === 'string') {
+        check.parameter(wrap, wrapModes)
+        wrapS = wrapT = wrapModes[wrap]
+      } else if (Array.isArray(wrap)) {
+        check.parameter(wrap[0], wrapModes)
+        check.parameter(wrap[1], wrapModes)
+        wrapS = wrapModes[wrap[0]]
+        wrapT = wrapModes[wrap[1]]
+      }
     } else {
-      check(cubeMask === ((1 << 6) - 1), 'missing cubemap faces')
-      for (i = 0; i < 6; ++i) {
-        check(mipMaskCube[i] === mipMask, 'missing mip map data')
+      if ('wrapS' in options) {
+        var optWrapS = options.wrapS
+        check.parameter(optWrapS, wrapModes)
+        wrapS = wrapModes[optWrapS]
+      }
+      if ('wrapT' in options) {
+        var optWrapT = options.wrapT
+        check.parameter(optWrapT, wrapModes)
+        wrapT = wrapModes[optWrapT]
       }
     }
+    info.wrapS = wrapS
+    info.wrapT = wrapT
 
-    var mipFilter = (MIPMAP_FILTERS.indexOf(params.minFilter) >= 0)
-    params.genMipmaps = !hasMip && (params.genMipmaps || mipFilter)
-    var useMipmaps = hasMip || params.genMipmaps
-
-    if (!params.minFilter) {
-      params.minFilter = useMipmaps
-        ? GL_LINEAR_MIPMAP_LINEAR
-        : GL_NEAREST
-    } else {
-      check(useMipmaps === mipFilter,
-        'min filter inconsistent with mipmap data')
+    if ('anisotropic' in options) {
+      var anisotropic = options.anisotropic
+      check(typeof anisotropic === 'number' &&
+         anisotropic >= 1 && anisotropic <= limits.maxAnisotropic,
+        'aniso samples must be between 1 and ')
+      info.anisotropic = options.anisotropic
     }
 
-    if (useMipmaps) {
-      check(width === height && isPow2(width),
-        'must be a square power of 2 to support mipmaps')
-    }
+    if ('mipmap' in options) {
+      var hasMipMap = false
+      switch (typeof options.mipmap) {
+        case 'string':
+          check.parameter(options.mipmap, mipmapHint,
+            'invalid mipmap hint')
+          info.mipmapHint = mipmapHint[options.mipmap]
+          info.genMipmaps = true
+          hasMipMap = true
+          break
 
-    if (params.genMipmaps) {
-      check(!compressed, 'mipmap generation not supported for compressed textures')
-    }
+        case 'boolean':
+          hasMipMap = info.genMipmaps = options.mipmap
+          break
 
-    params.wrapS = params.wrapS || GL_CLAMP_TO_EDGE
-    params.wrapT = params.wrapT || GL_CLAMP_TO_EDGE
-    if (params.wrapS !== GL_CLAMP_TO_EDGE ||
-        params.wrapT !== GL_CLAMP_TO_EDGE) {
-      check(isPow2(width) && isPow2(height) && !cubeMask,
-        'incompatible size for wrap mode, image must be a power of 2')
-    }
+        case 'object':
+          check(Array.isArray(options.mipmap), 'invalid mipmap type')
+          info.genMipmaps = false
+          hasMipMap = true
+          break
 
-    if ((type === GL_FLOAT && !extensions.oes_texture_float_linear) ||
-        (type === GL_HALF_FLOAT_OES &&
-          !extensions.oes_texture_half_float_linear)) {
-      check(this.magFilter === GL_NEAREST && this.minFilter === GL_NEAREST,
-        'unsupported filter mode for float texture')
-    }
-
-    for (i = 0; i < pixels.length; ++i) {
-      pixmap = pixels[i]
-      var level = pixmap.miplevel
-      if (pixmap.width) {
-        check(pixmap.width << level === width, 'inconsistent width')
+        default:
+          check.raise('invalid mipmap type')
       }
-      if (pixmap.height) {
-        check(pixmap.height << level === height, 'inconsistent width')
-      }
-      if (pixmap.channels) {
-        check(pixmap.channels === channels, 'inconsistent channels')
-      } else {
-        pixmap.channels = channels
-      }
-      if (pixmap.format) {
-        check(pixmap.format === format, 'inconsistent format')
-      } else {
-        pixmap.format = format
-      }
-      if (pixmap.internalformat) {
-        check(pixmap.internalformat === internalformat, 'inconsistent internalformat')
-      } else {
-        pixmap.internalformat = internalformat
-      }
-      if (pixmap.type) {
-        check(pixmap.type === type, 'inconsistent type')
-      } else {
-        pixmap.type = type
-      }
-      if (pixmap.copy) {
-        check(pixmap.type === GL_UNSIGNED_BYTE &&
-          pixmap.internalformat === GL_RGBA,
-          'incompatible format/type for copyTexImage2D')
+      if (hasMipMap && !('min' in options)) {
+        info.minFilter = GL_NEAREST_MIPMAP_NEAREST
       }
     }
   }
 
-  var activeTexture = 0
+  function setTexInfo (info, target) {
+    gl.texParameteri(target, GL_TEXTURE_MIN_FILTER, info.minFilter)
+    gl.texParameteri(target, GL_TEXTURE_MAG_FILTER, info.magFilter)
+    gl.texParameteri(target, GL_TEXTURE_WRAP_S, info.wrapS)
+    gl.texParameteri(target, GL_TEXTURE_WRAP_T, info.wrapT)
+    if (extensions.ext_texture_filter_anisotropic) {
+      gl.texParameteri(target, GL_TEXTURE_MAX_ANISOTROPY_EXT, info.anisotropic)
+    }
+    if (info.genMipmaps) {
+      gl.hint(GL_GENERATE_MIPMAP_HINT, info.mipmapHint)
+      gl.generateMipmap(target)
+    }
+  }
+
+  var infoPool = []
+
+  function allocInfo () {
+    var result = infoPool.pop() || new TexInfo()
+    TexInfo.call(result)
+    return result
+  }
+
+  function freeInfo (info) {
+    infoPool.push(info)
+  }
+
+  // -------------------------------------------------------
+  // Full texture object
+  // -------------------------------------------------------
   var textureCount = 0
   var textureSet = {}
-  var pollSet = []
   var numTexUnits = limits.maxTextureUnits
   var textureUnits = Array(numTexUnits).map(function () {
     return null
   })
 
   function REGLTexture (target) {
+    TexFlags.call(this)
+    this.mipmask = 0
+
     this.id = textureCount++
+
     this.refCount = 1
 
     this.target = target
-    this.texture = null
-
-    this.pollId = -1
+    this.texture = gl.createTexture()
 
     this.unit = -1
     this.bindCount = 0
-
-    // cancels all pending callbacks
-    this.cancelPending = null
-
-    // parsed user inputs
-    this.params = new TexParams(target)
-    this.pixels = []
   }
 
-  function update (texture, options) {
-    var i
-    clearListeners(texture)
+  function tempBind (texture) {
+    gl.activeTexture(GL_TEXTURE0)
+    gl.bindTexture(texture.target, texture.texture)
+  }
 
-    // Clear parameters and pixel data
-    var params = texture.params
-    TexParams.call(params, texture.target)
-    var pixels = texture.pixels
-    pixels.length = 0
-
-    // parse parameters
-    params.parse(options)
-
-    // parse pixel data
-    function parseMip (target, data) {
-      var mipmap = data.mipmap
-      var pixmap
-      if (Array.isArray(mipmap)) {
-        for (var i = 0; i < mipmap.length; ++i) {
-          pixmap = new PixelInfo(target)
-          pixmap.parseFlags(options)
-          pixmap.parseFlags(data)
-          pixmap.parse(mipmap[i], i)
-          pixels.push(pixmap)
-        }
-      } else {
-        pixmap = new PixelInfo(target)
-        pixmap.parseFlags(options)
-        pixmap.parse(data, 0)
-        pixels.push(pixmap)
-      }
-    }
-    if (texture.target === GL_TEXTURE_2D) {
-      parseMip(GL_TEXTURE_2D, options)
+  function tempRestore () {
+    var prev = textureUnits[0]
+    if (prev) {
+      gl.bindTexture(prev.target, prev.texture)
     } else {
-      var faces = options.faces || options
-      if (Array.isArray(faces)) {
-        check(faces.length === 6,
-          'invalid number of faces in cube map')
-        for (i = 0; i < 6; ++i) {
-          parseMip(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, faces[i])
-        }
-      } else if (typeof faces === 'string') {
-        // TODO Read dds
-      } else {
-        // Initialize to all empty textures
-        for (i = 0; i < 6; ++i) {
-          parseMip(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, {})
-        }
-      }
-    }
-
-    // do a second pass to reconcile defaults
-    checkTextureComplete(params, pixels)
-
-    if (params.needsListeners) {
-      hookListeners(texture)
-    }
-
-    if (params.needsPoll) {
-      texture.pollId = pollSet.length
-      pollSet.push(texture)
-    }
-
-    refresh(texture)
-  }
-
-  function refresh (texture) {
-    if (!gl.isTexture(texture.texture)) {
-      texture.texture = gl.createTexture()
-    }
-
-    // Lazy bind
-    var target = texture.target
-    var unit = texture.unit
-    if (unit >= 0) {
-      gl.activeTexture(GL_TEXTURE0 + unit)
-      activeTexture = unit
-    } else {
-      gl.bindTexture(target, texture.texture)
-    }
-
-    // Upload
-    var pixels = texture.pixels
-    var params = texture.params
-    for (var i = 0; i < pixels.length; ++i) {
-      pixels[i].upload(params)
-    }
-    params.upload()
-
-    // Lazy unbind
-    if (unit < 0) {
-      var active = textureUnits[activeTexture]
-      if (active) {
-        // restore binding state
-        gl.bindTexture(active.target, active.texture)
-      } else {
-        // otherwise become new active
-        texture.unit = activeTexture
-        textureUnits[activeTexture] = texture
-      }
-    }
-  }
-
-  function hookListeners (texture) {
-    var params = texture.params
-    var pixels = texture.pixels
-
-    // Appends all the texture data from the buffer to the current
-    function appendDDS (target, miplevel, buffer) {
-      var dds = parseDDS(buffer)
-
-      check(dds.format in colorFormats, 'unsupported dds texture format')
-
-      if (dds.cube) {
-        check(texture.target === GL_TEXTURE_CUBE_MAP)
-
-        // TODO handle cube map DDS
-        check.raise('cube map DDS not yet implemented')
-      } else {
-        check(texture.target === GL_TEXTURE_2D)
-      }
-
-      if (miplevel) {
-        check(dds.pixels.length === 1, 'number of mip levels inconsistent')
-      }
-
-      dds.pixels.forEach(function (pixmap) {
-        var info = new PixelInfo(dds.cube ? pixmap.target : target)
-
-        info.channels = dds.channels
-        info.compressed = dds.compressed
-        info.type = dds.type
-        info.internalformat = dds.format
-        info.format = colorFormats[dds.format]
-
-        info.width = pixmap.width
-        info.height = pixmap.height
-        info.miplevel = pixmap.miplevel || miplevel
-        info.data = pixmap.data
-
-        pixels.push(info)
-      })
-    }
-
-    function onData () {
-      // Update size of any newly loaded pixels
-      for (var i = 0; i < pixels.length; ++i) {
-        var pixelData = pixels[i]
-        var image = pixelData.image
-        var video = pixelData.video
-        var xhr = pixelData.xhr
-        if (image && image.complete) {
-          pixelData.width = image.naturalWidth
-          pixelData.height = image.naturalHeight
-        } else if (video && video.readyState > 2) {
-          pixelData.width = video.width
-          pixelData.height = video.height
-        } else if (xhr && xhr.readyState === 4) {
-          pixels[i] = pixels[pixels.length - 1]
-          pixels.pop()
-          xhr.removeEventListener('readystatechange', refresh)
-          appendDDS(pixelData.target, pixelData.miplevel, xhr.response)
-        }
-      }
-      checkTextureComplete(params, pixels)
-      refresh(texture)
-    }
-
-    pixels.forEach(function (pixelData) {
-      if (pixelData.image && !pixelData.image.complete) {
-        pixelData.image.addEventListener('load', onData)
-      } else if (pixelData.video && pixelData.readyState < 1) {
-        pixelData.video.addEventListener('progress', onData)
-      } else if (pixelData.xhr) {
-        pixelData.xhr.addEventListener('readystatechange', onData)
-      }
-    })
-
-    texture.cancelPending = function detachListeners () {
-      pixels.forEach(function (pixelData) {
-        if (pixelData.image) {
-          pixelData.image.removeEventListener('load', onData)
-        } else if (pixelData.video) {
-          pixelData.video.removeEventListener('progress', onData)
-        } else if (pixelData.xhr) {
-          pixelData.xhr.removeEventListener('readystatechange', onData)
-          pixelData.xhr.abort()
-        }
-      })
-    }
-  }
-
-  function clearListeners (texture) {
-    var cancelPending = texture.cancelPending
-    if (cancelPending) {
-      cancelPending()
-      texture.cancelPending = null
-    }
-    var id = texture.pollId
-    if (id >= 0) {
-      var other = pollSet[id] = pollSet[pollSet.length - 1]
-      other.id = id
-      pollSet.pop()
-      texture.pollId = -1
+      gl.bindTexture(GL_TEXTURE_2D, null)
     }
   }
 
@@ -6675,14 +6445,10 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, co
     var target = texture.target
     if (unit >= 0) {
       gl.activeTexture(GL_TEXTURE0 + unit)
-      activeTexture = unit
       gl.bindTexture(target, null)
       textureUnits[unit] = null
     }
-    clearListeners(texture)
-    if (gl.isTexture(handle)) {
-      gl.deleteTexture(handle)
-    }
+    gl.deleteTexture(handle)
     texture.texture = null
     texture.params = null
     texture.pixels = null
@@ -6714,7 +6480,6 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, co
         texture.unit = unit
         gl.activeTexture(GL_TEXTURE0 + unit)
         gl.bindTexture(texture.target, texture.texture)
-        activeTexture = unit
       }
       return unit
     },
@@ -6730,40 +6495,235 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, co
     }
   })
 
-  function createTexture (options, target) {
-    var texture = new REGLTexture(target)
+  function createTexture2D (a, b) {
+    var texture = new REGLTexture(GL_TEXTURE_2D)
     textureSet[texture.id] = texture
 
-    function reglTexture (a0, a1, a2, a3, a4, a5) {
-      var options = a0 || {}
-      if (target === GL_TEXTURE_CUBE_MAP && arguments.length === 6) {
-        options = [a0, a1, a2, a3, a4, a5]
+    function reglTexture2D (a, b) {
+      var texInfo = allocInfo()
+      var mipData = allocMipMap()
+
+      if (typeof a === 'number') {
+        if (typeof b === 'number') {
+          parseMipMapFromShape(mipData, a | 0, b | 0)
+        } else {
+          parseMipMapFromShape(mipData, a | 0, a | 0)
+        }
+      } else if (a) {
+        check.type(a, 'object', 'invalid arguments to regl.texture')
+        parseTexInfo(texInfo, a)
+        parseMipMapFromObject(mipData, a)
+      } else {
+        // empty textures get assigned a default shape of 1x1
+        parseMipMapFromShape(mipData, 1, 1)
       }
-      update(texture, options)
-      reglTexture.width = texture.params.width
-      reglTexture.height = texture.params.height
-      return reglTexture
+
+      if (texInfo.genMipmaps) {
+        mipData.mipmask = (mipData.width << 1) - 1
+      }
+      texture.mipmask = mipData.mipmask
+
+      copyFlags(texture, mipData)
+
+      check.texture2D(texInfo, mipData, limits)
+
+      reglTexture2D.width = mipData.width
+      reglTexture2D.height = mipData.height
+
+      tempBind(texture)
+      setMipMap(mipData, GL_TEXTURE_2D)
+      setTexInfo(texInfo, GL_TEXTURE_2D)
+      tempRestore()
+
+      freeInfo(texInfo)
+      freeMipMap(mipData)
+
+      return reglTexture2D
     }
 
-    reglTexture(options)
+    function subimage (image, x_, y_, level_) {
+      check(!!image, 'must specify image data')
 
-    reglTexture._reglType = 'texture'
-    reglTexture._texture = texture
-    reglTexture.destroy = function () {
+      var x = x_ | 0
+      var y = y_ | 0
+      var level = level_ | 0
+
+      var imageData = allocImage()
+      copyFlags(imageData, texture)
+      imageData.width >>= level
+      imageData.height >>= level
+      imageData.width -= x
+      imageData.height -= y
+      parseImage(imageData, image)
+
+      check(
+        texture.type === imageData.type &&
+        texture.format === imageData.format &&
+        texture.internalformat === imageData.internalformat,
+        'incompatible format for texture.subimage')
+      check(
+        x >= 0 && y >= 0 &&
+        x + imageData.width <= texture.width &&
+        y + imageData.height <= texture.height,
+        'texture.subimage write out of bounds')
+      check(
+        texture.mipmask & (1 << level),
+        'missing mipmap data')
+      check(
+        imageData.data || imageData.element || imageData.needsCopy,
+        'missing image data')
+
+      tempBind(texture)
+      setSubImage(imageData, GL_TEXTURE_2D, x, y, level)
+      tempRestore()
+
+      freeImage(imageData)
+
+      return reglTexture2D
+    }
+
+    reglTexture2D(a, b)
+
+    reglTexture2D.subimage = subimage
+    reglTexture2D._reglType = 'texture2d'
+    reglTexture2D._texture = texture
+    reglTexture2D.destroy = function () {
       texture.decRef()
     }
 
-    return reglTexture
+    return reglTexture2D
   }
 
-  // Called after context restore
-  function refreshTextures () {
-    values(textureSet).forEach(refresh)
-    for (var i = 0; i < numTexUnits; ++i) {
-      textureUnits[i] = null
+  function createTextureCube (a0, a1, a2, a3, a4, a5) {
+    var texture = new REGLTexture(GL_TEXTURE_CUBE_MAP)
+    textureSet[texture.id] = texture
+
+    var faces = new Array(6)
+
+    function reglTextureCube (a0, a1, a2, a3, a4, a5) {
+      var i
+      var texInfo = allocInfo()
+      for (i = 0; i < 6; ++i) {
+        faces[i] = allocMipMap()
+      }
+
+      if (typeof a0 === 'number' || !a0) {
+        var s = (a0 | 0) || 1
+        for (i = 0; i < 6; ++i) {
+          parseMipMapFromShape(faces[i], s, s)
+        }
+      } else if (typeof a0 === 'object') {
+        if (a1) {
+          parseMipMapFromObject(faces[0], a0)
+          parseMipMapFromObject(faces[1], a1)
+          parseMipMapFromObject(faces[2], a2)
+          parseMipMapFromObject(faces[3], a3)
+          parseMipMapFromObject(faces[4], a4)
+          parseMipMapFromObject(faces[5], a5)
+        } else {
+          parseTexInfo(texInfo, a0)
+          parseFlags(texture, a0)
+          if ('faces' in a0) {
+            var face_input = a0.faces
+            check(Array.isArray(face_input) && face_input.length === 6,
+              'cube faces must be a length 6 array')
+            for (i = 0; i < 6; ++i) {
+              check(typeof face_input[i] === 'object' && !!face_input[i],
+                'invalid input for cube map face')
+              copyFlags(faces[i], texture)
+              parseMipMapFromObject(faces[i], face_input[i])
+            }
+          } else {
+            for (i = 0; i < 6; ++i) {
+              parseMipMapFromObject(faces[i], a0)
+            }
+          }
+        }
+      } else {
+        check.raise('invalid arguments to cube map')
+      }
+
+      copyFlags(texture, faces[0])
+      if (texInfo.genMipmaps) {
+        texture.mipmask = (faces[0].width << 1) - 1
+      } else {
+        texture.mipmask = faces[0].mipmask
+      }
+
+      check.textureCube(texture, texInfo, faces, limits)
+
+      reglTextureCube.width = faces[0].width
+      reglTextureCube.height = faces[0].height
+
+      tempBind(texture)
+      for (i = 0; i < 6; ++i) {
+        setMipMap(faces[i], GL_TEXTURE_CUBE_MAP_POSITIVE_X + i)
+      }
+      setTexInfo(texInfo, GL_TEXTURE_CUBE_MAP)
+      tempRestore()
+
+      freeInfo(texInfo)
+
+      for (i = 0; i < 6; ++i) {
+        freeMipMap(faces[i])
+      }
+
+      return reglTextureCube
     }
-    activeTexture = 0
-    gl.activeTexture(GL_TEXTURE0)
+
+    function subimage (face, image, x_, y_, level_) {
+      check(!!image, 'must specify image data')
+      check(typeof face === 'number' && face === (face | 0) &&
+        face >= 0 && face < 6, 'invalid face')
+
+      var x = x_ | 0
+      var y = y_ | 0
+      var level = level_ | 0
+
+      var imageData = allocImage()
+      copyFlags(imageData, texture)
+      imageData.width >>= level
+      imageData.height >>= level
+      imageData.width -= x
+      imageData.height -= y
+      parseImage(imageData, image)
+
+      check(
+        texture.type === imageData.type &&
+        texture.format === imageData.format &&
+        texture.internalformat === imageData.internalformat,
+        'incompatible format for texture.subimage')
+      check(
+        x >= 0 && y >= 0 &&
+        x + imageData.width <= texture.width &&
+        y + imageData.height <= texture.height,
+        'texture.subimage write out of bounds')
+      check(
+        texture.mipmask & (1 << level),
+        'missing mipmap data')
+      check(
+        imageData.data || imageData.element || imageData.needsCopy,
+        'missing image data')
+
+      tempBind(texture)
+      setSubImage(imageData, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, x, y, level)
+      tempRestore()
+
+      freeImage(imageData)
+
+      return reglTextureCube
+    }
+
+    reglTextureCube(a0, a1, a2, a3, a4, a5)
+
+    reglTextureCube.subimage = subimage
+    reglTextureCube._reglType = 'textureCube'
+    reglTextureCube._texture = texture
+    reglTextureCube.destroy = function () {
+      texture.decRef()
+    }
+
+    return reglTextureCube
   }
 
   // Called when regl is destroyed
@@ -6773,28 +6733,20 @@ module.exports = function createTextureSet (gl, extensions, limits, reglPoll, co
       gl.bindTexture(GL_TEXTURE_2D, null)
       textureUnits[i] = null
     }
-    gl.activeTexture(GL_TEXTURE0)
-    activeTexture = 0
     values(textureSet).forEach(destroy)
   }
 
-  // Called once per raf, updates video textures
-  function pollTextures () {
-    pollSet.forEach(refresh)
-  }
-
   return {
-    create: createTexture,
-    refresh: refreshTextures,
+    create2D: createTexture2D,
+    createCube: createTextureCube,
     clear: destroyTextures,
-    poll: pollTextures,
     getTexture: function (wrapper) {
       return null
     }
   }
 }
 
-},{"./util/check":25,"./util/extend":28,"./util/is-ndarray":30,"./util/is-typed-array":31,"./util/load-texture":32,"./util/parse-dds":34,"./util/to-half-float":37,"./util/values":39}],25:[function(require,module,exports){
+},{"./constants/arraytypes.json":10,"./util/check":25,"./util/extend":28,"./util/is-ndarray":29,"./util/is-typed-array":30,"./util/pool":32,"./util/to-half-float":34,"./util/values":35}],25:[function(require,module,exports){
 // Error checking and parameter validation.
 //
 // Statements for the form `check.someProcedure(...)` get removed by
@@ -7180,6 +7132,212 @@ function checkFramebufferFormat (attachment, texFormats, rbFormats) {
   }
 }
 
+var GL_CLAMP_TO_EDGE = 0x812F
+
+var GL_NEAREST = 0x2600
+var GL_NEAREST_MIPMAP_NEAREST = 0x2700
+var GL_LINEAR_MIPMAP_NEAREST = 0x2701
+var GL_NEAREST_MIPMAP_LINEAR = 0x2702
+var GL_LINEAR_MIPMAP_LINEAR = 0x2703
+
+var GL_BYTE = 5120
+var GL_UNSIGNED_BYTE = 5121
+var GL_SHORT = 5122
+var GL_UNSIGNED_SHORT = 5123
+var GL_INT = 5124
+var GL_UNSIGNED_INT = 5125
+var GL_FLOAT = 5126
+
+var GL_UNSIGNED_SHORT_4_4_4_4 = 0x8033
+var GL_UNSIGNED_SHORT_5_5_5_1 = 0x8034
+var GL_UNSIGNED_SHORT_5_6_5 = 0x8363
+var GL_UNSIGNED_INT_24_8_WEBGL = 0x84FA
+
+var GL_HALF_FLOAT_OES = 0x8D61
+
+var TYPE_SIZE = {}
+
+TYPE_SIZE[GL_BYTE] =
+TYPE_SIZE[GL_UNSIGNED_BYTE] = 1
+
+TYPE_SIZE[GL_SHORT] =
+TYPE_SIZE[GL_UNSIGNED_SHORT] =
+TYPE_SIZE[GL_HALF_FLOAT_OES] =
+TYPE_SIZE[GL_UNSIGNED_SHORT_5_6_5] =
+TYPE_SIZE[GL_UNSIGNED_SHORT_4_4_4_4] =
+TYPE_SIZE[GL_UNSIGNED_SHORT_5_5_5_1] = 2
+
+TYPE_SIZE[GL_INT] =
+TYPE_SIZE[GL_UNSIGNED_INT] =
+TYPE_SIZE[GL_FLOAT] =
+TYPE_SIZE[GL_UNSIGNED_INT_24_8_WEBGL] = 4
+
+function pixelSize (type, channels) {
+  if (type === GL_UNSIGNED_SHORT_5_5_5_1 ||
+      type === GL_UNSIGNED_SHORT_4_4_4_4 ||
+      type === GL_UNSIGNED_SHORT_5_6_5) {
+    return 2
+  } else if (type === GL_UNSIGNED_INT_24_8_WEBGL) {
+    return 4
+  } else {
+    return TYPE_SIZE[type] * channels
+  }
+}
+
+function isPow2 (v) {
+  return !(v & (v - 1)) && (!!v)
+}
+
+function checkTexture2D (info, mipData, limits) {
+  var i
+  var w = mipData.width
+  var h = mipData.height
+  var c = mipData.channels
+
+  // Check texture shape
+  check(w > 0 && w <= limits.maxTextureSize &&
+        h > 0 && h <= limits.maxTextureSize,
+        'invalid texture shape')
+
+  // check wrap mode
+  if (info.wrapS !== GL_CLAMP_TO_EDGE || info.wrapT !== GL_CLAMP_TO_EDGE) {
+    check(isPow2(w) && isPow2(h),
+      'incompatible wrap mode for texture, both width and height must be power of 2')
+  }
+
+  if (mipData.mipmask === 1) {
+    if (w !== 1 && h !== 1) {
+      check(
+        info.minFilter !== GL_NEAREST_MIPMAP_NEAREST &&
+        info.minFilter !== GL_NEAREST_MIPMAP_LINEAR &&
+        info.minFilter !== GL_LINEAR_MIPMAP_NEAREST &&
+        info.minFilter !== GL_LINEAR_MIPMAP_LINEAR,
+        'min filter requires mipmap')
+    }
+  } else {
+    // texture must be power of 2
+    check(isPow2(w) && isPow2(h),
+      'texture must be a square power of 2 to support mipmapping')
+    check(mipData.mipmask === (w << 1) - 1,
+      'missing or incomplete mipmap data')
+  }
+
+  if (mipData.type === GL_FLOAT) {
+    if (limits.extensions.indexOf('oes_texture_float_linear') < 0) {
+      check(info.minFilter === GL_NEAREST && info.magFilter === GL_NEAREST,
+        'filter not supported, must enable oes_texture_float_linear')
+    }
+    check(!info.genMipmaps,
+      'mipmap generation not supported with float textures')
+  }
+
+  // check image complete
+  var mipimages = mipData.images
+  for (i = 0; i < 16; ++i) {
+    if (mipimages[i]) {
+      var mw = w >> i
+      var mh = h >> i
+      check(mipData.mipmask & (1 << i), 'missing mipmap data')
+
+      var img = mipimages[i]
+
+      check(
+        img.width === mw &&
+        img.height === mh,
+        'invalid shape for mip images')
+
+      check(
+        img.format === mipData.format &&
+        img.internalformat === mipData.internalformat &&
+        img.type === mipData.type,
+        'incompatible type for mip image')
+
+      if (img.compressed) {
+        // TODO: check size for compressed images
+      } else if (img.data) {
+        check(img.data.byteLength === mw * mh *
+          Math.max(pixelSize(img.type, c), img.unpackAlignment),
+          'invalid data for image, buffer size is inconsistent with image format')
+      } else if (img.element) {
+        // TODO: check element can be loaded
+      } else if (img.copy) {
+        // TODO: check compatible format and type
+      }
+    } else if (!info.genMipmaps) {
+      check((mipData.mipmask & (1 << i)) === 0, 'extra mipmap data')
+    }
+  }
+
+  if (mipData.compressed) {
+    check(!info.genMipmaps,
+      'mipmap generation for compressed images not supported')
+  }
+}
+
+function checkTextureCube (texture, info, faces, limits) {
+  var w = texture.width
+  var h = texture.height
+  var c = texture.channels
+
+  // Check texture shape
+  check(
+    w > 0 && w <= limits.maxTextureSize && h > 0 && h <= limits.maxTextureSize,
+    'invalid texture shape')
+  check(
+    w === h,
+    'cube map must be square')
+  check(
+    info.wrapS === GL_CLAMP_TO_EDGE && info.wrapT === GL_CLAMP_TO_EDGE,
+    'wrap mode not supported by cube map')
+
+  for (var i = 0; i < faces.length; ++i) {
+    var face = faces[i]
+    check(
+      face.width === w && face.height === h,
+      'inconsistent cube map face shape')
+
+    if (info.genMipmaps) {
+      check(!face.compressed,
+        'can not generate mipmap for compressed textures')
+      check(face.mipmask === 1,
+        'can not specify mipmaps and generate mipmaps')
+    } else {
+      // TODO: check mip and filter mode
+    }
+
+    var mipmaps = face.images
+    for (var j = 0; j < 16; ++j) {
+      var img = mipmaps[j]
+      if (img) {
+        var mw = w >> j
+        var mh = h >> j
+        check(face.mipmask & (1 << j), 'missing mipmap data')
+        check(
+          img.width === mw &&
+          img.height === mh,
+          'invalid shape for mip images')
+        check(
+          img.format === texture.format &&
+          img.internalformat === texture.internalformat &&
+          img.type === texture.type,
+          'incompatible type for mip image')
+
+        if (img.compressed) {
+          // TODO: check size for compressed images
+        } else if (img.data) {
+          check(img.data.byteLength === mw * mh *
+            Math.max(pixelSize(img.type, c), img.unpackAlignment),
+            'invalid data for image, buffer size is inconsistent with image format')
+        } else if (img.element) {
+          // TODO: check element can be loaded
+        } else if (img.copy) {
+          // TODO: check compatible format and type
+        }
+      }
+    }
+  }
+}
+
 module.exports = extend(check, {
   optional: checkOptional,
   raise: raise,
@@ -7198,10 +7356,12 @@ module.exports = extend(check, {
   saveCommandRef: saveCommandRef,
   saveDrawInfo: saveDrawCommandInfo,
   framebufferFormat: checkFramebufferFormat,
-  guessCommand: guessCommand
+  guessCommand: guessCommand,
+  texture2D: checkTexture2D,
+  textureCube: checkTextureCube
 })
 
-},{"./extend":28,"./is-typed-array":31}],26:[function(require,module,exports){
+},{"./extend":28,"./is-typed-array":30}],26:[function(require,module,exports){
 /* globals performance */
 module.exports =
   (typeof performance !== 'undefined' && performance.now)
@@ -7399,17 +7559,6 @@ module.exports = function (base, opts) {
 }
 
 },{}],29:[function(require,module,exports){
-module.exports = function flatten (result, data, dimension) {
-  var ptr = 0
-  for (var i = 0; i < data.length; ++i) {
-    var v = data[i]
-    for (var j = 0; j < dimension; ++j) {
-      result[ptr++] = v[j]
-    }
-  }
-}
-
-},{}],30:[function(require,module,exports){
 var isTypedArray = require('./is-typed-array')
 
 module.exports = function isNDArrayLike (obj) {
@@ -7424,96 +7573,13 @@ module.exports = function isNDArrayLike (obj) {
       isTypedArray(obj.data)))
 }
 
-},{"./is-typed-array":31}],31:[function(require,module,exports){
+},{"./is-typed-array":30}],30:[function(require,module,exports){
 var dtypes = require('../constants/arraytypes.json')
 module.exports = function (x) {
   return Object.prototype.toString.call(x) in dtypes
 }
 
-},{"../constants/arraytypes.json":10}],32:[function(require,module,exports){
-/* globals document, Image, XMLHttpRequest */
-
-module.exports = loadTexture
-
-function getExtension (url) {
-  var parts = /\.(\w+)(\?.*)?$/.exec(url)
-  if (parts && parts[1]) {
-    return parts[1].toLowerCase()
-  }
-}
-
-function isVideoExtension (url) {
-  return [
-    'avi',
-    'asf',
-    'gifv',
-    'mov',
-    'qt',
-    'yuv',
-    'mpg',
-    'mpeg',
-    'm2v',
-    'mp4',
-    'm4p',
-    'm4v',
-    'ogg',
-    'ogv',
-    'vob',
-    'webm',
-    'wmv'
-  ].indexOf(url) >= 0
-}
-
-function isCompressedExtension (url) {
-  return [
-    'dds'
-  ].indexOf(url) >= 0
-}
-
-function loadVideo (url, crossOrigin) {
-  var video = document.createElement('video')
-  video.autoplay = true
-  video.loop = true
-  if (crossOrigin) {
-    video.crossOrigin = crossOrigin
-  }
-  video.src = url
-  return video
-}
-
-function loadCompressedTexture (url, ext, crossOrigin) {
-  var xhr = new XMLHttpRequest()
-  xhr.responseType = 'arraybuffer'
-  xhr.open('GET', url, true)
-  xhr.send()
-  return xhr
-}
-
-function loadImage (url, crossOrigin) {
-  var image = new Image()
-  if (crossOrigin) {
-    image.crossOrigin = crossOrigin
-  }
-  image.src = url
-  return image
-}
-
-// Currently this stuff only works in a DOM environment
-function loadTexture (url, crossOrigin) {
-  if (typeof document !== 'undefined') {
-    var ext = getExtension(url)
-    if (isVideoExtension(ext)) {
-      return loadVideo(url, crossOrigin)
-    }
-    if (isCompressedExtension(ext)) {
-      return loadCompressedTexture(url, ext, crossOrigin)
-    }
-    return loadImage(url, crossOrigin)
-  }
-  return null
-}
-
-},{}],33:[function(require,module,exports){
+},{"../constants/arraytypes.json":10}],31:[function(require,module,exports){
 module.exports = function loop (n, f) {
   var result = Array(n)
   for (var i = 0; i < n; ++i) {
@@ -7522,192 +7588,7 @@ module.exports = function loop (n, f) {
   return result
 }
 
-},{}],34:[function(require,module,exports){
-// References:
-//
-// http://msdn.microsoft.com/en-us/library/bb943991.aspx/
-// http://blog.tojicode.com/2011/12/compressed-textures-in-webgl.html
-//
-var check = require('./check')
-
-module.exports = parseDDS
-
-var DDS_MAGIC = 0x20534444
-
-var GL_TEXTURE_2D = 0x0DE1
-var GL_TEXTURE_CUBE_MAP_POSITIVE_X = 0x8515
-
-var GL_COMPRESSED_RGB_S3TC_DXT1_EXT = 0x83F0
-var GL_COMPRESSED_RGBA_S3TC_DXT1_EXT = 0x83F1
-var GL_COMPRESSED_RGBA_S3TC_DXT3_EXT = 0x83F2
-var GL_COMPRESSED_RGBA_S3TC_DXT5_EXT = 0x83F3
-
-var GL_COMPRESSED_RGB_ETC1_WEBGL = 0x8D64
-
-var GL_UNSIGNED_BYTE = 0x1401
-// var GL_HALF_FLOAT_OES = 0x8D61
-// var GL_FLOAT = 0x1406
-
-var DDSD_MIPMAPCOUNT = 0x20000
-
-var DDSCAPS2_CUBEMAP = 0x200
-var DDSCAPS2_CUBEMAP_POSITIVEX = 0x400
-var DDSCAPS2_CUBEMAP_NEGATIVEX = 0x800
-var DDSCAPS2_CUBEMAP_POSITIVEY = 0x1000
-var DDSCAPS2_CUBEMAP_NEGATIVEY = 0x2000
-var DDSCAPS2_CUBEMAP_POSITIVEZ = 0x4000
-var DDSCAPS2_CUBEMAP_NEGATIVEZ = 0x8000
-
-var CUBEMAP_COMPLETE_FACES = (
-  DDSCAPS2_CUBEMAP_POSITIVEX |
-  DDSCAPS2_CUBEMAP_NEGATIVEX |
-  DDSCAPS2_CUBEMAP_POSITIVEY |
-  DDSCAPS2_CUBEMAP_NEGATIVEY |
-  DDSCAPS2_CUBEMAP_POSITIVEZ |
-  DDSCAPS2_CUBEMAP_NEGATIVEZ)
-
-var DDPF_FOURCC = 0x4
-var DDPF_RGB = 0x40
-
-var FOURCC_DXT1 = 0x31545844
-var FOURCC_DXT3 = 0x33545844
-var FOURCC_DXT5 = 0x35545844
-var FOURCC_ETC1 = 0x31435445
-
-// DDS_HEADER {
-var OFF_SIZE = 1        // int32 dwSize
-var OFF_FLAGS = 2       // int32 dwFlags
-var OFF_HEIGHT = 3      // int32 dwHeight
-var OFF_WIDTH = 4       // int32 dwWidth
-// var OFF_PITCH = 5       // int32 dwPitchOrLinearSize
-// var OFF_DEPTH = 6       // int32 dwDepth
-var OFF_MIPMAP = 7      // int32 dwMipMapCount; // offset: 7
-// int32[11] dwReserved1
-// DDS_PIXELFORMAT {
-// var OFF_PF_SIZE = 19    // int32 dwSize; // offset: 19
-var OFF_PF_FLAGS = 20   // int32 dwFlags
-var OFF_FOURCC = 21     // char[4] dwFourCC
-// var OFF_RGBA_BITS = 22  // int32 dwRGBBitCount
-// var OFF_RED_MASK = 23   // int32 dwRBitMask
-// var OFF_GREEN_MASK = 24 // int32 dwGBitMask
-// var OFF_BLUE_MASK = 25  // int32 dwBBitMask
-// var OFF_ALPHA_MASK = 26 // int32 dwABitMask; // offset: 26
-// }
-// var OFF_CAPS = 27       // int32 dwCaps; // offset: 27
-var OFF_CAPS2 = 28      // int32 dwCaps2
-// var OFF_CAPS3 = 29      // int32 dwCaps3
-// var OFF_CAPS4 = 30      // int32 dwCaps4
-// int32 dwReserved2 // offset 31
-
-function parseDDS (arrayBuffer) {
-  var header = new Int32Array(arrayBuffer)
-  check(header[0] === DDS_MAGIC,
-    'invalid magic number for dds header')
-
-  var flags = header[OFF_FLAGS]
-  check(flags & DDPF_FOURCC,
-    'unsupported dds format')
-
-  var width = header[OFF_WIDTH]
-  var height = header[OFF_HEIGHT]
-
-  var type = GL_UNSIGNED_BYTE
-  var format = 0
-  var blockBytes = 0
-  var channels = 4
-  switch (header[OFF_FOURCC]) {
-    case FOURCC_DXT1:
-      blockBytes = 8
-      if (flags & DDPF_RGB) {
-        channels = 3
-        format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT
-      } else {
-        format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
-      }
-      break
-
-    case FOURCC_DXT3:
-      blockBytes = 16
-      format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
-      break
-
-    case FOURCC_DXT5:
-      blockBytes = 16
-      format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
-      break
-
-    case FOURCC_ETC1:
-      blockBytes = 8
-      format = GL_COMPRESSED_RGB_ETC1_WEBGL
-      break
-
-    // TODO: Implement hdr and uncompressed textures
-
-    default:
-      // Handle uncompressed data here
-      check.raise('unsupported dds texture format')
-  }
-
-  var pixelFlags = header[OFF_PF_FLAGS]
-
-  var mipmapCount = 1
-  if (pixelFlags & DDSD_MIPMAPCOUNT) {
-    mipmapCount = Math.max(1, header[OFF_MIPMAP])
-  }
-
-  var ptr = header[OFF_SIZE] + 4
-
-  var result = {
-    width: width,
-    height: height,
-    channels: channels,
-    format: format,
-    type: type,
-    compressed: true,
-    cube: false,
-    pixels: []
-  }
-
-  function parseMips (target) {
-    var mipWidth = width
-    var mipHeight = height
-
-    for (var i = 0; i < mipmapCount; ++i) {
-      var size =
-        Math.max(1, (mipWidth + 3) >> 2) *
-        Math.max(1, (mipHeight + 3) >> 2) *
-        blockBytes
-      result.pixels.push({
-        target: target,
-        miplevel: i,
-        width: mipWidth,
-        height: mipHeight,
-        data: new Uint8Array(arrayBuffer, ptr, size)
-      })
-      ptr += size
-      mipWidth >>= 1
-      mipHeight >>= 1
-    }
-  }
-
-  var caps2 = header[OFF_CAPS2]
-  var cubemap = !!(caps2 & DDSCAPS2_CUBEMAP)
-  if (cubemap) {
-    check(
-      (caps2 & CUBEMAP_COMPLETE_FACES) === CUBEMAP_COMPLETE_FACES,
-      'missing cubemap faces')
-    result.cube = true
-    for (var i = 0; i < 6; ++i) {
-      parseMips(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i)
-    }
-  } else {
-    parseMips(GL_TEXTURE_2D)
-  }
-
-  return result
-}
-
-},{"./check":25}],35:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 var loop = require('./loop')
 
 var GL_BYTE = 5120
@@ -7758,24 +7639,36 @@ function free (buf) {
 }
 
 function allocType (type, n) {
+  var result = null
   switch (type) {
     case GL_BYTE:
-      return new Int8Array(alloc(n), 0, n)
+      result = new Int8Array(alloc(n), 0, n)
+      break
     case GL_UNSIGNED_BYTE:
-      return new Uint8Array(alloc(n), 0, n)
+      result = new Uint8Array(alloc(n), 0, n)
+      break
     case GL_SHORT:
-      return new Int16Array(alloc(2 * n), 0, n)
+      result = new Int16Array(alloc(2 * n), 0, n)
+      break
     case GL_UNSIGNED_SHORT:
-      return new Uint16Array(alloc(2 * n), 0, n)
+      result = new Uint16Array(alloc(2 * n), 0, n)
+      break
     case GL_INT:
-      return new Int32Array(alloc(4 * n), 0, n)
+      result = new Int32Array(alloc(4 * n), 0, n)
+      break
     case GL_UNSIGNED_INT:
-      return new Uint32Array(alloc(4 * n), 0, n)
+      result = new Uint32Array(alloc(4 * n), 0, n)
+      break
     case GL_FLOAT:
-      return new Float32Array(alloc(4 * n), 0, n)
+      result = new Float32Array(alloc(4 * n), 0, n)
+      break
     default:
       return null
   }
+  if (result.length !== n) {
+    return result.subarray(0, n)
+  }
+  return result
 }
 
 function freeType (array) {
@@ -7789,7 +7682,7 @@ module.exports = {
   freeType: freeType
 }
 
-},{"./loop":33}],36:[function(require,module,exports){
+},{"./loop":31}],33:[function(require,module,exports){
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
     typeof cancelAnimationFrame === 'function') {
@@ -7806,11 +7699,16 @@ if (typeof requestAnimationFrame === 'function' &&
   }
 }
 
-},{}],37:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
+var pool = require('./pool')
+
+var FLOAT = new Float32Array(1)
+var INT = new Uint32Array(FLOAT.buffer)
+
+var GL_UNSIGNED_SHORT = 5123
+
 module.exports = function convertToHalfFloat (array) {
-  var floats = new Float32Array(array)
-  var uints = new Uint32Array(floats.buffer)
-  var ushorts = new Uint16Array(array.length)
+  var ushorts = pool.allocType(GL_UNSIGNED_SHORT, array.length)
 
   for (var i = 0; i < array.length; ++i) {
     if (isNaN(array[i])) {
@@ -7820,7 +7718,8 @@ module.exports = function convertToHalfFloat (array) {
     } else if (array[i] === -Infinity) {
       ushorts[i] = 0xfc00
     } else {
-      var x = uints[i]
+      FLOAT[0] = array[i]
+      var x = INT[0]
 
       var sgn = (x >>> 31) << 15
       var exp = ((x << 1) >>> 24) - 127
@@ -7846,23 +7745,12 @@ module.exports = function convertToHalfFloat (array) {
   return ushorts
 }
 
-},{}],38:[function(require,module,exports){
-module.exports = function (
-  result, data, shapeX, shapeY, strideX, strideY, offset) {
-  var ptr = 0
-  for (var i = 0; i < shapeX; ++i) {
-    for (var j = 0; j < shapeY; ++j) {
-      result[ptr++] = data[strideX * i + strideY * j + offset]
-    }
-  }
-}
-
-},{}],39:[function(require,module,exports){
+},{"./pool":32}],35:[function(require,module,exports){
 module.exports = function (obj) {
   return Object.keys(obj).map(function (key) { return obj[key] })
 }
 
-},{}],40:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 // Context and canvas creation helper functions
 /*globals HTMLElement,WebGLRenderingContext*/
 
@@ -7984,7 +7872,7 @@ module.exports = function parseArgs (args) {
   }
 }
 
-},{"./util/check":25,"./util/extend":28}],41:[function(require,module,exports){
+},{"./util/check":25,"./util/extend":28}],37:[function(require,module,exports){
 var check = require('./lib/util/check')
 var extend = require('./lib/util/extend')
 var dynamic = require('./lib/dynamic')
@@ -8009,8 +7897,6 @@ var GL_DEPTH_BUFFER_BIT = 256
 var GL_STENCIL_BUFFER_BIT = 1024
 
 var GL_ARRAY_BUFFER = 34962
-var GL_TEXTURE_2D = 0x0DE1
-var GL_TEXTURE_CUBE_MAP = 0x8513
 
 var CONTEXT_LOST_EVENT = 'webglcontextlost'
 var CONTEXT_RESTORED_EVENT = 'webglcontextrestored'
@@ -8104,32 +7990,15 @@ module.exports = function wrapREGL () {
     // schedule next animation frame
     activeRAF = raf.next(handleRAF)
 
-    // increment frame coun
+    // increment frame count
     contextState.count += 1
-
-    // reset viewport
-    var viewport = nextState.viewport
-    var scissorBox = nextState.scissor_box
-    viewport[0] = viewport[1] = scissorBox[0] = scissorBox[1] = 0
-
-    contextState.viewportWidth =
-      contextState.frameBufferWidth =
-      contextState.drawingBufferWidth =
-      viewport[2] =
-      scissorBox[2] = gl.drawingBufferWidth
-    contextState.viewportHeight =
-      contextState.frameBufferWidth =
-      contextState.drawingBufferHeight =
-      viewport[3] =
-      scissorBox[3] = gl.drawingBufferHeight
 
     var now = clock()
     contextState.deltaTime = (now - LAST_TIME) / 1000.0
     contextState.time = (now - START_TIME) / 1000.0
     LAST_TIME = now
 
-    core.procs.refresh()
-    textureState.poll()
+    refresh()
 
     for (var i = 0; i < rafCallbacks.length; ++i) {
       var cb = rafCallbacks[i]
@@ -8151,30 +8020,11 @@ module.exports = function wrapREGL () {
   }
 
   function handleContextLoss (event) {
-    /*
-    stopRAF()
-    event.preventDefault()
-    if (options.onContextLost) {
-      options.onContextLost()
-    }
-    */
+    // TODO
   }
 
   function handleContextRestored (event) {
-    /*
-    gl.getError()
-    extensionState.refresh()
-    core.procs.refresh()
-    bufferState.refresh()
-    textureState.refresh()
-    renderbufferState.refresh()
-    framebufferState.refresh()
-    shaderState.refresh()
-    if (options.onContextRestored) {
-      options.onContextRestored()
-    }
-    handleRAF()
-    */
+    // TODO
   }
 
   if (canvas) {
@@ -8307,6 +8157,10 @@ module.exports = function wrapREGL () {
   }
 
   function clear (options) {
+    check(
+      typeof options === 'object' && options,
+      'regl.clear() takes an object as input')
+
     var clearFlags = 0
 
     poll()
@@ -8330,6 +8184,8 @@ module.exports = function wrapREGL () {
   }
 
   function frame (cb) {
+    check.type(cb, 'function', 'regl.frame() callback must be a function')
+
     rafCallbacks.push(cb)
 
     function cancel () {
@@ -8352,7 +8208,27 @@ module.exports = function wrapREGL () {
     }
   }
 
-  core.procs.refresh()
+  function refresh () {
+    // reset viewport
+    var viewport = nextState.viewport
+    var scissorBox = nextState.scissor_box
+    viewport[0] = viewport[1] = scissorBox[0] = scissorBox[1] = 0
+
+    contextState.viewportWidth =
+      contextState.frameBufferWidth =
+      contextState.drawingBufferWidth =
+      viewport[2] =
+      scissorBox[2] = gl.drawingBufferWidth
+    contextState.viewportHeight =
+      contextState.frameBufferWidth =
+      contextState.drawingBufferHeight =
+      viewport[3] =
+      scissorBox[3] = gl.drawingBufferHeight
+
+    core.procs.refresh()
+  }
+
+  refresh()
 
   return extend(compileProcedure, {
     // Clear current FBO
@@ -8367,30 +8243,14 @@ module.exports = function wrapREGL () {
     draw: compileProcedure({}),
 
     // Resources
-    elements: function (options) {
-      return elementState.create(options)
-    },
     buffer: function (options) {
       return bufferState.create(options, GL_ARRAY_BUFFER)
     },
-    texture: function (options) {
-      return textureState.create(options, GL_TEXTURE_2D)
-    },
-    cube: function (options) {
-      if (arguments.length === 6) {
-        return textureState.create(
-          Array.prototype.slice.call(arguments),
-          GL_TEXTURE_CUBE_MAP)
-      } else {
-        return textureState.create(options, GL_TEXTURE_CUBE_MAP)
-      }
-    },
-    renderbuffer: function (options) {
-      return renderbufferState.create(options)
-    },
-    framebuffer: function (options) {
-      return framebufferState.create(options)
-    },
+    elements: elementState.create,
+    texture: textureState.create2D,
+    cube: textureState.createCube,
+    renderbuffer: renderbufferState.create,
+    framebuffer: framebufferState.create,
     framebufferCube: function (options) {
       check.raise('framebuffer cube not yet implemented')
     },
@@ -8403,6 +8263,9 @@ module.exports = function wrapREGL () {
 
     // System limits
     limits: limits,
+    hasExtension: function (name) {
+      return limits.extensions.indexOf(name.toLowerCase()) >= 0
+    },
 
     // Read pixels
     read: readPixels,
@@ -8412,12 +8275,10 @@ module.exports = function wrapREGL () {
 
     // Direct GL state manipulation
     _gl: gl,
-    _refresh: function () {
-      core.procs.refresh()
-    }
+    _refresh: refresh
   })
 }
 
-},{"./lib/attribute":8,"./lib/buffer":9,"./lib/core":14,"./lib/dynamic":15,"./lib/elements":16,"./lib/extension":17,"./lib/framebuffer":18,"./lib/limits":19,"./lib/read":20,"./lib/renderbuffer":21,"./lib/shader":22,"./lib/strings":23,"./lib/texture":24,"./lib/util/check":25,"./lib/util/clock":26,"./lib/util/extend":28,"./lib/util/raf":36,"./lib/webgl":40}]},{},[6]);
+},{"./lib/attribute":8,"./lib/buffer":9,"./lib/core":14,"./lib/dynamic":15,"./lib/elements":16,"./lib/extension":17,"./lib/framebuffer":18,"./lib/limits":19,"./lib/read":20,"./lib/renderbuffer":21,"./lib/shader":22,"./lib/strings":23,"./lib/texture":24,"./lib/util/check":25,"./lib/util/clock":26,"./lib/util/extend":28,"./lib/util/raf":33,"./lib/webgl":36}]},{},[6]);
 </script>
 </html>
