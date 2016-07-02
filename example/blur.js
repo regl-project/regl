@@ -4,6 +4,8 @@ const regl = require('../regl')(canvas)
 const mat4 = require('gl-mat4')
 const camera = require('canvas-orbit-camera')(canvas)
 window.addEventListener('resize', fit(canvas), false)
+const bunny = require('bunny')
+const normals = require('angle-normals')
 
 // configure intial camera view.
 camera.rotate([0.0, 0.0], [0.0, -0.4])
@@ -46,18 +48,27 @@ for (row = 0; row <= (N - 1); ++row) {
   }
 }
 
+/*
+  This functions encapsulates all the state that is common between drawTerrain and drawBunny()
+  */
 const setupDefault = regl({
   cull: {
     enable: true
   },
   uniforms: {
+    // View Projection matrices.
     view: () => camera.view(),
     projection: ({viewportWidth, viewportHeight}) =>
       mat4.perspective([],
                        Math.PI / 4,
                        viewportWidth / viewportHeight,
                        0.01,
-                       1000)
+                       3000),
+
+    // light settings. These can of course by tweaked to your likings.
+    lightDir: [0.39, 0.87, 0.29],
+    ambientLightAmount: 0.3,
+    diffuseLightAmount: 0.7
   }
 })
 
@@ -71,12 +82,15 @@ const drawTerrain = regl({
 
   uniform sampler2D rockTexture;
 
+  uniform vec3 lightDir;
+  uniform float ambientLightAmount;
+  uniform float diffuseLightAmount;
+
   void main () {
     vec3 tex = texture2D(rockTexture, vUv*2.0).rgb;
-    vec3 lightDir = normalize(vec3(0.4, 0.9, 0.3));
 
-    vec3 ambient = 0.3 * tex;
-    vec3 diffuse = 0.7 * tex * clamp( dot(vNormal, lightDir ), 0.0, 1.0 );
+    vec3 ambient = ambientLightAmount * tex;
+    vec3 diffuse = diffuseLightAmount * tex * clamp( dot(vNormal, lightDir ), 0.0, 1.0 );
 
     gl_FragColor = vec4(ambient + diffuse, 1.0);
   }`,
@@ -135,6 +149,64 @@ const drawTerrain = regl({
   elements: regl.prop('elements')
 })
 
+const drawBunny = regl({
+  frag: `
+  precision mediump float;
+  varying vec3 vNormal;
+
+  uniform vec3 lightDir;
+  uniform vec3 color;
+  uniform float ambientLightAmount;
+  uniform float diffuseLightAmount;
+
+  void main () {
+    vec3 c = color;
+
+    vec3 ambient = ambientLightAmount * c;
+    vec3 diffuse = diffuseLightAmount * c * clamp( dot(vNormal, lightDir ), 0.0, 1.0 );
+
+    gl_FragColor = vec4(ambient + diffuse, 1.0);
+  }`,
+  vert: `
+  precision mediump float;
+
+  uniform mat4 projection, model, view;
+  attribute vec3 position;
+  attribute vec3 normal;
+
+  varying vec3 vNormal;
+
+  void main () {
+    vNormal = normal;
+    gl_Position = projection * view * model * vec4(position, 1.0);
+  }`,
+  attributes: {
+    position: bunny.positions,
+    normal: normals(bunny.cells, bunny.positions)
+  },
+  elements: bunny.cells,
+  uniforms: {
+//    model: mat4.identity([]),
+
+    model: (_, props, batchId) => {
+      var m = mat4.identity([])
+
+      mat4.translate(m, m, props.position)
+
+      var s = props.scale
+      mat4.scale(m, m, [s, s, s])
+
+      var r = props.rotation
+      mat4.rotateX(m, m, r[0])
+      mat4.rotateY(m, m, r[1])
+      mat4.rotateZ(m, m, r[2])
+
+      return m
+    },
+    color: regl.prop('color')
+  }
+})
+
 require('resl')({
   manifest: {
     heightTexture: {
@@ -163,6 +235,20 @@ require('resl')({
 
       setupDefault({}, () => {
         drawTerrain({elements, xzPosition, heightTexture, rockTexture})
+        drawBunny([
+          {color: [0.4, 0.2, 0.1], scale: 1.7, position: [0.0, -65.0, 0.0], rotation: [0.0, 0.8, 0.0]},
+          {color: [0.6, 0.2, 0.5], scale: 5.2, position: [30.0, -65.0, -80.0], rotation: [-0.5, 0.0, 0.0]},
+          {color: [0.4, 0.2, 0.6], scale: 1.5, position: [120.0, -55.0, -100.0], rotation: [-0.5, 1.9, 0.0]},
+          {color: [0.7, 0.7, 0.7], scale: 2.2, position: [50.0, -60.0, 0.0], rotation: [-0.2, 0.0, 0.0]},
+          {color: [0.0, 0.2, 0.5], scale: 1.0, position: [-50.0, -60.0, 0.0], rotation: [0.0, 1.2, 0.0]},
+          {color: [0.4, 0.4, 0.0], scale: 1.0, position: [-50.0, -45.0, 40.0], rotation: [0.0, 0, -0.6]},
+          {color: [0.2, 0.2, 0.2], scale: 3.3, position: [100.0, -65.0, 50.0], rotation: [0.0, -0.4, -0.0]},
+          {color: [0.4, 0.1, 0.1], scale: 2.1, position: [70.0, -65.0, 80.0], rotation: [0.1, 0.6, 0.2]},
+          {color: [0.2, 0.5, 0.2], scale: 6.1, position: [-50.0, -70.0, 80.0], rotation: [0.0, -0.9, 0.0]},
+          {color: [0.3, 0.5, 0.5], scale: 4.1, position: [-50.0, -70.0, -60.0], rotation: [0.7, -0.0, 0.0]},
+          {color: [0.4, 0.4, 0.1], scale: 1.8, position: [-80.0, -50.0, -110.0], rotation: [0.0, -0.0, 0.0]},
+          {color: [0.7, 0.4, 0.1], scale: 1.3, position: [-120.0, -85.0, -40.0], rotation: [0.0, +2.1, -0.3]}
+        ])
         camera.tick()
       })
     })
