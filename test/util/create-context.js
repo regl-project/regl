@@ -25,13 +25,18 @@ if (typeof document !== 'undefined') {
 
   module.exports.destroy = function (gl) { }
 } else {
-  module.exports = require('gl')
+  var CONTEXT = require('gl')(1, 1)
+  var RESIZE = CONTEXT.getExtension('STACKGL_resize_drawingbuffer')
+
+  module.exports = function (w, h) {
+    RESIZE.resize(w, h)
+    return CONTEXT
+  }
 
   module.exports.resize = function (gl, w, h) {
-    gl.getExtension('STACKGL_resize_drawingbuffer').resize(w, h)
+    RESIZE.resize(w, h)
   }
 
   module.exports.destroy = function (gl) {
-    gl.getExtension('STACKGL_destroy_context').destroy()
   }
 }
