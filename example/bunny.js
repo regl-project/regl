@@ -29,8 +29,8 @@ const drawBunny = regl({
 
   uniforms: {
     model: mat4.identity([]),
-    view: ({count}) => {
-      const t = 0.01 * count
+    view: ({tick}) => {
+      const t = 0.01 * tick
       return mat4.lookAt([],
         [30 * Math.cos(t), 2.5, 30 * Math.sin(t)],
         [0, 2.5, 0],
