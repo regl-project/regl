@@ -3,7 +3,8 @@ var createREGL = require('../../regl')
 var tape = require('tape')
 
 tape('drawing', function (t) {
-  var regl = createREGL(createContext(5, 5))
+  var gl = createContext(5, 5)
+  var regl = createREGL(gl)
 
   function checkPixmap (args, expected, remark) {
     var base = {
@@ -145,5 +146,6 @@ tape('drawing', function (t) {
   ], 'triangle fan')
 
   regl.destroy()
+  createContext.destroy(gl)
   t.end()
 })

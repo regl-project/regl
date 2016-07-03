@@ -12,7 +12,8 @@ function find (array, pred) {
 
 tape('batch', function (t) {
   setTimeout(function () {
-    var regl = createREGL(createContext(5, 5))
+    var gl = createContext(5, 5)
+    var regl = createREGL(gl)
 
     var points = [
       [2, 2],
@@ -125,7 +126,7 @@ tape('batch', function (t) {
     runTest()
 
     regl.destroy()
-
+    createContext.destroy(gl)
     t.end()
   }, 120)
 })
