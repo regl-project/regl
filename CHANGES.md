@@ -49,6 +49,7 @@
 
 ## Next
 
+* Remove `deltaTime` context variable
 * Uniform validation fixes
 * Texture construction fixes
 * Improved test coverage for uniform variables
