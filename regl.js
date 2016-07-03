@@ -41,13 +41,11 @@ module.exports = function wrapREGL () {
   var extensions = extensionState.extensions
 
   var START_TIME = clock()
-  var LAST_TIME = START_TIME
   var WIDTH = gl.drawingBufferWidth
   var HEIGHT = gl.drawingBufferHeight
 
   var contextState = {
     tick: 0,
-    deltaTime: 0,
     time: 0,
     viewportWidth: WIDTH,
     viewportHeight: HEIGHT,
@@ -118,17 +116,20 @@ module.exports = function wrapREGL () {
     // increment frame count
     contextState.tick += 1
 
-    var now = clock()
-    contextState.deltaTime = (now - LAST_TIME) / 1000.0
-    contextState.time = (now - START_TIME) / 1000.0
-    LAST_TIME = now
+    // Update time
+    contextState.time = (clock() - START_TIME) / 1000.0
 
-    refresh()
+    // poll for changes
+    poll()
 
+    // fire a callback for all pending rafs
     for (var i = 0; i < rafCallbacks.length; ++i) {
       var cb = rafCallbacks[i]
       cb(contextState, null, 0)
     }
+
+    // flush all pending webgl calls
+    gl.flush()
   }
 
   function startRAF () {
@@ -277,18 +278,13 @@ module.exports = function wrapREGL () {
     return REGLCommand
   }
 
-  function poll () {
-    core.procs.poll()
-  }
-
   function clear (options) {
     check(
       typeof options === 'object' && options,
       'regl.clear() takes an object as input')
 
     var clearFlags = 0
-
-    poll()
+    core.procs.poll()
 
     var c = options.color
     if (c) {
@@ -333,12 +329,11 @@ module.exports = function wrapREGL () {
     }
   }
 
-  function refresh () {
-    // reset viewport
+  // poll viewport
+  function pollViewport () {
     var viewport = nextState.viewport
     var scissorBox = nextState.scissor_box
     viewport[0] = viewport[1] = scissorBox[0] = scissorBox[1] = 0
-
     contextState.viewportWidth =
       contextState.frameBufferWidth =
       contextState.drawingBufferWidth =
@@ -349,7 +344,15 @@ module.exports = function wrapREGL () {
       contextState.drawingBufferHeight =
       viewport[3] =
       scissorBox[3] = gl.drawingBufferHeight
+  }
 
+  function poll () {
+    pollViewport()
+    core.procs.poll()
+  }
+
+  function refresh () {
+    pollViewport()
     core.procs.refresh()
   }
 
