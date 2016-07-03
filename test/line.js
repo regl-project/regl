@@ -4,7 +4,8 @@ var tape = require('tape')
 
 tape('line', function (t) {
   setTimeout(function () {
-    var regl = createREGL(createContext(7, 7))
+    var gl = createContext(7, 7)
+    var regl = createREGL(gl)
 
     regl.clear({
       color: [1, 0, 0, 1],
@@ -76,7 +77,7 @@ tape('line', function (t) {
     t.equals(got.join('\n'), expect.join('\n'), 'pixels equal')
 
     regl.destroy()
-
+    createContext.destroy(gl)
     t.end()
   }, 120)
 })

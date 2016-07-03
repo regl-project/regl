@@ -156,5 +156,6 @@ tape('buffer arg parsing', function (t) {
     'ndarray-like input')
 
   regl.destroy()
+  createContext.destroy(gl)
   t.end()
 })

@@ -31,5 +31,6 @@ tape('renderbuffer parsing', function (t) {
     'empty')
 
   regl.destroy()
+  createContext.destroy(gl)
   t.end()
 })
