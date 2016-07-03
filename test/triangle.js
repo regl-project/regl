@@ -4,7 +4,8 @@ var tape = require('tape')
 
 tape('triangle', function (t) {
   setTimeout(function () {
-    var regl = createREGL(createContext(16, 16))
+    var gl = createContext(16, 16)
+    var regl = createREGL(gl)
 
     regl.clear({
       color: [1, 0, 0, 1],
@@ -53,6 +54,7 @@ tape('triangle', function (t) {
     }
 
     regl.destroy()
+    createContext.destroy(gl)
     t.end()
   }, 120)
 })

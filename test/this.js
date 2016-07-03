@@ -3,7 +3,8 @@ var createREGL = require('../../regl')
 var tape = require('tape')
 
 tape('this / state variables', function (t) {
-  var regl = createREGL(createContext(5, 5))
+  var gl = createContext(5, 5)
+  var regl = createREGL(gl)
 
   function checkPixmap (slots, args, expected, remark) {
     var base = {
@@ -97,5 +98,6 @@ tape('this / state variables', function (t) {
   //   * gl properties
 
   regl.destroy()
+  createContext.destroy(gl)
   t.end()
 })

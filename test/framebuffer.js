@@ -269,5 +269,7 @@ tape('framebuffer', function (t) {
   // TODO check copyTexImage
   // TODO check regl.read
 
+  regl.destroy()
+  createContext.destroy(gl)
   t.end()
 })

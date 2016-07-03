@@ -3,7 +3,8 @@ var createREGL = require('../../regl')
 var tape = require('tape')
 
 tape('context', function (t) {
-  var regl = createREGL(createContext(16, 16))
+  var gl = createContext(16, 16)
+  var regl = createREGL(gl)
 
   var simpleScope = regl({
     context: {
@@ -55,5 +56,6 @@ tape('context', function (t) {
   })
 
   regl.destroy()
+  createContext.destroy(gl)
   t.end()
 })
