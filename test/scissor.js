@@ -113,5 +113,6 @@ tape('scissor', function (t) {
   })
 
   regl.destroy()
+  createContext.destroy(gl)
   t.end()
 })

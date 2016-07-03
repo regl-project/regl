@@ -3,7 +3,8 @@ var createREGL = require('../../regl')
 var tape = require('tape')
 
 tape('scope', function (t) {
-  var regl = createREGL(createContext(5, 5))
+  var gl = createContext(5, 5)
+  var regl = createREGL(gl)
 
   function checkPixmap (expected, remark) {
     var pixels = regl.read()
@@ -106,5 +107,6 @@ tape('scope', function (t) {
   // test setting uniforms with scope
 
   regl.destroy()
+  createContext.destroy(gl)
   t.end()
 })

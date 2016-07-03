@@ -117,7 +117,7 @@ tape('texture 2d', function (t) {
   function checkShouldThrow (desc, name) {
     t.throws(function () {
       regl.texture(desc)
-    }, null, name + ' throws')
+    }, /\(regl\)/, name + ' throws')
   }
 
   function comparePixels (texture, width, height, expected, tolerance, name) {
@@ -782,6 +782,7 @@ tape('texture 2d', function (t) {
 
   function endTest () {
     regl.destroy()
+    createContext.destroy(gl)
     t.end()
   }
 })

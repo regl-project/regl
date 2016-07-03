@@ -104,5 +104,6 @@ tape('viewport', function (t) {
   // TODO test resizing
 
   regl.destroy()
+  createContext.destroy(gl)
   t.end()
 })
