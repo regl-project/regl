@@ -352,5 +352,6 @@ tape('elements - more', function (t) {
   runSuite('')
 
   regl.destroy()
+  createContext.destroy(gl)
   t.end()
 })

@@ -25,7 +25,6 @@ var depthFuncs = {
 
 tape('depth', function (t) {
   var gl = createContext(5, 5)
-  console.log(gl)
   var regl = createREGL(gl)
 
   // TODO: test depth range
@@ -275,6 +274,7 @@ tape('depth', function (t) {
     if (cases.length === 0) {
       clearInterval(poll)
       regl.destroy()
+      createContext.destroy(gl)
       t.end()
     } else {
       var top = cases.pop()
