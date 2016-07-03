@@ -45,7 +45,7 @@ module.exports = function wrapREGL () {
   var HEIGHT = gl.drawingBufferHeight
 
   var contextState = {
-    count: 0,
+    tick: 0,
     time: 0,
     viewportWidth: WIDTH,
     viewportHeight: HEIGHT,
@@ -114,7 +114,7 @@ module.exports = function wrapREGL () {
     activeRAF = raf.next(handleRAF)
 
     // increment frame count
-    contextState.count += 1
+    contextState.tick += 1
 
     // Update time
     contextState.time = (clock() - START_TIME) / 1000.0

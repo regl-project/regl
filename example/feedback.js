@@ -45,7 +45,7 @@ const drawFeedback = regl({
       mouse.x * pixelRatio,
       viewportHeight - mouse.y * pixelRatio
     ],
-    t: ({count}) => 0.01 * count
+    t: ({tick}) => 0.01 * tick
   },
 
   count: 3
