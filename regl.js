@@ -132,6 +132,9 @@ module.exports = function wrapREGL () {
       var cb = rafCallbacks[i]
       cb(contextState, null, 0)
     }
+
+    // flush all pending webgl calls
+    gl.flush()
   }
 
   function startRAF () {
