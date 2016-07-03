@@ -47,6 +47,12 @@
     + Spring/cloth physics
     + Asset loading (obj, ply, etc.)
 
+## Next
+
+* Uniform validation fixes
+* Texture construction fixes
+* Improved test coverage for uniform variables
+
 ## 0.8.0
 
 * Optimize texture and cubemap constructors
