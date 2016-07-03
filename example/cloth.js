@@ -215,7 +215,9 @@ require('resl')({
   },
 
   onDone: ({ clothTexture }) => {
-    regl.frame(({deltaTime, count}) => {
+    regl.frame(({count}) => {
+      const deltaTime = 0.017
+
       regl.clear({
         color: [0, 0, 0, 255],
         depth: 1
