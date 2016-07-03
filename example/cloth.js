@@ -215,7 +215,8 @@ require('resl')({
   },
 
   onDone: ({ clothTexture }) => {
-    regl.frame(({deltaTime, count}) => {
+    regl.frame(({tick}) => {
+      const deltaTime = 0.017
       regl.clear({
         color: [0, 0, 0, 255],
         depth: 1
@@ -231,7 +232,7 @@ require('resl')({
 
       const g = [0.0, -4.0, 0.0] // gravity force vector.
 
-      var windForce = [Math.sin(count / 2.0), Math.cos(count / 3.0), Math.sin(count / 1.0)]
+      var windForce = [Math.sin(tick / 2.0), Math.cos(tick / 3.0), Math.sin(tick / 1.0)]
       vec3.normalize(windForce, windForce)
       vec3.scale(windForce, windForce, 4.6)
 

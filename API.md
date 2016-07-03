@@ -296,7 +296,7 @@ Context variables in `regl` are computed before any other parameters and can als
 
 | Name | Description |
 |------|-------------|
-| `frameCount` | The number of frames rendered |
+| `tick` | The number of frames rendered |
 | `deltaTime` | Time since the last frame was rendered in seconds |
 | `time` | Total time elapsed since the regl was initialized in seconds |
 | `viewportWidth` | Width of the current viewport in pixels |

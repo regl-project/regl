@@ -121,8 +121,8 @@ const drawBunnyWithLOD = regl({
       1000),
 
     // We slowly rotate the camera around the center of the bunny
-    view: ({count}) => {
-      const t = 0.004 * count
+    view: ({tick}) => {
+      const t = 0.004 * tick
       return mat4.lookAt([],
         [20 * Math.cos(t), 10, 20 * Math.sin(t)],
         [0, 2.5, 0],
@@ -137,7 +137,7 @@ const drawBunnyWithLOD = regl({
   count: (_, {lod}) => 2 * lodOffsets[Math.floor(lod)]
 })
 
-regl.frame(({count}) => {
+regl.frame(({tick}) => {
   regl.clear({
     depth: 1,
     color: [0, 0, 0, 1]
@@ -147,6 +147,6 @@ regl.frame(({count}) => {
   // a single property:
   drawBunnyWithLOD({
     lod: Math.min(NUM_LODS, Math.max(0,
-      0.5 * NUM_LODS * (1 + Math.cos(0.003 * count))))
+      0.5 * NUM_LODS * (1 + Math.cos(0.003 * tick))))
   })
 })

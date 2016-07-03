@@ -58,7 +58,7 @@ const drawTriangle = regl({
 })
 
 // regl.frame() wraps requestAnimationFrame and also handles viewport changes
-regl.frame(() => {
+regl.frame(({time}) => {
   // clear contents of the drawing buffer
   regl.clear({
     color: [0, 0, 0, 0],
@@ -68,9 +68,9 @@ regl.frame(() => {
   // draw a triangle using the command defined above
   drawTriangle({
     color: [
-      Math.cos(Date.now() * 0.001),
-      Math.sin(Date.now() * 0.0008),
-      Math.cos(Date.now() * 0.003),
+      Math.cos(time * 0.001),
+      Math.sin(time * 0.0008),
+      Math.cos(time * 0.003),
       1
     ]
   })
