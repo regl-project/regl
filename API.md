@@ -234,7 +234,7 @@ var drawSpinningStretchyTriangle = regl({
     //  * batchId: which is the index of the draw command in the batch
     //
     angle: function (context, props, batchId) {
-      return args.speed * stats.count + 0.01 * batchId
+      return args.speed * context.tick + 0.01 * batchId
     },
 
     // As a shortcut/optimization we can also just read out a property
@@ -1907,7 +1907,19 @@ regl exposes info about the WebGL context limits and capabilities via the `regl.
 
 ---------------------------------------
 ### Performance metrics
+`regl` tracks several metrics per command.  These can be read using the `regl.stats` object:
 
+| Metric | Meaning |
+|--------|---------|
+| `bufferCount` | The number of array buffers currently allocated |
+| `elementsCount` | The number of element buffers currently allocated |
+| `framebufferCount` | The number of framebuffer currently allocated |
+| `shaderCount` | The number of shaders currently allocated |
+| `textureCount` | The number of textures currently allocated |
+| `cubeCount` | The number of cube maps currently allocated |
+| `renderbufferCount` | The number of rnderbuffers currently allocated |
+
+#### Per-command stats
 **TODO**
 
 ---------------------------------------
