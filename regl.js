@@ -16,6 +16,7 @@ var wrapAttributes = require('./lib/attribute')
 var wrapShaders = require('./lib/shader')
 var wrapRead = require('./lib/read')
 var createCore = require('./lib/core')
+var createStats = require('./lib/stats')
 
 var GL_COLOR_BUFFER_BIT = 16384
 var GL_DEPTH_BUFFER_BIT = 256
@@ -36,6 +37,7 @@ module.exports = function wrapREGL () {
   var options = args.options
 
   var stringStore = createStringStore()
+  var stats = createStats()
 
   var extensionState = wrapExtensions(gl)
   var extensions = extensionState.extensions
@@ -65,7 +67,7 @@ module.exports = function wrapREGL () {
   }
 
   var limits = wrapLimits(gl, extensions)
-  var bufferState = wrapBuffers(gl)
+  var bufferState = wrapBuffers(gl, stats)
   var elementState = wrapElements(gl, extensions, bufferState)
   var attributeState = wrapAttributes(
     gl,
@@ -403,6 +405,9 @@ module.exports = function wrapREGL () {
 
     // Direct GL state manipulation
     _gl: gl,
-    _refresh: refresh
+    _refresh: refresh,
+
+    // regl Statistics Information
+    stats: stats
   })
 }
