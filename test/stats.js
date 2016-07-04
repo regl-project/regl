@@ -186,6 +186,25 @@ tape('test regl.stats', function (t) {
     // End Test stats.cubeCount
     //
 
+    //
+    // Begin Test stats.renderbufferCount
+    //
+    regl = createREGL(gl)
+    stats = regl.stats
+
+    t.equals(stats.renderbufferCount, 0, 'stats.renderbufferCount==0 at start')
+
+    regl.renderbuffer()
+    regl.renderbuffer({width: 16, height: 16, format: 'rgba4'})
+    regl.renderbuffer({width: 2, height: 2, format: 'depth'})
+    t.equals(stats.renderbufferCount, 3, 'stats.renderbufferCount==3 after creating 3 renderbuffers')
+
+    regl.destroy()
+    t.equals(stats.renderbufferCount, 0, 'stats.renderbufferCount==0 after regl.destroy()')
+    //
+    // End Test stats.renderbufferCount
+    //
+
     createContext.destroy(gl)
     t.end()
   }, 120)
