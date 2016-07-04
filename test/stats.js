@@ -125,6 +125,78 @@ tape('test regl.stats', function (t) {
     // End Test stats.shaderCount
     //
 
+    //
+    // Begin Test stats.textureCount
+    //
+    regl = createREGL(gl)
+    stats = regl.stats
+
+    t.equals(stats.textureCount, 0, 'stats.textureCount==0 at start')
+
+    regl.texture({shape: [16, 16]})
+    regl.texture({
+      width: 2,
+      height: 2,
+      data: [
+        255, 255, 255, 255, 0, 0, 0, 0,
+        255, 0, 255, 255, 0, 0, 255, 255
+      ]
+    })
+    regl.texture([[[0, 255, 0], [255, 0, 0]], [[0, 0, 255], [255, 255, 255]]])
+    t.equals(stats.textureCount, 3, 'stats.textureCount==3 after creating 3 textures')
+
+    regl.destroy()
+    t.equals(stats.textureCount, 0, 'stats.textureCount==0 after regl.destroy()')
+    //
+    // End Test stats.textureCount
+    //
+
+    //
+    // Begin Test stats.cubeCount
+    //
+    regl = createREGL(gl)
+    stats = regl.stats
+
+    t.equals(stats.cubeCount, 0, 'stats.cubeCount==0 at start')
+/*
+    regl.cube({shape: [16, 16]})
+    regl.cube({
+      width: 2,
+      height: 2,
+      data: [
+        255, 255, 255, 255, 0, 0, 0, 0,
+        255, 0, 255, 255, 0, 0, 255, 255
+      ]
+    })
+    regl.cube([[[0, 255, 0], [255, 0, 0]], [[0, 0, 255], [255, 255, 255]]])
+*/
+    regl.cube(16)
+    regl.cube(
+      [[[255, 0, 0, 255]]],
+      [[[0, 255, 0, 255]]],
+      [[[0, 0, 255, 255]]],
+      [[[0, 0, 0, 255]]],
+      [[[255, 255, 0, 255]]],
+      [[[0, 255, 255, 255]]])
+    regl.cube({
+      faces: [
+        [[[255, 0, 0, 255]]],
+        [[[0, 255, 0, 255]]],
+        [[[0, 0, 255, 255]]],
+        [[[0, 0, 0, 255]]],
+        [[[255, 0, 0, 255]]],
+        [[[0, 255, 0, 255]]]
+      ]
+    })
+
+    t.equals(stats.cubeCount, 3, 'stats.cubeCount==3 after creating 3 cubes')
+
+    regl.destroy()
+    t.equals(stats.cubeCount, 0, 'stats.cubeCount==0 after regl.destroy()')
+    //
+    // End Test stats.cubeCount
+    //
+
     createContext.destroy(gl)
     t.end()
   }, 120)
