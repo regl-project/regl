@@ -1,10 +1,18 @@
 /* global AudioContext */
+// In this example, we implement a simple pong game.
+// The demonstratred features are: batching, and how you can
+// implement a game loop with regl.
+
+// Note that the ball will probably go through the paddles
+// once it goes really fast. So the game could be a lot more stable.
+// In order to keep the example short and readable,
+// we have refrained from fixing this.
 
 const regl = require('../regl')()
 const vec2 = require('gl-vec2')
 
+// we keep track of the mouse y-coordinate.
 var mouseY = null
-
 require('mouse-change')(function (buttons, x, y) {
   mouseY = y
 })
@@ -16,6 +24,20 @@ function Aabb (c, r) {
   // Aabb radiuses(halfwidths)
   this.r = vec2.fromValues(r[0], r[1])
 }
+
+// Below are all the global objects.
+
+var playerPaddle = new Aabb([-0.9, 0.0], [0.03, 0.15])
+var aiPaddle = new Aabb([+0.9, 0.0], [0.03, 0.15])
+
+var midline = new Aabb([+0.0, 0.0], [0.005, 1.0])
+
+// we set all ball properties in resetBall()
+var ball = new Aabb([0.0, 0.0], [0.0, 0.0]) // set velocity
+var ballVel = vec2.fromValues(0.0, 0.0)
+
+const context = new AudioContext()
+const volume = 0.1
 
 function clamp (value, min, max) {
   return min < max
@@ -50,35 +72,23 @@ function detectAabbCollision (a, b, r) {
   }
 }
 
-var playerPaddle = new Aabb([-0.9, 0.0], [0.03, 0.15])
-var aiPaddle = new Aabb([+0.9, 0.0], [0.03, 0.15])
-
-var midline = new Aabb([+0.0, 0.0], [0.005, 1.0])
-
-// we set all ball properties in resetBall()
-var ball = new Aabb([0.0, 0.0], [0.0, 0.0]) // set velocity
-var ballVel = vec2.fromValues(0.0, 0.0)
-
-const context = new AudioContext()
-const volume = 0.1
-
-function getRand(min, max) {
-    return Math.random() * (max - min) + min;
+function getRand (min, max) {
+  return Math.random() * (max - min) + min
 }
 
-
-function resetBall(playerWon) {
+function resetBall (playerWon) {
   ball.c = [+0.0, 0.0]
   ball.r = [0.02, 0.02]
 
   var speed = getRand(0.3, 0.4)
   const RANGE = 1.2
 
-  if(!playerWon) {
-    var theta = getRand(-RANGE, +RANGE)
+  var theta
+  if (!playerWon) {
+    theta = getRand(-RANGE, +RANGE)
     ballVel = [speed * Math.cos(theta), speed * Math.sin(theta)]
   } else {
-    var theta = getRand(Math.PI - RANGE, Math.PI + RANGE)
+    theta = getRand(Math.PI - RANGE, Math.PI + RANGE)
     ballVel = [speed * Math.cos(theta), speed * Math.sin(theta)]
   }
 }
@@ -97,7 +107,7 @@ function createAudioBuffer (length, createAudioDataCallback) {
   return audioBuffer
 }
 
-function playAudioBuffer(audioBuffer) {
+function playAudioBuffer (audioBuffer) {
   // Appearently, you have to create a new AudioBufferSourceNode
   // every time you want to play a sound again.
   var source = context.createBufferSource()
@@ -134,10 +144,8 @@ hitAudioBuffers[1] =
                         }
                       })
 
-
-
 // We play this sound when the player wins.
-// It is just a sqauare wave, with some simple frequency modulation.
+// It is just a square wave, with some simple frequency modulation.
 var winAudioBuffer =
     createAudioBuffer(0.4,
                       (channelData, frameCount) => {
@@ -147,7 +155,7 @@ var winAudioBuffer =
                           if (i % period === 0) {
                             current *= -1.0
                           }
-                          if(i % 600 === 0) {
+                          if (i % 600 === 0) {
                             period -= 2
                           }
                           var a = (i / frameCount)
@@ -155,17 +163,13 @@ var winAudioBuffer =
                         }
                       })
 
-
-
 // We play this sound when the player loses.
 // It is just white noise.
 var loseAudioBuffer =
     createAudioBuffer(0.5,
                       (channelData, frameCount) => {
-
                         var current = getRand(-volume, +volume)
                         for (var i = 0; i < frameCount; i++) {
-
                           if (i % 150 === 0) {
                             current = getRand(-volume, +volume)
                           }
@@ -174,8 +178,6 @@ var loseAudioBuffer =
                       })
 
 var iHitAudioBuffer = 0
-
-
 function reflect (v, n) {
   var scratch = [0.0, 0.0]
 
@@ -186,7 +188,7 @@ function reflect (v, n) {
   return vec2.subtract(v, v, vec2.scale(scratch, n, (1.0 + cr) * vec2.dot(v, n)))
 }
 
-// Next we create our command
+// This command draws an Aabb as a white rectangle.
 const drawAabb = regl({
   frag: `
     precision mediump float;
@@ -194,8 +196,8 @@ const drawAabb = regl({
       gl_FragColor = vec4(1.0);
     }`,
   vert: `
-
   precision mediump float;
+
   attribute vec2 position;
 
   uniform vec2 offset;
@@ -205,11 +207,9 @@ const drawAabb = regl({
   uniform float viewportHeight;
 
   void main() {
-
     // windows ratio scaling factor.
-    float ratioScale = (viewportWidth) / (viewportHeight);
-
-    gl_Position = vec4(position.xy * scale * vec2(1.0, ratioScale) + offset, 0, 1);
+    float r = (viewportWidth) / (viewportHeight);
+    gl_Position = vec4(position.xy * scale * vec2(1.0, r) + offset, 0, 1);
   }`,
 
   attributes: {
@@ -232,34 +232,47 @@ const drawAabb = regl({
   cull: {
     enable: true
   },
-
   count: 6
 })
 
 // initialize game.
 resetBall(true)
 
-//playAudioBuffer(winAudioBuffer)
-
-regl.frame(function ({deltaTime, viewportWidth, viewportHeight, pixelRatio}) {
+regl.frame(function ({viewportWidth, viewportHeight, pixelRatio}) {
   regl.clear({
     color: [0, 0, 0, 1]
   })
 
+  var deltaTime = 0.017
+
+  // We use this ratio r in order to make sure that all renderered
+  // objects keep their proportions on different screen sizes
+  // Note that we made the assumption that the screen has greater width
+  // than height!
+  // And we can't just calculate this value once and then cache it, because the
+  // user may resize the browser window while playing!
   var r = viewportWidth / viewportHeight
+
   //
   // BEGIN GAME LOGIC
   //
 
+  var minY = -1 + playerPaddle.r[1] * r
+  var maxY = +1 - playerPaddle.r[1] * r
   // player paddle follows the mouse
   if (mouseY !== null) {
+    // this maps the mouse y-coordinates to the range [0,1]
+    // we must take the pixel ratio in to account, so that it handles
+    // retina displays and such.
     var a = 1.0 - (mouseY * pixelRatio) / viewportHeight
-    playerPaddle.c[1] = clamp(-1.0 + 2.0 * (a), -1 + playerPaddle.r[1] * r, +1 - playerPaddle.r[1] * r)
+    // Map from [0,1] to our coordinates system(which is [-1, -1])
+    // also, clamp to ensure that the paddle does not move outside the screen boundaries.
+    playerPaddle.c[1] = clamp(-1.0 + 2.0 * (a), minY, maxY)
   }
 
   // AI paddle follows the ball.
   var dist = (ball.c[1] - aiPaddle.c[1])
-  aiPaddle.c[1] = clamp(aiPaddle.c[1] + dist * deltaTime * 1.9, -1 + playerPaddle.r[1] * r, +1 - playerPaddle.r[1] * r)
+  aiPaddle.c[1] = clamp(aiPaddle.c[1] + dist * deltaTime * 1.9, minY, maxY)
 
   // Move ball.
   vec2.scaleAndAdd(ball.c, ball.c, ballVel, deltaTime)
@@ -274,7 +287,6 @@ regl.frame(function ({deltaTime, viewportWidth, viewportHeight, pixelRatio}) {
     playAudioBuffer(winAudioBuffer)
     // player win. Reset ball
     resetBall(true)
-
   }
 
   // Handle ball collision south wall
