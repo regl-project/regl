@@ -158,18 +158,7 @@ tape('test regl.stats', function (t) {
     stats = regl.stats
 
     t.equals(stats.cubeCount, 0, 'stats.cubeCount==0 at start')
-/*
-    regl.cube({shape: [16, 16]})
-    regl.cube({
-      width: 2,
-      height: 2,
-      data: [
-        255, 255, 255, 255, 0, 0, 0, 0,
-        255, 0, 255, 255, 0, 0, 255, 255
-      ]
-    })
-    regl.cube([[[0, 255, 0], [255, 0, 0]], [[0, 0, 255], [255, 255, 255]]])
-*/
+
     regl.cube(16)
     regl.cube(
       [[[255, 0, 0, 255]]],
