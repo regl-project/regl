@@ -235,7 +235,7 @@ require('resl')({
 
       var windForce = [Math.sin(tick / 2.0), Math.cos(tick / 3.0), Math.sin(tick / 1.0)]
       vec3.normalize(windForce, windForce)
-      vec3.scale(windForce, windForce, 4.6)
+      vec3.scale(windForce, windForce, 20.6)
 
       for (i = 0; i < position.length; ++i) {
         //
