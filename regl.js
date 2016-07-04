@@ -170,6 +170,7 @@ module.exports = function wrapREGL () {
     framebufferState.clear()
     renderbufferState.clear()
     textureState.clear()
+    elementState.clear()
     bufferState.clear()
 
     if (options.onDestroy) {
