@@ -41,6 +41,7 @@
     "vectorize-text": "^3.0.2"
   },
   "scripts": {
+    "mytest": "standard | snazzy && tape test/stats.js",
     "test": "standard | snazzy && tape test/util/index.js | faucet",
     "test-browser": "budo test/util/browser.js --open",
     "cover": "istanbul cover test/util/index.js",
