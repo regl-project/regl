@@ -177,13 +177,21 @@ var loseAudioBuffer =
                         }
                       })
 
+// compute the reflection vector for an incident vector `v` against
+// a surface with the normal `n`.
+// but note that the kinetic energy is slightly increased
+// with the reflection
 var iHitAudioBuffer = 0
 function reflect (v, n) {
   var scratch = [0.0, 0.0]
 
+  // alternatingly, play sound effect.
   playAudioBuffer(hitAudioBuffers[iHitAudioBuffer])
   iHitAudioBuffer = (iHitAudioBuffer + 1) % 2
 
+  // if it were perfect elastic collison, this would be 1.0
+  // But we want the ball to become faster with every bounce,
+  // so we set it to a slightly higher value.
   var cr = 1.1
   return vec2.subtract(v, v, vec2.scale(scratch, n, (1.0 + cr) * vec2.dot(v, n)))
 }
@@ -243,7 +251,7 @@ regl.frame(function ({viewportWidth, viewportHeight, pixelRatio}) {
     color: [0, 0, 0, 1]
   })
 
-  var deltaTime = 0.017
+  const deltaTime = 0.017
 
   // We use this ratio r in order to make sure that all renderered
   // objects keep their proportions on different screen sizes
