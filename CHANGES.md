@@ -11,11 +11,11 @@
     + Should be able to report errors when extensions are missing
     + Allow users to disable extensions for testing/mocking
 
-* Performance monitoring hooks
-
 * Context loss handling
 
 * Write comparison suite
+
+* More performance monitoring hooks
 
 * Benchmark suite
     + Dashboard for test cases and benchmarks
@@ -37,18 +37,16 @@
 * Build a website (preview at [regl.party](http://regl.party))
 
 * Recipe book/example set
-    + Minecraft example
     + Globe
-    + Tile based 2D rendering
     + Compound scene
     + Shadow mapping
     + Stencil shadows
     + Turing patterns
-    + Spring/cloth physics
     + Asset loading (obj, ply, etc.)
 
 ## Next
 
+* Added performance monitoring hooks via `regl.stats`
 * Rename `count` context variable to `tick`
 * Remove `deltaTime` context variable
 * Uniform validation fixes
