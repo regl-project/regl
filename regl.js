@@ -81,7 +81,8 @@ module.exports = function wrapREGL () {
     extensions,
     limits,
     poll,
-    contextState)
+    contextState,
+    stats)
   var renderbufferState = wrapRenderbuffers(gl, extensions, limits)
   var framebufferState = wrapFramebuffers(
     gl,
