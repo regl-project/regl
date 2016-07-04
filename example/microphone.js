@@ -62,7 +62,7 @@ require('getusermedia')({audio: true}, function (err, stream) {
     primitive: 'line loop'
   })
 
-  regl.frame(({count}) => {
+  regl.frame(({tick}) => {
     // Clear draw buffer
     regl.clear({
       color: [0, 0, 0, 1],

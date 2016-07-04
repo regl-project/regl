@@ -41,13 +41,11 @@ module.exports = function wrapREGL () {
   var extensions = extensionState.extensions
 
   var START_TIME = clock()
-  var LAST_TIME = START_TIME
   var WIDTH = gl.drawingBufferWidth
   var HEIGHT = gl.drawingBufferHeight
 
   var contextState = {
-    count: 0,
-    deltaTime: 0,
+    tick: 0,
     time: 0,
     viewportWidth: WIDTH,
     viewportHeight: HEIGHT,
@@ -116,13 +114,10 @@ module.exports = function wrapREGL () {
     activeRAF = raf.next(handleRAF)
 
     // increment frame count
-    contextState.count += 1
+    contextState.tick += 1
 
-    // update clock
-    var now = clock()
-    contextState.deltaTime = (now - LAST_TIME) / 1000.0
-    contextState.time = (now - START_TIME) / 1000.0
-    LAST_TIME = now
+    // Update time
+    contextState.time = (clock() - START_TIME) / 1000.0
 
     // poll for changes
     poll()

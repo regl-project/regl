@@ -49,6 +49,8 @@
 
 ## Next
 
+* Rename `count` context variable to `tick`
+* Remove `deltaTime` context variable
 * Uniform validation fixes
 * Texture construction fixes
 * Improved test coverage for uniform variables
