@@ -7,11 +7,12 @@ var tape = require('tape')
 tape('test regl.stats', function (t) {
   setTimeout(function () {
     var gl = createContext(16, 16)
+    var regl
 
     //
-    // Test stats.bufferCount
+    // Begin Test stats.bufferCount
     //
-    var regl = createREGL(gl)
+    regl = createREGL(gl)
 
     t.equals(regl.stats.bufferCount, 0, 'stats.bufferCount==0 at start')
 
@@ -24,6 +25,33 @@ tape('test regl.stats', function (t) {
     regl.destroy()
 
     t.equals(regl.stats.bufferCount, 0, 'stats.bufferCount==0 after regl.destroy()')
+    //
+    // End Test stats.bufferCount
+    //
+
+    //
+    // Begin Test stats.elementsCount
+    //
+    regl = createREGL(gl)
+
+    t.equals(regl.stats.elementsCount, 0, 'stats.elementsCount==0 at start')
+
+    regl.elements([1, 2, 3])
+    regl.elements([[1, 2, 3], [5, 6, 7]])
+    regl.elements({
+      primitive: 'line loop',
+      count: 5,
+      data: new Uint8Array([0, 2, 4, 1, 3])
+    })
+
+    t.equals(regl.stats.bufferCount, 3, 'stats.elementsCount==3 after creating 3 buffers')
+
+    regl.destroy()
+
+    t.equals(regl.stats.elementsCount, 0, 'stats.elementsCount==0 after regl.destroy()')
+    //
+    // End Test stats.bufferCount
+    //
 
     createContext.destroy(gl)
     t.end()
