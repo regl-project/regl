@@ -76,6 +76,55 @@ tape('test regl.stats', function (t) {
     // End Test stats.framebufferCount
     //
 
+    //
+    // Begin Test stats.shaderCount
+    //
+    regl = createREGL(gl)
+    stats = regl.stats
+
+    t.equals(stats.shaderCount, 0, 'stats.shaderCount==0 at start')
+
+    var draw1 = regl({
+      frag: `
+      precision mediump float;
+      void main () { gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); }`,
+      vert: `
+      precision mediump float;
+      attribute vec2 position;
+      void main () {gl_Position = vec4(position, 0, 1); }`,
+      attributes: { position: [[-1, 0], [0, -1], [1, 1]] },
+      uniforms: { color: [1, 0, 0, 1] },
+      count: 3
+    })
+
+    var draw2 = regl({
+      frag: `
+      precision mediump float;
+      void main () { gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); }`,
+      vert: `
+      precision mediump float;
+      attribute vec2 position;
+      void main () {gl_Position = vec4(position, 0, 1); }`,
+      attributes: { position: [[-1, 0], [0, -1], [1, 1]] },
+      uniforms: { color: [1, 0, 0, 1] },
+      count: 3
+    })
+
+    // no matter how many times we draw it, we should only have two shaders.
+    draw1()
+    draw1()
+
+    draw2()
+    draw2()
+
+    t.equals(stats.shaderCount, 2, 'stats.shaderCount==2 after creating 2 calls')
+
+    regl.destroy()
+    t.equals(stats.shaderCount, 0, 'stats.shaderCount==0 after regl.destroy()')
+    //
+    // End Test stats.shaderCount
+    //
+
     createContext.destroy(gl)
     t.end()
   }, 120)
