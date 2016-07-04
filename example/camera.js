@@ -44,7 +44,7 @@ const drawBunny = regl({
   }
 })
 
-regl.frame(function (props, count) {
+regl.frame(() => {
   regl.clear({
     color: [0, 0, 0, 1]
   })

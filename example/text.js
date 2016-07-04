@@ -41,7 +41,7 @@ const drawFeedback = regl({
 
   uniforms: {
     texture: feedBackTexture,
-    t: ({count}) => 0.001 * count
+    t: ({tick}) => 0.001 * tick
   },
 
   depth: {enable: false},
@@ -75,10 +75,10 @@ const drawText = regl({
   elements: textMesh.edges,
 
   uniforms: {
-    t: ({count}) => 0.01 * count,
+    t: ({tick}) => 0.01 * tick,
 
-    view: ({count}) => {
-      const t = 0.01 * count
+    view: ({tick}) => {
+      const t = 0.01 * tick
       return lookAt([],
         [5 * Math.sin(t), 0, -5 * Math.cos(t)],
         [0, 0, 0],
