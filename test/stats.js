@@ -85,13 +85,15 @@ tape('test regl.stats', function (t) {
     t.equals(stats.shaderCount, 0, 'stats.shaderCount==0 at start')
 
     var draw1 = regl({
-      frag: `
-      precision mediump float;
-      void main () { gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); }`,
-      vert: `
-      precision mediump float;
-      attribute vec2 position;
-      void main () {gl_Position = vec4(position, 0, 1); }`,
+      frag: [
+        'precision mediump float;',
+        'void main () { gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); } '
+      ].join('\n'),
+      vert: [
+        'precision mediump float;',
+        'attribute vec2 position;',
+        'void main () {gl_Position = vec4(position, 0, 1); }'
+      ].join('\n'),
       attributes: { position: [[-1, 0], [0, -1], [1, 1]] },
       uniforms: { color: [1, 0, 0, 1] },
       count: 3
