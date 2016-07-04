@@ -88,7 +88,8 @@ module.exports = function wrapREGL () {
     extensions,
     limits,
     textureState,
-    renderbufferState)
+    renderbufferState,
+    stats)
   var readPixels = wrapRead(gl, poll, contextState)
 
   var core = createCore(
