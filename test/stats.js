@@ -35,6 +35,7 @@ tape('test regl.stats', function (t) {
     // Begin Test stats.elementsCount
     //
     regl = createREGL(gl)
+    stats = regl.stats
 
     t.equals(stats.elementsCount, 0, 'stats.elementsCount==0 at start')
 
@@ -52,7 +53,27 @@ tape('test regl.stats', function (t) {
 
     t.equals(stats.elementsCount, 0, 'stats.elementsCount==0 after regl.destroy()')
     //
-    // End Test stats.bufferCount
+    // End Test stats.elementsCount
+    //
+
+    //
+    // Begin Test stats.framebufferCount
+    //
+
+    regl = createREGL(gl)
+    stats = regl.stats
+
+    t.equals(stats.framebufferCount, 0, 'stats.framebufferCount==0 at start')
+
+    regl.framebuffer({radius: 5})
+    regl.framebuffer({width: 2, height: 4, depth: false, stencil: false})
+
+    t.equals(stats.framebufferCount, 2, 'stats.framebufferCount==2 after creating 2 buffers')
+
+    regl.destroy()
+    t.equals(stats.framebufferCount, 0, 'stats.framebufferCount==0 after regl.destroy()')
+    //
+    // End Test stats.framebufferCount
     //
 
     createContext.destroy(gl)
