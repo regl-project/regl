@@ -21,6 +21,8 @@
     + Dashboard for test cases and benchmarks
     + Create some more typical drawing examples
 
+* A pretty printer for the generated code
+
 * Documentation
 
 * Testing
