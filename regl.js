@@ -186,6 +186,8 @@ module.exports = function wrapREGL () {
     check(!!options, 'invalid args to regl({...})')
     check.type(options, 'object', 'invalid args to regl({...})')
 
+
+
     function flattenNestedOptions (options) {
       var result = extend({}, options)
       delete result.uniforms
@@ -235,7 +237,24 @@ module.exports = function wrapREGL () {
     var attributes = separateDynamic(options.attributes || {})
     var opts = separateDynamic(flattenNestedOptions(options))
 
-    var compiled = core.compile(opts, attributes, uniforms, context)
+
+
+    var stats = {
+      gpuTime: -1.0
+    }
+    if(extensions.ext_disjoint_timer_query) {
+      EXT_DISJOINT_TIMER_QUERY = extensions.ext_disjoint_timer_query
+
+      // FIXME: destroy these two queries somewhere.
+      stats._queries = []
+      stats._queries[0] = EXT_DISJOINT_TIMER_QUERY.createQueryEXT()
+      stats._queries[1] = EXT_DISJOINT_TIMER_QUERY.createQueryEXT()
+
+      stats.iQuery = 0
+      stats.iCollect = -1
+    }
+
+    var compiled = core.compile(opts, attributes, uniforms, context, stats)
 
     var draw = compiled.draw
     var batch = compiled.batch
@@ -250,6 +269,7 @@ module.exports = function wrapREGL () {
     }
 
     function REGLCommand (args, body) {
+
       var i
       if (typeof args === 'function') {
         return scope.call(this, null, args, 0)
@@ -280,7 +300,11 @@ module.exports = function wrapREGL () {
       }
     }
 
-    return REGLCommand
+    return extend(REGLCommand, {
+      stats: stats
+    })
+
+//    return REGLCommand
   }
 
   function clear (options) {
