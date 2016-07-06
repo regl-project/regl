@@ -83,9 +83,11 @@ function createStatsWidget () {
         var drawCall
         var str
         var textCursor = [TEXT_START[0], TEXT_START[1]]
+        var diff
         for (var i = 0; i < drawCalls.length; i++) {
           drawCall = drawCalls[i]
-          str = drawCall[1] + ' : ' + Math.round(100.0 * drawCall[0].stats.gpuTime) / 100.0 + 'ms'
+          diff = drawCall[0].stats.gpuTime - drawCall[0].stats.prevGpuTime
+          str = drawCall[1] + ' : ' + Math.round(100.0 * diff) / 100.0 + 'ms'
 
           context.fillText(str, textCursor[0] * pr, textCursor[1] * pr)
           textCursor[1] += TEXT_SIZE + TEXT_SPACING
