@@ -12,58 +12,57 @@ camera.rotate([0.0, 0.0], [0.0, -0.4])
 camera.zoom(300.0)
 
 function createStatsWidget () {
-  var container = document.createElement( 'div' );
-  container.style.cssText = 'position:fixed;top:0;left:0;opacity:0.8;z-index:10000;';
-  var pr = Math.round( window.devicePixelRatio || 1 );
-  var WIDTH = 160, HEIGHT = 200
+  var container = document.createElement('div')
+  container.style.cssText = 'position:fixed;top:0;left:0;opacity:0.8;z-index:10000;'
+  var pr = Math.round(window.devicePixelRatio || 1)
+
+  // TODO: all the text wont fit if we try to send too many drawCalls to `update`
+  // we need to dynamically compute the height from the number of drawCalls.
+  var WIDTH = 160
+  var HEIGHT = 200
   var HEADER_SIZE = 20
   var TEXT_SIZE = 10
   var TEXT_START = [7, 44]
+  var HEADER_POS = [3, 3]
   var BG = '#000'
   var FG = '#bbb'
 
-  var canvas = document.createElement( 'canvas' )
+  var canvas = document.createElement('canvas')
   canvas.width = WIDTH * pr
   canvas.height = HEIGHT * pr
   canvas.style.cssText = 'width:' + WIDTH + 'px;height:' + HEIGHT + 'px'
 
-  var context = canvas.getContext( '2d' )
+  var context = canvas.getContext('2d')
 
   // make background.
   context.fillStyle = BG
-  context.fillRect( 0, 0, WIDTH * pr, HEIGHT* pr)
+  context.fillRect(0, 0, WIDTH * pr, HEIGHT * pr)
 
-  //
-  context.font = 'bold ' + ( HEADER_SIZE * pr ) + 'px Helvetica,Arial,sans-serif'
+  context.font = 'bold ' + (HEADER_SIZE * pr) + 'px Helvetica,Arial,sans-serif'
   context.textBaseline = 'top'
   context.fillStyle = FG
-  context.fillText( 'Stats', 3*pr, 3*pr )
+  context.fillText('Stats', HEADER_POS[0] * pr, HEADER_POS[1] * pr)
 
   container.appendChild(canvas)
-  document.body.appendChild( container );
+  document.body.appendChild(container)
 
-  var totalTime = 2.0
+  var totalTime = 2.0 // first time `update` is called we always update.
 
   return {
-
     update: function (drawCalls, deltaTime) {
-
       totalTime += deltaTime
 
-      if(totalTime > 1.0 ){
+      if (totalTime > 1.0) {
         totalTime = 0
-//        console.log("dracall ", drawCalls[0] )
-
 
         context.fillStyle = BG
         context.fillRect(
           TEXT_START[0] * pr,
-          TEXT_START[1],
+          TEXT_START[1] * pr,
           (WIDTH - TEXT_START[0]) * pr,
-          (HEIGHT - TEXT_START[1])* pr);
+          (HEIGHT - TEXT_START[1]) * pr)
 
-
-        context.font = 'bold ' + ( TEXT_SIZE * pr ) + 'px Helvetica,Arial,sans-serif';
+        context.font = 'bold ' + (TEXT_SIZE * pr) + 'px Helvetica,Arial,sans-serif'
         context.fillStyle = FG
 
         var drawCall
@@ -71,13 +70,12 @@ function createStatsWidget () {
         var textCursor = [TEXT_START[0], TEXT_START[1]]
         for (var i = 0; i < drawCalls.length; i++) {
           drawCall = drawCalls[i]
-          str = drawCall[1] + " : " + Math.round(100.0 * drawCall[0].stats.gpuTime) / 100.0 + "ms"
+          str = drawCall[1] + ' : ' + Math.round(100.0 * drawCall[0].stats.gpuTime) / 100.0 + 'ms'
 
-          context.fillText( str, textCursor[0]*pr, textCursor[1]*pr )
-          textCursor[1] += TEXT_SIZE * pr
+          context.fillText(str, textCursor[0] * pr, textCursor[1] * pr)
+          textCursor[1] += TEXT_SIZE
         }
       }
-
     }
   }
 }
@@ -239,24 +237,20 @@ const drawBox = regl({
   }
 })
 
-var frame = 0
-
-regl.frame(({}) => {
+regl.frame(() => {
   regl.clear({
     color: [0, 0, 0, 255],
     depth: 1
   })
 
-    const deltaTime = 0.017
+  const deltaTime = 0.017
 
-    statsWidget.update([
-      [drawPlane,"drawPlane"],
-      [drawBunny,"drawBunny"],
-      [drawBox, "drawBox"]], deltaTime)
-
+  statsWidget.update([
+    [drawPlane, 'drawPlane'],
+    [drawBunny, 'drawBunny'],
+    [drawBox, 'drawBox']], deltaTime)
 
   setupDefault({}, () => {
-
     drawPlane({scale: 2000.0, position: [0.0, 0.0, 0.0]})
 
     var bunnies = []
