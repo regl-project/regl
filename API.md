@@ -1691,6 +1691,8 @@ var rgba_16x24 = regl.renderbuffer(16, 24)
 | `'format'` | Sets the internal format of the render buffer (see below) | `'rgba4'` |
 | `'width'` | Sets the width of the render buffer in pixels | `1` |
 | `'height'` | Sets the height of the render buffer in pixels | `1` |
+| `'shape'` | Alias for width and height | `[1,1]` |
+| `'radius'` | Simultaneously sets width and height | `1` |
 
 | Format | Description |
 |--------|-------------|
@@ -1715,9 +1717,25 @@ var rgba_16x24 = regl.renderbuffer(16, 24)
 Like all other resources, renderbuffers can be updated in place:
 
 ```javascript
+var renderbuffer = regl.renderbuffer()
+
+renderbuffer({
+  radius: 3,
+  format: 'depth'
+})
 ```
 
 ##### Resizing
+A renderbuffer can also be resized in place by calling `.resize()`:
+
+```javascript
+var renderbuffer = regl.renderbuffer({
+  shape: [10, 10],
+  format: 'depth stencil'
+})
+
+renderbuffer.resize(32, 32)
+```
 
 #### Destroy
 
