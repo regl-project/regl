@@ -1,15 +1,45 @@
-const canvas = document.body.appendChild(document.createElement('canvas'))
+const webglCanvas = document.body.appendChild(document.createElement('canvas'))
 const fit = require('canvas-fit')
-const regl = require('../regl')(canvas)
+const regl = require('../regl')(webglCanvas)
 const mat4 = require('gl-mat4')
-const camera = require('canvas-orbit-camera')(canvas)
-window.addEventListener('resize', fit(canvas), false)
+const camera = require('canvas-orbit-camera')(webglCanvas)
+window.addEventListener('resize', fit(webglCanvas), false)
 const bunny = require('bunny')
 const normals = require('angle-normals')
 
 // configure intial camera view.
 camera.rotate([0.0, 0.0], [0.0, -0.4])
 camera.zoom(300.0)
+
+var container = document.createElement( 'div' );
+container.style.cssText = 'position:fixed;top:0;left:0;opacity:0.8;z-index:10000;';
+
+var pr = Math.round( window.devicePixelRatio || 1 );
+
+var canvasWidth = 160 * pr, canvasHeight = 200 * pr
+
+var canvas = document.createElement( 'canvas' );
+canvas.width = canvasWidth;
+canvas.height = canvasHeight;
+canvas.style.cssText = 'width:160px;height:200px';
+
+var context = canvas.getContext( '2d' );
+
+// make background.
+context.fillStyle = '#000';
+context.fillRect( 0, 0, canvasWidth, canvasHeight );
+
+//
+context.font = 'bold ' + ( 20 * pr ) + 'px Helvetica,Arial,sans-serif';
+context.textBaseline = 'top';
+context.fillStyle = '#bbb';
+context.fillText( 'Stats', 3*pr, 3*pr );
+
+context.font = 'bold ' + ( 10 * pr ) + 'px Helvetica,Arial,sans-serif';
+context.fillText( 'Bunnies: 0.0343ms', 7*pr, 40*pr );
+
+container.appendChild(canvas)
+document.body.appendChild( container );
 
 const planeElements = []
 var planePosition = []
@@ -87,7 +117,7 @@ const setupDefault = regl({
                        Math.PI / 4,
                        viewportWidth / viewportHeight,
                        0.01,
-                       3000),
+                       2000),
 
     // light settings. These can of course by tweaked to your likings.
     lightDir: [0.39, 0.87, 0.29],
@@ -180,8 +210,6 @@ regl.frame(({deltaTime}) => {
     drawPlane({scale: 2000.0, position: [0.0, 0.0, 0.0]})
 
     if (frame % 90 === 0) {
-//      console.log('bufferCount', regl.stats)
-  //    console.log('draw.stats', draw.stats)
       console.log('drawPlane.stats.gpuTime', drawPlane.stats.gpuTime)
       console.log('drawBunny.stats.gpuTime', drawBunny.stats.gpuTime)
       console.log('drawBox.stats.gpuTime', drawBox.stats.gpuTime)
@@ -197,7 +225,7 @@ regl.frame(({deltaTime}) => {
     var SPACING = 100
     for (x = 0; x < X_COUNT; x++) {
       for (z = 0; z < Z_COUNT; z++) {
-        bunnies.push({scale: 5.2, position: [x * SPACING, -0.3, -80.0 + z * SPACING]})
+        bunnies.push({scale: 5.2, position: [x * SPACING, 3.3, -80.0 + z * SPACING]})
       }
     }
     drawBunny(bunnies)
@@ -207,7 +235,7 @@ regl.frame(({deltaTime}) => {
     SPACING = -100
     for (x = 0; x < X_COUNT; x++) {
       for (z = 0; z < Z_COUNT; z++) {
-        boxes.push({scale: 50.7, position: [-200.0 + x * SPACING, 22, 200 + z * SPACING]})
+        boxes.push({scale: 50.7, position: [-200.0 + x * SPACING, 40, 200 + z * SPACING]})
       }
     }
     drawBox(boxes)
