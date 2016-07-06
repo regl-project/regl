@@ -186,8 +186,6 @@ module.exports = function wrapREGL () {
     check(!!options, 'invalid args to regl({...})')
     check.type(options, 'object', 'invalid args to regl({...})')
 
-
-
     function flattenNestedOptions (options) {
       var result = extend({}, options)
       delete result.uniforms
@@ -237,18 +235,14 @@ module.exports = function wrapREGL () {
     var attributes = separateDynamic(options.attributes || {})
     var opts = separateDynamic(flattenNestedOptions(options))
 
-
-
     var stats = {
       gpuTime: -1.0
     }
-    if(extensions.ext_disjoint_timer_query) {
-      EXT_DISJOINT_TIMER_QUERY = extensions.ext_disjoint_timer_query
-
+    if (extensions.ext_disjoint_timer_query) {
       // FIXME: destroy these two queries somewhere.
       stats._queries = []
-      stats._queries[0] = EXT_DISJOINT_TIMER_QUERY.createQueryEXT()
-      stats._queries[1] = EXT_DISJOINT_TIMER_QUERY.createQueryEXT()
+      stats._queries[0] = extensions.ext_disjoint_timer_query.createQueryEXT()
+      stats._queries[1] = extensions.ext_disjoint_timer_query.createQueryEXT()
 
       stats.iQuery = 0
       stats.iCollect = -1
@@ -269,7 +263,6 @@ module.exports = function wrapREGL () {
     }
 
     function REGLCommand (args, body) {
-
       var i
       if (typeof args === 'function') {
         return scope.call(this, null, args, 0)
