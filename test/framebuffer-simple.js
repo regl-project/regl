@@ -6,11 +6,6 @@ tape('framebuffer', function (t) {
   var gl = createContext(16, 16)
   var regl = createREGL(gl)
 
-  // modes to check:
-  //  scope
-  //  draw
-  //  batch
-
   var setFramebufferDynamic = regl({
     framebuffer: regl.prop('framebuffer'),
 
@@ -265,9 +260,6 @@ tape('framebuffer', function (t) {
   checkContents(null, [0, 255, 0, 255], 'batch drawing fbo')
   checkContents(testFBO1, [255, 0, 0, 255], 'batch first fbo')
   checkContents(testFBO2, [0, 0, 255, 255], 'batch second fbo')
-
-  // TODO check copyTexImage
-  // TODO check regl.read
 
   regl.destroy()
   createContext.destroy(gl)
