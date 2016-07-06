@@ -18,7 +18,8 @@ tape('test regl.stats', function (t) {
 
     t.equals(stats.bufferCount, 0, 'stats.bufferCount==0 at start')
 
-    regl.buffer([1, 2, 3])
+    var buf = regl.buffer([1, 2, 3])
+    buf([2, 3, 4])
     regl.buffer(new Uint16Array([1, 2, 3]))
     regl.buffer(new Float32Array([1, 2, 3, 4]))
 
@@ -39,7 +40,8 @@ tape('test regl.stats', function (t) {
 
     t.equals(stats.elementsCount, 0, 'stats.elementsCount==0 at start')
 
-    regl.elements([1, 2, 3])
+    var elements = regl.elements([1, 2, 3])
+    elements([1, 2, 3])
     regl.elements([[1, 2, 3], [5, 6, 7]])
     regl.elements({
       primitive: 'line loop',
@@ -138,7 +140,8 @@ tape('test regl.stats', function (t) {
 
     t.equals(stats.textureCount, 0, 'stats.textureCount==0 at start')
 
-    regl.texture({shape: [16, 16]})
+    var tex = regl.texture({shape: [16, 16]})
+    tex(5)
     regl.texture({
       width: 2,
       height: 2,
@@ -164,7 +167,8 @@ tape('test regl.stats', function (t) {
 
     t.equals(stats.cubeCount, 0, 'stats.cubeCount==0 at start')
 
-    regl.cube(16)
+    var cube = regl.cube(16)
+    cube(8)
     regl.cube(
       [[[255, 0, 0, 255]]],
       [[[0, 255, 0, 255]]],
@@ -200,8 +204,9 @@ tape('test regl.stats', function (t) {
     t.equals(stats.renderbufferCount, 0, 'stats.renderbufferCount==0 at start')
 
     regl.renderbuffer()
-    regl.renderbuffer({width: 16, height: 16, format: 'rgba4'})
+    var rb = regl.renderbuffer({width: 16, height: 16, format: 'rgba4'})
     regl.renderbuffer({width: 2, height: 2, format: 'depth'})
+    rb(3, 3)
     t.equals(stats.renderbufferCount, 3, 'stats.renderbufferCount==3 after creating 3 renderbuffers')
 
     regl.destroy()
