@@ -1675,16 +1675,20 @@ cubeMap.destroy()
 
 #### Constructor
 ```javascript
+// Allocate a new renderbuffer with the prescribed format
 var rb = regl.renderbuffer({
   width: 16,
   height: 16,
   format: 'rgba4'
 })
+
+// Allocate an 'rgba4' renderbuffer with a fixed size
+var rgba_16x24 = regl.renderbuffer(16, 24)
 ```
 
 | Property | Interpretation | Default |
 |----------|----------------|---------|
-| `'format'` | Sets the internal format of the render buffer | `'rgba4'` |
+| `'format'` | Sets the internal format of the render buffer (see below) | `'rgba4'` |
 | `'width'` | Sets the width of the render buffer in pixels | `1` |
 | `'height'` | Sets the height of the render buffer in pixels | `1` |
 
@@ -1696,6 +1700,9 @@ var rb = regl.renderbuffer({
 | `'depth'` | `gl.DEPTH_COMPONENT16` |
 | `'stencil'` | `gl.STENCIL_INDEX8` |
 | `'srgba'` | `ext.SRGB8_ALPHA8_EXT`, only if [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) supported |
+| `'rgba16f'` | 16 bit floating point RGBA buffer, only if [EXT_color_buffer_half_float](https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_half_float/) |
+| `'rgb16f'` | 16 bit floating point RGB buffer, only if [EXT_color_buffer_half_float](https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_half_float/) |
+| `'rgba32f'` | 32 bit floating point RGBA buffer, only if [WEBGL_color_buffer_float](https://www.khronos.org/registry/webgl/extensions/WEBGL_color_buffer_float/) supported |
 
 **Relevant WebGL APIs**
 
@@ -1705,8 +1712,12 @@ var rb = regl.renderbuffer({
 * [`gl.bindRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBindRenderbuffer.xml)
 
 #### Update
+Like all other resources, renderbuffers can be updated in place:
 
-**TODO**
+```javascript
+```
+
+##### Resizing
 
 #### Destroy
 
