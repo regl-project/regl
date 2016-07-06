@@ -236,7 +236,8 @@ module.exports = function wrapREGL () {
     var opts = separateDynamic(flattenNestedOptions(options))
 
     var stats = {
-      gpuTime: -1.0
+      gpuTime: 0.0,
+      prevGpuTime: 0.0
     }
     if (extensions.ext_disjoint_timer_query) {
       // FIXME: destroy these two queries somewhere.
