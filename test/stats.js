@@ -210,6 +210,45 @@ tape('test regl.stats', function (t) {
     // End Test stats.renderbufferCount
     //
 
+    //
+    // Begin Test drawCommand.stats.gpuTime
+    //
+    regl = createREGL(gl)
+
+    var draw3 = regl({
+      frag: [
+        'precision mediump float;',
+        'void main () { gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); } '
+      ].join('\n'),
+      vert: [
+        'precision mediump float;',
+        'attribute vec2 position;',
+        'uniform vec2 offset;',
+        'void main () {gl_Position = vec4(position+offset, 0, 1); }'
+      ].join('\n'),
+      attributes: { position: [[-1, 0], [0, -1], [1, 1]] },
+      uniforms: {
+        color: [1, 0, 0, 1],
+        offset: regl.prop('offset')
+      },
+      count: 3
+    })
+
+    t.ok(draw3.stats.gpuTime === 0, 'drawCommand.stats.gpuTime=0 at startup')
+
+    for (var i = 0; i < 10; ++i) {
+      draw3({offset: [0, 0]})
+    }
+
+    console.log('print: ', draw3.stats)
+
+    t.ok(draw3.stats.gpuTime > 0, 'drawCommand.stats.gpuTime>0 after one-shot call')
+
+    regl.destroy()
+    //
+    // End Test drawCommand.stats.gpuTime
+    //
+
     createContext.destroy(gl)
     t.end()
   }, 120)
