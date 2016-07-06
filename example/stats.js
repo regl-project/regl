@@ -11,35 +11,78 @@ const normals = require('angle-normals')
 camera.rotate([0.0, 0.0], [0.0, -0.4])
 camera.zoom(300.0)
 
-var container = document.createElement( 'div' );
-container.style.cssText = 'position:fixed;top:0;left:0;opacity:0.8;z-index:10000;';
+function createStatsWidget () {
+  var container = document.createElement( 'div' );
+  container.style.cssText = 'position:fixed;top:0;left:0;opacity:0.8;z-index:10000;';
+  var pr = Math.round( window.devicePixelRatio || 1 );
+  var WIDTH = 160, HEIGHT = 200
+  var HEADER_SIZE = 20
+  var TEXT_SIZE = 10
+  var TEXT_START = [7, 44]
+  var BG = '#000'
+  var FG = '#bbb'
 
-var pr = Math.round( window.devicePixelRatio || 1 );
+  var canvas = document.createElement( 'canvas' )
+  canvas.width = WIDTH * pr
+  canvas.height = HEIGHT * pr
+  canvas.style.cssText = 'width:' + WIDTH + 'px;height:' + HEIGHT + 'px'
 
-var canvasWidth = 160 * pr, canvasHeight = 200 * pr
+  var context = canvas.getContext( '2d' )
 
-var canvas = document.createElement( 'canvas' );
-canvas.width = canvasWidth;
-canvas.height = canvasHeight;
-canvas.style.cssText = 'width:160px;height:200px';
+  // make background.
+  context.fillStyle = BG
+  context.fillRect( 0, 0, WIDTH * pr, HEIGHT* pr)
 
-var context = canvas.getContext( '2d' );
+  //
+  context.font = 'bold ' + ( HEADER_SIZE * pr ) + 'px Helvetica,Arial,sans-serif'
+  context.textBaseline = 'top'
+  context.fillStyle = FG
+  context.fillText( 'Stats', 3*pr, 3*pr )
 
-// make background.
-context.fillStyle = '#000';
-context.fillRect( 0, 0, canvasWidth, canvasHeight );
+  container.appendChild(canvas)
+  document.body.appendChild( container );
 
-//
-context.font = 'bold ' + ( 20 * pr ) + 'px Helvetica,Arial,sans-serif';
-context.textBaseline = 'top';
-context.fillStyle = '#bbb';
-context.fillText( 'Stats', 3*pr, 3*pr );
+  var totalTime = 2.0
 
-context.font = 'bold ' + ( 10 * pr ) + 'px Helvetica,Arial,sans-serif';
-context.fillText( 'Bunnies: 0.0343ms', 7*pr, 40*pr );
+  return {
 
-container.appendChild(canvas)
-document.body.appendChild( container );
+    update: function (drawCalls, deltaTime) {
+
+      totalTime += deltaTime
+
+      if(totalTime > 1.0 ){
+        totalTime = 0
+//        console.log("dracall ", drawCalls[0] )
+
+
+        context.fillStyle = BG
+        context.fillRect(
+          TEXT_START[0] * pr,
+          TEXT_START[1],
+          (WIDTH - TEXT_START[0]) * pr,
+          (HEIGHT - TEXT_START[1])* pr);
+
+
+        context.font = 'bold ' + ( TEXT_SIZE * pr ) + 'px Helvetica,Arial,sans-serif';
+        context.fillStyle = FG
+
+        var drawCall
+        var str
+        var textCursor = [TEXT_START[0], TEXT_START[1]]
+        for (var i = 0; i < drawCalls.length; i++) {
+          drawCall = drawCalls[i]
+          str = drawCall[1] + " : " + Math.round(100.0 * drawCall[0].stats.gpuTime) / 100.0 + "ms"
+
+          context.fillText( str, textCursor[0]*pr, textCursor[1]*pr )
+          textCursor[1] += TEXT_SIZE * pr
+        }
+      }
+
+    }
+  }
+}
+
+var statsWidget = createStatsWidget()
 
 const planeElements = []
 var planePosition = []
@@ -198,22 +241,23 @@ const drawBox = regl({
 
 var frame = 0
 
-regl.frame(({deltaTime}) => {
+regl.frame(({}) => {
   regl.clear({
     color: [0, 0, 0, 255],
     depth: 1
   })
 
+    const deltaTime = 0.017
+
+    statsWidget.update([
+      [drawPlane,"drawPlane"],
+      [drawBunny,"drawBunny"],
+      [drawBox, "drawBox"]], deltaTime)
+
+
   setupDefault({}, () => {
-    ++frame
 
     drawPlane({scale: 2000.0, position: [0.0, 0.0, 0.0]})
-
-    if (frame % 90 === 0) {
-      console.log('drawPlane.stats.gpuTime', drawPlane.stats.gpuTime)
-      console.log('drawBunny.stats.gpuTime', drawBunny.stats.gpuTime)
-      console.log('drawBox.stats.gpuTime', drawBox.stats.gpuTime)
-    }
 
     var bunnies = []
 
