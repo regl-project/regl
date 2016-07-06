@@ -175,18 +175,17 @@ regl.frame(({deltaTime}) => {
   })
 
   setupDefault({}, () => {
-
     ++frame
 
     drawPlane({scale: 2000.0, position: [0.0, 0.0, 0.0]})
 
-    if (frame % 90 == 0) {
-//      console.log("bufferCount", regl.stats)
-  //    console.log("draw.stats", draw.stats)
-      console.log("draw.stats.gpuTime", drawPlane.stats.gpuTime)
-      console.log("draw.stats.iCollect", drawPlane.stats.iCollect)
+    if (frame % 90 === 0) {
+//      console.log('bufferCount', regl.stats)
+  //    console.log('draw.stats', draw.stats)
+      console.log('drawPlane.stats.gpuTime', drawPlane.stats.gpuTime)
+      console.log('drawBunny.stats.gpuTime', drawBunny.stats.gpuTime)
+      console.log('drawBox.stats.gpuTime', drawBox.stats.gpuTime)
     }
-
 
     var bunnies = []
 
@@ -197,8 +196,8 @@ regl.frame(({deltaTime}) => {
     var z
     var SPACING = 100
     for (x = 0; x < X_COUNT; x++) {
-      for(z = 0; z <  Z_COUNT; z++) {
-        bunnies.push({scale: 5.2, position: [x * SPACING, -0.3, -80.0 + z * SPACING] })
+      for (z = 0; z < Z_COUNT; z++) {
+        bunnies.push({scale: 5.2, position: [x * SPACING, -0.3, -80.0 + z * SPACING]})
       }
     }
     drawBunny(bunnies)
@@ -207,15 +206,11 @@ regl.frame(({deltaTime}) => {
 
     SPACING = -100
     for (x = 0; x < X_COUNT; x++) {
-      for(z = 0; z <  Z_COUNT; z++) {
-        boxes.push({scale: 50.7, position: [-200.0 + x * SPACING, 22, 200 + z * SPACING] })
+      for (z = 0; z < Z_COUNT; z++) {
+        boxes.push({scale: 50.7, position: [-200.0 + x * SPACING, 22, 200 + z * SPACING]})
       }
     }
     drawBox(boxes)
-
-
-//    drawBox(    {scale: 40.7, position: [-200.0, 20.0, -200.0]})
-
     camera.tick()
   })
 })
