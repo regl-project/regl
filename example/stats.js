@@ -12,49 +12,64 @@ camera.rotate([0.0, 0.0], [0.0, -0.4])
 camera.zoom(300.0)
 
 function createStatsWidget () {
+  // the widget is contained in a <div>
   var container = document.createElement('div')
-  container.style.cssText = 'position:fixed;top:0;left:0;opacity:0.8;z-index:10000;'
+  container.style.cssText = 'position:fixed;top:20px;left:20px;opacity:0.8;z-index:10000;'
+
   var pr = Math.round(window.devicePixelRatio || 1)
 
-  // TODO: all the text wont fit if we try to send too many drawCalls to `update`
-  // we need to dynamically compute the height from the number of drawCalls.
+  // widget styling constants.
   var WIDTH = 160
-  var HEIGHT = 200
   var HEADER_SIZE = 20
   var TEXT_SIZE = 10
-  var TEXT_START = [7, 44]
+  var TEXT_START = [7, 37]
+  var TEXT_SPACING = 6
+  var BOTTOM_SPACING = 20
   var HEADER_POS = [3, 3]
   var BG = '#000'
   var FG = '#bbb'
 
-  var canvas = document.createElement('canvas')
-  canvas.width = WIDTH * pr
-  canvas.height = HEIGHT * pr
-  canvas.style.cssText = 'width:' + WIDTH + 'px;height:' + HEIGHT + 'px'
+  // we later compute this dynamically from the number of drawCalls.
+  var HEIGHT
 
+  // we draw the widget on a canvas.
+  var canvas = document.createElement('canvas')
   var context = canvas.getContext('2d')
 
-  // make background.
-  context.fillStyle = BG
-  context.fillRect(0, 0, WIDTH * pr, HEIGHT * pr)
-
-  context.font = 'bold ' + (HEADER_SIZE * pr) + 'px Helvetica,Arial,sans-serif'
-  context.textBaseline = 'top'
-  context.fillStyle = FG
-  context.fillText('Stats', HEADER_POS[0] * pr, HEADER_POS[1] * pr)
-
-  container.appendChild(canvas)
-  document.body.appendChild(container)
-
   var totalTime = 2.0 // first time `update` is called we always update.
+  var isInitialized = false
 
   return {
     update: function (drawCalls, deltaTime) {
-      totalTime += deltaTime
+      if (!isInitialized) {
+        isInitialized = true
+        // we initialize the widget the first time `update` is called.
 
+        HEIGHT = drawCalls.length * TEXT_SIZE + (drawCalls.length - 1) * TEXT_SPACING + TEXT_START[1] + BOTTOM_SPACING
+
+        canvas.width = WIDTH * pr
+        canvas.height = HEIGHT * pr
+        canvas.style.cssText = 'width:' + WIDTH + 'px;height:' + HEIGHT + 'px'
+
+        // draw background.
+        context.fillStyle = BG
+        context.fillRect(0, 0, WIDTH * pr, HEIGHT * pr)
+
+        // draw header.
+        context.font = 'bold ' + (HEADER_SIZE * pr) + 'px Helvetica,Arial,sans-serif'
+        context.textBaseline = 'top'
+        context.fillStyle = FG
+        context.fillText('Stats', HEADER_POS[0] * pr, HEADER_POS[1] * pr)
+
+        container.appendChild(canvas)
+        document.body.appendChild(container)
+      }
+
+      totalTime += deltaTime
       if (totalTime > 1.0) {
         totalTime = 0
 
+        // make sure that we clear the old text before drawing new text.
         context.fillStyle = BG
         context.fillRect(
           TEXT_START[0] * pr,
@@ -73,7 +88,7 @@ function createStatsWidget () {
           str = drawCall[1] + ' : ' + Math.round(100.0 * drawCall[0].stats.gpuTime) / 100.0 + 'ms'
 
           context.fillText(str, textCursor[0] * pr, textCursor[1] * pr)
-          textCursor[1] += TEXT_SIZE
+          textCursor[1] += TEXT_SIZE + TEXT_SPACING
         }
       }
     }
