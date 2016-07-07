@@ -220,22 +220,20 @@ const scope1 = regl({
   }`
 })
 
-
 // we make the light darker in this scope.
 const scope2 = regl({
   uniforms: {
     ambientLightAmount: 0.15,
     diffuseLightAmount: 0.35
-  },
+  }
 })
 
 const scope3 = regl({
   uniforms: {
     ambientLightAmount: 0.90,
     diffuseLightAmount: 0.70
-  },
+  }
 })
-
 
 const drawPlane = regl({
 
@@ -305,13 +303,13 @@ regl.frame(() => {
   statsWidget.update(draws, deltaTime)
 
   scope1({}, () => {
-
     var boxes = []
     var x
     var z
     var X_COUNT = 5
     var Z_COUNT = 5
 
+    // place out boxes.
     var SPACING = -100
     for (x = 0; x < X_COUNT; x++) {
       for (z = 0; z < Z_COUNT; z++) {
@@ -323,27 +321,19 @@ regl.frame(() => {
       drawBox(boxes)
     })
 
+    // place out bunnies
     SPACING = 100
-
-
-
-
     var bunnies = []
-
-
-
     for (x = 0; x < X_COUNT; x++) {
       for (z = 0; z < Z_COUNT; z++) {
         bunnies.push({scale: 5.2, position: [x * SPACING, 3.3, -80.0 + z * SPACING]})
       }
     }
 
-
     scope3({}, () => {
       drawPlane({scale: 2000.0, position: [0.0, 0.0, 0.0]})
       drawBunny(bunnies)
     })
-
 
     camera.tick()
   })
