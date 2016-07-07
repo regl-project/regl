@@ -239,9 +239,7 @@ module.exports = function wrapREGL () {
     var opts = separateDynamic(flattenNestedOptions(options))
 
     var stats = {
-      gpuTime: 0.0,
-      _startQueryIndex: -1,
-      _endQueryIndex: -1
+      gpuTime: 0.0
     }
 
     var compiled = core.compile(opts, attributes, uniforms, context, stats)
@@ -409,7 +407,7 @@ module.exports = function wrapREGL () {
 
     // System limits
     limits: limits,
-    hasExtension: function (name) {
+    hasExtensionn: function (name) {
       return limits.extensions.indexOf(name.toLowerCase()) >= 0
     },
 
