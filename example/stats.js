@@ -15,12 +15,23 @@ function createStatsWidget (drawCalls) {
   // the widget keeps track of the previous values of gpuTime,
   // in order to compute the frame time.
   var prevGpuTimes = []
-  for (var i = 0; i < drawCalls.length; i++) {
+  var i
+  for (i = 0; i < drawCalls.length; i++) {
     prevGpuTimes[i] = 0
   }
 
   // we update the widget every second, we need to keep track of the time:
   var totalTime = 1.1
+
+  // we show the average frametime to the user.
+  var N = 50
+  var totalFrameTime = []
+  var frameTimeCount = 0
+  var avgFrameTime = []
+  for (i = 0; i < drawCalls.length; ++i) {
+    totalFrameTime[i] = 0.0
+    avgFrameTime[i] = 0.0
+  }
 
   // the widget is contained in a <div>
   var container = document.createElement('div')
@@ -85,8 +96,7 @@ function createStatsWidget (drawCalls) {
         for (var i = 0; i < drawCalls.length; i++) {
           drawCall = drawCalls[i]
 
-          frameTime = drawCall[0].stats.gpuTime - prevGpuTimes[i]
-          str = drawCall[1] + ' : ' + Math.round(100.0 * frameTime) / 100.0 + 'ms'
+          str = drawCall[1] + ' : ' + Math.round(100.0 * avgFrameTime[i]) / 100.0 + 'ms'
           context.fillText(str, textCursor[0] * pr, textCursor[1] * pr)
 
           // next line
@@ -94,10 +104,25 @@ function createStatsWidget (drawCalls) {
         }
       }
 
-      // make sure to update the previous gpuTime.
+      frameTimeCount++
+      // make sure to update the previous gpuTime, and to compute the average.
       for (i = 0; i < drawCalls.length; i++) {
         drawCall = drawCalls[i]
+
+        frameTime = drawCall[0].stats.gpuTime - prevGpuTimes[i]
+        totalFrameTime[i] += frameTime
+
+        if (frameTimeCount === N) {
+          avgFrameTime[i] = totalFrameTime[i] / N
+          totalFrameTime[i] = 0.0
+        }
+
         prevGpuTimes[i] = drawCall[0].stats.gpuTime
+      }
+
+      // reset avg calculation.
+      if (frameTimeCount === N) {
+        frameTimeCount = 0
       }
     }
   }
