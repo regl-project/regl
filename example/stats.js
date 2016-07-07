@@ -12,8 +12,7 @@ camera.rotate([0.0, 0.0], [0.0, -0.4])
 camera.zoom(300.0)
 
 function createStatsWidget (drawCalls) {
-
-  prevGpuTimes = []
+  var prevGpuTimes = []
 
   for (var i = 0; i < drawCalls.length; i++) {
     prevGpuTimes[i] = 0
@@ -72,8 +71,6 @@ function createStatsWidget (drawCalls) {
         document.body.appendChild(container)
       }
 
-
-
       totalTime += deltaTime
       if (totalTime > 1.0) {
         totalTime = 0
@@ -96,10 +93,6 @@ function createStatsWidget (drawCalls) {
         for (var i = 0; i < drawCalls.length; i++) {
           drawCall = drawCalls[i]
 
-//    drawCall = drawCalls[i]
-
-
-          //          diff = drawCall[0].stats.gpuTime - drawCall[0].stats.prevGpuTime
           diff = drawCall[0].stats.gpuTime - prevGpuTimes[i]
           str = drawCall[1] + ' : ' + Math.round(100.0 * diff) / 100.0 + 'ms'
 
@@ -108,15 +101,13 @@ function createStatsWidget (drawCalls) {
         }
       }
 
-      for (var i = 0; i < drawCalls.length; i++) {
+      for (i = 0; i < drawCalls.length; i++) {
         drawCall = drawCalls[i]
         prevGpuTimes[i] = drawCall[0].stats.gpuTime
-//        console.log("")
       }
     }
   }
 }
-
 
 const planeElements = []
 var planePosition = []
@@ -277,13 +268,12 @@ var draws = [
   [drawPlane, 'drawPlane'],
   [drawBunny, 'drawBunny'],
   [drawBox, 'drawBox'],
-  [setupDefault, 'setupDefault'],
+  [setupDefault, 'setupDefault']
 ]
 
 var statsWidget = createStatsWidget(draws)
 
 regl.frame(() => {
-
   regl.updateTimer()
 
   regl.clear({
