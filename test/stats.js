@@ -210,7 +210,6 @@ tape('test regl.stats', function (t) {
     // End Test stats.renderbufferCount
     //
 
-
     createContext.destroy(gl)
     t.end()
   }, 120)
