@@ -2,7 +2,7 @@
 
 ## Planned
 
-* Optimize constructors/updates for renderbuffers and framebuffers
+* Optimize constructors/updates for framebuffers
 * Cubic frame buffer objects
 * More test cases for framebuffers
 
@@ -20,6 +20,8 @@
 * Benchmark suite
     + Dashboard for test cases and benchmarks
     + Create some more typical drawing examples
+
+* A pretty printer for the generated code
 
 * Documentation
 
@@ -46,6 +48,8 @@
 
 ## Next
 
+* Clean up renderbuffer constructor and improve test coverage
+* Added `resize` method to renderbuffers
 * Added performance monitoring hooks via `regl.stats`
 * Rename `count` context variable to `tick`
 * Remove `deltaTime` context variable
