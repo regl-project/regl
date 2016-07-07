@@ -180,6 +180,10 @@ module.exports = function wrapREGL () {
     elementState.clear()
     bufferState.clear()
 
+    if (timer) {
+      timer.clear()
+    }
+
     if (options.onDestroy) {
       options.onDestroy()
     }
