@@ -72,6 +72,8 @@ function createStatsWidget (drawCalls) {
         document.body.appendChild(container)
       }
 
+
+
       totalTime += deltaTime
       if (totalTime > 1.0) {
         totalTime = 0
@@ -103,9 +105,13 @@ function createStatsWidget (drawCalls) {
 
           context.fillText(str, textCursor[0] * pr, textCursor[1] * pr)
           textCursor[1] += TEXT_SIZE + TEXT_SPACING
-
-          prevGpuTimes[i] = drawCall[0].stats.gpuTime
         }
+      }
+
+      for (var i = 0; i < drawCalls.length; i++) {
+        drawCall = drawCalls[i]
+        prevGpuTimes[i] = drawCall[0].stats.gpuTime
+        console.log("")
       }
     }
   }
