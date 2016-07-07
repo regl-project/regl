@@ -11,7 +11,14 @@ const normals = require('angle-normals')
 camera.rotate([0.0, 0.0], [0.0, -0.4])
 camera.zoom(300.0)
 
-function createStatsWidget () {
+function createStatsWidget (drawCalls) {
+
+  prevGpuTimes = []
+
+  for (var i = 0; i < drawCalls.length; i++) {
+    prevGpuTimes[i] = 0
+  }
+
   // the widget is contained in a <div>
   var container = document.createElement('div')
   container.style.cssText = 'position:fixed;top:20px;left:20px;opacity:0.8;z-index:10000;'
@@ -86,18 +93,24 @@ function createStatsWidget () {
         var diff
         for (var i = 0; i < drawCalls.length; i++) {
           drawCall = drawCalls[i]
-          diff = drawCall[0].stats.gpuTime - drawCall[0].stats.prevGpuTime
+
+//    drawCall = drawCalls[i]
+
+
+          //          diff = drawCall[0].stats.gpuTime - drawCall[0].stats.prevGpuTime
+          diff = drawCall[0].stats.gpuTime - prevGpuTimes[i]
           str = drawCall[1] + ' : ' + Math.round(100.0 * diff) / 100.0 + 'ms'
 
           context.fillText(str, textCursor[0] * pr, textCursor[1] * pr)
           textCursor[1] += TEXT_SIZE + TEXT_SPACING
+
+          prevGpuTimes[i] = drawCall[0].stats.gpuTime
         }
       }
     }
   }
 }
 
-var statsWidget = createStatsWidget()
 
 const planeElements = []
 var planePosition = []
@@ -254,7 +267,17 @@ const drawBox = regl({
   }
 })
 
+var draws = [
+    [drawPlane, 'drawPlane'],
+    [drawBunny, 'drawBunny'],
+    [drawBox, 'drawBox']]
+
+var statsWidget = createStatsWidget(draws)
+
 regl.frame(() => {
+
+  regl.updateTimer()
+
   regl.clear({
     color: [0, 0, 0, 255],
     depth: 1
@@ -262,10 +285,7 @@ regl.frame(() => {
 
   const deltaTime = 0.017
 
-  statsWidget.update([
-    [drawPlane, 'drawPlane'],
-    [drawBunny, 'drawBunny'],
-    [drawBox, 'drawBox']], deltaTime)
+  statsWidget.update(draws, deltaTime)
 
   setupDefault({}, () => {
     drawPlane({scale: 2000.0, position: [0.0, 0.0, 0.0]})

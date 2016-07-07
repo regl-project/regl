@@ -17,6 +17,7 @@ var wrapShaders = require('./lib/shader')
 var wrapRead = require('./lib/read')
 var createCore = require('./lib/core')
 var createStats = require('./lib/stats')
+var createTimer = require('./lib/timer')
 
 var GL_COLOR_BUFFER_BIT = 16384
 var GL_DEPTH_BUFFER_BIT = 256
@@ -41,6 +42,7 @@ module.exports = function wrapREGL () {
 
   var extensionState = wrapExtensions(gl)
   var extensions = extensionState.extensions
+  var timer = createTimer(gl, extensions)
 
   var START_TIME = clock()
   var WIDTH = gl.drawingBufferWidth
@@ -106,7 +108,8 @@ module.exports = function wrapREGL () {
     attributeState,
     shaderState,
     drawState,
-    contextState)
+    contextState,
+    timer)
 
   var nextState = core.next
   var canvas = gl.canvas
@@ -237,9 +240,11 @@ module.exports = function wrapREGL () {
 
     var stats = {
       gpuTime: 0.0,
-      prevGpuTime: 0.0
+      prevGpuTime: 0.0,
+      _startQueryIndex: -1,
+      _endQueryIndex: -1,
     }
-    if (extensions.ext_disjoint_timer_query) {
+/*    if (extensions.ext_disjoint_timer_query) {
       // FIXME: destroy these two queries somewhere.
       stats._queries = []
       stats._queries[0] = extensions.ext_disjoint_timer_query.createQueryEXT()
@@ -248,7 +253,7 @@ module.exports = function wrapREGL () {
       stats.iQuery = 0
       stats.iCollect = -1
     }
-
+*/
     var compiled = core.compile(opts, attributes, uniforms, context, stats)
 
     var draw = compiled.draw
@@ -429,6 +434,10 @@ module.exports = function wrapREGL () {
     _refresh: refresh,
 
     // regl Statistics Information
-    stats: stats
+    stats: stats,
+
+    updateTimer: function() {
+      timer.update()
+    }
   })
 }
