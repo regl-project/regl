@@ -12,65 +12,57 @@ camera.rotate([0.0, 0.0], [0.0, -0.4])
 camera.zoom(300.0)
 
 function createStatsWidget (drawCalls) {
+  // the widget keeps track of the previous values of gpuTime,
+  // in order to compute the frame time.
   var prevGpuTimes = []
-
   for (var i = 0; i < drawCalls.length; i++) {
     prevGpuTimes[i] = 0
   }
 
+  // we update the widget every second, we need to keep track of the time:
+  var totalTime = 1.1
+
   // the widget is contained in a <div>
   var container = document.createElement('div')
   container.style.cssText = 'position:fixed;top:20px;left:20px;opacity:0.8;z-index:10000;'
-
   var pr = Math.round(window.devicePixelRatio || 1)
 
   // widget styling constants.
   var WIDTH = 160
-  var HEADER_SIZE = 20
   var TEXT_SIZE = 10
   var TEXT_START = [7, 37]
   var TEXT_SPACING = 6
+  var HEADER_SIZE = 20
   var BOTTOM_SPACING = 20
   var HEADER_POS = [3, 3]
   var BG = '#000'
-  var FG = '#bbb'
-
-  // we later compute this dynamically from the number of drawCalls.
-  var HEIGHT
+  var FG = '#ccc'
+  var HEIGHT = drawCalls.length * TEXT_SIZE + (drawCalls.length - 1) * TEXT_SPACING + TEXT_START[1] + BOTTOM_SPACING
 
   // we draw the widget on a canvas.
   var canvas = document.createElement('canvas')
   var context = canvas.getContext('2d')
 
-  var totalTime = 2.0 // first time `update` is called we always update.
-  var isInitialized = false
+  // set canvas size
+  canvas.width = WIDTH * pr
+  canvas.height = HEIGHT * pr
+  canvas.style.cssText = 'width:' + WIDTH + 'px;height:' + HEIGHT + 'px'
+
+  // draw background.
+  context.fillStyle = BG
+  context.fillRect(0, 0, WIDTH * pr, HEIGHT * pr)
+
+  // draw header.
+  context.font = 'bold ' + (HEADER_SIZE * pr) + 'px Helvetica,Arial,sans-serif'
+  context.textBaseline = 'top'
+  context.fillStyle = FG
+  context.fillText('Stats', HEADER_POS[0] * pr, HEADER_POS[1] * pr)
+
+  container.appendChild(canvas)
+  document.body.appendChild(container)
 
   return {
-    update: function (drawCalls, deltaTime) {
-      if (!isInitialized) {
-        isInitialized = true
-        // we initialize the widget the first time `update` is called.
-
-        HEIGHT = drawCalls.length * TEXT_SIZE + (drawCalls.length - 1) * TEXT_SPACING + TEXT_START[1] + BOTTOM_SPACING
-
-        canvas.width = WIDTH * pr
-        canvas.height = HEIGHT * pr
-        canvas.style.cssText = 'width:' + WIDTH + 'px;height:' + HEIGHT + 'px'
-
-        // draw background.
-        context.fillStyle = BG
-        context.fillRect(0, 0, WIDTH * pr, HEIGHT * pr)
-
-        // draw header.
-        context.font = 'bold ' + (HEADER_SIZE * pr) + 'px Helvetica,Arial,sans-serif'
-        context.textBaseline = 'top'
-        context.fillStyle = FG
-        context.fillText('Stats', HEADER_POS[0] * pr, HEADER_POS[1] * pr)
-
-        container.appendChild(canvas)
-        document.body.appendChild(container)
-      }
-
+    update: function (deltaTime) {
       totalTime += deltaTime
       if (totalTime > 1.0) {
         totalTime = 0
@@ -89,18 +81,20 @@ function createStatsWidget (drawCalls) {
         var drawCall
         var str
         var textCursor = [TEXT_START[0], TEXT_START[1]]
-        var diff
+        var frameTime
         for (var i = 0; i < drawCalls.length; i++) {
           drawCall = drawCalls[i]
 
-          diff = drawCall[0].stats.gpuTime - prevGpuTimes[i]
-          str = drawCall[1] + ' : ' + Math.round(100.0 * diff) / 100.0 + 'ms'
-
+          frameTime = drawCall[0].stats.gpuTime - prevGpuTimes[i]
+          str = drawCall[1] + ' : ' + Math.round(100.0 * frameTime) / 100.0 + 'ms'
           context.fillText(str, textCursor[0] * pr, textCursor[1] * pr)
+
+          // next line
           textCursor[1] += TEXT_SIZE + TEXT_SPACING
         }
       }
 
+      // make sure to update the previous gpuTime.
       for (i = 0; i < drawCalls.length; i++) {
         drawCall = drawCalls[i]
         prevGpuTimes[i] = drawCall[0].stats.gpuTime
@@ -279,7 +273,7 @@ const drawBox = regl({
   }
 })
 
-var draws = [
+var drawCalls = [
   [drawPlane, 'drawPlane'],
   [drawBunny, 'drawBunny'],
   [drawBox, 'drawBox'],
@@ -287,8 +281,7 @@ var draws = [
   [scope2, 'scope2'],
   [scope3, 'scope3']
 ]
-
-var statsWidget = createStatsWidget(draws)
+var statsWidget = createStatsWidget(drawCalls)
 
 regl.frame(() => {
   regl.updateTimer()
@@ -300,7 +293,7 @@ regl.frame(() => {
 
   const deltaTime = 0.017
 
-  statsWidget.update(draws, deltaTime)
+  statsWidget.update(deltaTime)
 
   scope1({}, () => {
     var boxes = []
