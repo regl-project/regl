@@ -240,20 +240,10 @@ module.exports = function wrapREGL () {
 
     var stats = {
       gpuTime: 0.0,
-      prevGpuTime: 0.0,
       _startQueryIndex: -1,
-      _endQueryIndex: -1,
+      _endQueryIndex: -1
     }
-/*    if (extensions.ext_disjoint_timer_query) {
-      // FIXME: destroy these two queries somewhere.
-      stats._queries = []
-      stats._queries[0] = extensions.ext_disjoint_timer_query.createQueryEXT()
-      stats._queries[1] = extensions.ext_disjoint_timer_query.createQueryEXT()
 
-      stats.iQuery = 0
-      stats.iCollect = -1
-    }
-*/
     var compiled = core.compile(opts, attributes, uniforms, context, stats)
 
     var draw = compiled.draw
@@ -436,7 +426,7 @@ module.exports = function wrapREGL () {
     // regl Statistics Information
     stats: stats,
 
-    updateTimer: function() {
+    updateTimer: function () {
       timer.update()
     }
   })
