@@ -173,7 +173,7 @@ function createModel (position, scale) {
 /*
   This function encapsulates all the common state
   */
-const setupDefault = regl({
+const scope1 = regl({
   cull: {
     enable: true
   },
@@ -219,6 +219,23 @@ const setupDefault = regl({
     gl_Position = projection * view * model * vec4(position, 1);
   }`
 })
+
+
+// we make the light darker in this scope.
+const scope2 = regl({
+  uniforms: {
+    ambientLightAmount: 0.15,
+    diffuseLightAmount: 0.35
+  },
+})
+
+const scope3 = regl({
+  uniforms: {
+    ambientLightAmount: 0.90,
+    diffuseLightAmount: 0.70
+  },
+})
+
 
 const drawPlane = regl({
 
@@ -268,7 +285,9 @@ var draws = [
   [drawPlane, 'drawPlane'],
   [drawBunny, 'drawBunny'],
   [drawBox, 'drawBox'],
-  [setupDefault, 'setupDefault']
+  [scope1, 'scope1'],
+  [scope2, 'scope2'],
+  [scope3, 'scope3']
 ]
 
 var statsWidget = createStatsWidget(draws)
@@ -285,33 +304,47 @@ regl.frame(() => {
 
   statsWidget.update(draws, deltaTime)
 
-  setupDefault({}, () => {
-    drawPlane({scale: 2000.0, position: [0.0, 0.0, 0.0]})
+  scope1({}, () => {
 
-    var bunnies = []
-
+    var boxes = []
+    var x
+    var z
     var X_COUNT = 5
     var Z_COUNT = 5
 
-    var x
-    var z
-    var SPACING = 100
-    for (x = 0; x < X_COUNT; x++) {
-      for (z = 0; z < Z_COUNT; z++) {
-        bunnies.push({scale: 5.2, position: [x * SPACING, 3.3, -80.0 + z * SPACING]})
-      }
-    }
-    drawBunny(bunnies)
-
-    var boxes = []
-
-    SPACING = -100
+    var SPACING = -100
     for (x = 0; x < X_COUNT; x++) {
       for (z = 0; z < Z_COUNT; z++) {
         boxes.push({scale: 50.7, position: [-200.0 + x * SPACING, 40, 200 + z * SPACING]})
       }
     }
-    drawBox(boxes)
+
+    scope2({}, () => {
+      drawBox(boxes)
+    })
+
+    SPACING = 100
+
+
+
+
+    var bunnies = []
+
+
+
+    for (x = 0; x < X_COUNT; x++) {
+      for (z = 0; z < Z_COUNT; z++) {
+        bunnies.push({scale: 5.2, position: [x * SPACING, 3.3, -80.0 + z * SPACING]})
+      }
+    }
+
+
+    scope3({}, () => {
+      drawPlane({scale: 2000.0, position: [0.0, 0.0, 0.0]})
+      drawBunny(bunnies)
+    })
+
+
     camera.tick()
   })
 })
