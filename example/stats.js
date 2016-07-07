@@ -111,7 +111,7 @@ function createStatsWidget (drawCalls) {
       for (var i = 0; i < drawCalls.length; i++) {
         drawCall = drawCalls[i]
         prevGpuTimes[i] = drawCall[0].stats.gpuTime
-        console.log("")
+//        console.log("")
       }
     }
   }
@@ -274,9 +274,11 @@ const drawBox = regl({
 })
 
 var draws = [
-    [drawPlane, 'drawPlane'],
-    [drawBunny, 'drawBunny'],
-    [drawBox, 'drawBox']]
+  [drawPlane, 'drawPlane'],
+  [drawBunny, 'drawBunny'],
+  [drawBox, 'drawBox'],
+  [setupDefault, 'setupDefault'],
+]
 
 var statsWidget = createStatsWidget(draws)
 
