@@ -89,17 +89,6 @@ tape('framebuffer - depth stencil attachment', function (t) {
         stencil: 1
       })
     } else {
-      t.throws(function () {
-        drawLine({
-          color: [1, 1, 1, 1],
-          x: [
-            [-1, -1],
-            [5, 5]
-          ],
-          z: 0,
-          stencil: 1
-        })
-      }, /\(regl\)/, name + ' stencil throws')
       drawLine({
         color: [1, 0, 0, 1],
         x: [[-1, 2], [5, 2]],
@@ -245,6 +234,17 @@ tape('framebuffer - depth stencil attachment', function (t) {
 
     renderTexture({ tex: depthTexture })
     // TODO: test depth texture contents
+
+    testFBO('depth texture + stencil renderbuffer',
+      regl.framebuffer({
+        radius: N,
+        depthBuffer: depthTexture,
+        stencilBuffer: regl.renderbuffer({
+          radius: N,
+          format: 'stencil'
+        })
+      }),
+      true, true)
 
     var depthStencilTexture = regl.texture({
       radius: N,
