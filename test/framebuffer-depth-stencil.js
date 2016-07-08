@@ -178,9 +178,23 @@ tape('framebuffer - depth stencil attachment', function (t) {
     }),
     true, true)
 
-  // formats to test:
-  // * depth texture
-  // * depth-stencil texture
+  // try rendering with depth buffer in a broken configuration
+  t.throws(function () {
+    regl.framebuffer({
+      radius: N,
+      depthBuffer: regl.renderbuffer(N)
+    })
+  }, /\(regl\)/, 'bad depth buffer throws')
+
+  t.throws(function () {
+    regl.framebuffer({
+      radius: N,
+      colorBuffer: regl.renderbuffer({
+        radius: N,
+        format: 'depth'
+      })
+    })
+  }, /\(regl\)/, 'bad color buffer throws')
 
   if (regl.hasExtension('webgl_depth_texture')) {
     var renderTexture = regl({
