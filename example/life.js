@@ -11,7 +11,8 @@ const state = (Array(2)).fill().map(() =>
       data: INITIAL_CONDITIONS,
       wrap: 'repeat'
     }),
-    depth: false
+    depth: false,
+    stencil: false
   }))
 
 const updateLife = regl({
