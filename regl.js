@@ -411,7 +411,7 @@ module.exports = function wrapREGL () {
 
     // System limits
     limits: limits,
-    hasExtensionn: function (name) {
+    hasExtension: function (name) {
       return limits.extensions.indexOf(name.toLowerCase()) >= 0
     },
 
