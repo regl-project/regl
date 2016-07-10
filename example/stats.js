@@ -251,7 +251,9 @@ const scope3 = regl({
   uniforms: {
     ambientLightAmount: 0.90,
     diffuseLightAmount: 0.70
-  }
+  },
+  enableGpuTimer: false
+//  enableGpuTimer: true
 })
 
 const drawPlane = regl({
@@ -281,7 +283,7 @@ const drawBunny = regl({
       return createModel(props.position, props.scale)
     },
     color: [0.5, 0.0, 0.0]
-  }
+  },
 })
 
 const drawBox = regl({
@@ -295,7 +297,8 @@ const drawBox = regl({
       return createModel(props.position, props.scale)
     },
     color: [0.0, 0.6, 0.0]
-  }
+  },
+  enableGpuTimer: false
 })
 
 var drawCalls = [
