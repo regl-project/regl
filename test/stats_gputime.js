@@ -46,9 +46,14 @@ tape('test gpuTime', function (t) {
 
     var prevGpuTime1
 
+    // we divide every test-case into two parts:
+    // ONE: we execute the actual drawing commands
+    // TWO: we see if `gpuTime` assumes reasonable values for the executed drawing commands
+    // we need a timeOut after part ONE(so that the timer query has time to finish), we must
+    // divide it into two parts like this.
     var testCases = [
-      [
-        () => {
+      {
+        partOne: () => {
           var batch = []
           for (var i = 0; i < 10; ++i) {
             batch.push({offset: [0, 0.1 * i]})
@@ -57,7 +62,7 @@ tape('test gpuTime', function (t) {
 
           draw2({offset: [0, 0.1]})
         },
-        () => {
+        partTwo: () => {
           t.ok(draw1.stats.gpuTime > 0, 'draw1.stats.gpuTime > 0 after batch call')
           t.ok(draw2.stats.gpuTime > 0, 'draw1.stats.gpuTime > 0 after one-shot call')
 
@@ -67,37 +72,37 @@ tape('test gpuTime', function (t) {
           // we we will use this values in the next test, we save:
           prevGpuTime1 = draw1.stats.gpuTime
         }
-          ],
-      [
-      () => {
+      },
+      {
+        partOne: () => {
           draw1({offset: [0, 0.1]})
         },
-      () => {
+        partTwo: () => {
           // now test that calling the drawCall once again will increase gpuTime.
           t.ok(draw1.stats.gpuTime > prevGpuTime1, 'draw1.stats.gpuTime > prevGpuTime1 after one-shot call')
           // reset these values for the next test.
           draw1.stats.gpuTime = 0
           draw2.stats.gpuTime = 0
         }
-      ],
-      [
-        () => {
+      },
+      {
+        partOne: () => {
           for (var i = 0; i < 10; ++i) {
             draw1({offset: [0, 0.1 * i]})
           }
           draw2({offset: [0, 0.1]})
         },
-          () => {
-            // make sure that if we call a drawCall as one-shot several times, the counter is also incremented several times.
-            t.ok(draw1.stats.gpuTime > draw2.stats.gpuTime, 'draw1.stats.gpuTime > draw2.stats.gpuTime after several one-shot calls')
+        partTwo: () => {
+          // make sure that if we call a drawCall as one-shot several times, the counter is also incremented several times.
+          t.ok(draw1.stats.gpuTime > draw2.stats.gpuTime, 'draw1.stats.gpuTime > draw2.stats.gpuTime after several one-shot calls')
 
-            // reset these values for the next test.
-            draw1.stats.gpuTime = 0
-            draw2.stats.gpuTime = 0
-          }
-          ],
-      [
-        () => {
+          // reset these values for the next test.
+          draw1.stats.gpuTime = 0
+          draw2.stats.gpuTime = 0
+        }
+      },
+      {
+        partOne: () => {
           var batch = []
           for (var i = 0; i < 10; ++i) {
             batch.push({offset: [0, 0.1 * i]})
@@ -106,7 +111,7 @@ tape('test gpuTime', function (t) {
           scope1({}, () => {
             scope2({}, () => {
               for (var i = 0; i < 10; ++i) {
-                draw2({offset: [0, 0.1*i]})
+                draw2({offset: [0, 0.1 * i]})
               }
               scope3({}, () => {
                 draw3({offset: [0, 0.1]})
@@ -116,32 +121,32 @@ tape('test gpuTime', function (t) {
             draw4({offset: [0, 0.1]})
           })
         },
-          () => {
-            // Now we will test whether `gpuTime` handles deeply nested scopes.
+        partTwo: () => {
+          // Now we will test whether `gpuTime` handles deeply nested scopes.
 
-            var d1 = draw1.stats.gpuTime
-            var d2 = draw2.stats.gpuTime
-            var d3 = draw3.stats.gpuTime
-            var d4 = draw4.stats.gpuTime
+          var d1 = draw1.stats.gpuTime
+          var d2 = draw2.stats.gpuTime
+          var d3 = draw3.stats.gpuTime
+          var d4 = draw4.stats.gpuTime
 
-            t.ok((d1 + d2 + d3 + d4) === scope1.stats.gpuTime, 'scope s1 === d1+d2+d3+d4')
-            t.ok((d1 + d2 + d3) === scope2.stats.gpuTime, 'scope s2 === d1+d2+d3')
-            t.ok((d1 + d3) === scope3.stats.gpuTime, 'scope s3 === d1+d3')
-          }
-          ]
+          t.ok((d1 + d2 + d3 + d4) === scope1.stats.gpuTime, 'scope s1 === d1+d2+d3+d4')
+          t.ok((d1 + d2 + d3) === scope2.stats.gpuTime, 'scope s2 === d1+d2+d3')
+          t.ok((d1 + d3) === scope3.stats.gpuTime, 'scope s3 === d1+d3')
+        }
+      }
     ]
 
     var temp = null
 
-    function processCase () {
+    var processCase = function () {
       if (temp !== null) {
         regl.updateTimer()
-        temp[1]()
+        temp.partTwo()
       }
       var testCase = testCases.shift()
 
       if (testCase) {
-        testCase[0]()
+        testCase.partOne()
         temp = testCase
         setTimeout(processCase, 200)
       } else {
@@ -151,6 +156,5 @@ tape('test gpuTime', function (t) {
       }
     }
     processCase()
-
   }
 })
