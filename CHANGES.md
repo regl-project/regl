@@ -49,7 +49,7 @@
 ## Next
 
 * Clean up renderbuffer constructor and improve test coverage
-* Added `resize` method to renderbuffers
+* Added `resize` method to textures and renderbuffers
 * Added performance monitoring hooks via `regl.stats`
 * Rename `count` context variable to `tick`
 * Remove `deltaTime` context variable
