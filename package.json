@@ -1,7 +1,7 @@
 {
   "name": "regl",
   "version": "0.8.0",
-  "description": "WebGL",
+  "description": "Regl is a fast functional reactive abstraction for WebGL.",
   "main": "regl.js",
   "directories": {
     "example": "example"
