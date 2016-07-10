@@ -236,8 +236,7 @@ const scope1 = regl({
     vPosition = position;
     vNormal = normal;
     gl_Position = projection * view * model * vec4(position, 1);
-  }`,
-  enableGpuTimer: true
+  }`
 })
 
 // we make the light darker in this scope.
@@ -245,17 +244,14 @@ const scope2 = regl({
   uniforms: {
     ambientLightAmount: 0.15,
     diffuseLightAmount: 0.35
-  },
-  enableGpuTimer: false
+  }
 })
 
 const scope3 = regl({
   uniforms: {
     ambientLightAmount: 0.90,
     diffuseLightAmount: 0.70
-  },
-  enableGpuTimer: true
-//  enableGpuTimer: true
+  }
 })
 
 const drawPlane = regl({
@@ -299,8 +295,7 @@ const drawBox = regl({
       return createModel(props.position, props.scale)
     },
     color: [0.0, 0.6, 0.0]
-  },
-  enableGpuTimer: true
+  }
 })
 
 var drawCalls = [
