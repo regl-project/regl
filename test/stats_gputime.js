@@ -4,6 +4,8 @@ var tape = require('tape')
 
 tape('test gpuTime', function (t) {
   var gl = createContext(100, 100)
+  t.equals(gl.getError(), 0, 'error code ok')
+
   var regl = createREGL(gl)
   regl = createREGL(gl)
 
@@ -64,7 +66,7 @@ tape('test gpuTime', function (t) {
         },
         partTwo: function () {
           t.ok(draw1.stats.gpuTime > 0, 'draw1.stats.gpuTime > 0 after batch call')
-          t.ok(draw2.stats.gpuTime > 0, 'draw1.stats.gpuTime > 0 after one-shot call')
+          t.ok(draw2.stats.gpuTime > 0, 'draw2.stats.gpuTime > 0 after one-shot call')
 
           // draw1 should certainly take more time than draw2, because more stuff was drawn.
           t.ok(draw1.stats.gpuTime > draw2.stats.gpuTime, 'draw1.stats.gpuTime > draw2.stats.gpuTime')
@@ -124,6 +126,11 @@ tape('test gpuTime', function (t) {
         partTwo: function () {
           // Now we will test whether `gpuTime` handles deeply nested scopes.
 
+          t.ok(draw1.stats.gpuTime > 0, 'draw1.stats.gpuTime > 0 after scoped call')
+          t.ok(draw2.stats.gpuTime > 0, 'draw2.stats.gpuTime > 0 after scoped call')
+          t.ok(draw3.stats.gpuTime > 0, 'draw3.stats.gpuTime > 0 after scoped call')
+          t.ok(draw4.stats.gpuTime > 0, 'draw4.stats.gpuTime > 0 after scoped call')
+
           var d1 = draw1.stats.gpuTime
           var d2 = draw2.stats.gpuTime
           var d3 = draw3.stats.gpuTime
@@ -150,6 +157,7 @@ tape('test gpuTime', function (t) {
         temp = testCase
         setTimeout(processCase, 200)
       } else {
+        t.equals(gl.getError(), 0, 'error code ok')
         regl.destroy()
         createContext.destroy(gl)
         t.end()
