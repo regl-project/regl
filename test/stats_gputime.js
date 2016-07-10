@@ -53,7 +53,7 @@ tape('test gpuTime', function (t) {
     // divide it into two parts like this.
     var testCases = [
       {
-        partOne: () => {
+        partOne: function () {
           var batch = []
           for (var i = 0; i < 10; ++i) {
             batch.push({offset: [0, 0.1 * i]})
@@ -62,7 +62,7 @@ tape('test gpuTime', function (t) {
 
           draw2({offset: [0, 0.1]})
         },
-        partTwo: () => {
+        partTwo: function () {
           t.ok(draw1.stats.gpuTime > 0, 'draw1.stats.gpuTime > 0 after batch call')
           t.ok(draw2.stats.gpuTime > 0, 'draw1.stats.gpuTime > 0 after one-shot call')
 
@@ -74,10 +74,10 @@ tape('test gpuTime', function (t) {
         }
       },
       {
-        partOne: () => {
+        partOne: function () {
           draw1({offset: [0, 0.1]})
         },
-        partTwo: () => {
+        partTwo: function () {
           // now test that calling the drawCall once again will increase gpuTime.
           t.ok(draw1.stats.gpuTime > prevGpuTime1, 'draw1.stats.gpuTime > prevGpuTime1 after one-shot call')
           // reset these values for the next test.
@@ -86,13 +86,13 @@ tape('test gpuTime', function (t) {
         }
       },
       {
-        partOne: () => {
+        partOne: function () {
           for (var i = 0; i < 10; ++i) {
             draw1({offset: [0, 0.1 * i]})
           }
           draw2({offset: [0, 0.1]})
         },
-        partTwo: () => {
+        partTwo: function () {
           // make sure that if we call a drawCall as one-shot several times, the counter is also incremented several times.
           t.ok(draw1.stats.gpuTime > draw2.stats.gpuTime, 'draw1.stats.gpuTime > draw2.stats.gpuTime after several one-shot calls')
 
@@ -102,18 +102,18 @@ tape('test gpuTime', function (t) {
         }
       },
       {
-        partOne: () => {
+        partOne: function () {
           var batch = []
           for (var i = 0; i < 10; ++i) {
             batch.push({offset: [0, 0.1 * i]})
           }
 
-          scope1({}, () => {
-            scope2({}, () => {
+          scope1({}, function () {
+            scope2({}, function () {
               for (var i = 0; i < 10; ++i) {
                 draw2({offset: [0, 0.1 * i]})
               }
-              scope3({}, () => {
+              scope3({}, function () {
                 draw3({offset: [0, 0.1]})
                 draw1(batch)
               })
@@ -121,7 +121,7 @@ tape('test gpuTime', function (t) {
             draw4({offset: [0, 0.1]})
           })
         },
-        partTwo: () => {
+        partTwo: function () {
           // Now we will test whether `gpuTime` handles deeply nested scopes.
 
           var d1 = draw1.stats.gpuTime
