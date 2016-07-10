@@ -281,7 +281,7 @@ const drawBunny = regl({
       return createModel(props.position, props.scale)
     },
     color: [0.5, 0.0, 0.0]
-  },
+  }
 })
 
 const drawBox = regl({
