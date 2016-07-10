@@ -156,5 +156,7 @@ tape('test gpuTime', function (t) {
       }
     }
     processCase()
+  } else {
+    t.end()
   }
 })
