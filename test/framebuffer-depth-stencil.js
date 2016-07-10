@@ -46,11 +46,9 @@ tape('framebuffer - depth stencil attachment', function (t) {
         return 'stencil' in props
       },
       func: function (context, props) {
-        if ('stencil' in props) {
-          return {
-            cmp: '!=',
-            ref: props.stencil
-          }
+        return {
+          cmp: '!=',
+          ref: props.stencil | 0
         }
       },
       opFront: {
@@ -69,7 +67,7 @@ tape('framebuffer - depth stencil attachment', function (t) {
       stencil: 0
     })
 
-    if ('stencil') {
+    if (stencil) {
       drawLine({
         color: [1, 0, 0, 1],
         x: [[-1, 2], [5, 2]],
@@ -154,6 +152,7 @@ tape('framebuffer - depth stencil attachment', function (t) {
     }),
     false, false)
 
+  /*
   testFBO('depth renderbuffer',
     regl.framebuffer({
       radius: N,
@@ -169,6 +168,7 @@ tape('framebuffer - depth stencil attachment', function (t) {
       stencil: true
     }),
     false, true)
+  */
 
   testFBO('depth-stencil renderbuffer',
     regl.framebuffer({
@@ -197,42 +197,14 @@ tape('framebuffer - depth stencil attachment', function (t) {
   }, /\(regl\)/, 'bad color buffer throws')
 
   if (regl.hasExtension('webgl_depth_texture')) {
-    var renderTexture = regl({
-      frag: [
-        'precision highp float;',
-        'uniform sampler2D tex;',
-        'varying vec2 uv;',
-        'void main() {',
-        '  gl_FragColor = texture2D(tex, uv);',
-        '}'
-      ].join('\n'),
-
-      vert: [
-        'precision highp float;',
-        'attribute vec2 position;',
-        'varying vec2 uv;',
-        'void main() {',
-        '  uv = position;',
-        '  gl_Position = vec4(position, 0, 1);',
-        '}'
-      ].join('\n'),
-
-      uniforms: {
-        tex: regl.prop('texture')
-      },
-
-      attributes: {
-        position: [
-          0, -4,
-          4, 4,
-          -4, 4
-        ]
-      },
-      count: 3,
-      primitive: 'triangles',
-
-      depth: { enable: false }
+    /*
+    var fbo = regl.framebuffer({
+      radius: N,
+      depthTexture: true,
+      stencil: false
     })
+
+    testFBO('depth texture (params)', fbo, true, false)
 
     var depthTexture = regl.texture({
       radius: N,
@@ -245,25 +217,18 @@ tape('framebuffer - depth stencil attachment', function (t) {
         depthBuffer: depthTexture
       }),
       true, false)
-
-    renderTexture({ tex: depthTexture })
-    // TODO: test depth texture contents
-
-    testFBO('depth texture + stencil renderbuffer',
-      regl.framebuffer({
-        radius: N,
-        depthBuffer: depthTexture,
-        stencilBuffer: regl.renderbuffer({
-          radius: N,
-          format: 'stencil'
-        })
-      }),
-      true, true)
+    */
 
     var depthStencilTexture = regl.texture({
       radius: N,
       format: 'depth stencil'
     })
+
+    testFBO('depth-stencil texture (params)',
+      regl.framebuffer({
+        radius: N,
+        depthTexture: true
+      }), true, true)
 
     testFBO('depth-stencil texture',
       regl.framebuffer({
@@ -271,9 +236,6 @@ tape('framebuffer - depth stencil attachment', function (t) {
         depthStencilBuffer: depthStencilTexture
       }),
       true, true)
-
-    renderTexture({ tex: depthStencilTexture })
-    // TODO: test depth-stencil texture contents
   }
 
   regl.destroy()
