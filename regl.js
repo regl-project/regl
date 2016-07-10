@@ -17,6 +17,7 @@ var wrapShaders = require('./lib/shader')
 var wrapRead = require('./lib/read')
 var createCore = require('./lib/core')
 var createStats = require('./lib/stats')
+var createTimer = require('./lib/timer')
 
 var GL_COLOR_BUFFER_BIT = 16384
 var GL_DEPTH_BUFFER_BIT = 256
@@ -41,6 +42,7 @@ module.exports = function wrapREGL () {
 
   var extensionState = wrapExtensions(gl)
   var extensions = extensionState.extensions
+  var timer = createTimer(gl, extensions)
 
   var START_TIME = clock()
   var WIDTH = gl.drawingBufferWidth
@@ -106,7 +108,8 @@ module.exports = function wrapREGL () {
     attributeState,
     shaderState,
     drawState,
-    contextState)
+    contextState,
+    timer)
 
   var nextState = core.next
   var canvas = gl.canvas
@@ -177,6 +180,10 @@ module.exports = function wrapREGL () {
     elementState.clear()
     bufferState.clear()
 
+    if (timer) {
+      timer.clear()
+    }
+
     if (options.onDestroy) {
       options.onDestroy()
     }
@@ -235,7 +242,11 @@ module.exports = function wrapREGL () {
     var attributes = separateDynamic(options.attributes || {})
     var opts = separateDynamic(flattenNestedOptions(options))
 
-    var compiled = core.compile(opts, attributes, uniforms, context)
+    var stats = {
+      gpuTime: 0.0
+    }
+
+    var compiled = core.compile(opts, attributes, uniforms, context, stats)
 
     var draw = compiled.draw
     var batch = compiled.batch
@@ -280,7 +291,11 @@ module.exports = function wrapREGL () {
       }
     }
 
-    return REGLCommand
+    return extend(REGLCommand, {
+      stats: stats
+    })
+
+//    return REGLCommand
   }
 
   function clear (options) {
@@ -411,6 +426,10 @@ module.exports = function wrapREGL () {
     _refresh: refresh,
 
     // regl Statistics Information
-    stats: stats
+    stats: stats,
+
+    updateTimer: function () {
+      timer.update()
+    }
   })
 }
