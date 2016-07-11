@@ -115,7 +115,7 @@ In this section, we show how you can implement a spinning textured cube in `regl
 
 ![](images/cube_example.png)
 
-#### [`regl`](https://mikolalysenko.github.io/regl/www/gallery/camera.js.html)
+#### [`regl`](https://mikolalysenko.github.io/regl/www/gallery/cube.js.html)
 
 ```javascript
 const regl = require('../regl')()
@@ -214,7 +214,7 @@ require('resl')({
 ```
 
 
-#### [Raw WebGL](https://mikolalysenko.github.io/regl/www/gallery/camera.js.html)
+#### [Raw WebGL](https://mikolalysenko.github.io/regl/compare/webgl_cube.html)
 
 ```html
 <!doctype html>
