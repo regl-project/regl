@@ -74,7 +74,11 @@ require('resl')({
     texture: {
       type: 'image',
       src: 'assets/lena.png',
-      parser: (data) => regl.texture({data: data})
+      parser: (data) => regl.texture({
+        data: data,
+        mag: 'linear',
+        min: 'linear',
+      })
     }
   },
   onDone: ({texture}) => {
