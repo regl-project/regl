@@ -77,7 +77,7 @@ require('resl')({
       parser: (data) => regl.texture({
         data: data,
         mag: 'linear',
-        min: 'linear',
+        min: 'linear'
       })
     }
   },
