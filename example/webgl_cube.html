@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+  <head>
+    <title>WebGL Textured Cube Demo</title>
+    <script src="webgl_cube.js" type="text/javascript"></script>
+
+    <script id="shader-fs" type="x-shader/x-fragment">
+  precision mediump float;
+  varying vec2 vUv;
+  uniform sampler2D tex;
+  void main () {
+    gl_FragColor = texture2D(tex,vUv);
+  }
+    </script>
+
+    <script id="shader-vs" type="x-shader/x-vertex">
+
+  precision mediump float;
+  attribute vec3 position;
+  attribute vec2 uv;
+  varying vec2 vUv;
+  uniform mat4 projection, view;
+  void main() {
+    vUv = uv;
+    gl_Position = projection * view * vec4(position, 1);
+  }
+    </script>
+  </head>
+
+  <body onload="start()">
+    <canvas id="glcanvas" width="640" height="480">
+      Your browser doesn't appear to support the <code>&lt;canvas&gt;</code> element.
+    </canvas>
+  </body>
+</html>
