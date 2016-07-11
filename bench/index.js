@@ -84,7 +84,7 @@ function benchmark (procedure, samples, warmupSamples) {
 
   function sample (tick) {
     var start = performance.now()
-    procedure({a:tick})
+    procedure({a: tick})
     timeSamples.push(performance.now() - start)
     heapSamples.push(performance.memory.usedJSHeapSize)
   }
@@ -98,7 +98,7 @@ function benchmark (procedure, samples, warmupSamples) {
 
     var i
     for (i = 0; i < warmupSamples; ++i) {
-      procedure({a:i})
+      procedure({a: i})
     }
 
     timeSamples.length = 0
@@ -155,8 +155,8 @@ Object.keys(CASES).map(function (caseName) {
   var sample = benchmark(proc, obj.samples, obj.warmupSamples)
 
   result = button(caseName, function () {
-     var bench = sample()
-     result.text.innerText = 'n:' + bench.n + ', t:(' + bench.time + '), m:(' + bench.space + ')'
+    var bench = sample()
+    result.text.innerText = 'n:' + bench.n + ', t:(' + bench.time + '), m:(' + bench.space + ')'
   })
   return result
 })
@@ -171,9 +171,7 @@ chartDiv.style.cssText = 'padding: 0; margin: auto; display: block; width: ' + W
 var chartCanvas = document.createElement('canvas')
 chartDiv.appendChild(chartCanvas)
 
-
 document.body.appendChild(chartDiv)
-
 
 // padring-right
 var ctx = chartCanvas
