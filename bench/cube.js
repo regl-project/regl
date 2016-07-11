@@ -33,10 +33,10 @@ module.exports = function (regl) {
     frag: `
     precision mediump float;
     varying vec2 vUv;
-//    uniform sampler2D tex;
+    uniform sampler2D tex;
     void main () {
-      //    gl_FragColor = texture2D(tex,vUv);
-      gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+      gl_FragColor = texture2D(tex,vUv*7.0);
+//      gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
 
     }`,
     vert: `
@@ -68,7 +68,16 @@ module.exports = function (regl) {
                          viewportWidth / viewportHeight,
                          0.01,
                          10),
- //     tex: regl.prop('texture')
+      tex: regl.texture({
+        min: 'nearest',
+        mag: 'nearest',
+        wrap: 'repeat',
+
+      data: [
+        [255, 128],
+        [128, 255]
+      ]
+    })
     }
   })
 }
