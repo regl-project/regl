@@ -113,6 +113,8 @@ You can also use `regl` as a standalone script if you are really stubborn.  The 
 
 In this section, we show how you can implement a spinning textured cube in `regl`, and compare it with other WebGL frameworks. 
 
+![](images/cube_example.png)
+
 #### [`regl`](https://mikolalysenko.github.io/regl/www/gallery/camera.js.html)
 
 ```javascript
