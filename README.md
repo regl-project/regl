@@ -531,11 +531,18 @@ function perspective (fovy, aspect, near, far) {
 </html>
 ```
 
-* vs WebGL
-* vs gl-* modules from stack.gl
-* gl-react
-* vs TWGL
-* vs THREE.js
+#### [stack.gl]()
+TODO
+
+#### [gl-react]()
+TODO
+
+#### [TWGL]()
+TODO
+
+#### [three.js]()
+TODO
+
 
 ### Benchmarks
 You can run benchmarks locally using `npm run bench` or check them out here:
