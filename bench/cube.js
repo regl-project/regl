@@ -1,7 +1,6 @@
 const mat4 = require('gl-mat4')
 
 module.exports = function (regl) {
-
   var cubePosition = [
     [-0.5, +0.5, +0.5], [+0.5, +0.5, +0.5], [+0.5, -0.5, +0.5], [-0.5, -0.5, +0.5], // positive z face.
     [+0.5, +0.5, +0.5], [+0.5, +0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], // positive x face
@@ -36,7 +35,7 @@ module.exports = function (regl) {
     uniform sampler2D tex;
     void main () {
       gl_FragColor = texture2D(tex,vUv*7.0);
-//      gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+      //      gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
 
     }`,
     vert: `
@@ -73,11 +72,11 @@ module.exports = function (regl) {
         mag: 'nearest',
         wrap: 'repeat',
 
-      data: [
-        [255, 128],
-        [128, 255]
-      ]
-    })
+        data: [
+          [255, 128],
+          [128, 255]
+        ]
+      })
     }
   })
 }
