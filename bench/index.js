@@ -1,25 +1,27 @@
 /* globals performance */
 var CASES = require('./list')
 var extend = require('../lib/util/extend')
-var regl = require('../regl')()
+var createREGL = require('../../regl')
 
-var container = document.createElement('div')
-extend(container.style, {
-  'position': 'absolute',
-  'left': '0px',
-  'top': '0px',
-  'height': '100%',
-  'width': '100%',
-  'overflow': 'auto',
-  'padding': '15px',
-  'z-index': '10'
+var canvas = document.createElement('canvas')
+var gl = canvas.getContext('webgl', {
+  antialias: false,
+  stencil: true,
+  preserveDrawingBuffer: true
 })
+canvas.style.position = 'fixed'
+canvas.style.top = '0'
+canvas.style.right = '0'
 
-var header = document.createElement('h2')
-header.innerHTML = '<u>benchmarks</u>'
-container.appendChild(header)
+// TODO: we should take the pixel ratio into account here.
+canvas.style.width = '384px'
+canvas.style.height = '240px'
+canvas.width = 384
+canvas.height = 240
 
-document.body.appendChild(container)
+document.body.appendChild(canvas)
+
+var regl = createREGL(gl)
 
 function analyze (samples, fmt) {
   // Moments
@@ -75,13 +77,13 @@ function formatMemory (x) {
   return x + 'b'
 }
 
-function benchmark (procedure, duration, warmup) {
+function benchmark (procedure, samples, warmupSamples) {
   var timeSamples = []
   var heapSamples = []
 
-  function sample () {
+  function sample (tick) {
     var start = performance.now()
-    procedure()
+    procedure({a: tick})
     timeSamples.push(performance.now() - start)
     heapSamples.push(performance.memory.usedJSHeapSize)
   }
@@ -92,16 +94,16 @@ function benchmark (procedure, duration, warmup) {
       depth: 1,
       stencil: 0
     })
-    for (var i = 0; i < warmup; ++i) {
-      procedure()
+    var i
+    for (i = 0; i < warmupSamples; ++i) {
+      procedure({a: i})
     }
 
     timeSamples.length = 0
     heapSamples.length = 0
 
-    var stop = duration + performance.now()
-    while (performance.now() <= stop) {
-      sample()
+    for (i = 0; i < samples; i++) {
+      sample(i)
     }
 
     return {
@@ -128,7 +130,7 @@ function button (text, onClick) {
   var buttonContainer = document.createElement('div')
   buttonContainer.appendChild(result)
   buttonContainer.appendChild(statNode)
-  container.appendChild(buttonContainer)
+  document.body.appendChild(buttonContainer)
 
   return {
     link: result,
@@ -139,11 +141,15 @@ function button (text, onClick) {
 
 Object.keys(CASES).map(function (caseName) {
   var result
-  var proc = CASES[caseName]
-  var sample = benchmark(proc(regl), 1000, 10)
+
+  var obj = CASES[caseName]
+  var proc = obj.proc(regl)
+
+  var sample = benchmark(proc, obj.samples, obj.warmupSamples)
+
   result = button(caseName, function () {
-    var bench = sample()
-    result.text.innerText = 'n:' + bench.n + ', t:(' + bench.time + '), m:(' + bench.space + ')'
+     var bench = sample()
+     result.text.innerText = 'n:' + bench.n + ', t:(' + bench.time + '), m:(' + bench.space + ')'
   })
   return result
 })
