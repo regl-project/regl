@@ -2,6 +2,7 @@
 var CASES = require('./list')
 var extend = require('../lib/util/extend')
 var createREGL = require('../../regl')
+var Chart = require('chart.js')
 
 var canvas = document.createElement('canvas')
 var gl = canvas.getContext('webgl', {
@@ -83,7 +84,7 @@ function benchmark (procedure, samples, warmupSamples) {
 
   function sample (tick) {
     var start = performance.now()
-    procedure({a: tick})
+    procedure({a:tick})
     timeSamples.push(performance.now() - start)
     heapSamples.push(performance.memory.usedJSHeapSize)
   }
@@ -94,15 +95,21 @@ function benchmark (procedure, samples, warmupSamples) {
       depth: 1,
       stencil: 0
     })
+
     var i
     for (i = 0; i < warmupSamples; ++i) {
-      procedure({a: i})
+      procedure({a:i})
     }
 
     timeSamples.length = 0
     heapSamples.length = 0
 
     for (i = 0; i < samples; i++) {
+      regl.clear({
+        color: [ 0, 0, 0, 0 ],
+        depth: 1,
+        stencil: 0
+      })
       sample(i)
     }
 
@@ -153,3 +160,52 @@ Object.keys(CASES).map(function (caseName) {
   })
   return result
 })
+/*
+var W = 640
+var H = 288
+var chartDiv = document.createElement('div')
+chartDiv.width = W
+chartDiv.height = H
+chartDiv.style.cssText = 'padding: 0; margin: auto; display: block; width: ' + W + 'px; height: ' + H + 'px;'
+
+var chartCanvas = document.createElement('canvas')
+chartDiv.appendChild(chartCanvas)
+
+
+document.body.appendChild(chartDiv)
+
+
+// padring-right
+var ctx = chartCanvas
+
+var myChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        datasets: [{
+            label: 'Scatter Dataset',
+            data: [{
+                x: -10,
+                y: 0
+            }, {
+                x: 0,
+                y: 10
+            }, {
+                x: 10,
+                y: 5
+            }]
+        }]
+    },
+    options: {
+        scales: {
+            xAxes: [{
+                type: 'time',
+                time: {
+                    displayFormats: {
+                        quarter: 'MMM YYYY'
+                    }
+                }
+            }]
+        }
+    }
+});;
+*/
