@@ -1042,8 +1042,8 @@ var command = regl({
     box: {
       x: 10,
       y: 20,
-      w: 100,
-      h: 100
+      width: 100,
+      height: 100
     }
   }
 
@@ -1054,7 +1054,7 @@ var command = regl({
 | Property | Description | Default |
 |----------|-------------|---------|
 | `enable` | Toggles `gl.enable(gl.SCISSOR)` | `false` |
-| `box` | Sets `gl.scissor` | `{x:0,y:0}` |
+| `box` | Sets `gl.scissor` | `{}` |
 
 **Notes**
 * `box` is the shape of the scissor region, it takes the following parameters
@@ -1078,8 +1078,8 @@ var command = regl({
   viewport: {
     x: 5,
     y: 10,
-    w: 100,
-    h: 50
+    width: 100,
+    height: 50
   }
 
   // ...
