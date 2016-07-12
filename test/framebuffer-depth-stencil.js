@@ -183,8 +183,7 @@ tape('framebuffer - depth stencil attachment', function (t) {
   testFBO('depth-stencil renderbuffer - implicit',
     regl.framebuffer({
       radius: N,
-      depth: true,
-      stencil: true
+      depthStencil: true
     }),
     true, true)
 
