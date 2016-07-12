@@ -91,6 +91,12 @@ tape('framebuffer-codegen', function (t) {
       ext[propName] = regl.context(propName)
       cases[propName + '-context-const ' + name] = extend(extend({}, parent), ext)
 
+      context = {}
+      context[propName] = regl.prop(propName)
+      ext = {context: extend(context, parent.context || {})}
+      ext[propName] = regl.context(propName)
+      cases[propName + '-context-prop ' + name] = extend(extend({}, parent), ext)
+
       ext = {}
       ext[propName] = regl.this(propName)
       cases[propName + '-this ' + name] = extend(ext, parent)
