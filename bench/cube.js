@@ -54,13 +54,15 @@ module.exports = function (regl) {
     },
     elements: cubeElements,
     uniforms: {
+
       view: (_, props, batchId) => {
         const t = 0.01 * props.tick
         return mat4.lookAt([],
                            [5 * Math.cos(t), 2.5 * Math.sin(t), 5 * Math.sin(t)],
                            [0, 0.0, 0],
                            [0, 1, 0])
-      },
+                           },
+
       projection: ({viewportWidth, viewportHeight}) => {
         return mat4.perspective([],
                          Math.PI / 4,

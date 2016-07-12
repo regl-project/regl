@@ -85,6 +85,11 @@ function benchmark (procedure, samples, warmupSamples) {
   var heapSamples = []
 
   function sample (tick) {
+    regl.clear({
+        color: [ 0, 0, 0, 0 ],
+        depth: 1,
+        stencil: 0
+    })
     var start = performance.now()
     procedure({tick: tick})
     timeSamples.push(performance.now() - start)
@@ -92,14 +97,16 @@ function benchmark (procedure, samples, warmupSamples) {
   }
 
   return function run () {
-    regl.clear({
-      color: [ 0, 0, 0, 0 ],
-      depth: 1,
-      stencil: 0
-    })
 
     var i
     for (i = 0; i < warmupSamples; ++i) {
+      regl.clear({
+        color: [ 0, 0, 0, 0 ],
+        depth: 1,
+        stencil: 0
+      })
+      regl.updateTimer()
+
       procedure({tick: i})
     }
 
@@ -107,14 +114,12 @@ function benchmark (procedure, samples, warmupSamples) {
     heapSamples.length = 0
 
     for (i = 0; i < samples; i++) {
-      regl.clear({
-        color: [ 0, 0, 0, 0 ],
-        depth: 1,
-        stencil: 0
-      })
+      regl.updateTimer()
+
       sample(i)
     }
 
+//    console.log("samples: ", timeSamples)
     return {
       n: timeSamples.length,
       time: analyze(timeSamples, formatTime),
