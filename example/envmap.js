@@ -110,6 +110,8 @@ require('resl')({
       posy, negy,
       posz, negz)
     regl.frame(() => {
+      regl.updateTimer()
+
       setupEnvMap({ cube }, () => {
         drawBackground()
         drawBunny()

@@ -56,6 +56,8 @@ require('resl')({
     })
 
     regl.frame(({viewportWidth, viewportHeight}) => {
+      regl.updateTimer()
+
       const {x, y} = mouse
 
       const boxX = map[0].length * x / viewportWidth

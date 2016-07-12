@@ -95,6 +95,8 @@ const drawBunny = regl({
 })
 
 regl.frame(() => {
+  regl.updateTimer()
+
   regl.clear({
     depth: 1,
     color: [0, 0, 0, 1]

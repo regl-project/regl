@@ -70,6 +70,8 @@ require('resl')({
 
     const texture = regl.texture(video)
     regl.frame(() => {
+      regl.updateTimer()
+
       drawDoggie({ video: texture.subimage(video) })
     })
   }

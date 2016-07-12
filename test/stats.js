@@ -6,7 +6,7 @@ var tape = require('tape')
 
 tape('test regl.stats', function (t) {
   setTimeout(function () {
-    var gl = createContext(16, 16)
+    var gl = createContext(2000, 2000)
     var regl
     var stats
 
