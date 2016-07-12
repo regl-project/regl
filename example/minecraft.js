@@ -194,6 +194,8 @@ require('resl')({
 
   onDone: ({ atlas }) => {
     regl.frame(() => {
+      regl.updateTimer()
+
       drawWorld({position, elements, uv, normal, atlas})
       camera.tick()
     })

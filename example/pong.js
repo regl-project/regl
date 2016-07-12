@@ -247,6 +247,8 @@ const drawAabb = regl({
 resetBall(true)
 
 regl.frame(function ({viewportWidth, viewportHeight, pixelRatio}) {
+  regl.updateTimer()
+
   regl.clear({
     color: [0, 0, 0, 1]
   })
