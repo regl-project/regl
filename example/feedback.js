@@ -52,6 +52,8 @@ const drawFeedback = regl({
 })
 
 regl.frame(function () {
+  regl.updateTimer()
+
   regl.clear({
     color: [0, 0, 0, 1]
   })

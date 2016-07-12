@@ -99,6 +99,8 @@ require('resl')({
   },
   onDone: () => {
     regl.frame(({tick}) => {
+      regl.updateTimer()
+
       const t = 0.01 * tick
       setupEnvMap({
         view: mat4.lookAt([],
