@@ -161,12 +161,7 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
   }
 
   function drawScene (args) {
-
-    gl.clearColor(0.0, 1.0, 0.0, 1.0)
-  gl.enable(gl.DEPTH_TEST)
-  gl.enable(gl.CULL_FACE)
-
-
+    gl.viewport(0, 0, canvasWidth, canvasHeight);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
     // bind buffers.
@@ -188,14 +183,13 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
     gl.uniform1i(gl.getUniformLocation(shaderProgram, 'tex'), 0)
 
     const t = 0.01 * args.tick
-    var perspectiveMatrix = perspective(45, canvasWidth / canvasHeight, 0.1, 100.0)
+    var perspectiveMatrix = perspective(Math.PI / 4, canvasWidth / canvasHeight, 0.01, 10.0)
     gl.uniformMatrix4fv(projectionUniformLocation, false, new Float32Array(perspectiveMatrix))
 
     var m =       lookAt(
         [5 * Math.cos(t), 2.5 * Math.sin(t), 5 * Math.sin(t)],
         [0, 0.0, 0],
       [0, 1, 0])
-    console.log("m: ", m)
     gl.uniformMatrix4fv(viewUniformLocation, false, new Float32Array(m))
 
     gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0)
