@@ -2,9 +2,7 @@
 
 ## Planned
 
-* Optimize constructors/updates for framebuffers
 * Cubic frame buffer objects
-* More test cases for framebuffers
 
 * Implement a standard method for handling context creation errors
 * Add a mechanism for managing webgl extensions
@@ -48,8 +46,11 @@
 
 ## Next
 
+* Finish API documentation for framebuffers
+* Optimize constructors/updates for framebuffers
+* More test cases for framebuffers
 * Clean up renderbuffer constructor and improve test coverage
-* Added `resize` method to textures and renderbuffers
+* Added `resize` method to textures, renderbuffers and framebuffers
 * Added performance monitoring hooks via `regl.stats`
 * Rename `count` context variable to `tick`
 * Remove `deltaTime` context variable
