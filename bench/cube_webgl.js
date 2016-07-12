@@ -187,7 +187,7 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
     // set uniforms
     gl.uniform1i(gl.getUniformLocation(shaderProgram, 'tex'), 0)
 
-    const t = 0.01 * args.a
+    const t = 0.01 * args.tick
     var perspectiveMatrix = perspective(45, canvasWidth / canvasHeight, 0.1, 100.0)
     gl.uniformMatrix4fv(projectionUniformLocation, false, new Float32Array(perspectiveMatrix))
 
@@ -348,7 +348,5 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
     ]
   }
 
-  return function(a) {
-    drawScene(a)
-  }
+  return drawScene
 }
