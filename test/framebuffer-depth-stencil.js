@@ -152,23 +152,23 @@ tape('framebuffer - depth stencil attachment', function (t) {
     }),
     false, false)
 
-  /*
-  testFBO('depth renderbuffer',
-    regl.framebuffer({
-      radius: N,
-      depth: true,
-      stencil: false
-    }),
-    true, false)
+  if (typeof document !== 'undefined') {
+    testFBO('depth renderbuffer',
+      regl.framebuffer({
+        radius: N,
+        depth: true,
+        stencil: false
+      }),
+      true, false)
 
-  testFBO('stencil renderbuffer',
-    regl.framebuffer({
-      radius: N,
-      depth: false,
-      stencil: true
-    }),
-    false, true)
-  */
+    testFBO('stencil renderbuffer',
+      regl.framebuffer({
+        radius: N,
+        depth: false,
+        stencil: true
+      }),
+      false, true)
+  }
 
   testFBO('depth-stencil renderbuffer',
     regl.framebuffer({
@@ -197,27 +197,28 @@ tape('framebuffer - depth stencil attachment', function (t) {
   }, /\(regl\)/, 'bad color buffer throws')
 
   if (regl.hasExtension('webgl_depth_texture')) {
-    /*
-    var fbo = regl.framebuffer({
-      radius: N,
-      depthTexture: true,
-      stencil: false
-    })
-
-    testFBO('depth texture (params)', fbo, true, false)
-
-    var depthTexture = regl.texture({
-      radius: N,
-      format: 'depth'
-    })
-
-    testFBO('depth texture',
-      regl.framebuffer({
+    // FIXME: this is a bug in chrome
+    if (typeof document === 'undefined') {
+      var fbo = regl.framebuffer({
         radius: N,
-        depthBuffer: depthTexture
-      }),
-      true, false)
-    */
+        depthTexture: true,
+        stencil: false
+      })
+
+      testFBO('depth texture (params)', fbo, true, false)
+
+      var depthTexture = regl.texture({
+        radius: N,
+        format: 'depth'
+      })
+
+      testFBO('depth texture',
+        regl.framebuffer({
+          radius: N,
+          depthBuffer: depthTexture
+        }),
+        true, false)
+    }
 
     var depthStencilTexture = regl.texture({
       radius: N,
