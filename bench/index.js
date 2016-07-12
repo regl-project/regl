@@ -4,6 +4,7 @@ var extend = require('../lib/util/extend')
 var createREGL = require('../../regl')
 var Chart = require('chart.js')
 
+
 var canvas = document.createElement('canvas')
 var gl = canvas.getContext('webgl', {
   antialias: false,
@@ -23,6 +24,7 @@ canvas.height = 240
 document.body.appendChild(canvas)
 
 var regl = createREGL(gl)
+
 
 function analyze (samples, fmt) {
   // Moments
@@ -145,12 +147,19 @@ function button (text, onClick) {
     container: buttonContainer
   }
 }
+// require('./cube_webgl')(gl, canvas.width, canvas.height)
 
 Object.keys(CASES).map(function (caseName) {
   var result
 
   var obj = CASES[caseName]
-  var proc = obj.proc(regl)
+
+  var proc
+  if(caseName === 'cube_webgl') {
+    proc = obj.proc(gl, canvas.width, canvas.height)
+  } else {
+    proc = obj.proc(regl)
+  }
 
   var sample = benchmark(proc, obj.samples, obj.warmupSamples)
 
