@@ -20,15 +20,15 @@ tape('viewport', function (t) {
     } else {
       t.equals(box[1], 0, prefix + 'box.y')
     }
-    if ('w' in fbox) {
-      t.equals(box[2], fbox.w, prefix + 'box.w')
+    if ('width' in fbox) {
+      t.equals(box[2], fbox.width, prefix + 'box.width')
     } else {
-      t.equals(box[2], gl.drawingBufferWidth - box[0], prefix + 'box.w')
+      t.equals(box[2], gl.drawingBufferWidth - box[0], prefix + 'box.width')
     }
-    if ('h' in fbox) {
-      t.equals(box[3], fbox.h, prefix + 'box.h')
+    if ('height' in fbox) {
+      t.equals(box[3], fbox.height, prefix + 'box.height')
     } else {
-      t.equals(box[3], gl.drawingBufferHeight - box[1], prefix + 'box.h')
+      t.equals(box[3], gl.drawingBufferHeight - box[1], prefix + 'box.height')
     }
   }
 
@@ -44,8 +44,8 @@ tape('viewport', function (t) {
     },
     {
       viewport: {
-        w: 10,
-        h: 10
+        width: 10,
+        height: 10
       }
     }
   ]
