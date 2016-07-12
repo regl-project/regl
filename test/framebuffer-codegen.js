@@ -11,7 +11,7 @@ tape('framebuffer-codegen', function (t) {
     framebuffer: regl.prop('fbo')
   })
 
-  function checkColor(name, fbo, color, x, y) {
+  function checkColor (name, fbo, color, x, y) {
     setFBO({fbo: fbo}, function (context) {
       var pixels = regl.read({ x: x, y: y, width: 1, height: 1 })
       t.same(
@@ -107,8 +107,8 @@ tape('framebuffer-codegen', function (t) {
       {
         cases: {
           '': extend({
-              vert: vert
-            }, baseCommand)
+            vert: vert
+          }, baseCommand)
         },
         obj: {}
       },
@@ -148,7 +148,6 @@ tape('framebuffer-codegen', function (t) {
     return cases
   }
 
-
   // properties to check:
   //
   //  size:
@@ -166,11 +165,11 @@ tape('framebuffer-codegen', function (t) {
 
     t.same(
       context.viewportWidth,
-      viewport.width || (w - (viewport.x|0)),
+      viewport.width || (w - (viewport.x | 0)),
       name + 'viewport width')
     t.same(
       context.viewportHeight,
-      viewport.height || (h - (viewport.y|0)),
+      viewport.height || (h - (viewport.y | 0)),
       name + 'viewport height')
 
     t.same(context.framebufferWidth, w, name + 'framebuffer width')
