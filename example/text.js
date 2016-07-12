@@ -97,6 +97,8 @@ const drawText = regl({
 })
 
 regl.frame(() => {
+  regl.updateTimer()
+
   drawFeedback()
   drawText()
   feedBackTexture({
