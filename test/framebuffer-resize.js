@@ -39,7 +39,7 @@ tape('framebuffer resizing', function (t) {
 
   var color = regl.renderbuffer(8)
   fbo({
-    colorBuffer: color
+    color: color
   })
 
   t.equals(fbo.color[0], color)

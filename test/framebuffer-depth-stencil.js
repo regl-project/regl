@@ -147,13 +147,12 @@ tape('framebuffer - depth stencil attachment', function (t) {
   testFBO('color buffer only',
     regl.framebuffer({
       radius: N,
-      depth: false,
-      stencil: false
+      depthStencil: false
     }),
     false, false)
 
-  if (typeof document !== 'undefined') {
-    testFBO('depth renderbuffer',
+  if (typeof document === 'undefined') {
+    testFBO('depth renderbuffer - implicit',
       regl.framebuffer({
         radius: N,
         depth: true,
@@ -161,7 +160,18 @@ tape('framebuffer - depth stencil attachment', function (t) {
       }),
       true, false)
 
-    testFBO('stencil renderbuffer',
+    testFBO('depth renderbuffer',
+      regl.framebuffer({
+        radius: N,
+        depth: regl.renderbuffer({
+          radius: N,
+          format: 'depth'
+        }),
+        stencil: false
+      }),
+      true, false)
+
+    testFBO('stencil renderbuffer - implicit',
       regl.framebuffer({
         radius: N,
         depth: false,
@@ -170,7 +180,7 @@ tape('framebuffer - depth stencil attachment', function (t) {
       false, true)
   }
 
-  testFBO('depth-stencil renderbuffer',
+  testFBO('depth-stencil renderbuffer - implicit',
     regl.framebuffer({
       radius: N,
       depth: true,
@@ -178,18 +188,28 @@ tape('framebuffer - depth stencil attachment', function (t) {
     }),
     true, true)
 
+  testFBO('depth-stencil renderbuffer',
+    regl.framebuffer({
+      radius: N,
+      depthStencil: regl.renderbuffer({
+        radius: N,
+        format: 'depth stencil'
+      })
+    }),
+    true, true)
+
   // try rendering with depth buffer in a broken configuration
   t.throws(function () {
     regl.framebuffer({
       radius: N,
-      depthBuffer: regl.renderbuffer(N)
+      depth: regl.renderbuffer(N)
     })
   }, /\(regl\)/, 'bad depth buffer throws')
 
   t.throws(function () {
     regl.framebuffer({
       radius: N,
-      colorBuffer: regl.renderbuffer({
+      color: regl.renderbuffer({
         radius: N,
         format: 'depth'
       })
@@ -197,7 +217,6 @@ tape('framebuffer - depth stencil attachment', function (t) {
   }, /\(regl\)/, 'bad color buffer throws')
 
   if (regl.hasExtension('webgl_depth_texture')) {
-    // FIXME: this is a bug in chrome
     if (typeof document === 'undefined') {
       var fbo = regl.framebuffer({
         radius: N,

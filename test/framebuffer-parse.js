@@ -155,7 +155,28 @@ tape('framebuffer parsing', function (t) {
     regl.framebuffer({
       width: 10,
       height: 10,
-      colorFormat: 'rgba4',
+      colorFormat: 'rgb5 a1',
+      depth: true,
+      stencil: true
+    }),
+    {
+      width: 10,
+      height: 10,
+      color: [{
+        target: gl.RENDERBUFFER,
+        format: gl.RGB5_A1
+      }],
+      depthStencil: {
+        target: gl.RENDERBUFFER,
+        format: gl.DEPTH_STENCIL
+      }
+    },
+    'color renderbuffer')
+
+  checkProperties(
+    regl.framebuffer({
+      shape: [10, 10],
+      colorTexture: false,
       depth: true,
       stencil: true
     }),
@@ -171,7 +192,10 @@ tape('framebuffer parsing', function (t) {
         format: gl.DEPTH_STENCIL
       }
     },
-    'no color')
+    'color renderbuffer')
+
+  // TODO: float, half float types
+  // TODO: multiple render targets
 
   regl.destroy()
   createContext.destroy(gl)
