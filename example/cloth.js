@@ -216,6 +216,8 @@ require('resl')({
 
   onDone: ({ clothTexture }) => {
     regl.frame(({tick}) => {
+      regl.updateTimer()
+
       const deltaTime = 0.017
 
       regl.clear({
