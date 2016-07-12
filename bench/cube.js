@@ -61,12 +61,12 @@ module.exports = function (regl) {
                            [0, 0.0, 0],
                            [0, 1, 0])
       },
-      projection: ({viewportWidth, viewportHeight}) =>
-        mat4.perspective([],
+      projection: ({viewportWidth, viewportHeight}) => {
+        return mat4.perspective([],
                          Math.PI / 4,
                          viewportWidth / viewportHeight,
                          0.01,
-                         10),
+                         10) },
       tex: regl.texture({
         min: 'nearest',
         mag: 'nearest',
