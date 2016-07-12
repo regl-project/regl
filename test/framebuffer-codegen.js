@@ -11,11 +11,11 @@ tape('framebuffer-codegen', function (t) {
     framebuffer: regl.prop('fbo')
   })
 
-  function checkColor(name, fbo, color) {
-    setFBO({fbo: fbo}, function () {
-      var pixels = regl.read()
+  function checkColor(name, fbo, color, x, y) {
+    setFBO({fbo: fbo}, function (context) {
+      var pixels = regl.read({ x: x, y: y, width: 1, height: 1 })
       t.same(
-        [ pixels[0], pixels[1], pixels[2], pixels[3] ],
+        Array.prototype.slice.call(pixels),
         color,
         name + ' color')
     })
@@ -51,51 +51,103 @@ tape('framebuffer-codegen', function (t) {
     primitive: 'triangles',
     count: function (context, props) {
       if (props.check) {
-        props.check(context)
+        props.check(context, props)
       }
       return 3
     },
     depth: {enable: false}
   }
 
-  // usage modes:
-  //
-  //  static
-  //  dynamic
-  //
-  var commands = {
-    'constant': function (vert, frag, fbo) {
-      return regl(extend({
-        framebuffer: fbo,
-        vert: vert,
-        frag: frag
-      }, baseCommand))
-    },
-    'dynamic': function (vert, frag, fbo) {
-      return regl(extend({
-        framebuffer: regl.prop('fbo'),
-        vert: vert,
-        frag: frag
-      }, baseCommand))
-    },
-    'context': function (vert, frag, fbo) {
-      return regl(extend({
-        context: {
-          fbo: fbo
-        },
-        framebuffer: regl.context('fbo'),
-        vert: vert,
-        frag: frag
-      }, baseCommand))
-    },
-    'this': function (vert, frag, fbo) {
-      return regl(extend({
-        framebuffer: regl.this('fbo'),
-        vert: vert,
-        frag: frag
-      }, baseCommand)).bind({ fbo: fbo })
+  function expandCases (input, propName, propValue) {
+    var obj = input.obj
+    var cases = {}
+
+    obj[propName] = propValue
+
+    Object.keys(input.cases).forEach(function (name) {
+      var parent = input.cases[name]
+      var ext
+
+      if (propValue === 'skip') {
+        cases[propName + '-skip'] = parent
+        return
+      }
+
+      ext = {}
+      ext[propName] = propValue
+      cases[propName + '-const ' + name] = extend(ext, parent)
+
+      ext = {}
+      ext[propName] = regl.prop(propName)
+      cases[propName + '-prop ' + name] = extend(ext, parent)
+
+      if (propName === 'frag') {
+        return
+      }
+
+      var context = {}
+      context[propName] = propValue
+      ext = {context: extend(context, parent.context || {})}
+      ext[propName] = regl.context(propName)
+      cases[propName + '-context-const ' + name] = extend(extend({}, parent), ext)
+
+      ext = {}
+      ext[propName] = regl.this(propName)
+      cases[propName + '-this ' + name] = extend(ext, parent)
+    })
+
+    return {
+      obj: obj,
+      cases: cases
     }
   }
+
+  function generateCommands (framebuffer, viewport) {
+    return expandCases(expandCases(expandCases(
+      {
+        cases: {
+          '': extend({
+              vert: vert
+            }, baseCommand)
+        },
+        obj: {}
+      },
+      'framebuffer',
+      framebuffer),
+      'viewport',
+      viewport),
+      'frag',
+      frag)
+  }
+
+  function generateDrawModes (props_) {
+    var desc = generateCommands(props_.framebuffer, props_.viewport)
+    var commands = desc.cases
+
+    var props = extend({
+      check: checkContext
+    }, desc.obj)
+
+    var cases = {}
+    Object.keys(commands).forEach(function (name) {
+      var cmd = regl(commands[name]).bind(props)
+      cases['draw ' + name] = function (input) {
+        cmd.call(props, extend(input, props))
+      }
+      cases['batch ' + name] = function (input) {
+        cmd.call(props, [extend(input, props)])
+      }
+      cases['scope-draw ' + name] = function (input) {
+        cmd.call(props, extend(input, props), function (context, props) {
+          checkContext(context, props)
+          regl.draw()
+        })
+      }
+    })
+
+    return cases
+  }
+
 
   // properties to check:
   //
@@ -103,113 +155,41 @@ tape('framebuffer-codegen', function (t) {
   //    framebufferWidth
   //    viewportWidth
   //
-  function checkContext (context) {
-    var expected = this
-    var name = expected.name
-    t.same(context.viewportWidth, expected.width, name + 'viewport width')
-    t.same(context.viewportHeight, expected.height, name + 'viewport height')
-    t.same(context.framebufferWidth, expected.width, name + 'framebuffer width')
-    t.same(context.framebufferHeight, expected.height, name + 'framebuffer height')
-    t.same(context.drawingBufferWidth, 5, name + 'drawing buffer width')
-    t.same(context.drawingBufferHeight, 5, name + 'drawing buffer height')
+  function checkContext (context, props) {
+    var name = props.name
+
+    var fbo = props.framebuffer
+    var viewport = props.viewport
+
+    var w = fbo ? fbo.width : gl.drawingBufferWidth
+    var h = fbo ? fbo.height : gl.drawingBufferHeight
+
+    t.same(
+      context.viewportWidth,
+      viewport.width || (w - (viewport.x|0)),
+      name + 'viewport width')
+    t.same(
+      context.viewportHeight,
+      viewport.height || (h - (viewport.y|0)),
+      name + 'viewport height')
+
+    t.same(context.framebufferWidth, w, name + 'framebuffer width')
+    t.same(context.framebufferHeight, h, name + 'framebuffer height')
+
+    t.same(
+      context.drawingBufferWidth,
+      gl.drawingBufferWidth,
+      name + 'drawing buffer width')
+    t.same(
+      context.drawingBufferHeight,
+      gl.drawingBufferHeight,
+      name + 'drawing buffer height')
   }
-
-  // draw modes:
-  //
-  //  draw
-  //  batch
-  //  scope
-  //  draw - dynamic shader
-  //  batch - dynamic shader
-  //
-  var drawModes = {
-    'draw': function (cmd, props, expected) {
-      return (cmd(vert, frag, props.fbo))(extend({
-        check: checkContext.bind(expected)
-      }, props))
-    },
-    'batch': function (cmd, props, expected) {
-      return (cmd(vert, frag, props.fbo))([extend({
-        check: checkContext.bind(expected)
-      }, props)])
-    },
-    'scope - draw': function (cmd, props, expected) {
-      return (cmd(vert, frag, props.fbo))(extend({
-        check: function () {}
-      }, props), function (context) {
-        checkContext.call(expected, context)
-        regl.draw()
-      })
-    },
-    'scope - batch': function (cmd, props, expected) {
-      return (cmd(vert, frag, props.fbo))(extend({
-        check: function () {}
-      }, props), function (context) {
-        checkContext.call(expected, context)
-        regl.draw(1)
-      })
-    },
-    'draw - dynamic shader': function (cmd, props, expected) {
-      return (cmd(regl.prop('vert'), regl.prop('frag'), props.fbo))(extend({
-        check: checkContext.bind(expected),
-        vert: vert,
-        frag: frag
-      }, props))
-    },
-    'batch - dynamic shader': function (cmd, props, expected) {
-      return (cmd(regl.prop('vert'), regl.prop('frag'), props.fbo))([extend({
-        check: checkContext.bind(expected),
-        vert: vert,
-        frag: frag
-      }, props)])
-    }
-  }
-
-  var colors = [
-    [255, 0, 0, 255],
-    [0, 0, 255, 255],
-    [0, 255, 0, 255]
-  ]
-
-  var framebufferArgs = {
-    'drawing buffer': null,
-    'framebuffer': regl.framebuffer(3)
-  }
-
-  Object.keys(commands).forEach(function (cmdName) {
-    var createCommand = commands[cmdName]
-    Object.keys(drawModes).forEach(function (mode) {
-      var drawCommand = drawModes[mode]
-      Object.keys(framebufferArgs).forEach(function (name) {
-        var fbo = framebufferArgs[name]
-        var testName = name + ' (' + mode + ',' + cmdName + '):'
-        colors.forEach(function (color) {
-          regl.clear({
-            color: [0, 0, 0, 0]
-          })
-          drawCommand(createCommand, {
-            fbo: fbo,
-            color: color
-          }, {
-            name: testName,
-            width: fbo ? fbo.width : 5,
-            height: fbo ? fbo.height : 5
-          })
-          if (fbo) {
-            regl.clear({
-              color: [0, 0, 0, 0]
-            })
-          }
-          checkColor(testName, fbo, color)
-        })
-      })
-    })
-  })
 
   // test batch mode with multiple renders
   var fboSet = [
-    null,
     regl.framebuffer(3),
+    null,
     regl.framebuffer(5, 6),
     regl.framebuffer(4)
   ]
@@ -217,34 +197,109 @@ tape('framebuffer-codegen', function (t) {
   var cmd = regl(extend({
     vert: vert,
     frag: frag,
-    framebuffer: regl.prop('fbo')
+    framebuffer: regl.prop('framebuffer')
   }, baseCommand))
 
   cmd([
     {
-      fbo: fboSet[0],
+      framebuffer: fboSet[0],
       color: [1, 0, 0, 1]
     },
     {
-      fbo: fboSet[1],
+      framebuffer: fboSet[1],
       color: [0, 1, 0, 1]
     },
     {
-      fbo: fboSet[2],
+      framebuffer: fboSet[2],
       color: [0, 0, 1, 1]
     },
     {
-      fbo: fboSet[3],
+      framebuffer: fboSet[3],
       color: [0, 0, 0, 1]
     }
   ])
 
-  checkColor('batch[0]', fboSet[0], [255, 0, 0, 255])
-  checkColor('batch[1]', fboSet[1], [0, 255, 0, 255])
-  checkColor('batch[2]', fboSet[2], [0, 0, 255, 255])
-  checkColor('batch[3]', fboSet[3], [0, 0, 0, 255])
+  checkColor('batch[0]', fboSet[0], [255, 0, 0, 255], 0, 0)
+  checkColor('batch[1]', fboSet[1], [0, 255, 0, 255], 0, 0)
+  checkColor('batch[2]', fboSet[2], [0, 0, 255, 255], 0, 0)
+  checkColor('batch[3]', fboSet[3], [0, 0, 0, 255], 0, 0)
 
-  regl.destroy()
-  createContext.destroy(gl)
-  t.end()
+  var framebufferArgs = {
+    'drawingBuffer': null,
+    'framebuffer': regl.framebuffer(3)
+  }
+
+  var viewportArgs = {
+    'skip': 'skip',
+    'empty': {},
+    'width/height': {
+      width: 2,
+      height: 3
+    },
+    'offset': {
+      x: 1,
+      y: 1
+    }
+  }
+
+  var pending = []
+
+  Object.keys(framebufferArgs).forEach(function (fboName) {
+    var fbo = framebufferArgs[fboName]
+    Object.keys(viewportArgs).forEach(function (viewportName) {
+      var viewport = viewportArgs[viewportName]
+      pending.push([fbo, fboName, viewport, viewportName])
+    })
+  })
+
+  var colors = [
+    [255, 0, 0, 255],
+    [0, 0, 255, 255]
+  ]
+
+  function drain () {
+    var testCase = pending.pop()
+    if (!testCase) {
+      regl.destroy()
+      createContext.destroy(gl)
+      t.end()
+      return
+    }
+
+    var fbo = testCase[0]
+    var fboName = testCase[1]
+    var viewport = testCase[2]
+    var viewportName = testCase[3]
+
+    var tests = generateDrawModes({
+      framebuffer: fbo,
+      viewport: viewport
+    })
+
+    Object.keys(tests).forEach(function (name) {
+      var cmd = tests[name]
+      var testName = fboName + ',' + viewportName + ':' + name
+      colors.forEach(function (color) {
+        setFBO({fbo: fbo}, function () {
+          regl.clear({
+            color: [0, 0, 0, 0]
+          })
+        })
+        cmd({
+          name: testName,
+          color: color
+        })
+        if (fbo) {
+          regl.clear({
+            color: [0, 0, 0, 0]
+          })
+        }
+        checkColor(testName, fbo, color, 1, 1)
+      })
+    })
+
+    setTimeout(drain, 40)
+  }
+
+  setTimeout(drain, 40)
 })
