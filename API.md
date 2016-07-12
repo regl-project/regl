@@ -1042,8 +1042,8 @@ var command = regl({
     box: {
       x: 10,
       y: 20,
-      w: 100,
-      h: 100
+      width: 100,
+      height: 100
     }
   }
 
@@ -1054,7 +1054,7 @@ var command = regl({
 | Property | Description | Default |
 |----------|-------------|---------|
 | `enable` | Toggles `gl.enable(gl.SCISSOR)` | `false` |
-| `box` | Sets `gl.scissor` | `{x:0,y:0}` |
+| `box` | Sets `gl.scissor` | `{}` |
 
 **Notes**
 * `box` is the shape of the scissor region, it takes the following parameters
@@ -1078,8 +1078,8 @@ var command = regl({
   viewport: {
     x: 5,
     y: 10,
-    w: 100,
-    h: 50
+    width: 100,
+    height: 50
   }
 
   // ...
@@ -1576,6 +1576,14 @@ Where,
 * [`gl.copyTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexSubImage2D.xml)
 * [`gl.compressedTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexSubImage2D.xml)
 
+##### Resize
+Finally, textures can be resized with the `.resize()` method.  Note that this clears the contents of the texture and is not supported by compressed textures.
+
+```javascript
+var texture = regl.texture(5)
+
+texture.resize(3, 7)
+```
 
 #### Destroy
 Finally, when a texture is no longer needed it can be released by calling the `destroy()` method:
@@ -1748,17 +1756,26 @@ rb.destroy()
 * [`gl.deleteRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteRenderbuffer.xml)
 
 ---------------------------------------
-### Frame buffers
+### Framebuffers
 
 #### Constructor
 Example,
 
 ```javascript
+// Creating a simple 2x2 framebuffer:
+var fbo2x2 = regl.framebuffer(2)
+
+// A 256x256 framebuffer without a stencil attachment
 var fbo = regl.framebuffer({
   width: 256,
   height: 256,
-  depth: true,
-  stencil: true
+  stencil: false
+})
+
+// A framebuffer with a color buffer
+var texture = regl.texture(16)
+var texFBO = regl.framebuffer({
+  color: texture
 })
 ```
 
@@ -1766,16 +1783,14 @@ var fbo = regl.framebuffer({
 |----------|-------------|---------|
 | `width` | Sets the width of the framebuffer | `gl.drawingBufferWidth` |
 | `height` | Sets the height of the framebuffer | `gl.drawingBufferHeight` |
-| `format` | Sets the format of the color buffer | `'rgba'` |
-| `type` | Sets the type of the color buffer if it is a texture | `'uint8'` |
-| `colorCount` | Sets the number of color buffers | `1` |
-| `depth` | Toggles whether or not a depth buffer is included | `true` |
-| `stencil` | Toggles whether or not to use a stencil buffer | `false` |
-| `depthTexture` | Toggles whether depth/stencil attachments should be in texture | `false` |
-| `colorBuffers` | List of color buffer attachments | |
-| `depthBuffer` | The depth buffer attachment | |
-| `stencilBuffer` | The stencil buffer attachment | |
-| `depthStencilBuffer` | The depth-stencil attachment | |
+| `color` | An optional array of either textures renderbuffers for the color attachment. | |
+| `depth` | If boolean, then toggles the depth attachment.  Otherwise if a renderbuffer/texture sets the depth attachment. | `true` |
+| `stencil` | If boolean, then toggles the stencil attachment.  Otherwise if a renderbuffer sets the stencil attachment. | `true` |
+| `depthStencil` | If boolean, then toggles both the depth and stencil attachment.  Otherwise if a renderbuffer/texture sets the combined depth/stencil attachment. | `true` |
+| `colorFormat` | Sets the format of the color buffer.  Ignored if color | `'rgba'` |
+| `colorType` | Sets the type of the color buffer if it is a texture | `'uint8'` |
+| `colorCount` | Sets the number of color buffers. Values > 1 require [WEBGL_draw_buffers](https://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/) | `1` |
+| `depthTexture` | Toggles whether depth/stencil attachments should be in texture. Requires [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) | `false` |
 
 | Color format | Description | Attachment |
 |--------------|-------------|------------|
@@ -1787,14 +1802,20 @@ var fbo = regl.framebuffer({
 | `'rgba4'` | `gl.RGBA4` | Renderbuffer |
 | `'rgb565'` | `gl.RGB565` | Renderbuffer |
 | `'rgb5 a1'` | `gl.RGB5_A1` | Renderbuffer |
-
+| `'rgb16f'` | `gl.RGBA4` | Renderbuffer |
+| `'rgba16f'` | `gl.RGB565` | Renderbuffer |
+| `'rgba32f'` | `gl.RGBA32F` | Renderbuffer |
 
 | Color type | Description |
 |------------|-------------|
-| `'best'` | Highest available precision |
 | `'uint8'` | `gl.UNSIGNED_BYTE` |
-| `'half float'` | 16 bit float |
+| `'half float'` | 16 bit float, requires  |
 | `'float'` | 32 bit float` |
+
+**Notes**
+
+* If `color` is not specified, then color attachments are created manually
+* Instead of passing width/height, it is also possible to pass in `shape` to the framebuffer constructor.
 
 **Relevant WebGL APIs**
 
@@ -1806,10 +1827,28 @@ var fbo = regl.framebuffer({
 
 
 #### Update
+Like all other objects, a framebuffer can be updated in place:
 
-**TODO**
+```javascript
+var framebuffer = regl.framebuffer(3, 4)
+
+framebuffer({
+  shape: [8, 10],
+  depth: false
+})
+```
+
+##### Resizing
+Framebuffers can be resized using the `.resize()` method.  This method will also modify all of the framebuffer's attachments.
+
+```javascript
+var framebuffer = regl.framebuffer(20, 4)
+
+framebuffer.resize(3, 3)
+```
 
 #### Destroy
+Calling `.destroy()` on a framebuffer removes it and recursively destroys any non-shared attachments.
 
 ```javascript
 fbo.destroy()
