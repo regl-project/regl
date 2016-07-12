@@ -25,7 +25,7 @@ tape('framebuffer - ref counting', function (t) {
   t.equals(regl.stats.renderbufferCount, 1, 'renderbuffer count ok')
 
   var fbo = regl.framebuffer({
-    colorBuffer: rb
+    color: rb
   })
   t.equals(regl.stats.textureCount, 0, 'no new textures created')
   t.equals(regl.stats.renderbufferCount, 2, 'exactly one depth buffer created')
@@ -46,7 +46,7 @@ tape('framebuffer - ref counting', function (t) {
   t.equals(regl.stats.framebufferCount, 1, 'framebuffer count ok')
 
   fbo2({
-    colorBuffer: regl.renderbuffer(5)
+    color: regl.renderbuffer(5)
   })
   t.equals(regl.stats.textureCount, 0, 'texture count ok')
   t.equals(regl.stats.renderbufferCount, 2, 'renderbuffer count ok')
