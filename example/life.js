@@ -69,6 +69,8 @@ const setupQuad = regl({
 })
 
 regl.frame(() => {
+  regl.updateTimer()
+
   setupQuad(() => {
     regl.draw()
     updateLife()
