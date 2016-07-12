@@ -55,7 +55,6 @@ tape('framebuffer parsing', function (t) {
           label + ' object assoc')
       } else {
         t.equals(actual.renderbuffer, null, label + '.renderbuffer')
-        t.equals(actual.level, expected.level || 0, label + '.level')
         /*
         t.equals(
           actual.texture._texture.params.internalformat,
@@ -74,7 +73,7 @@ tape('framebuffer parsing', function (t) {
           label + ' object assoc')
         t.equals(
           getParameter(gl.FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL),
-          expected.level || 0,
+          0,
           label + ' miplevel')
         t.equals(
           getParameter(gl.FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE),
