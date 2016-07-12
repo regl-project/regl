@@ -8,6 +8,8 @@ tape('framebuffer resizing', function (t) {
 
   var fbo = regl.framebuffer(10, 10)
 
+  t.equals(fbo.resize(10), fbo, 'resizing to same size does nothing')
+
   t.equals(fbo.width, 10, 'width ok')
   t.equals(fbo.height, 10, 'height ok')
   t.equals(fbo.color[0].width, 10, 'color width ok')
