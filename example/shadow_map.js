@@ -115,7 +115,9 @@ const drawNormal = regl({
                        viewportWidth / viewportHeight,
                        0.01,
                        2000),
-    shadowMap: () => fbo.color[0]
+    shadowMap: () => fbo.color[0],
+    minBias: () => 0.005,
+    maxBias: () => 0.03
   },
   frag: `
   precision mediump float;
@@ -128,6 +130,9 @@ const drawNormal = regl({
   uniform vec3 color;
   uniform sampler2D shadowMap;
   uniform vec3 lightDir;
+
+  uniform float minBias;
+  uniform float maxBias;
 
 #define texelSize 1.0 / float(${SHADOW_RES})
 
@@ -144,8 +149,9 @@ const drawNormal = regl({
 
     float v = 1.0; // shadow value
     vec2 co = vShadowCoord.xy * 0.5 + 0.5;// go from range [-1,+1] to range [0,+1]
-    //    float bias = 0.005;
-    float bias = max(0.03 * (1.0 - cosTheta), 0.005);
+
+    // counteract shadow acne.
+    float bias = max(maxBias * (1.0 - cosTheta), minBias);
 
     float v0 = shadowSample(co + texelSize * vec2(0.0, 0.0), vShadowCoord.z, bias);
     float v1 = shadowSample(co + texelSize * vec2(1.0, 0.0), vShadowCoord.z, bias);
