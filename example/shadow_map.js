@@ -11,19 +11,17 @@ const normals = require('angle-normals')
 camera.rotate([0.0, 0.0], [0.0, -0.4])
 camera.zoom(10.0)
 
-// create fbo. We set the size in `regl.frame`
+var SHADOW_RES = 1024
+
 const fbo = regl.framebuffer({
   color: regl.texture({
-    width: 1024,
-    height: 1024,
+    width: SHADOW_RES,
+    height: SHADOW_RES,
     wrap: 'clamp',
     type: 'float'
   }),
-  depth: true,
-  colorType: 'float'
+  depth: true
 })
-
-console.log("fbo: ", fbo)
 
 const planeElements = []
 var planePosition = []
@@ -41,8 +39,6 @@ planeNormal.push([0.0, 1.0, 0.0])
 
 planeElements.push([3, 1, 0])
 planeElements.push([0, 2, 3])
-
-// create box geometry
 
 var boxPosition = [
   // side faces
@@ -76,57 +72,42 @@ var boxNormal = [
   [0.0, -1.0, 0.0], [0.0, -1.0, 0.0], [0.0, -1.0, 0.0], [0.0, -1.0, 0.0]
 ]
 
-function createModel (position, scale) {
-  var m = mat4.identity([])
-
-  mat4.translate(m, m, position)
-
-  var s = scale
-  mat4.scale(m, m, [s, s, s])
-  return m
-}
-
-// this call encapsulated the common state between `drawNormal` and `drawDepth`
+// This call encapsulates the common state between `drawNormal` and `drawDepth`
 const globalScope = regl({
   context: {
     lightDir: [0.39, 0.87, 0.29]
   },
   uniforms: {
     lightDir: regl.context('lightDir'),
-    // View Projection matrices.
-    lightView: (context) =>  {
+    lightView: (context) => {
       return mat4.lookAt([], context.lightDir, [0.0, 0.0, 0.0], [0.0, 1.0, 0.0])
     },
-    lightProjection: mat4.ortho([], -20, 20, -30, 70, -30, 40)
+    lightProjection: mat4.ortho([], -25, 25, -20, 20, -25, 25)
   }
 })
 
 const drawDepth = regl({
   frag: `
   precision mediump float;
-  varying vec3 p;
+  varying vec3 vPosition;
   void main () {
-    gl_FragColor = vec4(
-      //vec3(gl_FragCoord.z),
-      vec3(p.z),
-      1.0);
+    gl_FragColor = vec4(vec3(vPosition.z), 1.0);
   }`,
   vert: `
   precision mediump float;
   attribute vec3 position;
   uniform mat4 lightProjection, lightView, model;
-  varying vec3 p;
+  varying vec3 vPosition;
   void main() {
-    gl_Position = lightProjection * lightView * model * vec4(position, 1.0);
-    p = (lightProjection * lightView * model * vec4(position, 1.0)).xyz;
-
+    vec4 p = lightProjection * lightView * model * vec4(position, 1.0);
+    gl_Position = p;
+    vPosition = p.xyz;
   }`,
   framebuffer: fbo
 })
 
 const drawNormal = regl({
   uniforms: {
-    // View Projection matrices.
     view: () => camera.view(),
     projection: ({viewportWidth, viewportHeight}) =>
       mat4.perspective([],
@@ -134,46 +115,68 @@ const drawNormal = regl({
                        viewportWidth / viewportHeight,
                        0.01,
                        2000),
-    shadowMap: () => fbo.color[0],
+    shadowMap: () => fbo.color[0]
   },
   frag: `
   precision mediump float;
+
   varying vec3 vNormal;
   varying vec3 vShadowCoord;
-  uniform vec3 lightDir;
+
   uniform float ambientLightAmount;
   uniform float diffuseLightAmount;
   uniform vec3 color;
   uniform sampler2D shadowMap;
-  void main () {
-    vec3 tex = color;
-    vec3 ambient = ambientLightAmount * tex;
-    vec3 diffuse = diffuseLightAmount * tex * clamp( dot(vNormal, lightDir ), 0.0, 1.0 );
+  uniform vec3 lightDir;
 
-    float v = 1.0;
-    if(texture2D(shadowMap, vShadowCoord.xy * 0.5 + 0.5).z < vShadowCoord.z-0.005) {
-      v = 0.0;
+#define texelSize 1.0 / float(${SHADOW_RES})
+
+  float shadowSample(vec2 co, float z, float bias) {
+    float a = texture2D(shadowMap, co).z;
+    float b = vShadowCoord.z;
+    return step(b-bias, a);
+  }
+
+  void main () {
+    vec3 ambient = ambientLightAmount * color;
+    float cosTheta = dot(vNormal, lightDir);
+    vec3 diffuse = diffuseLightAmount * color * clamp(cosTheta , 0.0, 1.0 );
+
+    float v = 1.0; // shadow value
+    vec2 co = vShadowCoord.xy * 0.5 + 0.5;// go from range [-1,+1] to range [0,+1]
+    //    float bias = 0.005;
+    float bias = max(0.03 * (1.0 - cosTheta), 0.005);
+
+    float v0 = shadowSample(co + texelSize * vec2(0.0, 0.0), vShadowCoord.z, bias);
+    float v1 = shadowSample(co + texelSize * vec2(1.0, 0.0), vShadowCoord.z, bias);
+    float v2 = shadowSample(co + texelSize * vec2(0.0, 1.0), vShadowCoord.z, bias);
+    float v3 = shadowSample(co + texelSize * vec2(1.0, 1.0), vShadowCoord.z, bias);
+
+    // PCF filtering
+    v = (v0 + v1 + v2 + v3) * (1.0 / 4.0);
+
+    // if outside light frustum, render now shadow.
+    // If WebGL had GL_CLAMP_TO_BORDER we would not have to do this,
+    // but that is unfortunately not the case...
+    if(co.x < 0.0 || co.x > 1.0 || co.y < 0.0 || co.y > 1.0) {
+      v = 1.0;
     }
 
-    //gl_FragColor = vec4(vec3(v), 1.0);
-
-    gl_FragColor = vec4((ambient + diffuse)*v, 1.0);
-
-
-//   gl_FragColor = vec4(vec3(texture2D(shadowMap, vShadowCoord.xy * 0.5 + 0.5).x), 1.0 );
-
-
+    gl_FragColor = vec4((ambient + diffuse * v), 1.0);
   }`,
   vert: `
-  // the size of the world on the x and z-axes.
   precision mediump float;
+
   attribute vec3 position;
   attribute vec3 normal;
+
   varying vec3 vPosition;
   varying vec3 vNormal;
   varying vec3 vShadowCoord;
+
   uniform mat4 projection, view, model;
   uniform mat4 lightProjection, lightView;
+
   void main() {
     vPosition = position;
     vNormal = normal;
@@ -191,19 +194,23 @@ function Mesh (elements, position, normal) {
 }
 
 Mesh.prototype.draw = regl({
-
   uniforms: {
     model: (_, props, batchId) => {
-      return createModel(props.translate, props.scale)
+      var m = mat4.identity([])
+
+      mat4.translate(m, m, props.translate)
+
+      var s = props.scale
+      mat4.scale(m, m, [s, s, s])
+      return m
     },
     ambientLightAmount: 0.3,
     diffuseLightAmount: 0.7,
-    color: [1.0, 1.0, 1.0]
+    color: regl.prop('color')
   },
   attributes: {
     position: regl.this('position'),
     normal: regl.this('normal')
-
   },
   elements: regl.this('elements'),
   cull: {
@@ -215,25 +222,30 @@ var bunnyMesh = new Mesh(bunny.cells, bunny.positions, normals(bunny.cells, bunn
 var boxMesh = new Mesh(boxElements, boxPosition, boxNormal)
 var planeMesh = new Mesh(planeElements, planePosition, planeNormal)
 
-regl.frame(() => {
+regl.frame(({tick}) => {
   regl.updateTimer()
 
-
-
   var drawMeshes = () => {
-  regl.clear({
-    color: [0, 0, 0, 255],
-    depth: 1
-  })
+    regl.clear({
+      color: [0, 0, 0, 255],
+      depth: 1
+    })
+    var t = tick * 0.02
+    var r = 8.0
+    var bp1 = [r * Math.sin(t), 3.3, r * Math.cos(t)]
 
-    boxMesh.draw({scale: 4.2, translate: [4.0, 9.0, 0]})
-    planeMesh.draw({scale: 100.0, translate: [0.0, 0.0, 0.0]})
-    bunnyMesh.draw({scale: 0.7, translate: [-8.0, 3.3, 0.0]})
+    t = (tick - 100) * 0.015
+    r = 5.0
+    var bp2 = [r * Math.sin(t), 12.3, r * Math.cos(t)]
+
+    boxMesh.draw({scale: 4.2, translate: [0.0, 9.0, 0], color: [0.05, 0.5, 0.5]})
+    planeMesh.draw({scale: 80.0, translate: [0.0, 0.0, 0.0], color: [1.0, 1.0, 1.0]})
+    bunnyMesh.draw({scale: 0.7, translate: bp1, color: [0.55, 0.2, 0.05]})
+    bunnyMesh.draw({scale: 0.8, translate: bp2, color: [0.55, 0.55, 0.05]})
   }
 
   globalScope(() => {
     drawDepth(drawMeshes)
-
     drawNormal(drawMeshes)
   })
 
