@@ -3,7 +3,8 @@ var createContext = require('./util/create-context')
 var createREGL = require('../regl')
 
 tape('dynamic elements', function (t) {
-  var regl = createREGL(createContext(5, 5))
+  var gl = createContext(5, 5)
+  var regl = createREGL(gl)
 
   var command = regl({
     frag: [
@@ -73,5 +74,6 @@ tape('dynamic elements', function (t) {
   // TODO test overloading element parameters for count, offset and instances
 
   regl.destroy()
+  createContext.destroy(gl)
   t.end()
 })

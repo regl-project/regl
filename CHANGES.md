@@ -2,24 +2,24 @@
 
 ## Planned
 
-* Optimize constructors/updates for renderbuffers and framebuffers
 * Cubic frame buffer objects
-* More test cases for framebuffers
 
 * Implement a standard method for handling context creation errors
 * Add a mechanism for managing webgl extensions
     + Should be able to report errors when extensions are missing
     + Allow users to disable extensions for testing/mocking
 
-* Performance monitoring hooks
-
 * Context loss handling
 
 * Write comparison suite
 
+* More performance monitoring hooks
+
 * Benchmark suite
     + Dashboard for test cases and benchmarks
     + Create some more typical drawing examples
+
+* A pretty printer for the generated code
 
 * Documentation
 
@@ -37,15 +37,26 @@
 * Build a website (preview at [regl.party](http://regl.party))
 
 * Recipe book/example set
-    + Minecraft example
     + Globe
-    + Tile based 2D rendering
     + Compound scene
     + Shadow mapping
     + Stencil shadows
     + Turing patterns
-    + Spring/cloth physics
     + Asset loading (obj, ply, etc.)
+
+## Next
+
+* Finish API documentation for framebuffers
+* Optimize constructors/updates for framebuffers
+* More test cases for framebuffers
+* Clean up renderbuffer constructor and improve test coverage
+* Added `resize` method to textures, renderbuffers and framebuffers
+* Added performance monitoring hooks via `regl.stats`
+* Rename `count` context variable to `tick`
+* Remove `deltaTime` context variable
+* Uniform validation fixes
+* Texture construction fixes
+* Improved test coverage for uniform variables
 
 ## 0.8.0
 

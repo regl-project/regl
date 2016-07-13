@@ -137,7 +137,7 @@ require('resl')({
       },
 
       uniforms: {
-        offsetRow: ({count}) => count % N,
+        offsetRow: ({tick}) => tick % N,
         terrain: terrainTexture,
         projection: ({viewportWidth, viewportHeight}) =>
           perspective([],
@@ -145,19 +145,19 @@ require('resl')({
             viewportWidth / viewportHeight,
             0.01,
             1000),
-        view: ({count}) =>
+        view: ({tick}) =>
           lookAt([],
-            [ 0.5 + 0.2 * Math.cos(0.001 * count),
+            [ 0.5 + 0.2 * Math.cos(0.001 * tick),
               1,
-              0.7 + 0.2 * Math.cos(0.003 * count + 2.4) ],
+              0.7 + 0.2 * Math.cos(0.003 * tick + 2.4) ],
             [0.5, 0, 0],
             [0, 0, 1]),
-        lightPosition: ({count}) => [
-          0.5 + Math.sin(0.01 * count),
-          1.0 + Math.cos(0.01 * count),
-          1.0 + 0.6 * Math.cos(0.04 * count) ],
+        lightPosition: ({tick}) => [
+          0.5 + Math.sin(0.01 * tick),
+          1.0 + Math.cos(0.01 * tick),
+          1.0 + 0.6 * Math.cos(0.04 * tick) ],
         color: colorTexture,
-        t: ({count}) => 0.01 * count
+        t: ({tick}) => 0.01 * tick
       },
 
       elements: null,
@@ -172,8 +172,10 @@ require('resl')({
       data: new Uint8Array(N)
     }
     const freqSamples = new Uint8Array(N)
-    regl.frame(({count}) => {
-      const offsetRow = count % N
+    regl.frame(({frameCount}) => {
+      regl.updateTimer()
+
+      const offsetRow = frameCount % N
 
       // Clear background
       regl.clear({

@@ -42,8 +42,8 @@ const drawBunny = regl({
   elements: bunny.cells,
 
   uniforms: {
-    view: ({count}) => {
-      const t = 0.01 * count
+    view: ({tick}) => {
+      const t = 0.01 * tick
       return mat4.lookAt([],
         [30 * Math.cos(t), 2.5, 30 * Math.sin(t)],
         [0, 2.5, 0],
@@ -59,32 +59,32 @@ const drawBunny = regl({
     'lights[1].color': [0, 1, 0],
     'lights[2].color': [0, 0, 1],
     'lights[3].color': [1, 1, 0],
-    'lights[0].position': ({count}) => {
-      const t = 0.1 * count
+    'lights[0].position': ({tick}) => {
+      const t = 0.1 * tick
       return [
         10 * Math.cos(0.09 * (t)),
         10 * Math.sin(0.09 * (2 * t)),
         10 * Math.cos(0.09 * (3 * t))
       ]
     },
-    'lights[1].position': ({count}) => {
-      const t = 0.1 * count
+    'lights[1].position': ({tick}) => {
+      const t = 0.1 * tick
       return [
         10 * Math.cos(0.05 * (5 * t + 1)),
         10 * Math.sin(0.05 * (4 * t)),
         10 * Math.cos(0.05 * (0.1 * t))
       ]
     },
-    'lights[2].position': ({count}) => {
-      const t = 0.1 * count
+    'lights[2].position': ({tick}) => {
+      const t = 0.1 * tick
       return [
         10 * Math.cos(0.05 * (9 * t)),
         10 * Math.sin(0.05 * (0.25 * t)),
         10 * Math.cos(0.05 * (4 * t))
       ]
     },
-    'lights[3].position': ({count}) => {
-      const t = 0.1 * count
+    'lights[3].position': ({tick}) => {
+      const t = 0.1 * tick
       return [
         10 * Math.cos(0.1 * (0.3 * t)),
         10 * Math.sin(0.1 * (2.1 * t)),
@@ -95,6 +95,8 @@ const drawBunny = regl({
 })
 
 regl.frame(() => {
+  regl.updateTimer()
+
   regl.clear({
     depth: 1,
     color: [0, 0, 0, 1]

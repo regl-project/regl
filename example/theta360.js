@@ -98,8 +98,10 @@ require('resl')({
     }
   },
   onDone: () => {
-    regl.frame(({count}) => {
-      const t = 0.01 * count
+    regl.frame(({tick}) => {
+      regl.updateTimer()
+
+      const t = 0.01 * tick
       setupEnvMap({
         view: mat4.lookAt([],
           [30 * Math.cos(t), 2.5, 30 * Math.sin(t)],

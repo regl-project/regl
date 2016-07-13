@@ -16,6 +16,8 @@ var wrapAttributes = require('./lib/attribute')
 var wrapShaders = require('./lib/shader')
 var wrapRead = require('./lib/read')
 var createCore = require('./lib/core')
+var createStats = require('./lib/stats')
+var createTimer = require('./lib/timer')
 
 var GL_COLOR_BUFFER_BIT = 16384
 var GL_DEPTH_BUFFER_BIT = 256
@@ -36,18 +38,18 @@ module.exports = function wrapREGL () {
   var options = args.options
 
   var stringStore = createStringStore()
+  var stats = createStats()
 
   var extensionState = wrapExtensions(gl)
   var extensions = extensionState.extensions
+  var timer = createTimer(gl, extensions)
 
   var START_TIME = clock()
-  var LAST_TIME = START_TIME
   var WIDTH = gl.drawingBufferWidth
   var HEIGHT = gl.drawingBufferHeight
 
   var contextState = {
-    count: 0,
-    deltaTime: 0,
+    tick: 0,
     time: 0,
     viewportWidth: WIDTH,
     viewportHeight: HEIGHT,
@@ -67,28 +69,30 @@ module.exports = function wrapREGL () {
   }
 
   var limits = wrapLimits(gl, extensions)
-  var bufferState = wrapBuffers(gl)
-  var elementState = wrapElements(gl, extensions, bufferState)
+  var bufferState = wrapBuffers(gl, stats)
+  var elementState = wrapElements(gl, extensions, bufferState, stats)
   var attributeState = wrapAttributes(
     gl,
     extensions,
     limits,
     bufferState,
     stringStore)
-  var shaderState = wrapShaders(gl, stringStore)
+  var shaderState = wrapShaders(gl, stringStore, stats)
   var textureState = wrapTextures(
     gl,
     extensions,
     limits,
     poll,
-    contextState)
-  var renderbufferState = wrapRenderbuffers(gl, extensions, limits)
+    contextState,
+    stats)
+  var renderbufferState = wrapRenderbuffers(gl, extensions, limits, stats)
   var framebufferState = wrapFramebuffers(
     gl,
     extensions,
     limits,
     textureState,
-    renderbufferState)
+    renderbufferState,
+    stats)
   var readPixels = wrapRead(gl, poll, contextState)
 
   var core = createCore(
@@ -104,7 +108,8 @@ module.exports = function wrapREGL () {
     attributeState,
     shaderState,
     drawState,
-    contextState)
+    contextState,
+    timer)
 
   var nextState = core.next
   var canvas = gl.canvas
@@ -116,19 +121,22 @@ module.exports = function wrapREGL () {
     activeRAF = raf.next(handleRAF)
 
     // increment frame count
-    contextState.count += 1
+    contextState.tick += 1
 
-    var now = clock()
-    contextState.deltaTime = (now - LAST_TIME) / 1000.0
-    contextState.time = (now - START_TIME) / 1000.0
-    LAST_TIME = now
+    // Update time
+    contextState.time = (clock() - START_TIME) / 1000.0
 
-    refresh()
+    // poll for changes
+    poll()
 
+    // fire a callback for all pending rafs
     for (var i = 0; i < rafCallbacks.length; ++i) {
       var cb = rafCallbacks[i]
       cb(contextState, null, 0)
     }
+
+    // flush all pending webgl calls
+    gl.flush()
   }
 
   function startRAF () {
@@ -169,7 +177,12 @@ module.exports = function wrapREGL () {
     framebufferState.clear()
     renderbufferState.clear()
     textureState.clear()
+    elementState.clear()
     bufferState.clear()
+
+    if (timer) {
+      timer.clear()
+    }
 
     if (options.onDestroy) {
       options.onDestroy()
@@ -229,7 +242,11 @@ module.exports = function wrapREGL () {
     var attributes = separateDynamic(options.attributes || {})
     var opts = separateDynamic(flattenNestedOptions(options))
 
-    var compiled = core.compile(opts, attributes, uniforms, context)
+    var stats = {
+      gpuTime: 0.0
+    }
+
+    var compiled = core.compile(opts, attributes, uniforms, context, stats)
 
     var draw = compiled.draw
     var batch = compiled.batch
@@ -274,11 +291,11 @@ module.exports = function wrapREGL () {
       }
     }
 
-    return REGLCommand
-  }
+    return extend(REGLCommand, {
+      stats: stats
+    })
 
-  function poll () {
-    core.procs.poll()
+//    return REGLCommand
   }
 
   function clear (options) {
@@ -287,8 +304,7 @@ module.exports = function wrapREGL () {
       'regl.clear() takes an object as input')
 
     var clearFlags = 0
-
-    poll()
+    core.procs.poll()
 
     var c = options.color
     if (c) {
@@ -333,23 +349,30 @@ module.exports = function wrapREGL () {
     }
   }
 
-  function refresh () {
-    // reset viewport
+  // poll viewport
+  function pollViewport () {
     var viewport = nextState.viewport
     var scissorBox = nextState.scissor_box
     viewport[0] = viewport[1] = scissorBox[0] = scissorBox[1] = 0
-
     contextState.viewportWidth =
-      contextState.frameBufferWidth =
+      contextState.framebufferWidth =
       contextState.drawingBufferWidth =
       viewport[2] =
       scissorBox[2] = gl.drawingBufferWidth
     contextState.viewportHeight =
-      contextState.frameBufferWidth =
+      contextState.framebufferHeight =
       contextState.drawingBufferHeight =
       viewport[3] =
       scissorBox[3] = gl.drawingBufferHeight
+  }
 
+  function poll () {
+    pollViewport()
+    core.procs.poll()
+  }
+
+  function refresh () {
+    pollViewport()
     core.procs.refresh()
   }
 
@@ -400,6 +423,13 @@ module.exports = function wrapREGL () {
 
     // Direct GL state manipulation
     _gl: gl,
-    _refresh: refresh
+    _refresh: refresh,
+
+    // regl Statistics Information
+    stats: stats,
+
+    updateTimer: function () {
+      timer.update()
+    }
   })
 }

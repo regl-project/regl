@@ -29,7 +29,7 @@ tape('clear color', function (t) {
     t.equals(allequal, true, 'all clear pixels are equal')
 
     regl.destroy()
-
+    createContext.destroy(gl)
     t.end()
   }, 120)
 })

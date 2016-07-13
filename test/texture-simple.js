@@ -3,7 +3,8 @@ var createREGL = require('../../regl')
 var tape = require('tape')
 
 tape('texture', function (t) {
-  var regl = createREGL(createContext(2, 2))
+  var gl = createContext(2, 2)
+  var regl = createREGL(gl)
 
   var texture = regl.texture([
     [[255, 0, 0], [0, 255, 0]],
@@ -54,5 +55,6 @@ tape('texture', function (t) {
   ], 'simple texture test')
 
   regl.destroy()
+  createContext.destroy(gl)
   t.end()
 })

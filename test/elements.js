@@ -3,7 +3,8 @@ var createREGL = require('../../regl')
 var tape = require('tape')
 
 tape('elements', function (t) {
-  var regl = createREGL(createContext(7, 7))
+  var gl = createContext(7, 7)
+  var regl = createREGL(gl)
   var elements = regl.elements([
     [0, 2],
     [1, 3]
@@ -166,6 +167,7 @@ tape('elements', function (t) {
     function () {
       // try destroying elements
       elements.destroy()
+      createContext.destroy(gl)
       regl.destroy()
       t.ok('destroy successful')
     }

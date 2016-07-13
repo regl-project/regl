@@ -67,8 +67,8 @@ const drawParticles = regl({
   },
 
   uniforms: {
-    view: ({count}) => {
-      const t = 0.01 * count
+    view: ({tick}) => {
+      const t = 0.01 * tick
       return mat4.lookAt([],
         [30 * Math.cos(t), 2.5, 30 * Math.sin(t)],
         [0, 0, 0],
@@ -80,7 +80,7 @@ const drawParticles = regl({
         viewportWidth / viewportHeight,
         0.01,
         1000),
-    time: ({count}) => count * 0.001
+    time: ({tick}) => tick * 0.001
   },
 
   count: NUM_POINTS,
@@ -89,6 +89,8 @@ const drawParticles = regl({
 })
 
 regl.frame(() => {
+  regl.updateTimer()
+
   regl.clear({
     depth: 1,
     color: [0, 0, 0, 1]
