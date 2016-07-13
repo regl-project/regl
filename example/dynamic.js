@@ -40,8 +40,6 @@ const draw = regl({
 })
 
 regl.frame(({tick}) => {
-  regl.updateTimer()
-
   regl.clear({
     color: [0, 0, 0, 1]
   })

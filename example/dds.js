@@ -94,8 +94,6 @@ require('resl')({
     })
 
     regl.frame(() => {
-      regl.updateTimer()
-
       draw()
     })
   }

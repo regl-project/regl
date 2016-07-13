@@ -55,7 +55,5 @@ const drawCheckerboard = regl({
 })
 
 regl.frame(() => {
-  regl.updateTimer()
-
   drawCheckerboard()
 })

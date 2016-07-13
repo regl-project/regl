@@ -138,8 +138,6 @@ const drawBunnyWithLOD = regl({
 })
 
 regl.frame(({tick}) => {
-  regl.updateTimer()
-
   regl.clear({
     depth: 1,
     color: [0, 0, 0, 1]

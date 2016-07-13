@@ -83,8 +83,6 @@ require('resl')({
   },
   onDone: ({texture}) => {
     regl.frame(() => {
-      regl.updateTimer()
-
       regl.clear({
         color: [0, 0, 0, 255],
         depth: 1
