@@ -429,7 +429,9 @@ module.exports = function wrapREGL () {
     stats: stats,
 
     updateTimer: function () {
-      timer.update()
+      if (timer) {
+        timer.update()
+      }
     }
   })
 }
