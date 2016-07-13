@@ -2,7 +2,6 @@
 var CASES = require('./list')
 var extend = require('../lib/util/extend')
 var createREGL = require('../../regl')
-var Chart = require('chart.js')
 var gitCommits = require('git-commits');
 var path = require('path');
 var present = require('present');
@@ -10,7 +9,7 @@ var present = require('present');
 const WIDTH = 384
 const HEIGHT = 240
 var regl
-var isHeadless = false
+var isHeadless = true
 var canvas
 var gl
 
@@ -182,13 +181,18 @@ Object.keys(CASES).map(function (caseName) {
 
   var sample = benchmark(proc, obj.samples, obj.warmupSamples)
 
-  var result
-
-  result = button(caseName, function () {
+  if (isHeadless) {
     var bench = sample()
-    result.text.innerText = 'n:' + bench.n + ', t:(' + bench.time + '),' //+ 'm:(' + bench.space + ')'
-  })
-  return result
+    console.log(caseName + " : " +  'n:' + bench.n + ', t:(' + bench.time + '),')
+  } else {
+    var result
+    result = button(caseName, function () {
+      var bench = sample()
+      result.text.innerText = 'n:' + bench.n + ', t:(' + bench.time + '),' //+ 'm:(' + bench.space + ')'
+      return result
+
+    })
+  }
 
 })
 
