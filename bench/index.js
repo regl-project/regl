@@ -5,6 +5,7 @@ var createREGL = require('../../regl')
 var Chart = require('chart.js')
 var gitCommits = require('git-commits');
 var path = require('path');
+var present = require('present');
 
 const WIDTH = 384
 const HEIGHT = 240
@@ -103,9 +104,9 @@ function benchmark (procedure, samples, warmupSamples) {
       depth: 1,
       stencil: 0
     })
-    var start = performance.now()
+    var start = present()//performance.now()
     procedure({tick: tick})
-    timeSamples.push(performance.now() - start)
+    timeSamples.push(present() - start)
 
     // dont have this in headless.
 //    heapSamples.push(performance.memory.usedJSHeapSize)
