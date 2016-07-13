@@ -1,3 +1,11 @@
+/*
+
+  This examples demonstrates how we can render a height map, how to place out several models(using the batching feature), and how to
+  implement a simple fullscreen post-process effect(using the framebuffer feature) in REGL. The post-process effect is a simple box filter blur.
+
+  The FBO feature, and the batching feature is used to implement the above.
+ */
+
 const canvas = document.body.appendChild(document.createElement('canvas'))
 const fit = require('canvas-fit')
 const regl = require('../regl')(canvas)
@@ -7,9 +15,23 @@ window.addEventListener('resize', fit(canvas), false)
 const bunny = require('bunny')
 const normals = require('angle-normals')
 
+// increase and decrease the blur amount by modifying this value.
+const FILTER_RADIUS = 1
+
 // configure intial camera view.
 camera.rotate([0.0, 0.0], [0.0, -0.4])
 camera.zoom(300.0)
+
+
+// create fbo. We set the size in `regl.frame`
+const fbo = regl.framebuffer({
+  color: regl.texture({
+    width: 1,
+    height: 1,
+    wrap: 'clamp'
+  }),
+  depth: true
+})
 
 // geometry arrays.
 const elements = []
@@ -26,13 +48,13 @@ var ymax = +size
 /*
   For the terrain geometry, we create a plane with min position as (x=-0.5,z=-0.5) and max position as (x=+0.5, z=+0.5).
 
-  In the vertex shader, we enlarge this plane. And the y-values are sampled from the heightmap texture,
+  In the vertex shader, we enlarge this plane on the x- and z-axis. And the y-values are sampled from the heightmap texture,
 
   The uv-coordinates are computed from the positions.
-  The normals can be approximated from the heightmap texture.
+  The normals can be approximated from the heightmap texture and the positions.
 
   So we only have to upload the x- and z-values and the heightmap texture to the GPU, and nothing else.
-  */
+*/
 var row
 var col
 for (row = 0; row <= N; ++row) {
@@ -59,8 +81,10 @@ for (row = 0; row <= (N - 1); ++row) {
 }
 
 /*
-  This function encapsulates all the state that is common between drawTerrain and drawBunny()
-  */
+  This function encapsulates all the state that is common between drawTerrain() and drawBunny()
+
+  Also, configure so that we render to an FBO.
+*/
 const setupDefault = regl({
   cull: {
     enable: true
@@ -79,7 +103,8 @@ const setupDefault = regl({
     lightDir: [0.39, 0.87, 0.29],
     ambientLightAmount: 0.3,
     diffuseLightAmount: 0.7
-  }
+  },
+  framebuffer: fbo
 })
 
 const drawTerrain = regl({
@@ -196,6 +221,9 @@ const drawBunny = regl({
   elements: bunny.cells,
   uniforms: {
     model: (_, props, batchId) => {
+      /*
+        By using props, we translate the bunny, scale it, and rotate it.
+        */
       var m = mat4.identity([])
 
       mat4.translate(m, m, props.position)
@@ -212,6 +240,48 @@ const drawBunny = regl({
     },
     color: regl.prop('color')
   }
+})
+
+const drawFboBlurred = regl({
+  frag: `
+  precision mediump float;
+  varying vec2 uv;
+  uniform sampler2D tex;
+  uniform float wRcp, hRcp;
+#define R int(${FILTER_RADIUS})
+
+  void main() {
+
+    float W =  float((1 + 2 * R) * (1 + 2 * R));
+
+    vec3 avg = vec3(0.0);
+    for (int x = -R; x <= +R; x++) {
+      for (int y = -R; y <= +R; y++) {
+        avg += (1.0 / W) * texture2D(tex, uv + vec2(float(x) * wRcp, float(y) * hRcp)).xyz;
+      }
+    }
+
+    gl_FragColor = vec4(avg, 1.0);
+  }`,
+
+  vert: `
+  precision mediump float;
+  attribute vec2 position;
+  varying vec2 uv;
+  void main() {
+    uv = 0.5 * (position + 1.0);
+    gl_Position = vec4(position, 0, 1);
+  }`,
+  attributes: {
+    position: [ -4, -4, 4, -4, 0, 4 ]
+  },
+  uniforms: {
+    tex: ({count}) => fbo.color[0],
+    wRcp: ({viewportWidth}) => 1.0 / viewportWidth,
+    hRcp: ({viewportHeight}) => 1.0 / viewportHeight
+  },
+  depth: { enable: false },
+  count: 3
 })
 
 require('resl')({
@@ -234,13 +304,23 @@ require('resl')({
   },
 
   onDone: ({ heightTexture, rockTexture }) => {
-    regl.frame(({deltaTime}) => {
-      regl.clear({
-        color: [0, 0, 0, 255],
-        depth: 1
-      })
+    regl.frame(({deltaTime, viewportWidth, viewportHeight}) => {
+      /*
+        We need to set the FBO size in `regl.frame`, because the viewport size will change if
+        the user resizes the browser window.
 
+        However, note that regl is clever, and will only actually resize the fbo when the
+        viewport size actually changes!
+       */
+      fbo.resize(viewportWidth, viewportHeight)
+
+      // begin render to FBO
       setupDefault({}, () => {
+        regl.clear({
+          color: [0, 0, 0, 255],
+          depth: 1
+        })
+
         drawTerrain({elements, xzPosition, heightTexture, rockTexture})
 
         drawBunny([
@@ -257,8 +337,18 @@ require('resl')({
           {color: [0.4, 0.4, 0.1], scale: 1.8, position: [-80.0, -50.0, -110.0], rotation: [0.0, -0.0, 0.0]},
           {color: [0.7, 0.4, 0.1], scale: 1.3, position: [-120.0, -85.0, -40.0], rotation: [0.0, +2.1, -0.3]}
         ])
-        camera.tick()
       })
+      // end render to FBO
+
+      regl.clear({
+        color: [0, 0, 0, 255],
+        depth: 1
+      })
+
+      // Now render fbo to quad, but also blur it.
+      drawFboBlurred()
+
+      camera.tick()
     })
   }
 })
