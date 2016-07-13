@@ -32,7 +32,7 @@ const drawCheckerboard = regl({
   },
 
   uniforms: {
-    tick: ({count}) => 0.005 * count,
+    tick: ({tick}) => 0.005 * tick,
 
     texture: regl.texture({
       min: 'nearest mipmap linear',
@@ -55,5 +55,7 @@ const drawCheckerboard = regl({
 })
 
 regl.frame(() => {
+  regl.updateTimer()
+
   drawCheckerboard()
 })

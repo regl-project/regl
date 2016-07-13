@@ -14,23 +14,6 @@ tape('framebuffer parsing', function (t) {
     t.equals(_framebuffer.width, props.width, prefix + '.width')
     t.equals(_framebuffer.height, props.height, prefix + '.height')
 
-    t.equals(
-      framebuffer.color.length,
-      _framebuffer.colorAttachments.length,
-      prefix + ' color handle')
-    t.equals(
-      !!framebuffer.depth,
-      !!_framebuffer.depthAttachment,
-      prefix + ' depth handle')
-    t.equals(
-      !!framebuffer.stencil,
-      !!_framebuffer.stencilAttachment,
-      prefix + ' stencil handle')
-    t.equals(
-      !!framebuffer.depthStencil,
-      !!_framebuffer.depthStencilAttachment,
-      prefix + ' depth stencil handle')
-
     gl.bindFramebuffer(gl.FRAMEBUFFER, _framebuffer.framebuffer)
 
     function diffAttachments (actual, expected, sprefix, attachment) {
@@ -72,7 +55,6 @@ tape('framebuffer parsing', function (t) {
           label + ' object assoc')
       } else {
         t.equals(actual.renderbuffer, null, label + '.renderbuffer')
-        t.equals(actual.level, expected.level || 0, label + '.level')
         /*
         t.equals(
           actual.texture._texture.params.internalformat,
@@ -91,7 +73,7 @@ tape('framebuffer parsing', function (t) {
           label + ' object assoc')
         t.equals(
           getParameter(gl.FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL),
-          expected.level || 0,
+          0,
           label + ' miplevel')
         t.equals(
           getParameter(gl.FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE),
@@ -102,18 +84,16 @@ tape('framebuffer parsing', function (t) {
 
     if (props.color) {
       t.equals(
-        _framebuffer.colorAttachments.length,
+        framebuffer.color.length,
         props.color.length,
         prefix + ' colorCount')
       for (var i = 0; i < props.color.length; ++i) {
         diffAttachments(
-          _framebuffer.colorAttachments[i],
+          _framebuffer.colorAttachments[i] || _framebuffer.colorAttachments,
           props.color[i],
           'color[' + i + ']',
           gl.COLOR_ATTACHMENT0 + i)
       }
-    } else {
-      t.same(_framebuffer.colorAttachments, [], prefix + ' color')
     }
 
     diffAttachments(
@@ -137,15 +117,15 @@ tape('framebuffer parsing', function (t) {
   checkProperties(
     regl.framebuffer(),
     {
-      width: 16,
-      height: 16,
+      width: 1,
+      height: 1,
       color: [{
         target: gl.TEXTURE_2D,
         format: gl.RGBA
       }],
-      depth: {
+      depthStencil: {
         target: gl.RENDERBUFFER,
-        format: gl.DEPTH_COMPONENT16
+        format: gl.DEPTH_STENCIL
       }
     },
     'empty')
@@ -162,7 +142,11 @@ tape('framebuffer parsing', function (t) {
       color: [{
         target: gl.TEXTURE_2D,
         format: gl.RGBA
-      }]
+      }],
+      stencil: {
+        target: gl.RENDERBUFFER,
+        format: gl.STENCIL_INDEX8
+      }
     },
     'shape and no depth')
 
@@ -170,7 +154,28 @@ tape('framebuffer parsing', function (t) {
     regl.framebuffer({
       width: 10,
       height: 10,
-      format: 'rgba4',
+      colorFormat: 'rgb5 a1',
+      depth: true,
+      stencil: true
+    }),
+    {
+      width: 10,
+      height: 10,
+      color: [{
+        target: gl.RENDERBUFFER,
+        format: gl.RGB5_A1
+      }],
+      depthStencil: {
+        target: gl.RENDERBUFFER,
+        format: gl.DEPTH_STENCIL
+      }
+    },
+    'color renderbuffer')
+
+  checkProperties(
+    regl.framebuffer({
+      shape: [10, 10],
+      colorTexture: false,
       depth: true,
       stencil: true
     }),
@@ -186,79 +191,12 @@ tape('framebuffer parsing', function (t) {
         format: gl.DEPTH_STENCIL
       }
     },
-    'no color')
+    'color renderbuffer')
 
-  // test color buffer formats
-
-  // test cube map associations
-
-  // test creation with colorBuffers, depthBuffers, stencilBuffers, etc.
-
-  if (gl.getExtension('WEBGL_depth_texture')) {
-    // test depth texture stuff
-  }
-
-  // check in place updates
-  var origFBO = regl.framebuffer({
-    shape: [5, 5]
-  })
-
-  var origColor = origFBO.color
-  var origDepth = origFBO.depth
-
-  checkProperties(
-    origFBO,
-    {
-      width: 5,
-      height: 5,
-      color: [{
-        target: gl.TEXTURE_2D,
-        level: 0,
-        format: gl.RGBA
-      }],
-      depth: {
-        target: gl.RENDERBUFFER,
-        format: gl.DEPTH_COMPONENT16
-      }
-    },
-    'before update')
-
-  t.ok(origFBO._framebuffer.ownsColor, 'owns color buffer')
-  t.ok(origFBO._framebuffer.ownsDepthStencil, 'owns depth/stencil buffer')
-
-  origFBO({
-    radius: 10,
-    depth: true,
-    stencil: true
-  })
-
-  // Should reuse texture and renderbuffer references
-  t.equals(origFBO.color[0], origColor[0], 'colors buffer reused')
-  t.equals(origFBO.depthStencil, origDepth, 'depth buffer reused')
-
-  checkProperties(
-    origFBO,
-    {
-      width: 10,
-      height: 10,
-      color: [{
-        target: gl.TEXTURE_2D,
-        level: 0,
-        format: gl.RGBA
-      }],
-      depthStencil: {
-        target: gl.RENDERBUFFER,
-        format: gl.DEPTH_STENCIL
-      }
-    },
-    'after update')
-
-  // check multiple render targets
-  var extDrawBuffers = gl.getExtension('WEBGL_draw_buffers')
-  if (extDrawBuffers) {
-    // TODO check multiple render target support
-  }
+  // TODO: float, half float types
+  // TODO: multiple render targets
 
   regl.destroy()
+  createContext.destroy(gl)
   t.end()
 })

@@ -6,12 +6,12 @@ const INITIAL_CONDITIONS = (Array(RADIUS * RADIUS * 4)).fill(0).map(
 
 const state = (Array(2)).fill().map(() =>
   regl.framebuffer({
-    colorBuffer: regl.texture({
+    color: regl.texture({
       radius: RADIUS,
       data: INITIAL_CONDITIONS,
       wrap: 'repeat'
     }),
-    depth: false
+    depthStencil: false
   }))
 
 const updateLife = regl({
@@ -33,7 +33,7 @@ const updateLife = regl({
     }
   }`,
 
-  framebuffer: ({count}) => state[(count + 1) % 2]
+  framebuffer: ({tick}) => state[(tick + 1) % 2]
 })
 
 const setupQuad = regl({
@@ -60,7 +60,7 @@ const setupQuad = regl({
   },
 
   uniforms: {
-    prevState: ({count}) => state[count % 2].color[0]
+    prevState: ({tick}) => state[tick % 2].color[0]
   },
 
   depth: { enable: false },
@@ -69,6 +69,8 @@ const setupQuad = regl({
 })
 
 regl.frame(() => {
+  regl.updateTimer()
+
   setupQuad(() => {
     regl.draw()
     updateLife()

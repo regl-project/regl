@@ -50,7 +50,7 @@ tape('texture cube', function (t) {
     var args = Array.prototype.slice.call(arguments, 1)
     t.throws(function () {
       regl.cube.apply(null, args)
-    }, null, name + ' throws')
+    }, /\(regl\)/, name + ' throws')
   }
 
   function comparePixels (texture, width, height, faces, tolerance, name) {
@@ -359,5 +359,6 @@ tape('texture cube', function (t) {
   // TODO dom elements
 
   regl.destroy()
+  createContext.destroy(gl)
   t.end()
 })

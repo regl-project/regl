@@ -92,5 +92,6 @@ tape('element arg parsing', function (t) {
     'manual properties')
 
   regl.destroy()
+  createContext.destroy(gl)
   t.end()
 })

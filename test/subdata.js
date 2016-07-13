@@ -140,5 +140,6 @@ tape('subdata', function (t) {
   ], 'using subdata nested typedarrays')
 
   regl.destroy()
+  createContext.destroy(gl)
   t.end()
 })

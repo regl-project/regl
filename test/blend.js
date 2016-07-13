@@ -185,5 +185,6 @@ tape('blend', function (t) {
   })
 
   regl.destroy()
+  createContext.destroy(gl)
   t.end()
 })
