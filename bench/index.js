@@ -213,3 +213,5 @@ Object.keys(CASES).map(function (caseName) {
 cuben:30000, t:(μ=12.24μs∓78.41μs, q=[10μs, 15μs, 9.18ms]), m:(μ=12.11Mb∓0b, q=[12.11Mb, 12.11Mb, 12.11Mb])
 cube_webgln:30000, t:(μ=14.46μs∓88.63μs, q=[15μs, 15μs, 7.32ms]), m:(μ=12.11Mb∓0b, q=[12.11Mb, 12.11Mb, 12.11Mb])
   */
+
+//     draw('for(var gggg = 0; gggg < 1000; gggg++) ', env.shared.gl, '.useProgram(', program, '.program);')
