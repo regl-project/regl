@@ -84,7 +84,7 @@ function flatten (result, data, dimension) {
   }
 }
 
-module.exports = function wrapBufferState (gl) {
+module.exports = function wrapBufferState (gl, stats) {
   var bufferCount = 0
   var bufferSet = {}
 
@@ -100,6 +100,10 @@ module.exports = function wrapBufferState (gl) {
 
   REGLBuffer.prototype.bind = function () {
     gl.bindBuffer(this.type, this.buffer)
+  }
+
+  REGLBuffer.prototype.destroy = function () {
+    destroy(this)
   }
 
   var streamPool = []
@@ -201,16 +205,18 @@ module.exports = function wrapBufferState (gl) {
   }
 
   function destroy (buffer) {
+    stats.bufferCount--
+
     var handle = buffer.buffer
     
-    if (gl.isBuffer(handle)) {
-      gl.deleteBuffer(handle)
-    }
+    gl.deleteBuffer(handle)
     buffer.buffer = null
     delete bufferSet[buffer.id]
   }
 
   function createBuffer (options, type, deferInit) {
+    stats.bufferCount++
+
     var buffer = new REGLBuffer(type)
     bufferSet[buffer.id] = buffer
 
@@ -369,7 +375,7 @@ module.exports = function wrapBufferState (gl) {
   }
 }
 
-},{"./constants/arraytypes.json":3,"./constants/dtypes.json":4,"./constants/usage.json":6,"./util/is-ndarray":21,"./util/is-typed-array":22,"./util/pool":24,"./util/values":27}],3:[function(require,module,exports){
+},{"./constants/arraytypes.json":3,"./constants/dtypes.json":4,"./constants/usage.json":6,"./util/is-ndarray":24,"./util/is-typed-array":25,"./util/pool":27,"./util/values":30}],3:[function(require,module,exports){
 module.exports={
   "[object Int8Array]": 5120
 , "[object Int16Array]": 5122
@@ -422,6 +428,7 @@ var createEnvironment = require('./util/codegen')
 var loop = require('./util/loop')
 var isTypedArray = require('./util/is-typed-array')
 var isNDArray = require('./util/is-ndarray')
+var isArrayLike = require('./util/is-array-like')
 
 var primTypes = require('./constants/primitives.json')
 var glTypes = require('./constants/dtypes.json')
@@ -670,7 +677,8 @@ module.exports = function reglCore (
   attributeState,
   shaderState,
   drawState,
-  contextState) {
+  contextState,
+  timer) {
   var AttributeRecord = attributeState.Record
 
   var blendEquations = {
@@ -799,6 +807,8 @@ module.exports = function reglCore (
     framebuffer: framebufferState,
     extensions: extensions,
 
+    timer: timer,
+
     isBufferArgs: isBufferArgs
   }
 
@@ -811,6 +821,8 @@ module.exports = function reglCore (
     glTypes: glTypes,
     orientationType: orientationType
   }
+
+  
 
   if (extDrawBuffers) {
     sharedConstants.backBuffer = [GL_BACK]
@@ -951,7 +963,7 @@ module.exports = function reglCore (
             CONTEXT,
             '.' + S_FRAMEBUFFER_HEIGHT,
             CONTEXT + '.' + S_DRAWINGBUFFER_HEIGHT)
-          return null
+          return 'null'
         })
       }
     } else if (S_FRAMEBUFFER in dynamicOptions) {
@@ -1000,33 +1012,38 @@ module.exports = function reglCore (
         var isStatic = true
         var x = box.x | 0
         var y = box.y | 0
+        
         var w, h
-        if ('w' in box) {
-          w = box.w | 0
+        if ('width' in box) {
+          w = box.width | 0
           
         } else {
           isStatic = false
         }
-        if ('h' in box) {
-          h = box.h | 0
+        if ('height' in box) {
+          h = box.height | 0
           
         } else {
           isStatic = false
         }
 
         return new Declaration(
-          isStatic && framebuffer && framebuffer.thisDep,
-          isStatic && framebuffer && framebuffer.contextDep,
-          isStatic && framebuffer && framebuffer.propDep,
+          !isStatic && framebuffer && framebuffer.thisDep,
+          !isStatic && framebuffer && framebuffer.contextDep,
+          !isStatic && framebuffer && framebuffer.propDep,
           function (env, scope) {
             var CONTEXT = env.shared.context
             var BOX_W = w
-            if (!('w' in box)) {
+            if (!('width' in box)) {
               BOX_W = scope.def(CONTEXT, '.', S_FRAMEBUFFER_WIDTH, '-', x)
+            } else {
+              
             }
             var BOX_H = h
-            if (!('h' in box)) {
+            if (!('height' in box)) {
               BOX_H = scope.def(CONTEXT, '.', S_FRAMEBUFFER_HEIGHT, '-', y)
+            } else {
+              
             }
             return [x, y, BOX_W, BOX_H]
           })
@@ -1041,10 +1058,10 @@ module.exports = function reglCore (
           var BOX_X = scope.def(BOX, '.x|0')
           var BOX_Y = scope.def(BOX, '.y|0')
           var BOX_W = scope.def(
-            '"w" in ', BOX, '?', BOX, '.w|0:',
+            '"width" in ', BOX, '?', BOX, '.width|0:',
             '(', CONTEXT, '.', S_FRAMEBUFFER_WIDTH, '-', BOX_X, ')')
           var BOX_H = scope.def(
-            '"h" in ', BOX, '?', BOX, '.h|0:',
+            '"height" in ', BOX, '?', BOX, '.height|0:',
             '(', CONTEXT, '.', S_FRAMEBUFFER_HEIGHT, '-', BOX_Y, ')')
 
           
@@ -1054,7 +1071,7 @@ module.exports = function reglCore (
         if (framebuffer) {
           result.thisDep = result.thisDep || framebuffer.thisDep
           result.contextDep = result.contextDep || framebuffer.contextDep
-          result.propDep = result.propDep || framebuffer.prpoDep
+          result.propDep = result.propDep || framebuffer.propDep
         }
         return result
       } else if (framebuffer) {
@@ -1764,11 +1781,11 @@ module.exports = function reglCore (
       } else if (
         typeof value === 'function' &&
         (value._reglType === 'texture2d' ||
-         value._reglTYpe === 'textureCube')) {
+         value._reglType === 'textureCube')) {
         result = createStaticDecl(function (env) {
           return env.link(value)
         })
-      } else if (Array.isArray(value) || isTypedArray(value)) {
+      } else if (isArrayLike(value)) {
         result = createStaticDecl(function (env) {
           var ITEM = env.global.def('[',
             loop(value.length, function (i) {
@@ -1986,6 +2003,7 @@ module.exports = function reglCore (
 
   function parseArguments (options, attributes, uniforms, context) {
     var result = parseOptions(options)
+
     result.uniforms = parseUniforms(uniforms)
     result.attributes = parseAttributes(attributes)
     result.context = parseContext(context)
@@ -2085,8 +2103,8 @@ module.exports = function reglCore (
           return block.def(NEXT, '[', i, ']')
         })
         block(env.cond(parts.map(function (p, i) {
-          return p + '===' + CURRENT + '[' + i + ']'
-        }).join('&&'))
+          return p + '!==' + CURRENT + '[' + i + ']'
+        }).join('||'))
           .then(
             GL, '.', GL_VARIABLES[param], '(', parts, ');',
             parts.map(function (p, i) {
@@ -2140,7 +2158,7 @@ module.exports = function reglCore (
             .else(GL, '.disable(', flag, ');'))
         }
         scope(CURRENT_STATE, '.', param, '=', variable, ';')
-      } else if (Array.isArray(variable)) {
+      } else if (isArrayLike(variable)) {
         var CURRENT = CURRENT_VARS[param]
         scope(
           GL, '.', GL_VARIABLES[param], '(', variable, ');',
@@ -2159,6 +2177,25 @@ module.exports = function reglCore (
     if (extInstancing && !env.instancing) {
       env.instancing = scope.def(
         env.shared.extensions, '.angle_instanced_arrays')
+    }
+  }
+
+  function emitBeginTimerQuery (env, draw, args) {
+    var STATS = env.stats
+    var shared = env.shared
+
+    if (timer) {
+      var TIMER = shared.timer
+      draw(TIMER, '.beginQuery(', STATS, ');')
+    }
+  }
+
+  function emitEndTimerQuery (env, draw, args) {
+    var shared = env.shared
+
+    if (timer) {
+      var TIMER = shared.timer
+      draw(TIMER, '.endQuery();')
     }
   }
 
@@ -2323,19 +2360,20 @@ module.exports = function reglCore (
         if (!filter(arg)) {
           continue
         }
-        if (arg.static) {
+        if (isStatic(arg)) {
           var value = arg.value
           if (type === GL_SAMPLER_2D || type === GL_SAMPLER_CUBE) {
             
             var TEX_VALUE = env.link(value._texture)
-            scope(GL, '.uniform1i(', LOCATION, TEX_VALUE + '.bind());')
-            scope.exit(TEX_VALUE, '.unbind()')
+            scope(GL, '.uniform1i(', LOCATION, ',', TEX_VALUE + '.bind());')
+            scope.exit(TEX_VALUE, '.unbind();')
           } else if (
             type === GL_FLOAT_MAT2 ||
             type === GL_FLOAT_MAT3 ||
             type === GL_FLOAT_MAT4) {
             
-            var MAT_VALUE = env.global.def('[' + value + ']')
+            var MAT_VALUE = env.global.def('new Float32Array([' +
+              Array.prototype.slice.call(value) + '])')
             var dim = 2
             if (type === GL_FLOAT_MAT3) {
               dim = 3
@@ -2395,10 +2433,10 @@ module.exports = function reglCore (
                 
                 infix = '4i'
                 break
-              default:
-                
             }
-            scope(GL, '.uniform', infix, '(', LOCATION, ',', value, ');')
+            scope(GL, '.uniform', infix, '(', LOCATION, ',',
+              isArrayLike(value) ? Array.prototype.slice.call(value) : value,
+              ');')
           }
           continue
         } else {
@@ -2414,7 +2452,7 @@ module.exports = function reglCore (
       // perform type validation
       
 
-      var separator = ','
+      var unroll = 1
       switch (type) {
         case GL_SAMPLER_2D:
         case GL_SAMPLER_CUBE:
@@ -2430,17 +2468,20 @@ module.exports = function reglCore (
 
         case GL_INT_VEC2:
         case GL_BOOL_VEC2:
-          infix = '2iv'
+          infix = '2i'
+          unroll = 2
           break
 
         case GL_INT_VEC3:
         case GL_BOOL_VEC3:
-          infix = '3iv'
+          infix = '3i'
+          unroll = 3
           break
 
         case GL_INT_VEC4:
         case GL_BOOL_VEC4:
-          infix = '4iv'
+          infix = '4i'
+          unroll = 4
           break
 
         case GL_FLOAT:
@@ -2448,33 +2489,50 @@ module.exports = function reglCore (
           break
 
         case GL_FLOAT_VEC2:
-          infix = '2fv'
+          infix = '2f'
+          unroll = 2
           break
 
         case GL_FLOAT_VEC3:
-          infix = '3fv'
+          infix = '3f'
+          unroll = 3
           break
 
         case GL_FLOAT_VEC4:
-          infix = '4fv'
+          infix = '4f'
+          unroll = 4
           break
 
         case GL_FLOAT_MAT2:
           infix = 'Matrix2fv'
-          separator = ',false,'
           break
 
         case GL_FLOAT_MAT3:
           infix = 'Matrix3fv'
-          separator = ',false,'
           break
 
         case GL_FLOAT_MAT4:
           infix = 'Matrix4fv'
-          separator = ',false,'
           break
       }
-      scope(GL, '.uniform', infix, '(', LOCATION, separator, VALUE, ');')
+
+      scope(GL, '.uniform', infix, '(', LOCATION, ',')
+      if (infix.charAt(0) === 'M') {
+        var matSize = Math.pow(type - GL_FLOAT_MAT2 + 2, 2)
+        var STORAGE = env.global.def('new Float32Array(', matSize, ')')
+        scope(
+          'false,(Array.isArray(', VALUE, ')||', VALUE, ' instanceof Float32Array)?', VALUE, ':(',
+          loop(matSize, function (i) {
+            return STORAGE + '[' + i + ']=' + VALUE + '[' + i + ']'
+          }), ',', STORAGE, ')')
+      } else if (unroll > 1) {
+        scope(loop(unroll, function (i) {
+          return VALUE + '[' + i + ']'
+        }))
+      } else {
+        scope(VALUE)
+      }
+      scope(');')
     }
   }
 
@@ -2490,7 +2548,7 @@ module.exports = function reglCore (
       var ELEMENTS
       var scope = outer
       if (defn) {
-        if (!defn.batchStatic) {
+        if ((defn.contextDep && args.contextDynamic) || defn.propDep) {
           scope = inner
         }
         ELEMENTS = defn.append(env, scope)
@@ -2510,7 +2568,7 @@ module.exports = function reglCore (
       var COUNT
       var scope = outer
       if (defn) {
-        if (!defn.batchStatic) {
+        if ((defn.contextDep && args.contextDynamic) || defn.propDep) {
           scope = inner
         }
         COUNT = defn.append(env, scope)
@@ -2525,10 +2583,10 @@ module.exports = function reglCore (
     function emitValue (name) {
       var defn = drawOptions[name]
       if (defn) {
-        if (defn.batchStatic) {
-          return defn.append(env, outer)
-        } else {
+        if ((defn.contextDep && args.contextDynamic) || defn.propDep) {
           return defn.append(env, inner)
+        } else {
+          return defn.append(env, outer)
         }
       } else {
         return outer.def(DRAW_STATE, '.', name)
@@ -2652,7 +2710,6 @@ module.exports = function reglCore (
   // ===================================================
   function emitDrawBody (env, draw, args, program) {
     injectExtensions(env, draw)
-
     emitAttributes(env, draw, args, program.attributes, function () {
       return true
     })
@@ -2669,8 +2726,11 @@ module.exports = function reglCore (
 
     emitContext(env, draw, args.context)
     emitPollFramebuffer(env, draw, args.framebuffer)
+
     emitPollState(env, draw, args)
     emitSetOptions(env, draw, args.state)
+
+    emitBeginTimerQuery(env, draw, args)
 
     var program = args.shader.progVar.append(env, draw)
     draw(env.shared.gl, '.useProgram(', program, '.program);')
@@ -2695,6 +2755,8 @@ module.exports = function reglCore (
     if (Object.keys(args.state).length > 0) {
       draw(env.shared.current, '.dirty=true;')
     }
+
+    emitEndTimerQuery(env, draw, args)
   }
 
   // ===================================================
@@ -2720,7 +2782,7 @@ module.exports = function reglCore (
   function emitBatchBody (env, scope, args, program) {
     injectExtensions(env, scope)
 
-    var contextDynamic = args.contextDynamic
+    var contextDynamic = args.contextDep
 
     var BATCH_ID = scope.def()
     var PROP_LIST = 'a0'
@@ -2808,10 +2870,12 @@ module.exports = function reglCore (
       if (!needsFramebuffer) {
         emitPollFramebuffer(env, batch, framebuffer)
       }
+    } else {
+      emitPollFramebuffer(env, batch, null)
     }
 
     // viewport is weird because it can affect context vars
-    if (args.state.viewport && args.state.viewport.propDynamic) {
+    if (args.state.viewport && args.state.viewport.propDep) {
       contextDynamic = true
     }
 
@@ -2820,6 +2884,8 @@ module.exports = function reglCore (
     emitSetOptions(env, batch, args.state, function (defn) {
       return !((defn.contextDep && contextDynamic) || defn.propDep)
     })
+
+    emitBeginTimerQuery(env, batch, args)
 
     // Save these values to args so that the batch body routine can use them
     args.contextDep = contextDynamic
@@ -2862,6 +2928,8 @@ module.exports = function reglCore (
     if (Object.keys(args.state).length > 0) {
       batch(env.shared.current, '.dirty=true;')
     }
+
+    emitEndTimerQuery(env, batch, args)
   }
 
   // ===================================================
@@ -2876,6 +2944,14 @@ module.exports = function reglCore (
     var shared = env.shared
     var CURRENT_STATE = shared.current
 
+    var TIMER = shared.timer
+
+    var SCOPE_START
+    var SCOPE_END
+    if (timer) {
+      SCOPE_START = scope.def(TIMER, '.getNumPendingQueries()')
+    }
+
     emitContext(env, scope, args.context)
 
     if (args.framebuffer) {
@@ -2885,7 +2961,7 @@ module.exports = function reglCore (
     sortState(Object.keys(args.state)).forEach(function (name) {
       var defn = args.state[name]
       var value = defn.append(env, scope)
-      if (Array.isArray(value)) {
+      if (isArrayLike(value)) {
         value.forEach(function (v, i) {
           scope.set(env.next[name], '[' + i + ']', v)
         })
@@ -2933,6 +3009,17 @@ module.exports = function reglCore (
     }
 
     scope('a1(', env.shared.context, ',a0,0);')
+
+    if (timer) {
+      var STATS = env.stats
+
+      SCOPE_END = scope.def(TIMER, '.getNumPendingQueries()-1')
+      scope(TIMER, '.pushScopeStats(',
+            SCOPE_START, ',',
+            SCOPE_END, ',',
+            STATS,
+            ');')
+    }
   }
 
   // ===========================================================================
@@ -2940,8 +3027,12 @@ module.exports = function reglCore (
   // MAIN DRAW COMMAND
   // ===========================================================================
   // ===========================================================================
-  function compileCommand (options, attributes, uniforms, context) {
+  function compileCommand (options, attributes, uniforms, context, stats) {
     var env = createREGLEnvironment()
+
+    // link stats, so that we can easily access it in the program.
+    env.stats = env.link(stats)
+
     var args = parseArguments(options, attributes, uniforms, context)
 
     emitDrawProc(env, args)
@@ -3002,7 +3093,7 @@ module.exports = function reglCore (
         var NEXT, CURRENT
         var block = env.block()
         block(GL, '.', func, '(')
-        if (Array.isArray(init)) {
+        if (isArrayLike(init)) {
           var n = init.length
           NEXT = env.global.def(NEXT_STATE, '.', name)
           CURRENT = env.global.def(CURRENT_STATE, '.', name)
@@ -3039,7 +3130,7 @@ module.exports = function reglCore (
   }
 }
 
-},{"./constants/dtypes.json":4,"./constants/primitives.json":5,"./util/codegen":19,"./util/is-ndarray":21,"./util/is-typed-array":22,"./util/loop":23}],8:[function(require,module,exports){
+},{"./constants/dtypes.json":4,"./constants/primitives.json":5,"./util/codegen":21,"./util/is-array-like":23,"./util/is-ndarray":24,"./util/is-typed-array":25,"./util/loop":26}],8:[function(require,module,exports){
 
 
 var VARIABLE_COUNTER = 0
@@ -3140,6 +3231,7 @@ module.exports = {
 
 var isTypedArray = require('./util/is-typed-array')
 var isNDArrayLike = require('./util/is-ndarray')
+var values = require('./util/values')
 
 var primTypes = require('./constants/primitives.json')
 var usageTypes = require('./constants/usage.json')
@@ -3160,7 +3252,10 @@ var GL_ELEMENT_ARRAY_BUFFER = 34963
 var GL_STREAM_DRAW = 0x88E0
 var GL_STATIC_DRAW = 0x88E4
 
-module.exports = function wrapElementsState (gl, extensions, bufferState) {
+module.exports = function wrapElementsState (gl, extensions, bufferState, stats) {
+  var elementSet = {}
+  var elementCount = 0
+
   var elementTypes = {
     'uint8': GL_UNSIGNED_BYTE,
     'uint16': GL_UNSIGNED_SHORT
@@ -3171,6 +3266,8 @@ module.exports = function wrapElementsState (gl, extensions, bufferState) {
   }
 
   function REGLElementBuffer (buffer) {
+    this.id = elementCount++
+    elementSet[this.id] = this
     this.buffer = buffer
     this.primType = GL_TRIANGLES
     this.vertCount = 0
@@ -3275,9 +3372,19 @@ module.exports = function wrapElementsState (gl, extensions, bufferState) {
     elements.primType = primType
   }
 
+  function destroyElements (elements) {
+    stats.elementsCount--
+
+    
+    delete elementSet[elements.id]
+    elements.buffer.destroy()
+    elements.buffer = null
+  }
+
   function createElements (options) {
     var buffer = bufferState.create(null, GL_ELEMENT_ARRAY_BUFFER, true)
     var elements = new REGLElementBuffer(buffer._buffer)
+    stats.elementsCount++
 
     function reglElements (options) {
       if (!options) {
@@ -3362,9 +3469,7 @@ module.exports = function wrapElementsState (gl, extensions, bufferState) {
       return reglElements
     }
     reglElements.destroy = function () {
-      
-      buffer.destroy()
-      elements.buffer = null
+      destroyElements(elements)
     }
 
     return reglElements
@@ -3380,11 +3485,14 @@ module.exports = function wrapElementsState (gl, extensions, bufferState) {
         return elements._elements
       }
       return null
+    },
+    clear: function () {
+      values(elementSet).forEach(destroyElements)
     }
   }
 }
 
-},{"./constants/primitives.json":5,"./constants/usage.json":6,"./util/is-ndarray":21,"./util/is-typed-array":22}],10:[function(require,module,exports){
+},{"./constants/primitives.json":5,"./constants/usage.json":6,"./util/is-ndarray":24,"./util/is-typed-array":25,"./util/values":30}],10:[function(require,module,exports){
 module.exports = function createExtensionCache (gl) {
   var extensions = {}
 
@@ -3408,6 +3516,7 @@ module.exports = function createExtensionCache (gl) {
       'ext_shader_texture_lod',
       'ext_color_buffer_half_float',
       'ext_srgb',
+      'ext_disjoint_timer_query',
 
       'angle_instanced_arrays',
 
@@ -3440,7 +3549,6 @@ var GL_FRAMEBUFFER = 0x8D40
 var GL_RENDERBUFFER = 0x8D41
 
 var GL_TEXTURE_2D = 0x0DE1
-var GL_TEXTURE_CUBE_MAP = 0x8513
 var GL_TEXTURE_CUBE_MAP_POSITIVE_X = 0x8515
 
 var GL_COLOR_ATTACHMENT0 = 0x8CE0
@@ -3448,20 +3556,33 @@ var GL_DEPTH_ATTACHMENT = 0x8D00
 var GL_STENCIL_ATTACHMENT = 0x8D20
 var GL_DEPTH_STENCIL_ATTACHMENT = 0x821A
 
-var GL_UNSIGNED_BYTE = 0x1401
-var GL_FLOAT = 0x1406
-
-var GL_HALF_FLOAT_OES = 0x8D61
+var GL_FRAMEBUFFER_COMPLETE = 0x8CD5
+var GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT = 0x8CD6
+var GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT = 0x8CD7
+var GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS = 0x8CD9
+var GL_FRAMEBUFFER_UNSUPPORTED = 0x8CDD
 
 var GL_RGBA = 0x1908
+var GL_ALPHA = 0x1906
+var GL_RGB = 0x1907
+var GL_LUMINANCE = 0x1909
+var GL_LUMINANCE_ALPHA = 0x190A
+
+var GL_DEPTH_COMPONENT = 0x1902
+
+var colorTextureFormatEnums = [
+  GL_ALPHA,
+  GL_LUMINANCE,
+  GL_LUMINANCE_ALPHA,
+  GL_RGB,
+  GL_RGBA
+]
 
 var GL_RGBA4 = 0x8056
 var GL_RGB5_A1 = 0x8057
 var GL_RGB565 = 0x8D62
 var GL_DEPTH_COMPONENT16 = 0x81A5
 var GL_STENCIL_INDEX8 = 0x8D48
-
-var GL_DEPTH_COMPONENT = 0x1902
 var GL_DEPTH_STENCIL = 0x84F9
 
 var GL_SRGB8_ALPHA8_EXT = 0x8C43
@@ -3471,102 +3592,75 @@ var GL_RGBA32F_EXT = 0x8814
 var GL_RGBA16F_EXT = 0x881A
 var GL_RGB16F_EXT = 0x881B
 
-var GL_FRAMEBUFFER_COMPLETE = 0x8CD5
-var GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT = 0x8CD6
-var GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT = 0x8CD7
-var GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS = 0x8CD9
-var GL_FRAMEBUFFER_UNSUPPORTED = 0x8CDD
+var colorRenderbufferFormatEnums = [
+  GL_RGBA4,
+  GL_RGB5_A1,
+  GL_RGB565,
+  GL_SRGB8_ALPHA8_EXT,
+  GL_RGBA16F_EXT,
+  GL_RGB16F_EXT,
+  GL_RGBA32F_EXT
+]
+
+var statusCode = {}
+statusCode[GL_FRAMEBUFFER_COMPLETE] = 'complete'
+statusCode[GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT] = 'incomplete attachment'
+statusCode[GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS] = 'incomplete dimensions'
+statusCode[GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT] = 'incomplete, missing attachment'
+statusCode[GL_FRAMEBUFFER_UNSUPPORTED] = 'unsupported'
 
 module.exports = function wrapFBOState (
   gl,
   extensions,
   limits,
   textureState,
-  renderbufferState) {
+  renderbufferState,
+  stats) {
   var framebufferState = {
     current: null,
     next: null,
     dirty: false
   }
 
-  var statusCode = {}
-  statusCode[GL_FRAMEBUFFER_COMPLETE] = 'complete'
-  statusCode[GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT] = 'incomplete attachment'
-  statusCode[GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS] = 'incomplete dimensions'
-  statusCode[GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT] = 'incomplete, missing attachment'
-  statusCode[GL_FRAMEBUFFER_UNSUPPORTED] = 'unsupported'
-
-  var colorTextureFormats = {
-    'rgba': GL_RGBA
-  }
-
-  var colorRenderbufferFormats = {
-    'rgba4': GL_RGBA4,
-    'rgb565': GL_RGB565,
-    'rgb5 a1': GL_RGB5_A1
-  }
+  var colorTextureFormats = ['rgba']
+  var colorRenderbufferFormats = ['rgba4', 'rgb565', 'rgb5 a1']
 
   if (extensions.ext_srgb) {
-    colorRenderbufferFormats['srgba'] = GL_SRGB8_ALPHA8_EXT
+    colorRenderbufferFormats.push('srgba')
   }
 
   if (extensions.ext_color_buffer_half_float) {
-    colorRenderbufferFormats['rgba16f'] = GL_RGBA16F_EXT
-    colorRenderbufferFormats['rgb16f'] = GL_RGB16F_EXT
+    colorRenderbufferFormats.push('rgba16f', 'rgb16f')
   }
 
   if (extensions.webgl_color_buffer_float) {
-    colorRenderbufferFormats['rgba32f'] = GL_RGBA32F_EXT
+    colorRenderbufferFormats.push('rgba32f')
   }
 
-  var depthRenderbufferFormatEnums = [GL_DEPTH_COMPONENT16]
-  var stencilRenderbufferFormatEnums = [GL_STENCIL_INDEX8]
-  var depthStencilRenderbufferFormatEnums = [GL_DEPTH_STENCIL]
-
-  var depthTextureFormatEnums = []
-  var stencilTextureFormatEnums = []
-  var depthStencilTextureFormatEnums = []
-
-  if (extensions.webgl_depth_texture) {
-    depthTextureFormatEnums.push(GL_DEPTH_COMPONENT)
-    depthStencilTextureFormatEnums.push(GL_DEPTH_STENCIL)
-  }
-
-  var colorFormats = extend(extend({},
-    colorTextureFormats),
-    colorRenderbufferFormats)
-
-  var colorTextureFormatEnums = values(colorTextureFormats)
-  var colorRenderbufferFormatEnums = values(colorRenderbufferFormats)
-
-  var highestPrecision = GL_UNSIGNED_BYTE
-  var colorTypes = {
-    'uint8': GL_UNSIGNED_BYTE
-  }
+  var colorTypes = ['uint8']
   if (extensions.oes_texture_half_float) {
-    highestPrecision = colorTypes['half float'] = GL_HALF_FLOAT_OES
+    colorTypes.push('half float')
   }
   if (extensions.oes_texture_float) {
-    highestPrecision = colorTypes.float = GL_FLOAT
+    colorTypes.push('float')
   }
-  colorTypes.best = highestPrecision
 
-  var DRAW_BUFFERS = (function () {
-    var result = new Array(limits.maxDrawbuffers)
-    for (var i = 0; i <= limits.maxDrawbuffers; ++i) {
-      var row = result[i] = new Array(i)
-      for (var j = 0; j < i; ++j) {
-        row[j] = GL_COLOR_ATTACHMENT0 + j
-      }
-    }
-    return result
-  })()
-
-  function FramebufferAttachment (target, level, texture, renderbuffer) {
+  function FramebufferAttachment (target, texture, renderbuffer) {
     this.target = target
-    this.level = level
     this.texture = texture
     this.renderbuffer = renderbuffer
+
+    var w = 0
+    var h = 0
+    if (texture) {
+      w = texture.width
+      h = texture.height
+    } else if (renderbuffer) {
+      w = renderbuffer.width
+      h = renderbuffer.height
+    }
+    this.width = w
+    this.height = h
   }
 
   function decRef (attachment) {
@@ -3580,28 +3674,21 @@ module.exports = function wrapFBOState (
     }
   }
 
-  function incRefAndCheckShape (attachment, framebuffer) {
-    var width = framebuffer.width
-    var height = framebuffer.height
+  function incRefAndCheckShape (attachment, width, height) {
+    if (!attachment) {
+      return
+    }
     if (attachment.texture) {
       var texture = attachment.texture._texture
-      var tw = Math.max(1, texture.params.width >> attachment.level)
-      var th = Math.max(1, texture.params.height >> attachment.level)
-      width = width || tw
-      height = height || th
-      
+      var tw = Math.max(1, texture.width)
+      var th = Math.max(1, texture.height)
       
       texture.refCount += 1
     } else {
       var renderbuffer = attachment.renderbuffer._renderbuffer
-      width = width || renderbuffer.width
-      height = height || renderbuffer.height
-      
       
       renderbuffer.refCount += 1
     }
-    framebuffer.width = width
-    framebuffer.height = height
   }
 
   function attach (location, attachment) {
@@ -3612,7 +3699,7 @@ module.exports = function wrapFBOState (
           location,
           attachment.target,
           attachment.texture._texture.texture,
-          attachment.level)
+          0)
       } else {
         gl.framebufferRenderbuffer(
           GL_FRAMEBUFFER,
@@ -3630,82 +3717,76 @@ module.exports = function wrapFBOState (
     }
   }
 
-  function tryUpdateAttachment (
-    attachment,
-    isTexture,
-    format,
-    type,
-    width,
-    height) {
-    if (attachment.texture) {
-      var texture = attachment.texture
-      if (isTexture) {
-        texture({
-          format: format,
-          type: type,
-          width: width,
-          height: height
-        })
-        texture._texture.refCount += 1
-        return true
-      }
-    } else {
-      var renderbuffer = attachment.renderbuffer
-      if (!isTexture) {
-        renderbuffer({
-          format: format,
-          width: width,
-          height: height
-        })
-        renderbuffer._renderbuffer.refCount += 1
-        return true
-      }
-    }
-    decRef(attachment)
-    return false
-  }
-
   function parseAttachment (attachment) {
     var target = GL_TEXTURE_2D
-    var level = 0
     var texture = null
     var renderbuffer = null
 
     var data = attachment
     if (typeof attachment === 'object') {
       data = attachment.data
-      if ('level' in attachment) {
-        level = attachment.level | 0
-      }
       if ('target' in attachment) {
-        target = attachment.target | 0
+//        target = attachment.target | 0
       }
     }
 
     
 
-    var type = attachment._reglType
-    if (type === 'texture') {
-      texture = attachment
-      if (texture._texture.target === GL_TEXTURE_CUBE_MAP) {
-        
-      } else {
-        
-      }
-      // TODO check miplevel is consistent
+    var type = data._reglType
+    if (type === 'texture2d') {
+      texture = data
+      
+    } else if (type === 'textureCube') {
+      texture = data
+      
     } else if (type === 'renderbuffer') {
-      renderbuffer = attachment
+      renderbuffer = data
       target = GL_RENDERBUFFER
-      level = 0
     } else {
       
     }
 
-    return new FramebufferAttachment(target, level, texture, renderbuffer)
+    return new FramebufferAttachment(target, texture, renderbuffer)
+  }
+
+  function allocAttachment (
+    width,
+    height,
+    isTexture,
+    format,
+    type) {
+    if (isTexture) {
+      var texture = textureState.create2D({
+        width: width,
+        height: height,
+        format: format,
+        type: type
+      })
+      texture._texture.refCount = 0
+      return new FramebufferAttachment(GL_TEXTURE_2D, texture, null)
+    } else {
+      var rb = renderbufferState.create({
+        width: width,
+        height: height,
+        format: format
+      })
+      rb._renderbuffer.refCount = 0
+      return new FramebufferAttachment(GL_RENDERBUFFER, null, rb)
+    }
   }
 
   function unwrapAttachment (attachment) {
     return attachment && (attachment.texture || attachment.renderbuffer)
+  }
+
+  function resizeAttachment (attachment, w, h) {
+    if (attachment) {
+      if (attachment.texture) {
+        attachment.texture.resize(w, h)
+      } else if (attachment.renderbuffer) {
+        attachment.renderbuffer.resize(w, h)
+      }
+    }
   }
 
   var framebufferCount = 0
@@ -3715,7 +3796,7 @@ module.exports = function wrapFBOState (
     this.id = framebufferCount++
     framebufferSet[this.id] = this
 
-    this.framebuffer = null
+    this.framebuffer = gl.createFramebuffer()
     this.width = 0
     this.height = 0
 
@@ -3723,39 +3804,6 @@ module.exports = function wrapFBOState (
     this.depthAttachment = null
     this.stencilAttachment = null
     this.depthStencilAttachment = null
-
-    this.ownsColor = false
-    this.ownsDepthStencil = false
-  }
-
-  function refresh (framebuffer) {
-    if (!gl.isFramebuffer(framebuffer.framebuffer)) {
-      framebuffer.framebuffer = gl.createFramebuffer()
-    }
-    framebufferState.dirty = true
-    gl.bindFramebuffer(GL_FRAMEBUFFER, framebuffer.framebuffer)
-
-    var colorAttachments = framebuffer.colorAttachments
-    for (var i = 0; i < colorAttachments.length; ++i) {
-      attach(GL_COLOR_ATTACHMENT0 + i, colorAttachments[i])
-    }
-    for (i = colorAttachments.length; i < limits.maxColorAttachments; ++i) {
-      attach(GL_COLOR_ATTACHMENT0 + i, null)
-    }
-    attach(GL_DEPTH_ATTACHMENT, framebuffer.depthAttachment)
-    attach(GL_STENCIL_ATTACHMENT, framebuffer.stencilAttachment)
-    attach(GL_DEPTH_STENCIL_ATTACHMENT, framebuffer.depthStencilAttachment)
-
-    if (extensions.webgl_draw_buffers) {
-      extensions.webgl_draw_buffers.drawBuffersWEBGL(
-        DRAW_BUFFERS[colorAttachments.length])
-    }
-
-    // Check status code
-    var status = gl.checkFramebufferStatus(GL_FRAMEBUFFER)
-    if (status !== GL_FRAMEBUFFER_COMPLETE) {
-      
-    }
   }
 
   function decFBORefs (framebuffer) {
@@ -3768,318 +3816,313 @@ module.exports = function wrapFBOState (
   function destroy (framebuffer) {
     var handle = framebuffer.framebuffer
     
-    if (gl.isFramebuffer(handle)) {
-      gl.deleteFramebuffer(handle)
-    }
+    gl.deleteFramebuffer(handle)
+    framebuffer.framebuffer = null
+    stats.framebufferCount--
+    delete framebufferSet[framebuffer.id]
   }
 
-  function createFBO (options) {
-    var framebuffer = new REGLFramebuffer()
+  function updateFramebuffer (framebuffer) {
+    var i
+    gl.bindFramebuffer(GL_FRAMEBUFFER, framebuffer.framebuffer)
+    var colorAttachments = framebuffer.colorAttachments
+    for (i = 0; i < colorAttachments.length; ++i) {
+      attach(GL_COLOR_ATTACHMENT0 + i, colorAttachments[i])
+    }
+    for (i = colorAttachments.length; i < limits.maxColorAttachments; ++i) {
+      attach(GL_COLOR_ATTACHMENT0 + i, null)
+    }
+    attach(GL_DEPTH_ATTACHMENT, framebuffer.depthAttachment)
+    attach(GL_STENCIL_ATTACHMENT, framebuffer.stencilAttachment)
+    attach(GL_DEPTH_STENCIL_ATTACHMENT, framebuffer.depthStencilAttachment)
 
-    function reglFramebuffer (input) {
+    // Check status code
+    var status = gl.checkFramebufferStatus(GL_FRAMEBUFFER)
+    if (status !== GL_FRAMEBUFFER_COMPLETE) {
+      
+    }
+
+    gl.bindFramebuffer(GL_FRAMEBUFFER, framebufferState.next)
+    framebufferState.current = framebufferState.next
+  }
+
+  function createFBO (a0, a1) {
+    var framebuffer = new REGLFramebuffer()
+    stats.framebufferCount++
+
+    function reglFramebuffer (a, b) {
       var i
-      var options = input || {}
+
+      
 
       var extDrawBuffers = extensions.webgl_draw_buffers
 
       var width = 0
       var height = 0
-      if ('shape' in options) {
-        var shape = options.shape
-        
-        width = shape[0]
-        height = shape[1]
+
+      var needsDepth = true
+      var needsStencil = true
+
+      var colorBuffer = null
+      var colorTexture = true
+      var colorFormat = 'rgba'
+      var colorType = 'uint8'
+      var colorCount = 1
+
+      var depthBuffer = null
+      var stencilBuffer = null
+      var depthStencilBuffer = null
+      var depthStencilTexture = false
+
+      if (typeof a === 'number') {
+        width = a | 0
+        height = (b | 0) || width
+      } else if (!a) {
+        width = height = 1
       } else {
-        if ('radius' in options) {
-          width = height = options.radius
+        
+        var options = a
+
+        if ('shape' in options) {
+          var shape = options.shape
+          
+          width = shape[0]
+          height = shape[1]
+        } else {
+          if ('radius' in options) {
+            width = height = options.radius
+          }
+          if ('width' in options) {
+            width = options.width
+          }
+          if ('height' in options) {
+            height = options.height
+          }
         }
-        if ('width' in options) {
-          width = options.width
+
+        if ('color' in options ||
+            'colors' in options) {
+          colorBuffer =
+            options.color ||
+            options.colors
+          if (Array.isArray(colorBuffer)) {
+            
+          }
         }
-        if ('height' in options) {
-          height = options.height
+
+        if (!colorBuffer) {
+          if ('colorCount' in options) {
+            colorCount = options.colorCount | 0
+            
+          }
+
+          if ('colorTexture' in options) {
+            colorTexture = !!options.colorTexture
+            colorFormat = 'rgba4'
+          }
+
+          if ('colorType' in options) {
+            
+            colorType = options.colorType
+            if (!colorTexture) {
+              if (colorType === 'half float') {
+                if (extensions.ext_color_buffer_half_float) {
+                  colorFormat = 'rgba16f'
+                }
+              } else if (colorType === 'float') {
+                if (extensions.webgl_color_buffer_float) {
+                  colorFormat = 'rgba32f'
+                }
+              }
+            }
+          }
+
+          if ('colorFormat' in options) {
+            colorFormat = options.colorFormat
+            if (colorTextureFormats.indexOf(colorFormat) >= 0) {
+              colorTexture = true
+            } else if (colorRenderbufferFormats.indexOf(colorFormat) >= 0) {
+              colorTexture = false
+            } else {
+              if (colorTexture) {
+                
+              } else {
+                
+              }
+            }
+          }
+        }
+
+        if ('depthTexture' in options || 'depthStencilTexture' in options) {
+          depthStencilTexture = !!(options.depthTexture ||
+            options.depthStencilTexture)
+          
+        }
+
+        if ('depth' in options) {
+          if (typeof options.depth === 'boolean') {
+            needsDepth = options.depth
+          } else {
+            depthBuffer = options.depth
+            needsStencil = false
+          }
+        }
+
+        if ('stencil' in options) {
+          if (typeof options.stencil === 'boolean') {
+            needsStencil = options.stencil
+          } else {
+            stencilBuffer = options.stencil
+            needsDepth = false
+          }
+        }
+
+        if ('depthStencil' in options) {
+          if (typeof options.depthStencil === 'boolean') {
+            needsDepth = needsStencil = options.depthStencil
+          } else {
+            depthStencilBuffer = options.depthStencil
+            needsDepth = false
+            needsStencil = false
+          }
         }
       }
 
-      // colorType, numColors
-      var colorBuffers = null
-      var ownsColor = false
-      if ('colorBuffers' in options || 'colorBuffer' in options) {
-        var colorInputs = options.colorBuffers || options.colorBuffer
-        if (!Array.isArray(colorInputs)) {
-          colorInputs = [colorInputs]
-        }
+      // parse attachments
+      var colorAttachments = null
+      var depthAttachment = null
+      var stencilAttachment = null
+      var depthStencilAttachment = null
 
-        framebuffer.width = width
-        framebuffer.height = height
-
-        if (colorInputs.length > 1) {
-          
-        }
-        
-
-        // Wrap color attachments
-        colorBuffers = colorInputs.map(parseAttachment)
-
-        // Check head node
-        for (i = 0; i < colorBuffers.length; ++i) {
-          var colorAttachment = colorBuffers[i]
-          
-          incRefAndCheckShape(
-            colorAttachment,
-            framebuffer)
-        }
-
-        width = framebuffer.width
-        height = framebuffer.height
+      // Set up color attachments
+      if (Array.isArray(colorBuffer)) {
+        colorAttachments = colorBuffer.map(parseAttachment)
+      } else if (colorBuffer) {
+        colorAttachments = [parseAttachment(colorBuffer)]
       } else {
-        var colorTexture = true
-        var colorFormat = 'rgba'
-        var colorType = 'uint8'
-        var colorCount = 1
-        ownsColor = true
-
-        framebuffer.width = width = width || gl.drawingBufferWidth
-        framebuffer.height = height = height || gl.drawingBufferHeight
-
-        if ('format' in options) {
-          colorFormat = options.format
-          
-          colorTexture = colorFormat in colorTextureFormats
-        }
-
-        if ('type' in options) {
-          
-          colorType = options.type
-          
-        }
-
-        if ('colorCount' in options) {
-          colorCount = options.colorCount | 0
-          
-        }
-
-        // Reuse color buffer array if we own it
-        if (framebuffer.ownsColor) {
-          colorBuffers = framebuffer.colorAttachments
-          while (colorBuffers.length > colorCount) {
-            decRef(colorBuffers.pop())
-          }
-        } else {
-          colorBuffers = []
-        }
-
-        // update buffers in place, remove incompatible buffers
-        for (i = 0; i < colorBuffers.length; ++i) {
-          if (!tryUpdateAttachment(
-              colorBuffers[i],
-              colorTexture,
-              colorFormat,
-              colorType,
-              width,
-              height)) {
-            colorBuffers[i--] = colorBuffers[colorBuffers.length - 1]
-            colorBuffers.pop()
-          }
-        }
-
-        // Then append new buffers
-        while (colorBuffers.length < colorCount) {
-          if (colorTexture) {
-            colorBuffers.push(new FramebufferAttachment(
-              GL_TEXTURE_2D,
-              0,
-              textureState.create2D({
-                format: colorFormat,
-                type: colorType,
-                width: width,
-                height: height
-              }, GL_TEXTURE_2D),
-              null))
-          } else {
-            colorBuffers.push(new FramebufferAttachment(
-              GL_RENDERBUFFER,
-              0,
-              null,
-              renderbufferState.create({
-                format: colorFormat,
-                width: width,
-                height: height
-              })))
-          }
+        colorAttachments = new Array(colorCount)
+        for (i = 0; i < colorCount; ++i) {
+          colorAttachments[i] = allocAttachment(
+            width,
+            height,
+            colorTexture,
+            colorFormat,
+            colorType)
         }
       }
 
       
 
+      width = width || colorAttachments[0].width
+      height = height || colorAttachments[0].height
+
+      if (depthBuffer) {
+        depthAttachment = parseAttachment(depthBuffer)
+      } else if (needsDepth && !needsStencil) {
+        depthAttachment = allocAttachment(
+          width,
+          height,
+          depthStencilTexture,
+          'depth',
+          'uint32')
+      }
+
+      if (stencilBuffer) {
+        stencilAttachment = parseAttachment(stencilBuffer)
+      } else if (needsStencil && !needsDepth) {
+        stencilAttachment = allocAttachment(
+          width,
+          height,
+          false,
+          'stencil',
+          'uint8')
+      }
+
+      if (depthStencilBuffer) {
+        depthStencilAttachment = parseAttachment(depthStencilBuffer)
+      } else if (!depthBuffer && !stencilBuffer && needsStencil && needsDepth) {
+        depthStencilAttachment = allocAttachment(
+          width,
+          height,
+          depthStencilTexture,
+          'depth stencil',
+          'depth stencil')
+      }
+
+      
+
+      for (i = 0; i < colorAttachments.length; ++i) {
+        incRefAndCheckShape(colorAttachments[i], width, height)
+        
+      }
+      incRefAndCheckShape(depthAttachment, width, height)
+      
+      incRefAndCheckShape(stencilAttachment, width, height)
+      
+      incRefAndCheckShape(depthStencilAttachment, width, height)
+      
+
+      // decrement references
+      decFBORefs(framebuffer)
+
       framebuffer.width = width
       framebuffer.height = height
 
-      var depthBuffer = null
-      var stencilBuffer = null
-      var depthStencilBuffer = null
-      var ownsDepthStencil = false
-      var depthStencilCount = 0
+      framebuffer.colorAttachments = colorAttachments
+      framebuffer.depthAttachment = depthAttachment
+      framebuffer.stencilAttachment = stencilAttachment
+      framebuffer.depthStencilAttachment = depthStencilAttachment
 
-      if ('depthBuffer' in options) {
-        depthBuffer = parseAttachment(options.depthBuffer)
-        
-        depthStencilCount += 1
-      }
-      if ('stencilBuffer' in options) {
-        stencilBuffer = parseAttachment(options.stencilBuffer)
-        
-        depthStencilCount += 1
-      }
-      if ('depthStencilBuffer' in options) {
-        depthStencilBuffer = parseAttachment(options.depthStencilBuffer)
-        
-        depthStencilCount += 1
-      }
-
-      if (!(depthBuffer || stencilBuffer || depthStencilBuffer)) {
-        var depth = true
-        var stencil = false
-        var useTexture = false
-
-        if ('depth' in options) {
-          depth = !!options.depth
-        }
-        if ('stencil' in options) {
-          stencil = !!options.stencil
-        }
-        if ('depthTexture' in options) {
-          useTexture = !!options.depthTexture
-        }
-
-        var curDepthStencil =
-          framebuffer.depthAttachment ||
-          framebuffer.stencilAttachment ||
-          framebuffer.depthStencilAttachment
-        var nextDepthStencil = null
-
-        if (depth || stencil) {
-          ownsDepthStencil = true
-
-          if (useTexture) {
-            
-            var depthTextureFormat
-            
-            if (stencil) {
-              depthTextureFormat = 'depth stencil'
-            } else {
-              depthTextureFormat = 'depth'
-            }
-            if (framebuffer.ownsDepthStencil && curDepthStencil.texture) {
-              curDepthStencil.texture({
-                format: depthTextureFormat,
-                width: width,
-                height: height
-              })
-              curDepthStencil.texture._texture.refCount += 1
-              nextDepthStencil = curDepthStencil
-            } else {
-              nextDepthStencil = new FramebufferAttachment(
-                GL_TEXTURE_2D,
-                0,
-                textureState.create({
-                  format: depthTextureFormat,
-                  width: width,
-                  height: height
-                }, GL_TEXTURE_2D),
-                null)
-            }
-          } else {
-            var depthRenderbufferFormat
-            if (depth) {
-              if (stencil) {
-                depthRenderbufferFormat = 'depth stencil'
-              } else {
-                depthRenderbufferFormat = 'depth'
-              }
-            } else {
-              depthRenderbufferFormat = 'stencil'
-            }
-            if (framebuffer.ownsDepthStencil && curDepthStencil.renderbuffer) {
-              curDepthStencil.renderbuffer({
-                format: depthRenderbufferFormat,
-                width: width,
-                height: height
-              })
-              curDepthStencil.renderbuffer._renderbuffer.refCount += 1
-              nextDepthStencil = curDepthStencil
-            } else {
-              nextDepthStencil = new FramebufferAttachment(
-                GL_RENDERBUFFER,
-                0,
-                null,
-                renderbufferState.create({
-                  format: depthRenderbufferFormat,
-                  width: width,
-                  height: height
-                }))
-            }
-          }
-
-          if (depth) {
-            if (stencil) {
-              depthStencilBuffer = nextDepthStencil
-            } else {
-              depthBuffer = nextDepthStencil
-            }
-          } else {
-            stencilBuffer = nextDepthStencil
-          }
-        }
-      } else {
-        
-
-        incRefAndCheckShape(
-          depthBuffer ||
-          stencilBuffer ||
-          depthStencilBuffer,
-          framebuffer)
-      }
-
-      decFBORefs(framebuffer)
-
-      framebuffer.colorAttachments = colorBuffers
-      framebuffer.depthAttachment = depthBuffer
-      framebuffer.stencilAttachment = stencilBuffer
-      framebuffer.depthStencilAttachment = depthStencilBuffer
-      framebuffer.ownsColor = ownsColor
-      framebuffer.ownsDepthStencil = ownsDepthStencil
-
-      reglFramebuffer.color = colorBuffers.map(unwrapAttachment)
-      reglFramebuffer.depth = unwrapAttachment(depthBuffer)
-      reglFramebuffer.stencil = unwrapAttachment(stencilBuffer)
-      reglFramebuffer.depthStencil = unwrapAttachment(depthStencilBuffer)
-
-      refresh(framebuffer)
+      reglFramebuffer.color = colorAttachments.map(unwrapAttachment)
+      reglFramebuffer.depth = unwrapAttachment(depthAttachment)
+      reglFramebuffer.stencil = unwrapAttachment(stencilAttachment)
+      reglFramebuffer.depthStencil = unwrapAttachment(depthStencilAttachment)
 
       reglFramebuffer.width = framebuffer.width
       reglFramebuffer.height = framebuffer.height
 
+      updateFramebuffer(framebuffer)
+
       return reglFramebuffer
     }
 
-    reglFramebuffer(options)
+    function resize (w_, h_) {
+      
 
+      var w = w_ | 0
+      var h = (h_ | 0) || w
+      if (w === framebuffer.width && h === framebuffer.height) {
+        return reglFramebuffer
+      }
+
+      // resize all buffers
+      var colorAttachments = framebuffer.colorAttachments
+      for (var i = 0; i < colorAttachments.length; ++i) {
+        resizeAttachment(colorAttachments[i], w, h)
+      }
+      resizeAttachment(framebuffer.depthAttachment, w, h)
+      resizeAttachment(framebuffer.stencilAttachment, w, h)
+      resizeAttachment(framebuffer.depthStencilAttachment, w, h)
+
+      framebuffer.width = reglFramebuffer.width = w
+      framebuffer.height = reglFramebuffer.height = h
+
+      updateFramebuffer(framebuffer)
+
+      return reglFramebuffer
+    }
+
+    reglFramebuffer(a0, a1)
+
+    reglFramebuffer.resize = resize
     reglFramebuffer._reglType = 'framebuffer'
     reglFramebuffer._framebuffer = framebuffer
-    reglFramebuffer._destroy = function () {
+    reglFramebuffer.destroy = function () {
       destroy(framebuffer)
+      decFBORefs(framebuffer)
     }
 
     return reglFramebuffer
-  }
-
-  function refreshCache () {
-    values(framebufferSet).forEach(refresh)
-  }
-
-  function clearCache () {
-    values(framebufferSet).forEach(destroy)
   }
 
   return extend(framebufferState, {
@@ -4093,12 +4136,13 @@ module.exports = function wrapFBOState (
       return null
     },
     create: createFBO,
-    clear: clearCache,
-    refresh: refreshCache
+    clear: function () {
+      values(framebufferSet).forEach(destroy)
+    }
   })
 }
 
-},{"./util/extend":20,"./util/values":27}],12:[function(require,module,exports){
+},{"./util/extend":22,"./util/values":30}],12:[function(require,module,exports){
 var GL_SUBPIXEL_BITS = 0x0D50
 var GL_RED_BITS = 0x0D52
 var GL_GREEN_BITS = 0x0D53
@@ -4202,36 +4246,39 @@ var GL_PACK_ALIGNMENT = 0x0D05
 
 module.exports = function wrapReadPixels (gl, reglPoll, context) {
   function readPixels (input) {
-    var options = input || {}
+    // TODO check framebuffer state supports read
+    var x = 0
+    var y = 0
+    var width = context.framebufferWidth
+    var height = context.framebufferHeight
+    var data = null
+
     if (isTypedArray(input)) {
-      options = {
-        data: options
-      }
+      data = input
     } else if (arguments.length === 2) {
-      options = {
-        width: arguments[0] | 0,
-        height: arguments[1] | 0
-      }
-    } else if (typeof input !== 'object') {
-      options = {}
+      width = arguments[0] | 0
+      height = arguments[1] | 0
+    } else if (input) {
+      
+      x = input.x | 0
+      y = input.y | 0
+      width = input.width || context.framebufferWidth
+      height = input.height || context.framebufferHeight
+      data = input.data || null
     }
 
     // Update WebGL state
     reglPoll()
 
-    // Read viewport state
-    var x = options.x || 0
-    var y = options.y || 0
-    var width = options.width || context.viewportWidth
-    var height = options.height || context.viewportHeight
-
-    // TODO handle color buffer float
+    // TODO:
+    //  float color buffers
+    //  implementation specific formats
 
     // Compute size
     var size = width * height * 4
 
     // Allocate data
-    var data = options.data || new Uint8Array(size)
+    data = data || new Uint8Array(size)
 
     // Type check
     
@@ -4247,7 +4294,7 @@ module.exports = function wrapReadPixels (gl, reglPoll, context) {
   return readPixels
 }
 
-},{"./util/is-typed-array":22}],14:[function(require,module,exports){
+},{"./util/is-typed-array":25}],14:[function(require,module,exports){
 
 var values = require('./util/values')
 
@@ -4267,7 +4314,7 @@ var GL_RGBA32F_EXT = 0x8814
 var GL_RGBA16F_EXT = 0x881A
 var GL_RGB16F_EXT = 0x881B
 
-module.exports = function (gl, extensions, limits) {
+module.exports = function (gl, extensions, limits, stats) {
   var formatTypes = {
     'rgba4': GL_RGBA4,
     'rgb565': GL_RGB565,
@@ -4293,11 +4340,11 @@ module.exports = function (gl, extensions, limits) {
   var renderbufferCount = 0
   var renderbufferSet = {}
 
-  function REGLRenderbuffer () {
+  function REGLRenderbuffer (renderbuffer) {
     this.id = renderbufferCount++
     this.refCount = 1
 
-    this.renderbuffer = null
+    this.renderbuffer = renderbuffer
 
     this.format = GL_RGBA4
     this.width = 0
@@ -4305,79 +4352,109 @@ module.exports = function (gl, extensions, limits) {
   }
 
   REGLRenderbuffer.prototype.decRef = function () {
-    if (--this.refCount === 0) {
+    if (--this.refCount <= 0) {
       destroy(this)
     }
-  }
-
-  function refresh (rb) {
-    if (!gl.isRenderbuffer(rb.renderbuffer)) {
-      rb.renderbuffer = gl.createRenderbuffer()
-    }
-    gl.bindRenderbuffer(GL_RENDERBUFFER, rb.renderbuffer)
-    gl.renderbufferStorage(
-      GL_RENDERBUFFER,
-      rb.format,
-      rb.width,
-      rb.height)
   }
 
   function destroy (rb) {
     var handle = rb.renderbuffer
     
     gl.bindRenderbuffer(GL_RENDERBUFFER, null)
-    if (gl.isRenderbuffer(handle)) {
-      gl.deleteRenderbuffer(handle)
-    }
+    gl.deleteRenderbuffer(handle)
     rb.renderbuffer = null
     rb.refCount = 0
     delete renderbufferSet[rb.id]
+    stats.renderbufferCount--
   }
 
-  function createRenderbuffer (input) {
-    var renderbuffer = new REGLRenderbuffer()
+  function createRenderbuffer (a, b) {
+    var renderbuffer = new REGLRenderbuffer(gl.createRenderbuffer())
     renderbufferSet[renderbuffer.id] = renderbuffer
+    stats.renderbufferCount++
 
-    function reglRenderbuffer (input) {
-      var options = input || {}
-
+    function reglRenderbuffer (a, b) {
       var w = 0
       var h = 0
-      if ('shape' in options) {
-        var shape = options.shape
-        
-        w = shape[0] | 0
-        h = shape[1] | 0
+      var format = GL_RGBA4
+
+      if (typeof a === 'object' && a) {
+        var options = a
+        if ('shape' in options) {
+          var shape = options.shape
+          
+          w = shape[0] | 0
+          h = shape[1] | 0
+        } else {
+          if ('radius' in options) {
+            w = h = options.radius | 0
+          }
+          if ('width' in options) {
+            w = options.width | 0
+          }
+          if ('height' in options) {
+            h = options.height | 0
+          }
+        }
+        if ('format' in options) {
+          
+          format = formatTypes[options.format]
+        }
+      } else if (typeof a === 'number') {
+        w = a | 0
+        if (typeof b === 'number') {
+          h = b | 0
+        } else {
+          h = w
+        }
+      } else if (!a) {
+        w = h = 1
       } else {
-        if ('radius' in options) {
-          w = h = options.radius | 0
-        }
-        if ('width' in options) {
-          w = options.width | 0
-        }
-        if ('height' in options) {
-          h = options.height | 0
-        }
-      }
-      var s = limits.maxRenderbufferSize
-      
-      reglRenderbuffer.width = renderbuffer.width = Math.max(w, 1)
-      reglRenderbuffer.height = renderbuffer.height = Math.max(h, 1)
-
-      renderbuffer.format = GL_RGBA4
-      if ('format' in options) {
-        var format = options.format
         
-        renderbuffer.format = formatTypes[format]
       }
 
-      refresh(renderbuffer)
+      // check shape
+      
+
+      if (w === renderbuffer.width &&
+          h === renderbuffer.height &&
+          format === renderbuffer.format) {
+        return
+      }
+
+      reglRenderbuffer.width = renderbuffer.width = w
+      reglRenderbuffer.height = renderbuffer.height = h
+      renderbuffer.format = format
+
+      gl.bindRenderbuffer(GL_RENDERBUFFER, renderbuffer.renderbuffer)
+      gl.renderbufferStorage(GL_RENDERBUFFER, format, w, h)
 
       return reglRenderbuffer
     }
 
-    reglRenderbuffer(input)
+    function resize (w_, h_) {
+      var w = w_ | 0
+      var h = (h_ | 0) || w
 
+      if (w === renderbuffer.width && h === renderbuffer.height) {
+        return reglRenderbuffer
+      }
+
+      // check shape
+      
+
+      reglRenderbuffer.width = renderbuffer.width = w
+      reglRenderbuffer.height = renderbuffer.height = h
+
+      gl.bindRenderbuffer(GL_RENDERBUFFER, renderbuffer.renderbuffer)
+      gl.renderbufferStorage(GL_RENDERBUFFER, renderbuffer.format, w, h)
+
+      return reglRenderbuffer
+    }
+
+    reglRenderbuffer(a, b)
+
+    reglRenderbuffer.resize = resize
     reglRenderbuffer._reglType = 'renderbuffer'
     reglRenderbuffer._renderbuffer = renderbuffer
     reglRenderbuffer.destroy = function () {
@@ -4387,22 +4464,15 @@ module.exports = function (gl, extensions, limits) {
     return reglRenderbuffer
   }
 
-  function refreshRenderbuffers () {
-    values(renderbufferSet).forEach(refresh)
-  }
-
-  function destroyRenderbuffers () {
-    values(renderbufferSet).forEach(destroy)
-  }
-
   return {
     create: createRenderbuffer,
-    refresh: refreshRenderbuffers,
-    clear: destroyRenderbuffers
+    clear: function () {
+      values(renderbufferSet).forEach(destroy)
+    }
   }
 }
 
-},{"./util/values":27}],15:[function(require,module,exports){
+},{"./util/values":30}],15:[function(require,module,exports){
 
 var values = require('./util/values')
 
@@ -4412,7 +4482,7 @@ var GL_VERTEX_SHADER = 35633
 var GL_ACTIVE_UNIFORMS = 0x8B86
 var GL_ACTIVE_ATTRIBUTES = 0x8B89
 
-module.exports = function wrapShaderState (gl, stringStore) {
+module.exports = function wrapShaderState (gl, stringStore, stats) {
   // ===================================================
   // glsl compilation and linking
   // ===================================================
@@ -4541,17 +4611,15 @@ module.exports = function wrapShaderState (gl, stringStore) {
       })
       programList.length = 0
       programCache = {}
-    },
 
-    refresh: function () {
-      fragShaders = {}
-      vertShaders = {}
-      programList.forEach(linkProgram)
+      stats.shaderCount = 0
     },
 
     program: function (vertId, fragId, command) {
       
       
+
+      stats.shaderCount++
 
       var cache = programCache[fragId]
       if (!cache) {
@@ -4574,7 +4642,21 @@ module.exports = function wrapShaderState (gl, stringStore) {
   }
 }
 
-},{"./util/values":27}],16:[function(require,module,exports){
+},{"./util/values":30}],16:[function(require,module,exports){
+
+module.exports = function stats () {
+  return {
+    bufferCount: 0,
+    elementsCount: 0,
+    framebufferCount: 0,
+    shaderCount: 0,
+    textureCount: 0,
+    cubeCount: 0,
+    renderbufferCount: 0
+  }
+}
+
+},{}],17:[function(require,module,exports){
 module.exports = function createStringStore () {
   var stringIds = {'': 0}
   var stringValues = ['']
@@ -4595,7 +4677,7 @@ module.exports = function createStringStore () {
   }
 }
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 
 var extend = require('./util/extend')
 var values = require('./util/values')
@@ -4603,6 +4685,7 @@ var isTypedArray = require('./util/is-typed-array')
 var isNDArrayLike = require('./util/is-ndarray')
 var pool = require('./util/pool')
 var convertToHalfFloat = require('./util/to-half-float')
+var isArrayLike = require('./util/is-array-like')
 
 var dtypes = require('./constants/arraytypes.json')
 var arrayTypes = require('./constants/arraytypes.json')
@@ -4748,17 +4831,9 @@ function isRectArray (arr) {
   if (!Array.isArray(arr)) {
     return false
   }
-
   var width = arr.length
-  if (width === 0 || !Array.isArray(arr[0])) {
+  if (width === 0 || !isArrayLike(arr[0])) {
     return false
-  }
-
-  var height = arr[0].length
-  for (var i = 1; i < width; ++i) {
-    if (!Array.isArray(arr[i]) || arr[i].length !== height) {
-      return false
-    }
   }
   return true
 }
@@ -4893,7 +4968,7 @@ function flatten3DData (image, array, w, h, c) {
 }
 
 module.exports = function createTextureSet (
-  gl, extensions, limits, reglPoll, contextState) {
+  gl, extensions, limits, reglPoll, contextState, stats) {
   // -------------------------------------------------------
   // Initialize constants and parameter tables here
   // -------------------------------------------------------
@@ -5284,7 +5359,7 @@ module.exports = function createTextureSet (
       var w = data[0].length
       var h = data.length
       var c = 1
-      if (Array.isArray(data[0][0])) {
+      if (isArrayLike(data[0][0])) {
         c = data[0][0].length
         flatten3DData(image, data, w, h, c)
       } else {
@@ -5395,6 +5470,7 @@ module.exports = function createTextureSet (
     var imgData = null
     if (isPixelData(options)) {
       imgData = mipmap.images[0] = allocImage()
+      copyFlags(imgData, mipmap)
       parseImage(imgData, options)
       mipmap.mipmask = 1
     } else {
@@ -5586,6 +5662,7 @@ module.exports = function createTextureSet (
   function REGLTexture (target) {
     TexFlags.call(this)
     this.mipmask = 0
+    this.internalformat = GL_RGBA
 
     this.id = textureCount++
 
@@ -5628,6 +5705,7 @@ module.exports = function createTextureSet (
     texture.pixels = null
     texture.refCount = 0
     delete textureSet[texture.id]
+    stats.textureCount--
   }
 
   extend(REGLTexture.prototype, {
@@ -5663,7 +5741,7 @@ module.exports = function createTextureSet (
     },
 
     decRef: function () {
-      if (--this.refCount === 0) {
+      if (--this.refCount <= 0) {
         destroy(this)
       }
     }
@@ -5672,6 +5750,7 @@ module.exports = function createTextureSet (
   function createTexture2D (a, b) {
     var texture = new REGLTexture(GL_TEXTURE_2D)
     textureSet[texture.id] = texture
+    stats.textureCount++
 
     function reglTexture2D (a, b) {
       var texInfo = allocInfo()
@@ -5700,6 +5779,7 @@ module.exports = function createTextureSet (
       copyFlags(texture, mipData)
 
       
+      texture.internalformat = mipData.internalformat
 
       reglTexture2D.width = mipData.width
       reglTexture2D.height = mipData.height
@@ -5744,9 +5824,36 @@ module.exports = function createTextureSet (
       return reglTexture2D
     }
 
+    function resize (w_, h_) {
+      var w = w_ | 0
+      var h = (h_ | 0) || w
+      if (w === texture.width && h === texture.height) {
+        return reglTexture2D
+      }
+
+      reglTexture2D.width = texture.width = w
+      reglTexture2D.height = texture.height = h
+
+      tempBind(texture)
+      gl.texImage2D(
+        GL_TEXTURE_2D,
+        0,
+        texture.format,
+        w,
+        h,
+        0,
+        texture.format,
+        texture.type,
+        null)
+      tempRestore()
+
+      return reglTexture2D
+    }
+
     reglTexture2D(a, b)
 
     reglTexture2D.subimage = subimage
+    reglTexture2D.resize = resize
     reglTexture2D._reglType = 'texture2d'
     reglTexture2D._texture = texture
     reglTexture2D.destroy = function () {
@@ -5759,6 +5866,7 @@ module.exports = function createTextureSet (
   function createTextureCube (a0, a1, a2, a3, a4, a5) {
     var texture = new REGLTexture(GL_TEXTURE_CUBE_MAP)
     textureSet[texture.id] = texture
+    stats.cubeCount++
 
     var faces = new Array(6)
 
@@ -5811,6 +5919,7 @@ module.exports = function createTextureSet (
       }
 
       
+      texture.internalformat = faces[0].internalformat
 
       reglTextureCube.width = faces[0].width
       reglTextureCube.height = faces[0].height
@@ -5861,9 +5970,38 @@ module.exports = function createTextureSet (
       return reglTextureCube
     }
 
+    function resize (w_, h_) {
+      var w = w_ | 0
+      var h = (h_ | 0) || w
+      if (w === texture.width && h === texture.height) {
+        return reglTextureCube
+      }
+
+      reglTextureCube.width = texture.width = w
+      reglTextureCube.height = texture.height = h
+
+      tempBind(texture)
+      for (var i = 0; i < 6; ++i) {
+        gl.texImage2D(
+          GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+          0,
+          texture.format,
+          w,
+          h,
+          0,
+          texture.format,
+          texture.type,
+          null)
+      }
+      tempRestore()
+
+      return reglTextureCube
+    }
+
     reglTextureCube(a0, a1, a2, a3, a4, a5)
 
     reglTextureCube.subimage = subimage
+    reglTextureCube.resize = resize
     reglTextureCube._reglType = 'textureCube'
     reglTextureCube._texture = texture
     reglTextureCube.destroy = function () {
@@ -5881,6 +6019,9 @@ module.exports = function createTextureSet (
       textureUnits[i] = null
     }
     values(textureSet).forEach(destroy)
+
+    stats.cubeCount = 0
+    stats.textureCount = 0
   }
 
   return {
@@ -5893,14 +6034,141 @@ module.exports = function createTextureSet (
   }
 }
 
-},{"./constants/arraytypes.json":3,"./util/extend":20,"./util/is-ndarray":21,"./util/is-typed-array":22,"./util/pool":24,"./util/to-half-float":26,"./util/values":27}],18:[function(require,module,exports){
+},{"./constants/arraytypes.json":3,"./util/extend":22,"./util/is-array-like":23,"./util/is-ndarray":24,"./util/is-typed-array":25,"./util/pool":27,"./util/to-half-float":29,"./util/values":30}],19:[function(require,module,exports){
+
+module.exports = function (gl, extensions) {
+  var extTimer = extensions.ext_disjoint_timer_query
+
+  if (!extTimer) {
+    return null // the entire timer will just be null, if no extension.
+  }
+
+  var pendingQueries = []
+  var pendingStats = []
+
+  var activeStats
+  var activeQuery
+
+  // QUERY POOL BEGIN
+  var queryPool = []
+  function allocQuery () {
+    // TODO: we need to destroy the allocated queries somewhere.
+    return queryPool.pop() || extTimer.createQueryEXT()
+  }
+  function freeQuery (query) {
+    queryPool.push(query)
+  }
+  // QUERY POOL END
+
+  //
+  // Pending stats pool.
+  //
+  function PendingStats () {
+    this.startQueryIndex = -1
+    this.endQueryIndex = -1
+    this.stats = null
+  }
+  var pendingStatsPool = []
+  function allocPendingStats () {
+    return pendingStatsPool.pop() || new PendingStats()
+  }
+  function freePendingStats (pendingStats) {
+    pendingStatsPool.push(pendingStats)
+  }
+  // Pending stats pool end
+
+  function beginQuery (stats) {
+    activeStats = stats
+    activeQuery = allocQuery()
+
+    extTimer.beginQueryEXT(extTimer.TIME_ELAPSED_EXT, activeQuery)
+  }
+
+  function endQuery () {
+    extTimer.endQueryEXT(extTimer.TIME_ELAPSED_EXT)
+
+    var ps = allocPendingStats()
+    // for a non-scope query, the query only encompasses a single
+    // draw command, so start and end are identical.
+    ps.startQueryIndex = pendingQueries.length
+    ps.endQueryIndex = ps.startQueryIndex
+    ps.stats = activeStats
+
+    pendingStats.push(ps)
+    pendingQueries.push(activeQuery)
+  }
+
+  function pushScopeStats (start, end, stats) {
+    var ps = allocPendingStats()
+    ps.startQueryIndex = start
+    ps.endQueryIndex = end
+    ps.stats = stats
+
+    pendingStats.push(ps)
+  }
+
+  // we should call this at the beginning of the frame,
+  // in order to update gpuTime
+  function update () {
+    if (pendingQueries.length === 0) { // for first frame do nothing.
+      return
+    }
+
+    var queryResults = []
+    var i
+    var j
+
+    // from the pending queries, retrieve all the query results.
+    for (i = 0; i < pendingQueries.length; i++) {
+/*
+      if(false ===extTimer.getQueryObjectEXT(pendingQueries[i], extTimer.QUERY_RESULT_AVAILABLE_EXT)) {
+        console.log("QUERY RESULTS ARE NOT AVAILABE")
+      }*/
+
+      // here we retrive the results of the previous frame, and these results are pretty much always
+      // available at the current frame.
+      // sometimes, however, the results are not available. But then the result is simply 0, and that's no big deal.
+      queryResults[i] = (1.0 / (1000.0 * 1000.0)) * extTimer.getQueryObjectEXT(pendingQueries[i], extTimer.QUERY_RESULT_EXT)
+      freeQuery(pendingQueries[i])
+    }
+    pendingQueries = [] // drain queue.
+
+    // now add the results to all drawCommands.
+    for (i = 0; i < pendingStats.length; i++) {
+      var ps = pendingStats[i]
+      for (j = ps.startQueryIndex; j <= ps.endQueryIndex; j++) {
+        ps.stats.gpuTime += queryResults[j]
+      }
+      freePendingStats(ps)
+    }
+    pendingStats = [] // drain queue.
+  }
+
+  return {
+    beginQuery: beginQuery,
+    endQuery: endQuery,
+    update: update,
+    getNumPendingQueries: function () {
+      return pendingQueries.length
+    },
+    pushScopeStats: pushScopeStats,
+    clear: function () {
+      // make sure we destroy all queries.
+      for (var i = 0; i < queryPool.length; i++) {
+        extTimer.deleteQueryEXT(queryPool[i])
+      }
+    }
+  }
+}
+
+},{}],20:[function(require,module,exports){
 /* globals performance */
 module.exports =
   (typeof performance !== 'undefined' && performance.now)
   ? function () { return performance.now() }
   : function () { return +(new Date()) }
 
-},{}],19:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var extend = require('./extend')
 
 function slice (x) {
@@ -6067,6 +6335,7 @@ module.exports = function createEnvironment () {
       .replace(/}/g, '}\n')
       .replace(/{/g, '{\n')
     var proc = Function.apply(null, linkedNames.concat(src))
+//    console.log('src: ', src)
     return proc.apply(null, linkedValues)
   }
 
@@ -6081,7 +6350,7 @@ module.exports = function createEnvironment () {
   }
 }
 
-},{"./extend":20}],20:[function(require,module,exports){
+},{"./extend":22}],22:[function(require,module,exports){
 module.exports = function (base, opts) {
   var keys = Object.keys(opts)
   for (var i = 0; i < keys.length; ++i) {
@@ -6090,7 +6359,13 @@ module.exports = function (base, opts) {
   return base
 }
 
-},{}],21:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
+var isTypedArray = require('./is-typed-array')
+module.exports = function isArrayLike (s) {
+  return Array.isArray(s) || isTypedArray(s)
+}
+
+},{"./is-typed-array":25}],24:[function(require,module,exports){
 var isTypedArray = require('./is-typed-array')
 
 module.exports = function isNDArrayLike (obj) {
@@ -6105,13 +6380,13 @@ module.exports = function isNDArrayLike (obj) {
       isTypedArray(obj.data)))
 }
 
-},{"./is-typed-array":22}],22:[function(require,module,exports){
+},{"./is-typed-array":25}],25:[function(require,module,exports){
 var dtypes = require('../constants/arraytypes.json')
 module.exports = function (x) {
   return Object.prototype.toString.call(x) in dtypes
 }
 
-},{"../constants/arraytypes.json":3}],23:[function(require,module,exports){
+},{"../constants/arraytypes.json":3}],26:[function(require,module,exports){
 module.exports = function loop (n, f) {
   var result = Array(n)
   for (var i = 0; i < n; ++i) {
@@ -6120,7 +6395,7 @@ module.exports = function loop (n, f) {
   return result
 }
 
-},{}],24:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 var loop = require('./loop')
 
 var GL_BYTE = 5120
@@ -6214,7 +6489,7 @@ module.exports = {
   freeType: freeType
 }
 
-},{"./loop":23}],25:[function(require,module,exports){
+},{"./loop":26}],28:[function(require,module,exports){
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
     typeof cancelAnimationFrame === 'function') {
@@ -6231,7 +6506,7 @@ if (typeof requestAnimationFrame === 'function' &&
   }
 }
 
-},{}],26:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 var pool = require('./pool')
 
 var FLOAT = new Float32Array(1)
@@ -6277,12 +6552,12 @@ module.exports = function convertToHalfFloat (array) {
   return ushorts
 }
 
-},{"./pool":24}],27:[function(require,module,exports){
+},{"./pool":27}],30:[function(require,module,exports){
 module.exports = function (obj) {
   return Object.keys(obj).map(function (key) { return obj[key] })
 }
 
-},{}],28:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 // Context and canvas creation helper functions
 /*globals HTMLElement,WebGLRenderingContext*/
 
@@ -6404,7 +6679,7 @@ module.exports = function parseArgs (args) {
   }
 }
 
-},{"./util/extend":20}],29:[function(require,module,exports){
+},{"./util/extend":22}],32:[function(require,module,exports){
 
 var extend = require('./lib/util/extend')
 var dynamic = require('./lib/dynamic')
@@ -6423,6 +6698,8 @@ var wrapAttributes = require('./lib/attribute')
 var wrapShaders = require('./lib/shader')
 var wrapRead = require('./lib/read')
 var createCore = require('./lib/core')
+var createStats = require('./lib/stats')
+var createTimer = require('./lib/timer')
 
 var GL_COLOR_BUFFER_BIT = 16384
 var GL_DEPTH_BUFFER_BIT = 256
@@ -6443,18 +6720,18 @@ module.exports = function wrapREGL () {
   var options = args.options
 
   var stringStore = createStringStore()
+  var stats = createStats()
 
   var extensionState = wrapExtensions(gl)
   var extensions = extensionState.extensions
+  var timer = createTimer(gl, extensions)
 
   var START_TIME = clock()
-  var LAST_TIME = START_TIME
   var WIDTH = gl.drawingBufferWidth
   var HEIGHT = gl.drawingBufferHeight
 
   var contextState = {
-    count: 0,
-    deltaTime: 0,
+    tick: 0,
     time: 0,
     viewportWidth: WIDTH,
     viewportHeight: HEIGHT,
@@ -6474,28 +6751,30 @@ module.exports = function wrapREGL () {
   }
 
   var limits = wrapLimits(gl, extensions)
-  var bufferState = wrapBuffers(gl)
-  var elementState = wrapElements(gl, extensions, bufferState)
+  var bufferState = wrapBuffers(gl, stats)
+  var elementState = wrapElements(gl, extensions, bufferState, stats)
   var attributeState = wrapAttributes(
     gl,
     extensions,
     limits,
     bufferState,
     stringStore)
-  var shaderState = wrapShaders(gl, stringStore)
+  var shaderState = wrapShaders(gl, stringStore, stats)
   var textureState = wrapTextures(
     gl,
     extensions,
     limits,
     poll,
-    contextState)
-  var renderbufferState = wrapRenderbuffers(gl, extensions, limits)
+    contextState,
+    stats)
+  var renderbufferState = wrapRenderbuffers(gl, extensions, limits, stats)
   var framebufferState = wrapFramebuffers(
     gl,
     extensions,
     limits,
     textureState,
-    renderbufferState)
+    renderbufferState,
+    stats)
   var readPixels = wrapRead(gl, poll, contextState)
 
   var core = createCore(
@@ -6511,7 +6790,8 @@ module.exports = function wrapREGL () {
     attributeState,
     shaderState,
     drawState,
-    contextState)
+    contextState,
+    timer)
 
   var nextState = core.next
   var canvas = gl.canvas
@@ -6523,19 +6803,22 @@ module.exports = function wrapREGL () {
     activeRAF = raf.next(handleRAF)
 
     // increment frame count
-    contextState.count += 1
+    contextState.tick += 1
 
-    var now = clock()
-    contextState.deltaTime = (now - LAST_TIME) / 1000.0
-    contextState.time = (now - START_TIME) / 1000.0
-    LAST_TIME = now
+    // Update time
+    contextState.time = (clock() - START_TIME) / 1000.0
 
-    refresh()
+    // poll for changes
+    poll()
 
+    // fire a callback for all pending rafs
     for (var i = 0; i < rafCallbacks.length; ++i) {
       var cb = rafCallbacks[i]
       cb(contextState, null, 0)
     }
+
+    // flush all pending webgl calls
+    gl.flush()
   }
 
   function startRAF () {
@@ -6576,7 +6859,12 @@ module.exports = function wrapREGL () {
     framebufferState.clear()
     renderbufferState.clear()
     textureState.clear()
+    elementState.clear()
     bufferState.clear()
+
+    if (timer) {
+      timer.clear()
+    }
 
     if (options.onDestroy) {
       options.onDestroy()
@@ -6636,7 +6924,11 @@ module.exports = function wrapREGL () {
     var attributes = separateDynamic(options.attributes || {})
     var opts = separateDynamic(flattenNestedOptions(options))
 
-    var compiled = core.compile(opts, attributes, uniforms, context)
+    var stats = {
+      gpuTime: 0.0
+    }
+
+    var compiled = core.compile(opts, attributes, uniforms, context, stats)
 
     var draw = compiled.draw
     var batch = compiled.batch
@@ -6681,19 +6973,18 @@ module.exports = function wrapREGL () {
       }
     }
 
-    return REGLCommand
-  }
+    return extend(REGLCommand, {
+      stats: stats
+    })
 
-  function poll () {
-    core.procs.poll()
+//    return REGLCommand
   }
 
   function clear (options) {
     
 
     var clearFlags = 0
-
-    poll()
+    core.procs.poll()
 
     var c = options.color
     if (c) {
@@ -6738,23 +7029,30 @@ module.exports = function wrapREGL () {
     }
   }
 
-  function refresh () {
-    // reset viewport
+  // poll viewport
+  function pollViewport () {
     var viewport = nextState.viewport
     var scissorBox = nextState.scissor_box
     viewport[0] = viewport[1] = scissorBox[0] = scissorBox[1] = 0
-
     contextState.viewportWidth =
-      contextState.frameBufferWidth =
+      contextState.framebufferWidth =
       contextState.drawingBufferWidth =
       viewport[2] =
       scissorBox[2] = gl.drawingBufferWidth
     contextState.viewportHeight =
-      contextState.frameBufferWidth =
+      contextState.framebufferHeight =
       contextState.drawingBufferHeight =
       viewport[3] =
       scissorBox[3] = gl.drawingBufferHeight
+  }
 
+  function poll () {
+    pollViewport()
+    core.procs.poll()
+  }
+
+  function refresh () {
+    pollViewport()
     core.procs.refresh()
   }
 
@@ -6805,9 +7103,18 @@ module.exports = function wrapREGL () {
 
     // Direct GL state manipulation
     _gl: gl,
-    _refresh: refresh
+    _refresh: refresh,
+
+    // regl Statistics Information
+    stats: stats,
+
+    updateTimer: function () {
+      if (timer) {
+        timer.update()
+      }
+    }
   })
 }
 
-},{"./lib/attribute":1,"./lib/buffer":2,"./lib/core":7,"./lib/dynamic":8,"./lib/elements":9,"./lib/extension":10,"./lib/framebuffer":11,"./lib/limits":12,"./lib/read":13,"./lib/renderbuffer":14,"./lib/shader":15,"./lib/strings":16,"./lib/texture":17,"./lib/util/clock":18,"./lib/util/extend":20,"./lib/util/raf":25,"./lib/webgl":28}]},{},[29])(29)
+},{"./lib/attribute":1,"./lib/buffer":2,"./lib/core":7,"./lib/dynamic":8,"./lib/elements":9,"./lib/extension":10,"./lib/framebuffer":11,"./lib/limits":12,"./lib/read":13,"./lib/renderbuffer":14,"./lib/shader":15,"./lib/stats":16,"./lib/strings":17,"./lib/texture":18,"./lib/timer":19,"./lib/util/clock":20,"./lib/util/extend":22,"./lib/util/raf":28,"./lib/webgl":31}]},{},[32])(32)
 });
