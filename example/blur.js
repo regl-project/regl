@@ -2,8 +2,6 @@
 
   This examples demonstrates how we can render a height map, how to place out several models(using the batching feature), and how to
   implement a simple fullscreen post-process effect(using the framebuffer feature) in REGL. The post-process effect is a simple box filter blur.
-
-  The FBO feature, and the batching feature is used to implement the above.
  */
 
 const canvas = document.body.appendChild(document.createElement('canvas'))
