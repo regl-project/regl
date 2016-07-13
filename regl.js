@@ -137,6 +137,9 @@ module.exports = function wrapREGL () {
 
     // flush all pending webgl calls
     gl.flush()
+    if (timer) {
+      timer.update()
+    }
   }
 
   function startRAF () {
@@ -374,6 +377,9 @@ module.exports = function wrapREGL () {
   function refresh () {
     pollViewport()
     core.procs.refresh()
+    if (timer) {
+      timer.update()
+    }
   }
 
   refresh()
@@ -425,11 +431,14 @@ module.exports = function wrapREGL () {
     _gl: gl,
     _refresh: refresh,
 
-    // regl Statistics Information
-    stats: stats,
+    poll: function () {
+      core.procs.poll()
+      if (timer) {
+        timer.update()
+      }
+    },
 
-    updateTimer: function () {
-      timer.update()
-    }
+    // regl Statistics Information
+    stats: stats
   })
 }
