@@ -3,7 +3,8 @@ var CASES = require('./list')
 var extend = require('../lib/util/extend')
 var createREGL = require('../../regl')
 var Chart = require('chart.js')
-
+var gitCommits = require('git-commits');
+var path = require('path');
 
 var canvas = document.createElement('canvas')
 var gl = canvas.getContext('webgl', {
@@ -15,11 +16,13 @@ canvas.style.position = 'fixed'
 canvas.style.top = '0'
 canvas.style.right = '0'
 
-// TODO: we should take the pixel ratio into account here.
-canvas.style.width = '384px'
-canvas.style.height = '240px'
-canvas.width = 384
-canvas.height = 240
+const WIDTH = 384
+const HEIGHT = 240
+
+canvas.style.width = WIDTH + 'px'
+canvas.style.height = HEIGHT + 'px'
+canvas.width = WIDTH
+canvas.height = HEIGHT
 
 document.body.appendChild(canvas)
 
@@ -86,9 +89,9 @@ function benchmark (procedure, samples, warmupSamples) {
 
   function sample (tick) {
     regl.clear({
-        color: [ 0, 0, 0, 0 ],
-        depth: 1,
-        stencil: 0
+      color: [ 0, 0, 0, 0 ],
+      depth: 1,
+      stencil: 0
     })
     var start = performance.now()
     procedure({tick: tick})
@@ -119,7 +122,7 @@ function benchmark (procedure, samples, warmupSamples) {
       sample(i)
     }
 
-//    console.log("samples: ", timeSamples)
+    //    console.log("samples: ", timeSamples)
     return {
       n: timeSamples.length,
       time: analyze(timeSamples, formatTime),
@@ -152,72 +155,38 @@ function button (text, onClick) {
     container: buttonContainer
   }
 }
-// require('./cube_webgl')(gl, canvas.width, canvas.height)
 
 Object.keys(CASES).map(function (caseName) {
-  var result
 
   var obj = CASES[caseName]
 
   var proc
   if(caseName === 'cube_webgl') {
-    proc = obj.proc(gl, canvas.width, canvas.height)
+    proc = obj.proc(gl, WIDTH, HEIGHT)
   } else {
     proc = obj.proc(regl)
   }
 
   var sample = benchmark(proc, obj.samples, obj.warmupSamples)
 
+  var result
+
   result = button(caseName, function () {
     var bench = sample()
     result.text.innerText = 'n:' + bench.n + ', t:(' + bench.time + '), m:(' + bench.space + ')'
   })
   return result
+
 })
+
+//document.removeChild(document.documentElement);
+
 /*
-var W = 640
-var H = 288
-var chartDiv = document.createElement('div')
-chartDiv.width = W
-chartDiv.height = H
-chartDiv.style.cssText = 'padding: 0; margin: auto; display: block; width: ' + W + 'px; height: ' + H + 'px;'
+  var c =  document.getElementsByTagName("canvas")[0]
+  //http://130.241.188.19:9966/
+  document.body.removeChild(c);
 
-var chartCanvas = document.createElement('canvas')
-chartDiv.appendChild(chartCanvas)
-
-document.body.appendChild(chartDiv)
-
-// padring-right
-var ctx = chartCanvas
-
-var myChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        datasets: [{
-            label: 'Scatter Dataset',
-            data: [{
-                x: -10,
-                y: 0
-            }, {
-                x: 0,
-                y: 10
-            }, {
-                x: 10,
-                y: 5
-            }]
-        }]
-    },
-    options: {
-        scales: {
-            xAxes: [{
-                type: 'time',
-                time: {
-                    displayFormats: {
-                        quarter: 'MMM YYYY'
-                    }
-                }
-            }]
-        }
-    }
-});;
+  var p = document.createElement('p')
+  p.innerHTML = json
+  document.body.appendChild(p)
 */
