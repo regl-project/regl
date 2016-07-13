@@ -103,34 +103,6 @@ const setFBO = regl({
   framebuffer: regl.prop('framebuffer')
 })
 
-const copyTex = regl({
-  vert: `
-  precision highp float;
-  attribute vec2 p;
-  varying vec2 uv;
-  void main () {
-    uv = 0.5 * (p + 1.0);
-    gl_Position = vec4(p, 0, 1);
-  }`,
-
-  frag: `
-  precision highp float;
-  uniform sampler2D src;
-  varying vec2 uv;
-  void main () {
-    gl_FragColor = texture2D(src, uv);
-  }`,
-
-  attributes: {
-    p: [ -4, 0, 4, 4, 4, -4 ]
-  },
-  uniforms: {
-    src: regl.prop('texture')
-  },
-  depth: {enable: false, mask: false},
-  count: 3
-})
-
 const splatVerts = regl({
   vert: `
   precision highp float;
