@@ -6,27 +6,37 @@ var Chart = require('chart.js')
 var gitCommits = require('git-commits');
 var path = require('path');
 
-var canvas = document.createElement('canvas')
-var gl = canvas.getContext('webgl', {
-  antialias: false,
-  stencil: true,
-  preserveDrawingBuffer: true
-})
-canvas.style.position = 'fixed'
-canvas.style.top = '0'
-canvas.style.right = '0'
-
 const WIDTH = 384
 const HEIGHT = 240
+var regl
+var isHeadless = false
+var canvas
+var gl
 
-canvas.style.width = WIDTH + 'px'
-canvas.style.height = HEIGHT + 'px'
-canvas.width = WIDTH
-canvas.height = HEIGHT
+if (isHeadless) {
+  var gl = require('gl')(WIDTH, HEIGHT)
 
-document.body.appendChild(canvas)
+} else {
+  canvas = document.createElement('canvas')
+  gl = canvas.getContext('webgl', {
+    antialias: false,
+    stencil: true,
+    preserveDrawingBuffer: true
+  })
+  canvas.style.position = 'fixed'
+  canvas.style.top = '0'
+  canvas.style.right = '0'
 
-var regl = createREGL(gl)
+  canvas.style.width = WIDTH + 'px'
+  canvas.style.height = HEIGHT + 'px'
+  canvas.width = WIDTH
+  canvas.height = HEIGHT
+
+  document.body.appendChild(canvas)
+
+}
+
+regl = createREGL(gl)
 
 
 function analyze (samples, fmt) {
@@ -96,7 +106,9 @@ function benchmark (procedure, samples, warmupSamples) {
     var start = performance.now()
     procedure({tick: tick})
     timeSamples.push(performance.now() - start)
-    heapSamples.push(performance.memory.usedJSHeapSize)
+
+    // dont have this in headless.
+//    heapSamples.push(performance.memory.usedJSHeapSize)
   }
 
   return function run () {
@@ -125,8 +137,8 @@ function benchmark (procedure, samples, warmupSamples) {
     //    console.log("samples: ", timeSamples)
     return {
       n: timeSamples.length,
-      time: analyze(timeSamples, formatTime),
-      space: analyze(heapSamples, formatMemory)
+      time: analyze(timeSamples, formatTime)
+//      space: analyze(heapSamples, formatMemory)
     }
   }
 }
@@ -173,7 +185,7 @@ Object.keys(CASES).map(function (caseName) {
 
   result = button(caseName, function () {
     var bench = sample()
-    result.text.innerText = 'n:' + bench.n + ', t:(' + bench.time + '), m:(' + bench.space + ')'
+    result.text.innerText = 'n:' + bench.n + ', t:(' + bench.time + '),' //+ 'm:(' + bench.space + ')'
   })
   return result
 
@@ -190,3 +202,9 @@ Object.keys(CASES).map(function (caseName) {
   p.innerHTML = json
   document.body.appendChild(p)
 */
+
+/*
+  clearn:100, t:(μ=10.3μs∓37.43μs, q=[5μs, 30μs, 310μs]), m:(μ=12.11Mb∓0b, q=[12.11Mb, 12.11Mb, 12.11Mb])
+cuben:30000, t:(μ=12.24μs∓78.41μs, q=[10μs, 15μs, 9.18ms]), m:(μ=12.11Mb∓0b, q=[12.11Mb, 12.11Mb, 12.11Mb])
+cube_webgln:30000, t:(μ=14.46μs∓88.63μs, q=[15μs, 15μs, 7.32ms]), m:(μ=12.11Mb∓0b, q=[12.11Mb, 12.11Mb, 12.11Mb])
+  */
