@@ -7,40 +7,23 @@ window.addEventListener('resize', fit(webglCanvas), false)
 const bunny = require('bunny')
 const normals = require('angle-normals')
 
+var sphereMesh = require('primitive-sphere')(1.0, {
+  segments: 16
+})
+
+
 // configure intial camera view.
 camera.rotate([0.0, 0.0], [0.0, -0.4])
 camera.zoom(10.0)
 
 const fbo = regl.framebuffer({
-  color: [regl.texture({
-    width: 1,
-    height: 1,
-    type: 'uint8'
-  }),regl.texture({
-    width: 1,
-    height: 1,
-    type: 'float'
-  })
-         ],
+  color: [
+    regl.texture({type: 'uint8'}), // albedo
+    regl.texture({type: 'float'}), // normal
+    regl.texture({type: 'float'}), // position
+  ],
   depth: true
 })
-
-const planeElements = []
-var planePosition = []
-var planeNormal = []
-
-planePosition.push([-0.5, 0.0, -0.5])
-planePosition.push([+0.5, 0.0, -0.5])
-planePosition.push([-0.5, 0.0, +0.5])
-planePosition.push([+0.5, 0.0, +0.5])
-
-planeNormal.push([0.0, 1.0, 0.0])
-planeNormal.push([0.0, 1.0, 0.0])
-planeNormal.push([0.0, 1.0, 0.0])
-planeNormal.push([0.0, 1.0, 0.0])
-
-planeElements.push([3, 1, 0])
-planeElements.push([0, 2, 3])
 
 var boxPosition = [
   // side faces
@@ -74,7 +57,7 @@ var boxNormal = [
   [0.0, -1.0, 0.0], [0.0, -1.0, 0.0], [0.0, -1.0, 0.0], [0.0, -1.0, 0.0]
 ]
 
-const outputGBuffer = regl({
+const globalScope = regl({
   uniforms: {
     view: () => camera.view(),
     projection: ({viewportWidth, viewportHeight}) =>
@@ -82,10 +65,13 @@ const outputGBuffer = regl({
                        Math.PI / 4,
                        viewportWidth / viewportHeight,
                        0.01,
-                       2000),
-  },
+                       2000)
+  }
+})
+
+const outputGBuffer = regl({
   frag: `
-  #extension GL_EXT_draw_buffers : require
+#extension GL_EXT_draw_buffers : require
   precision mediump float;
 
   varying vec3 vNormal;
@@ -95,6 +81,7 @@ const outputGBuffer = regl({
   void main () {
     gl_FragData[0] = vec4(color, 1.0);
     gl_FragData[1] = vec4(vNormal, 0.0);
+    gl_FragData[2] = vec4(vPosition, 0.0);
   }`,
   vert: `
   precision mediump float;
@@ -108,9 +95,10 @@ const outputGBuffer = regl({
   uniform mat4 projection, view, model;
 
   void main() {
-    vPosition = position;
     vNormal = normal;
-    gl_Position = projection * view * model * vec4(position, 1);
+    vec4 worldSpacePosition = model * vec4(position, 1);
+    vPosition = worldSpacePosition.xyz;
+    gl_Position = projection * view * worldSpacePosition;
   }`,
   framebuffer: fbo
 })
@@ -157,6 +145,92 @@ const drawDirectionalLight = regl({
   count: 3
 })
 
+
+const drawPointLight = regl({
+    depth: { enable: false },
+  frag: `
+  precision mediump float;
+  varying vec2 uv;
+  uniform sampler2D albedoTex, normalTex, positionTex;
+
+  uniform vec3 ambientLight;
+  uniform vec3 diffuseLight;
+
+  uniform float lightRadius;
+  uniform vec3 lightPosition;
+
+  varying vec4 vPosition;
+
+  void main() {
+
+    vec2 uv = (vPosition.xy / vPosition.w ) * 0.5 + 0.5;
+    vec3 albedo = texture2D(albedoTex, uv).xyz;
+    vec3 n = texture2D(normalTex, uv).xyz;
+    vec4 position = texture2D(positionTex, uv);
+
+    vec3 lightDist = (position.xyz) - lightPosition;
+    float lightDistLength = length(lightDist);
+    vec3 l = - lightDist * 1.0 / ( lightDistLength );
+
+    float ztest = step(0.0, lightRadius - lightDistLength );
+
+    vec3 ambient = ambientLight * albedo;
+    vec3 diffuse = diffuseLight * albedo * clamp( dot(n, l ), 0.0, 1.0 );
+
+    gl_FragColor = vec4((diffuse+ambient) * ztest
+                        *(1.0 - lightDistLength / lightRadius)
+                        ,1.0);
+  }`,
+
+  vert: `
+  precision mediump float;
+  uniform mat4 projection, view, model;
+  attribute vec3 position;
+
+  varying vec4 vPosition;
+
+  void main() {
+    vec4 pos = projection * view * model * vec4(position, 1);
+   vPosition = pos;
+    gl_Position = pos;
+  }`,
+  uniforms: {
+    albedoTex: ({count}) => fbo.color[0],
+    normalTex: ({count}) => fbo.color[1],
+    positionTex: ({count}) => fbo.color[2],
+    ambientLight: regl.prop('ambientLight'),
+    diffuseLight: regl.prop('diffuseLight'),
+    lightPosition: regl.prop('translate'),
+    lightRadius: regl.prop('radius'),
+    model: (_, props, batchId) => {
+      var m = mat4.identity([])
+
+      mat4.translate(m, m, props.translate)
+      var s = props.scale
+
+      var r = props.radius
+      mat4.scale(m, m, [r, r, r])
+
+      return m
+    }
+  },
+  attributes: {
+    position: () => sphereMesh.positions,
+    normal: () => sphereMesh.normals
+  },
+  elements: () => sphereMesh.cells,
+  blend: {
+    enable: true,
+    func: {
+      src: 'one',
+      dst: 'one'
+    },
+  },
+
+})
+
+
+
 function Mesh (elements, position, normal) {
   this.elements = elements
   this.position = position
@@ -169,9 +243,14 @@ Mesh.prototype.draw = regl({
       var m = mat4.identity([])
 
       mat4.translate(m, m, props.translate)
-
       var s = props.scale
-      mat4.scale(m, m, [s, s, s])
+
+      if (typeof s === 'number') {
+        mat4.scale(m, m, [s, s, s])
+      } else { // else, we assume an array
+        mat4.scale(m, m, s)
+      }
+
       return m
     },
     ambientLightAmount: 0.3,
@@ -185,31 +264,58 @@ Mesh.prototype.draw = regl({
   elements: regl.this('elements'),
   cull: {
     enable: true
-  }
+  },
 })
 
 var bunnyMesh = new Mesh(bunny.cells, bunny.positions, normals(bunny.cells, bunny.positions))
 var boxMesh = new Mesh(boxElements, boxPosition, boxNormal)
-var planeMesh = new Mesh(planeElements, planePosition, planeNormal)
+
+//console.log("l: ", sphereMesh.positions, sphereMesh.normals, sphereMesh.cells)
 
 regl.frame(({tick, viewportWidth, viewportHeight}) => {
   regl.updateTimer()
 
   fbo.resize(viewportWidth, viewportHeight)
 
-  outputGBuffer(() => {
-    regl.clear({
-      color: [0, 0, 0, 255],
-      depth: 1
+  globalScope(() => {
+    outputGBuffer(() => {
+      regl.clear({
+        color: [0, 0, 0, 255],
+        depth: 1
+      })
+
+      boxMesh.draw({scale: 4.2, translate: [0.0, 9.0, 0], color: [0.05, 0.5, 0.5]})
+      bunnyMesh.draw({scale: 0.7, translate: [0.0, 3.3, 8.0], color: [0.55, 0.2, 0.05]})
+      bunnyMesh.draw({scale: 0.8, translate: [-10, 3.3, 0.0], color: [0.55, 0.55, 0.05]})
+      bunnyMesh.draw({scale: 0.8, translate: [-40, 3.3, 0.0], color: [0.55, 0.55, 0.05]})
+      bunnyMesh.draw({scale: 0.8, translate: [+60, 3.3, 0.0], color: [0.55, 0.55, 0.97]})
+
+      var S = 400 // box size
+      var T = 0.1 // box wall thickness
+      var C = [0.45, 0.45, 0.45] // box color
+
+      boxMesh.draw({scale: [S, T, S], translate: [0.0, 0.0, 0], color: C})
+
+      boxMesh.draw({scale: [T, S, S], translate: [S / 2, S / 2, 0], color: C})
+      boxMesh.draw({scale: [T, S, S], translate: [-S / 2, S / 2, 0], color: C})
+
+      boxMesh.draw({scale: [S, S, T], translate: [0, S / 2, S / 2], color: C})
+      boxMesh.draw({scale: [S, S, T], translate: [0, S / 2, -S / 2], color: C})
     })
 
-    boxMesh.draw({scale: 4.2, translate: [0.0, 9.0, 0], color: [0.05, 0.5, 0.5]})
-    planeMesh.draw({scale: 80.0, translate: [0.0, 0.0, 0.0], color: [1.0, 1.0, 1.0]})
-    bunnyMesh.draw({scale: 0.7, translate: [0.0, 3.3, 8.0], color: [0.55, 0.2, 0.05]})
-    bunnyMesh.draw({scale: 0.8, translate: [-10, 3.3, 0.0], color: [0.55, 0.55, 0.05]})
-  })
+    drawDirectionalLight()
 
-  drawDirectionalLight()
+    pointLights = [
+      {radius:20.0, translate: [0.0, 0.0, 0.0], ambientLight: [0.4, 0.0, 0.0], diffuseLight: [0.6, 0.0, 0.0]},
+      {radius:20.0, translate: [60.0, 0.0, 0.0], ambientLight: [0.0, 0.2, 0.0], diffuseLight: [0.0, 0.6, 0.0]}
+
+    ]
+
+    drawPointLight(pointLights)
+
+//	GL_C(glBlendFunc(GL_ONE, GL_ONE));
+
+  })
 
   camera.tick()
 })
