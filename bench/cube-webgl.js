@@ -1,9 +1,5 @@
-/* global Image, alert*/
-
+/* global alert*/
 module.exports = function (gl, canvasWidth, canvasHeight) {
-  var canvas
-  var gl
-
   var cubePositionBuffer
   var cubeUvBuffer
   var cubeElementsBuffers
@@ -16,15 +12,12 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
 
   var projectionUniformLocation
   var viewUniformLocation
-  var tick
 
   gl.clearColor(0.0, 0.0, 0.0, 1.0)
   gl.enable(gl.DEPTH_TEST)
   gl.enable(gl.CULL_FACE)
-  gl.viewport(0, 0, canvasWidth, canvasHeight);
+  gl.viewport(0, 0, canvasWidth, canvasHeight)
 
-
-//  console.log("DO STUFF")
   initShaders()
   initBuffers()
   initTextures()
@@ -33,49 +26,33 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
     cubePositionBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, cubePositionBuffer)
 
-    var cubePosition = [
+    var cubePosition =
+        [
       // positive z face.
-        -0.5, +0.5, +0.5,
-        +0.5, +0.5, +0.5,
-        +0.5, -0.5, +0.5,
-        -0.5, -0.5, +0.5,
+      -0.5, +0.5, +0.5, +0.5, +0.5, +0.5, +0.5, -0.5, +0.5, -0.5, -0.5, +0.5,
 
       // positive x face
-        +0.5, +0.5, +0.5,
-        +0.5, +0.5, -0.5,
-        +0.5, -0.5, -0.5,
-        +0.5, -0.5, +0.5,
+      +0.5, +0.5, +0.5, +0.5, +0.5, -0.5, +0.5, -0.5, -0.5, +0.5, -0.5, +0.5,
 
       // negative z face
-        +0.5, +0.5, -0.5,
-        -0.5, +0.5, -0.5,
-        -0.5, -0.5, -0.5,
-        +0.5, -0.5, -0.5,
+      +0.5, +0.5, -0.5, -0.5, +0.5, -0.5, -0.5, -0.5, -0.5, +0.5, -0.5, -0.5,
 
       // negative x face.
-        -0.5, +0.5, -0.5,
-        -0.5, +0.5, +0.5,
-        -0.5, -0.5, +0.5,
-        -0.5, -0.5, -0.5,
+      -0.5, +0.5, -0.5, -0.5, +0.5, +0.5, -0.5, -0.5, +0.5, -0.5, -0.5, -0.5,
 
       // top face
-        -0.5, +0.5, -0.5,
-        +0.5, +0.5, -0.5,
-        +0.5, +0.5, +0.5,
-        -0.5, +0.5, +0.5,
+      -0.5, +0.5, -0.5, +0.5, +0.5, -0.5, +0.5, +0.5, +0.5, -0.5, +0.5, +0.5,
 
       // bottom face
-        -0.5, -0.5, -0.5,
-        +0.5, -0.5, -0.5,
-        +0.5, -0.5, +0.5,
-        -0.5, -0.5, +0.5
+      -0.5, -0.5, -0.5, +0.5, -0.5, -0.5, +0.5, -0.5, +0.5, -0.5, -0.5, +0.5
     ]
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(cubePosition), gl.STATIC_DRAW)
 
     cubeUvBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, cubeUvBuffer)
 
-    var cubeUv = [
+    var cubeUv =
+        [
       // positive z face.
       0.0, 0.0,
       1.0, 0.0,
@@ -118,7 +95,8 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
     cubeElementsBuffers = gl.createBuffer()
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeElementsBuffers)
 
-    var cubeElements = [
+    var cubeElements =
+        [
       // positive z face.
       2, 1, 0,
       2, 0, 3,
@@ -155,7 +133,8 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
         255, 255, 255, 255,
         128, 128, 128, 255,
         128, 128, 128, 255,
-        255, 255, 255, 255]))
+        255, 255, 255, 255
+      ]))
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
@@ -163,7 +142,6 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
   }
 
   function drawScene (args) {
-
     // bind buffers.
     gl.bindBuffer(gl.ARRAY_BUFFER, cubePositionBuffer)
     gl.enableVertexAttribArray(cubePositionAttribute)
@@ -186,17 +164,14 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
     var perspectiveMatrix = perspective(Math.PI / 4, canvasWidth / canvasHeight, 0.01, 10.0)
     gl.uniformMatrix4fv(projectionUniformLocation, false, new Float32Array(perspectiveMatrix))
 
-    var m =       lookAt(
-        [5 * Math.cos(t), 2.5 * Math.sin(t), 5 * Math.sin(t)],
-        [0, 0.0, 0],
-      [0, 1, 0])
+    var m = lookAt(
+      [5 * Math.cos(t), 2.5 * Math.sin(t), 5 * Math.sin(t)], [0, 0.0, 0], [0, 1, 0])
     gl.uniformMatrix4fv(viewUniformLocation, false, new Float32Array(m))
 
     gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0)
   }
 
   function initShaders () {
-
     var vert = `
   precision mediump float;
   attribute vec3 position;
@@ -240,17 +215,7 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
   }
 
   function getShader (sourceCode, type) {
-
     var shader = gl.createShader(type)
-
-/*    if (e.type === 'x-shader/x-fragment') {
-      shader = gl.createShader(gl.FRAGMENT_SHADER)
-    } else if (e.type === 'x-shader/x-vertex') {
-      shader = gl.createShader(gl.VERTEX_SHADER)
-    } else {
-      return null
-    }
-    */
 
     gl.shaderSource(shader, sourceCode)
     gl.compileShader(shader)
@@ -320,10 +285,7 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
     return [
       x0, y0, z0, 0,
       x1, y1, z1, 0,
-      x2, y2, z2, 0,
-        -(x0 * eyex + x1 * eyey + x2 * eyez),
-        -(y0 * eyex + y1 * eyey + y2 * eyez),
-        -(z0 * eyex + z1 * eyey + z2 * eyez),
+      x2, y2, z2, 0, -(x0 * eyex + x1 * eyey + x2 * eyez), -(y0 * eyex + y1 * eyey + y2 * eyez), -(z0 * eyex + z1 * eyey + z2 * eyez),
       1
     ]
   }
