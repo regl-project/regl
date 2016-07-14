@@ -288,6 +288,64 @@ Mesh.prototype.draw = regl({
 var bunnyMesh = new Mesh(bunny.cells, bunny.positions, normals(bunny.cells, bunny.positions))
 var boxMesh = new Mesh(boxElements, boxPosition, boxNormal)
 
+var drawGeometry = () => {
+  var S = 800 // plane size
+  var T = 0.1 // plane thickness
+  var C = [0.45, 0.45, 0.45] // plane color
+
+  //
+  // First we place out lots of bunnies.
+  //
+
+  var bunnies = []
+  var N_BUNNIES = 5 // number of bunnies.
+
+  function negMod (x, n) {  // modulo that works for negative numbers
+    return ((x % n) + n) % n
+  }
+
+
+  // There's lots of magic numbers below, and they were simply chosen because
+  // they make it looks good. There's no deeper meaning behind them.
+  for (x = -N_BUNNIES; x <= +N_BUNNIES; x++) {
+    for (z = -N_BUNNIES; z <= +N_BUNNIES; z++) {
+      // we use these two to generate pseudo-random numbers.
+      var xs = x / (N_BUNNIES + 1)
+      var zs = z / (N_BUNNIES + 1)
+
+      // pseudo-random color
+      var c = [
+        ((Math.abs(3 * x + 5 * z + 100) % 10) / 10) * 0.64,
+        ((Math.abs(64 * x + x * z + 23) % 13) / 13) * 0.67,
+        ((Math.abs(143 * x * z + x * z * z + 19) % 11) / 11) * 0.65
+      ]
+
+      var A = S / 20 // max bunny displacement amount.
+      // compute random bunny displacement
+      var xd = (negMod(z * z * 231 + x * x * 343, 24) / 24) * 0.97 * A
+      var zd = (negMod(z * x * 198 + x * x * z * 24, 25) / 25) * 0.987 * A
+
+      // random bunny scale.
+      var s = ((Math.abs(3024 * z + 5239 * x + 1321) % 50) / 50) * 3.4 + 0.9
+      // random bunny rotation
+      var r = ((Math.abs(9422 * z * x + 3731 * x * x + 2321) % 200) / 200) * 2 * Math.PI
+
+      // translation
+      var t = [xs * S / 2.0 + xd, -0.2, zs * S / 2.0 + zd]
+
+      bunnies.push({scale: s, translate: t, color: c, yRotate: r})
+    }
+  }
+
+  //
+  // Then we draw.
+  //
+
+  bunnyMesh.draw(bunnies)
+  boxMesh.draw({scale: [S, T, S], translate: [0.0, 0.0, 0], color: C})
+
+}
+
 regl.frame(({tick, viewportWidth, viewportHeight}) => {
   regl.updateTimer()
 
@@ -304,46 +362,7 @@ regl.frame(({tick, viewportWidth, viewportHeight}) => {
         depth: 1
       })
 
-      var S = 800 // box size
-      var T = 0.1 // box wall thickness
-      var C = [0.45, 0.45, 0.45] // box color
-
-      var N_BUNNIES = 5
-
-      var bunnies = []
-
-      // modulo that works for negative numbers
-      function negMod (x, n) {
-        return ((x % n) + n) % n
-      }
-
-      for (x = -N_BUNNIES; x <= +N_BUNNIES; x++) {
-        for (z = -N_BUNNIES; z <= +N_BUNNIES; z++) {
-          var xs = x / (N_BUNNIES + 1)
-          var zs = z / (N_BUNNIES + 1)
-
-          // pseudo-random color
-          var c = [
-            ((Math.abs(3 * x + 5 * z + 100) % 10) / 10) * 0.64,
-            ((Math.abs(64 * x + x * z + 23) % 13) / 13) * 0.67,
-            ((Math.abs(143 * x * z + x * z * z + 19) % 11) / 11) * 0.65
-          ]
-
-          var A = S / 20 // max bunny displacement amount.
-
-          // random displavement
-          var xd = (negMod(z * z * 231 + x * x * 343, 24) / 24) * 0.97 * A
-          var zd = (negMod(z * x * 198 + x * x * z * 24, 25) / 25) * 0.987 * A
-
-          var s = ((Math.abs(3024 * z + 5239 * x + 1321) % 50) / 50) * 3.4 + 0.9
-          var r = ((Math.abs(9422 * z * x + 3731 * x * x + 2321) % 200) / 200) * 2 * Math.PI
-
-          bunnies.push({scale: s, translate: [xs * S / 2.0 + xd, -0.2, zs * S / 2.0 + zd], color: c, yRotate: r})
-        }
-      }
-
-      bunnyMesh.draw(bunnies)
-      boxMesh.draw({scale: [S, T, S], translate: [0.0, 0.0, 0], color: C})
+      drawGeometry()
     })
 
     // We have a single directional light in the scene.
