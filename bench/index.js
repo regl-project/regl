@@ -9,7 +9,7 @@ var present = require('present');
 const WIDTH = 384
 const HEIGHT = 240
 var regl
-var isHeadless = true
+var isHeadless = false
 var canvas
 var gl
 
@@ -173,7 +173,7 @@ Object.keys(CASES).map(function (caseName) {
   var obj = CASES[caseName]
 
   var proc
-  if(caseName === 'cube_webgl') {
+  if(caseName === 'cube-webgl') {
     proc = obj.proc(gl, WIDTH, HEIGHT)
   } else {
     proc = obj.proc(regl)

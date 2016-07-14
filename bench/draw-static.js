@@ -27,7 +27,9 @@ module.exports = function (regl) {
     uniforms: {
       color: [1, 0, 0, 1]
     },
-
+    depth: {
+      enable: false
+    },
     count: 3
   })
 }
