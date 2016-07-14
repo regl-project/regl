@@ -180,12 +180,14 @@ const drawPointLight = regl({
     // fake z-test
     float ztest = step(0.0, lightRadius - lightDist );
 
+    float attenuation = (1.0 - lightDist / lightRadius);
+
     vec3 ambient = ambientLight * albedo;
     vec3 diffuse = diffuseLight * albedo * clamp( dot(n, l ), 0.0, 1.0 );
 
     gl_FragColor = vec4((diffuse+ambient)
                         * ztest
-                        *(1.0 - lightDist / lightRadius)
+                        * attenuation
                         ,1.0);
   }`,
 
