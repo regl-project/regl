@@ -13,13 +13,13 @@ var sphereMesh = require('primitive-sphere')(1.0, {
 
 // configure intial camera view.
 camera.rotate([0.0, 0.0], [0.0, -0.4])
-camera.zoom(10.0)
+camera.zoom(500.0) // 10.0
 
 const fbo = regl.framebuffer({
   color: [
     regl.texture({type: 'uint8'}), // albedo
     regl.texture({type: 'float'}), // normal
-    regl.texture({type: 'float'}), // position
+    regl.texture({type: 'float'}) // position
   ],
   depth: true
 })
@@ -148,7 +148,6 @@ const drawDirectionalLight = regl({
   count: 3
 })
 
-
 const drawPointLight = regl({
   depth: { enable: false },
   frag: `
@@ -184,7 +183,8 @@ const drawPointLight = regl({
     vec3 ambient = ambientLight * albedo;
     vec3 diffuse = diffuseLight * albedo * clamp( dot(n, l ), 0.0, 1.0 );
 
-    gl_FragColor = vec4((diffuse+ambient) * ztest
+    gl_FragColor = vec4((diffuse+ambient)
+                        * ztest
                         *(1.0 - lightDist / lightRadius)
                         ,1.0);
   }`,
@@ -213,7 +213,6 @@ const drawPointLight = regl({
       var m = mat4.identity([])
 
       mat4.translate(m, m, props.translate)
-      var s = props.scale
 
       var r = props.radius
       mat4.scale(m, m, [r, r, r])
@@ -233,7 +232,7 @@ const drawPointLight = regl({
     func: {
       src: 'one',
       dst: 'one'
-    },
+    }
   },
   cull: {
     enable: true
@@ -243,7 +242,7 @@ const drawPointLight = regl({
   // If we render the front-faces, the lighting of the light sphere disappears if
   // we are inside the sphere, which is weird. But by rendering the back-faces instead,
   // we solve this problem.
-  frontFace: 'cw',
+  frontFace: 'cw'
 })
 
 function Mesh (elements, position, normal) {
@@ -268,8 +267,9 @@ Mesh.prototype.draw = regl({
         mat4.scale(m, m, s)
       }
 
-      if(typeof props.yRotate !== 'undefined')
+      if (typeof props.yRotate !== 'undefined') {
         mat4.rotateY(m, m, props.yRotate)
+      }
 
       return m
     },
@@ -282,7 +282,7 @@ Mesh.prototype.draw = regl({
   elements: regl.this('elements'),
   cull: {
     enable: true
-  },
+  }
 })
 
 var bunnyMesh = new Mesh(bunny.cells, bunny.positions, normals(bunny.cells, bunny.positions))
@@ -293,6 +293,8 @@ regl.frame(({tick, viewportWidth, viewportHeight}) => {
 
   fbo.resize(viewportWidth, viewportHeight)
 
+  var x, z
+
   globalScope(() => {
     // First we draw all geometry, and output their normals,
     // positions and albedo colors to the G-buffer
@@ -302,7 +304,7 @@ regl.frame(({tick, viewportWidth, viewportHeight}) => {
         depth: 1
       })
 
-      var S =800 // box size
+      var S = 800 // box size
       var T = 0.1 // box wall thickness
       var C = [0.45, 0.45, 0.45] // box color
 
@@ -316,111 +318,77 @@ regl.frame(({tick, viewportWidth, viewportHeight}) => {
       }
 
       for (x = -N_BUNNIES; x <= +N_BUNNIES; x++) {
-
         for (z = -N_BUNNIES; z <= +N_BUNNIES; z++) {
-
-          var xs = x / (N_BUNNIES+1)
-          var zs = z / (N_BUNNIES+1)
+          var xs = x / (N_BUNNIES + 1)
+          var zs = z / (N_BUNNIES + 1)
 
           // pseudo-random color
           var c = [
-            ((Math.abs(3 * x + 5 * z + 100) % 10) / 10) * 0.84,
-            ((Math.abs(64 * x + x * z + 23) % 13) / 13) * 0.87,
-            ((Math.abs(143 * x * z + x * z * z + 19) % 11) / 11) * 0.91,
+            ((Math.abs(3 * x + 5 * z + 100) % 10) / 10) * 0.64,
+            ((Math.abs(64 * x + x * z + 23) % 13) / 13) * 0.67,
+            ((Math.abs(143 * x * z + x * z * z + 19) % 11) / 11) * 0.65
           ]
 
           var A = S / 20 // max bunny displacement amount.
 
           // random displavement
-          var xd = (negMod(z *z * 231 + x * x * 343, 24) / 24) * 0.97 * A
+          var xd = (negMod(z * z * 231 + x * x * 343, 24) / 24) * 0.97 * A
           var zd = (negMod(z * x * 198 + x * x * z * 24, 25) / 25) * 0.987 * A
 
-
           var s = ((Math.abs(3024 * z + 5239 * x + 1321) % 50) / 50) * 3.4 + 0.9
+          var r = ((Math.abs(9422 * z * x + 3731 * x * x + 2321) % 200) / 200) * 2 * Math.PI
 
-          var r = ((Math.abs(9422 * z*x + 3731 * x*x + 2321) % 200) / 200) * 2 * Math.PI
-
-          bunnies.push({scale: s, translate: [xs * S / 2.0+ xd, -0.2, zs * S / 2.0 + zd], color: c, yRotate: r})
+          bunnies.push({scale: s, translate: [xs * S / 2.0 + xd, -0.2, zs * S / 2.0 + zd], color: c, yRotate: r})
         }
-
       }
 
       bunnyMesh.draw(bunnies)
-      //      boxMesh.draw({scale: 4.2, translate: [0.0, 9.0, 0], color: [0.05, 0.5, 0.5]})¨
-
-
-  /*
-      bunnyMesh.draw({scale: 0.7, translate: [0.0, -0.2, 8.0], color: [0.55, 0.2, 0.05]})
-      bunnyMesh.draw({scale: 0.8, translate: [-10, -0.2, 0.0], color: [0.55, 0.55, 0.05]})
-      bunnyMesh.draw({scale: 0.8, translate: [-40, -0.2, 0.0], color: [0.55, 0.55, 0.05]})
-      bunnyMesh.draw({scale: 0.8, translate: [+60, -0.2, 0.0], color: [0.55, 0.55, 0.97]})
-*/
-
       boxMesh.draw({scale: [S, T, S], translate: [0.0, 0.0, 0], color: C})
-      boxMesh.draw({scale: [T, S, S], translate: [S / 2, S / 2, 0], color: C})
-      boxMesh.draw({scale: [T, S, S], translate: [-S / 2, S / 2, 0], color: C})
-      boxMesh.draw({scale: [S, S, T], translate: [0, S / 2, S / 2], color: C})
-      boxMesh.draw({scale: [S, S, T], translate: [0, S / 2, -S / 2], color: C})
     })
 
     // We have a single directional light in the scene.
     // We draw it as a full-screen pass.
     drawDirectionalLight()
 
-    pointLights = []
+    var pointLights = []
 
-    var N = 10
+    function makeRose (args) {
+      var N = args.N
+      var n = args.n
+      var d = args.d
+      var v = args.v
+      var R = args.R
+      var s = args.s
 
-    for(var i = 0; i < N; ++i) {
-      var theta = 2 * Math.PI * i * (1.0 / (N));
-      theta += tick * 0.01
-      var R = 100
+      var startI = args.startI
 
-      var mod = i % 3
-      var r,g,b
-      var a = 0.8
-      r = 0.2
-      b = 0.7
+      for (var j = 0; j < N; ++j) {
+        var theta = s * 2 * Math.PI * i * (1.0 / (N))
+        theta += tick * 0.01
 
-      if (mod === 0) {
-        g = 0.2
-      } else if (mod === 1) {
-        g = 0.7
-      } else if (mod === 2) {
-        g = 0.5
+        var i = j + startI
+
+        var a = 0.8
+
+        var r = ((Math.abs(23232 * i * i + 100212) % 255) / 255) * 0.8452
+        var g = ((Math.abs(32278 * i + 213) % 255) / 255) * 0.8523
+        var b = ((Math.abs(3112 * i * i * i + 2137 + i) % 255) / 255) * 0.8523
+
+        var rad = ((Math.abs(3112 * i * i * i + 2137 + i * i + 232 * i) % 255) / 255) * 0.9 * 30.0 + 30.0
+
+        var k = n / d
+        pointLights.push({radius: rad, translate:
+                          [R * Math.cos(k * theta * v) * Math.cos(theta * v), 20.9, R * Math.cos(k * theta * v) * Math.sin(theta * v)],
+                          ambientLight: [a * r, a * g, a * b], diffuseLight: [r, g, b]})
       }
-
-      mod = (i+2) % 3
-
-      if (mod === 0) {
-        r = 0.1
-      } else if (mod === 1) {
-        r = 0.9
-      } else if (mod === 2) {
-        r = 0.5
-      }
-
-      mod = (i+9) % 4
-
-      if (mod === 0) {
-        b = 0.6
-      } else if (mod === 1) {
-        r = 0.24
-      } else if (mod === 2) {
-        r = 1.0
-      } else if (mod === 3) {
-        r = 0.1
-      }
-
-//      pointLights.push({radius:30.0, translate: [R * Math.sin(theta), 0.0, R * Math.cos(theta)], ambientLight: [a * r, a * g, a * b], diffuseLight: [r, g, b]})
     }
 
-    pointLights = [
-      {radius:20.0, translate: [0.0, 0.0, 0.0], ambientLight: [0.4, 0.0, 0.0], diffuseLight: [0.6, 0.0, 0.0]},
-      {radius:20.0, translate: [60.0, 0.0, 0.0], ambientLight: [0.0, 0.2, 0.0], diffuseLight: [0.0, 0.6, 0.0]}
-    ]
+    makeRose({N: 10, n: 3, d: 1, v: 0.4, R: 300, startI: 0, s: 1})
+    makeRose({N: 20, n: 7, d: 4, v: 0.6, R: 350, startI: 3000, s: 1})
+    makeRose({N: 20, n: 10, d: 6, v: 0.7, R: 350, startI: 30000, s: 1})
+    makeRose({N: 40, n: 7, d: 9, v: 0.7, R: 450, startI: 60000, s: 10})
 
-    // next, we draw all point lights as sphere.
+    // next, we draw all point lights as spheres.
     drawPointLight(pointLights)
   })
 
