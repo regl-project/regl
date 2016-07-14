@@ -63,8 +63,6 @@ require('getusermedia')({audio: true}, function (err, stream) {
   })
 
   regl.frame(({tick}) => {
-    regl.updateTimer()
-
     // Clear draw buffer
     regl.clear({
       color: [0, 0, 0, 1],

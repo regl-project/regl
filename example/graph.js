@@ -455,7 +455,6 @@ function step ({tick}) {
 }
 
 regl.frame((context) => {
-  regl.updateTimer()
   step(context)
   regl.clear({
     color: [1, 1, 1, 1]
