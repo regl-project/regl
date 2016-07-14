@@ -6,12 +6,12 @@ const INITIAL_CONDITIONS = (Array(RADIUS * RADIUS * 4)).fill(0).map(
 
 const state = (Array(2)).fill().map(() =>
   regl.framebuffer({
-    colorBuffer: regl.texture({
+    color: regl.texture({
       radius: RADIUS,
       data: INITIAL_CONDITIONS,
       wrap: 'repeat'
     }),
-    depth: false
+    depthStencil: false
   }))
 
 const updateLife = regl({
