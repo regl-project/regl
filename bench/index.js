@@ -9,7 +9,7 @@ var present = require('present');
 const WIDTH = 384
 const HEIGHT = 240
 var regl
-var isHeadless = false
+var isHeadless = typeof document === 'undefined'
 var canvas
 var gl
 
