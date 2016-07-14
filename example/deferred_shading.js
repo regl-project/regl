@@ -17,7 +17,7 @@ camera.zoom(500.0) // 10.0
 
 const fbo = regl.framebuffer({
   color: [
-    regl.texture({type: 'uint8'}), // albedo
+    regl.texture({type: 'float'}), // albedo
     regl.texture({type: 'float'}), // normal
     regl.texture({type: 'float'}) // position
   ],
