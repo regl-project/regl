@@ -2,8 +2,6 @@
 var CASES = require('./list')
 var extend = require('../lib/util/extend')
 var createREGL = require('../../regl')
-// var gitCommits = require('git-commits');
-// var path = require('path')
 var present = require('present')
 
 const WIDTH = 384
@@ -56,13 +54,15 @@ function analyze (samples, fmt) {
     return a - b
   })
 
+  return {
+    mean: mean,
+    stddev: stddev
+  }
+  /*
   return [
-    'μ=', fmt(mean), '∓', fmt(stddev),
-    ', q=[',
-    fmt(sorted[(0.5 * m0) | 0]), ', ',
-    fmt(sorted[(0.95 * m0) | 0]), ', ',
-    fmt(sorted[m0 - 1]), ']'
-  ].join('')
+
+//    'μ=', fmt(mean), '∓', fmt(stddev),
+  ].join('')*/
 }
 
 function sigfigs (x) {
@@ -90,7 +90,17 @@ function formatMemory (x) {
   return x + 'b'
 }
 
-function benchmark (procedure, samples, warmupSamples) {
+function benchmark (caseName, testCase) {
+
+  var procedure
+  if (caseName === 'cube-webgl') {
+    procedure = testCase.proc(gl, WIDTH, HEIGHT)
+  } else {
+    procedure = testCase.proc(regl)
+  }
+  var samples = testCase.samples
+  var warmupSamples = testCase.warmupSamples
+
   var timeSamples = []
   var heapSamples = []
 
@@ -105,7 +115,8 @@ function benchmark (procedure, samples, warmupSamples) {
     timeSamples.push(present() - start)
 
     // dont have this in headless.
-//    heapSamples.push(performance.memory.usedJSHeapSize)
+    if(!isHeadless)
+      heapSamples.push(performance.memory.usedJSHeapSize)
   }
 
   return function run () {
@@ -131,11 +142,15 @@ function benchmark (procedure, samples, warmupSamples) {
     }
 
     //    console.log("samples: ", timeSamples)
-    return {
+    var ret = {
       n: timeSamples.length,
       time: analyze(timeSamples, formatTime)
-//      space: analyze(heapSamples, formatMemory)
     }
+
+    if(!isHeadless)
+      ret.space = analyze(heapSamples, formatMemory)
+
+    return ret
   }
 }
 
@@ -164,47 +179,31 @@ function button (text, onClick) {
   }
 }
 
+var json = {}
+
 Object.keys(CASES).map(function (caseName) {
-  var obj = CASES[caseName]
 
-  var proc
-  if (caseName === 'cube-webgl') {
-    proc = obj.proc(gl, WIDTH, HEIGHT)
-  } else {
-    proc = obj.proc(regl)
-  }
-
-  var sample = benchmark(proc, obj.samples, obj.warmupSamples)
+  var sample = benchmark(caseName, CASES[caseName])
 
   if (isHeadless) {
     var bench = sample()
-    console.log(caseName + ' : ' + 'n:' + bench.n + ', t:(' + bench.time + '),')
+    json[caseName] = bench
+//    console.log(caseName + ' : ' + 'n:' + bench.n + ', t:(' + bench.time + '),')
   } else {
     var result
     result = button(caseName, function () {
       var bench = sample()
-      result.text.innerText = 'n:' + bench.n + ', t:(' + bench.time + '),' // + 'm:(' + bench.space + ')'
+
+      var time = ['μ=', formatTime(bench.time.mean), '∓', formatTime(bench.time.stddev)].join('')
+      var memory = ['μ=', formatMemory(bench.space.mean), '∓', formatMemory(bench.space.stddev)].join('')
+
+      result.text.innerText = 'n:' + bench.n + ', t:(' + time + '), ' + 'm:(' + memory + '),'
       return result
     })
   }
 })
 
-// document.removeChild(document.documentElement);
+// if headless, we output info through stdout.
 
-/*
-  var c =  document.getElementsByTagName("canvas")[0]
-  //http://130.241.188.19:9966/
-  document.body.removeChild(c);
-
-  var p = document.createElement('p')
-  p.innerHTML = json
-  document.body.appendChild(p)
-*/
-
-/*
-  clearn:100, t:(μ=10.3μs∓37.43μs, q=[5μs, 30μs, 310μs]), m:(μ=12.11Mb∓0b, q=[12.11Mb, 12.11Mb, 12.11Mb])
-cuben:30000, t:(μ=12.24μs∓78.41μs, q=[10μs, 15μs, 9.18ms]), m:(μ=12.11Mb∓0b, q=[12.11Mb, 12.11Mb, 12.11Mb])
-cube_webgln:30000, t:(μ=14.46μs∓88.63μs, q=[15μs, 15μs, 7.32ms]), m:(μ=12.11Mb∓0b, q=[12.11Mb, 12.11Mb, 12.11Mb])
-  */
-
-//     draw('for(var gggg = 0; gggg < 1000; gggg++) ', env.shared.gl, '.useProgram(', program, '.program);')
+if(isHeadless)
+  console.log(json)
