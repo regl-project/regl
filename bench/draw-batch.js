@@ -24,10 +24,7 @@ module.exports = function (regl) {
     ].join('\n'),
 
     attributes: {
-      position: regl.buffer([
-          -1, 0,
-        0, -1,
-        1, 1])
+      position: regl.buffer([-1, 0, 0, -1, 1, 1])
     },
 
     uniforms: {
@@ -64,5 +61,4 @@ module.exports = function (regl) {
       { offset: [1, 1] }
     ])
   }
-
 }
