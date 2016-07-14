@@ -189,6 +189,7 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
     gl.bindTexture(gl.TEXTURE_2D, cubeTexture)
 
     // set uniforms
+    gl.useProgram(shaderProgram)
     gl.uniform1i(gl.getUniformLocation(shaderProgram, 'tex'), 0)
 
     const t = 0.01 * args.tick
