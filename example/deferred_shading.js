@@ -290,7 +290,6 @@ Mesh.prototype.draw = regl({
 var bunnyMesh = new Mesh(bunny.cells, bunny.positions, normals(bunny.cells, bunny.positions))
 var boxMesh = new Mesh(boxElements, boxPosition, boxNormal)
 
-
 var drawGeometry = () => {
   var S = 800 // plane size
   var T = 0.1 // plane thickness
@@ -307,6 +306,8 @@ var drawGeometry = () => {
     return ((x % n) + n) % n
   }
 
+  var x
+  var z
 
   // There's lots of magic numbers below, and they were simply chosen because
   // they make it looks good. There's no deeper meaning behind them.
@@ -346,7 +347,6 @@ var drawGeometry = () => {
 
   bunnyMesh.draw(bunnies)
   boxMesh.draw({scale: [S, T, S], translate: [0.0, 0.0, 0], color: C})
-
 }
 
 var drawPointLights = (tick) => {
@@ -400,13 +400,10 @@ var drawPointLights = (tick) => {
   drawPointLight(pointLights)
 }
 
-
 regl.frame(({tick, viewportWidth, viewportHeight}) => {
   regl.updateTimer()
 
   fbo.resize(viewportWidth, viewportHeight)
-
-  var x, z
 
   globalScope(() => {
     // First we draw all geometry, and output their normals,
