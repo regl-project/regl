@@ -1,4 +1,120 @@
 /* global alert*/
+
+function flatten (data) {
+  var result = []
+  var dimension = data[0].length
+  var ptr = 0
+  for (var i = 0; i < data.length; ++i) {
+    var v = data[i]
+    for (var j = 0; j < dimension; ++j) {
+      result[ptr++] = v[j]
+    }
+  }
+  return result
+}
+
+var cubePosition = [
+  // positive z face.
+  [-0.5, +0.5, +0.5],
+  [+0.5, +0.5, +0.5],
+  [+0.5, -0.5, +0.5],
+  [-0.5, -0.5, +0.5],
+
+  // positive x face
+  [+0.5, +0.5, +0.5],
+  [+0.5, +0.5, -0.5],
+  [+0.5, -0.5, -0.5],
+  [+0.5, -0.5, +0.5],
+
+  // negative z face
+  [+0.5, +0.5, -0.5],
+  [-0.5, +0.5, -0.5],
+  [-0.5, -0.5, -0.5],
+  [+0.5, -0.5, -0.5],
+
+  // negative x face.
+  [-0.5, +0.5, -0.5],
+  [-0.5, +0.5, +0.5],
+  [-0.5, -0.5, +0.5],
+  [-0.5, -0.5, -0.5],
+
+  // top face
+  [-0.5, +0.5, -0.5],
+  [+0.5, +0.5, -0.5],
+  [+0.5, +0.5, +0.5],
+  [-0.5, +0.5, +0.5],
+
+  // bottom face
+  [-0.5, -0.5, -0.5],
+  [+0.5, -0.5, -0.5],
+  [+0.5, -0.5, +0.5],
+  [-0.5, -0.5, +0.5]
+]
+
+var cubeUv = [
+  // positive z face.
+  [0.0, 0.0],
+  [1.0, 0.0],
+  [1.0, 1.0],
+  [0.0, 1.0],
+
+  // positive x face.
+  [0.0, 0.0],
+  [1.0, 0.0],
+  [1.0, 1.0],
+  [0.0, 1.0],
+
+  // negative z face.
+  [0.0, 0.0],
+  [1.0, 0.0],
+  [1.0, 1.0],
+  [0.0, 1.0],
+
+  // negative x face.
+  [0.0, 0.0],
+  [1.0, 0.0],
+  [1.0, 1.0],
+  [0.0, 1.0],
+
+  // top face
+  [0.0, 0.0],
+  [1.0, 0.0],
+  [1.0, 1.0],
+  [0.0, 1.0],
+
+  // bottom face
+  [0.0, 0.0],
+  [1.0, 0.0],
+  [1.0, 1.0],
+  [0.0, 1.0]
+]
+
+var cubeElements = [
+  // positive z face.
+  [2, 1, 0],
+  [2, 0, 3],
+
+  // positive x face.
+  [6, 5, 4],
+  [6, 4, 7],
+
+  // negative z face.
+  [10, 9, 8],
+  [10, 8, 11],
+
+  // negative x face.
+  [14, 13, 12],
+  [14, 12, 15],
+
+  // top face.
+  [18, 17, 16],
+  [18, 16, 19],
+
+  // bottom face
+  [20, 21, 22],
+  [23, 20, 22]
+]
+
 module.exports = function (gl, canvasWidth, canvasHeight) {
   var cubePositionBuffer
   var cubeUvBuffer
@@ -26,102 +142,17 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
     cubePositionBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, cubePositionBuffer)
 
-    var cubePosition =
-        [
-      // positive z face.
-      -0.5, +0.5, +0.5, +0.5, +0.5, +0.5, +0.5, -0.5, +0.5, -0.5, -0.5, +0.5,
-
-      // positive x face
-      +0.5, +0.5, +0.5, +0.5, +0.5, -0.5, +0.5, -0.5, -0.5, +0.5, -0.5, +0.5,
-
-      // negative z face
-      +0.5, +0.5, -0.5, -0.5, +0.5, -0.5, -0.5, -0.5, -0.5, +0.5, -0.5, -0.5,
-
-      // negative x face.
-      -0.5, +0.5, -0.5, -0.5, +0.5, +0.5, -0.5, -0.5, +0.5, -0.5, -0.5, -0.5,
-
-      // top face
-      -0.5, +0.5, -0.5, +0.5, +0.5, -0.5, +0.5, +0.5, +0.5, -0.5, +0.5, +0.5,
-
-      // bottom face
-      -0.5, -0.5, -0.5, +0.5, -0.5, -0.5, +0.5, -0.5, +0.5, -0.5, -0.5, +0.5
-    ]
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(cubePosition), gl.STATIC_DRAW)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(flatten(cubePosition)), gl.STATIC_DRAW)
 
     cubeUvBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, cubeUvBuffer)
 
-    var cubeUv =
-        [
-      // positive z face.
-      0.0, 0.0,
-      1.0, 0.0,
-      1.0, 1.0,
-      0.0, 1.0,
-
-      // positive x face.
-      0.0, 0.0,
-      1.0, 0.0,
-      1.0, 1.0,
-      0.0, 1.0,
-
-      // negative z face.
-      0.0, 0.0,
-      1.0, 0.0,
-      1.0, 1.0,
-      0.0, 1.0,
-
-      // negative x face.
-      0.0, 0.0,
-      1.0, 0.0,
-      1.0, 1.0,
-      0.0, 1.0,
-
-      // top face
-      0.0, 0.0,
-      1.0, 0.0,
-      1.0, 1.0,
-      0.0, 1.0,
-
-      // bottom face
-      0.0, 0.0,
-      1.0, 0.0,
-      1.0, 1.0,
-      0.0, 1.0
-    ]
-
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(cubeUv), gl.STATIC_DRAW)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(flatten(cubeUv)), gl.STATIC_DRAW)
 
     cubeElementsBuffers = gl.createBuffer()
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeElementsBuffers)
 
-    var cubeElements =
-        [
-      // positive z face.
-      2, 1, 0,
-      2, 0, 3,
-
-      // positive x face.
-      6, 5, 4,
-      6, 4, 7,
-
-      // negative z face.
-      10, 9, 8,
-      10, 8, 11,
-
-      // negative x face.
-      14, 13, 12,
-      14, 12, 15,
-
-      // top face.
-      18, 17, 16,
-      18, 16, 19,
-
-      // bottom face
-      20, 21, 22,
-      23, 20, 22
-    ]
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(cubeElements), gl.STATIC_DRAW)
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(flatten(cubeElements)), gl.STATIC_DRAW)
   }
 
   function initTextures () {
@@ -173,19 +204,19 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
 
   function initShaders () {
     var vert = `
-  precision mediump float;
-  attribute vec3 position;
-  attribute vec2 uv;
-  varying vec2 vUv;
-  uniform mat4 projection, view;
-  void main() {
-    vUv = uv;
-    gl_Position = projection * view * vec4(position, 1);
-  }
+    precision mediump float;
+    attribute vec3 position;
+    attribute vec2 uv;
+    varying vec2 vUv;
+    uniform mat4 projection, view;
+    void main() {
+      vUv = uv;
+      gl_Position = projection * view * vec4(position, 1);
+    }
     `
 
     var frag = `
-      precision mediump float;
+    precision mediump float;
     varying vec2 vUv;
     uniform sampler2D tex;
     void main () {
