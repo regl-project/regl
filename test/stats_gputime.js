@@ -147,7 +147,7 @@ tape('test gpuTime', function (t) {
 
     var processCase = function () {
       if (temp !== null) {
-        regl.updateTimer()
+        regl.poll()
         temp.partTwo()
       }
       var testCase = testCases.shift()

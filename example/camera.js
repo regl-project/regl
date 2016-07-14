@@ -45,8 +45,6 @@ const drawBunny = regl({
 })
 
 regl.frame(() => {
-  regl.updateTimer()
-
   regl.clear({
     color: [0, 0, 0, 1]
   })
