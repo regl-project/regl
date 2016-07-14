@@ -61,14 +61,14 @@ module.exports = function (regl) {
                            [5 * Math.cos(t), 2.5 * Math.sin(t), 5 * Math.sin(t)],
                            [0, 0.0, 0],
                            [0, 1, 0])
-                           },
+      },
 
       projection: ({viewportWidth, viewportHeight}) => {
         return mat4.perspective([],
-                         Math.PI / 4,
-                         viewportWidth / viewportHeight,
-                         0.01,
-                         10) },
+                                Math.PI / 4,
+                                viewportWidth / viewportHeight,
+                                0.01,
+                                10) },
       tex: regl.texture({
         min: 'nearest',
         mag: 'nearest',

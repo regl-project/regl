@@ -1,10 +1,10 @@
-/* globals performance */
+// TODO: verify that headless actually correctly executes the examples with `regl.read`
 var CASES = require('./list')
 var extend = require('../lib/util/extend')
 var createREGL = require('../../regl')
-var gitCommits = require('git-commits');
-var path = require('path');
-var present = require('present');
+// var gitCommits = require('git-commits');
+// var path = require('path')
+var present = require('present')
 
 const WIDTH = 384
 const HEIGHT = 240
@@ -14,8 +14,7 @@ var canvas
 var gl
 
 if (isHeadless) {
-  var gl = require('gl')(WIDTH, HEIGHT)
-
+  gl = require('gl')(WIDTH, HEIGHT)
 } else {
   canvas = document.createElement('canvas')
   gl = canvas.getContext('webgl', {
@@ -33,11 +32,9 @@ if (isHeadless) {
   canvas.height = HEIGHT
 
   document.body.appendChild(canvas)
-
 }
 
 regl = createREGL(gl)
-
 
 function analyze (samples, fmt) {
   // Moments
@@ -103,7 +100,7 @@ function benchmark (procedure, samples, warmupSamples) {
       depth: 1,
       stencil: 0
     })
-    var start = present()//performance.now()
+    var start = present()
     procedure({tick: tick})
     timeSamples.push(present() - start)
 
@@ -112,7 +109,6 @@ function benchmark (procedure, samples, warmupSamples) {
   }
 
   return function run () {
-
     var i
     for (i = 0; i < warmupSamples; ++i) {
       regl.clear({
@@ -169,11 +165,10 @@ function button (text, onClick) {
 }
 
 Object.keys(CASES).map(function (caseName) {
-
   var obj = CASES[caseName]
 
   var proc
-  if(caseName === 'cube-webgl') {
+  if (caseName === 'cube-webgl') {
     proc = obj.proc(gl, WIDTH, HEIGHT)
   } else {
     proc = obj.proc(regl)
@@ -183,20 +178,18 @@ Object.keys(CASES).map(function (caseName) {
 
   if (isHeadless) {
     var bench = sample()
-    console.log(caseName + " : " +  'n:' + bench.n + ', t:(' + bench.time + '),')
+    console.log(caseName + ' : ' + 'n:' + bench.n + ', t:(' + bench.time + '),')
   } else {
     var result
     result = button(caseName, function () {
       var bench = sample()
-      result.text.innerText = 'n:' + bench.n + ', t:(' + bench.time + '),' //+ 'm:(' + bench.space + ')'
+      result.text.innerText = 'n:' + bench.n + ', t:(' + bench.time + '),' // + 'm:(' + bench.space + ')'
       return result
-
     })
   }
-
 })
 
-//document.removeChild(document.documentElement);
+// document.removeChild(document.documentElement);
 
 /*
   var c =  document.getElementsByTagName("canvas")[0]
