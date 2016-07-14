@@ -11,7 +11,6 @@ var sphereMesh = require('primitive-sphere')(1.0, {
   segments: 16
 })
 
-
 // configure intial camera view.
 camera.rotate([0.0, 0.0], [0.0, -0.4])
 camera.zoom(10.0)
@@ -57,6 +56,8 @@ var boxNormal = [
   [0.0, -1.0, 0.0], [0.0, -1.0, 0.0], [0.0, -1.0, 0.0], [0.0, -1.0, 0.0]
 ]
 
+// The view and projection matrices of the camera are used all over the place,
+// so we put them in the global scope for easy access.
 const globalScope = regl({
   uniforms: {
     view: () => camera.view(),
@@ -79,6 +80,7 @@ const outputGBuffer = regl({
   uniform vec3 color;
 
   void main () {
+    // just output geometry data.
     gl_FragData[0] = vec4(color, 1.0);
     gl_FragData[1] = vec4(vNormal, 0.0);
     gl_FragData[2] = vec4(vPosition, 0.0);
@@ -103,6 +105,7 @@ const outputGBuffer = regl({
   framebuffer: fbo
 })
 
+// draw a directional light as a full-screen pass.
 const drawDirectionalLight = regl({
   frag: `
   precision mediump float;
@@ -122,7 +125,6 @@ const drawDirectionalLight = regl({
 
     gl_FragColor = vec4(ambient + diffuse, 1.0);
   }`,
-
   vert: `
   precision mediump float;
   attribute vec2 position;
@@ -132,11 +134,12 @@ const drawDirectionalLight = regl({
     gl_Position = vec4(position, 0, 1);
   }`,
   attributes: {
+    // We implement the full-screen pass by using a full-screen triangle
     position: [ -4, -4, 4, -4, 0, 4 ]
   },
   uniforms: {
-    albedoTex: ({count}) => fbo.color[0],
-    normalTex: ({count}) => fbo.color[1],
+    albedoTex: () => fbo.color[0],
+    normalTex: () => fbo.color[1],
     ambientLight: [0.3, 0.3, 0.3],
     diffuseLight: [0.7, 0.7, 0.7],
     lightDir: [0.39, 0.87, 0.29]
@@ -147,11 +150,12 @@ const drawDirectionalLight = regl({
 
 
 const drawPointLight = regl({
-    depth: { enable: false },
+  depth: { enable: false },
   frag: `
   precision mediump float;
+
   varying vec2 uv;
-  uniform sampler2D albedoTex, normalTex, positionTex;
+  varying vec4 vPosition;
 
   uniform vec3 ambientLight;
   uniform vec3 diffuseLight;
@@ -159,26 +163,29 @@ const drawPointLight = regl({
   uniform float lightRadius;
   uniform vec3 lightPosition;
 
-  varying vec4 vPosition;
+  uniform sampler2D albedoTex, normalTex, positionTex;
 
   void main() {
-
+    // get screen-space position of light sphere
+    // (remember to do perspective division.)
     vec2 uv = (vPosition.xy / vPosition.w ) * 0.5 + 0.5;
+
     vec3 albedo = texture2D(albedoTex, uv).xyz;
     vec3 n = texture2D(normalTex, uv).xyz;
     vec4 position = texture2D(positionTex, uv);
 
-    vec3 lightDist = (position.xyz) - lightPosition;
-    float lightDistLength = length(lightDist);
-    vec3 l = - lightDist * 1.0 / ( lightDistLength );
+    vec3 toLightVector = position.xyz - lightPosition;
+    float lightDist = length(toLightVector);
+    vec3 l = -toLightVector / ( lightDist );
 
-    float ztest = step(0.0, lightRadius - lightDistLength );
+    // fake z-test
+    float ztest = step(0.0, lightRadius - lightDist );
 
     vec3 ambient = ambientLight * albedo;
     vec3 diffuse = diffuseLight * albedo * clamp( dot(n, l ), 0.0, 1.0 );
 
     gl_FragColor = vec4((diffuse+ambient) * ztest
-                        *(1.0 - lightDistLength / lightRadius)
+                        *(1.0 - lightDist / lightRadius)
                         ,1.0);
   }`,
 
@@ -191,13 +198,13 @@ const drawPointLight = regl({
 
   void main() {
     vec4 pos = projection * view * model * vec4(position, 1);
-   vPosition = pos;
+    vPosition = pos;
     gl_Position = pos;
   }`,
   uniforms: {
-    albedoTex: ({count}) => fbo.color[0],
-    normalTex: ({count}) => fbo.color[1],
-    positionTex: ({count}) => fbo.color[2],
+    albedoTex: () => fbo.color[0],
+    normalTex: () => fbo.color[1],
+    positionTex: () => fbo.color[2],
     ambientLight: regl.prop('ambientLight'),
     diffuseLight: regl.prop('diffuseLight'),
     lightPosition: regl.prop('translate'),
@@ -205,15 +212,11 @@ const drawPointLight = regl({
     model: (_, props, batchId) => {
       var m = mat4.identity([])
 
-
-
       mat4.translate(m, m, props.translate)
       var s = props.scale
 
       var r = props.radius
       mat4.scale(m, m, [r, r, r])
-
-
 
       return m
     }
@@ -223,6 +226,8 @@ const drawPointLight = regl({
     normal: () => sphereMesh.normals
   },
   elements: () => sphereMesh.cells,
+  // we use additive blending to combine the
+  // light spheres with the framebuffer.
   blend: {
     enable: true,
     func: {
@@ -250,8 +255,9 @@ function Mesh (elements, position, normal) {
 Mesh.prototype.draw = regl({
   uniforms: {
     model: (_, props, batchId) => {
+      // we create the model matrix by combining
+      // translation, scaling and rotation matrices.
       var m = mat4.identity([])
-
 
       mat4.translate(m, m, props.translate)
       var s = props.scale
@@ -265,11 +271,8 @@ Mesh.prototype.draw = regl({
       if(typeof props.yRotate !== 'undefined')
         mat4.rotateY(m, m, props.yRotate)
 
-
       return m
     },
-    ambientLightAmount: 0.3,
-    diffuseLightAmount: 0.7,
     color: regl.prop('color')
   },
   attributes: {
@@ -285,31 +288,14 @@ Mesh.prototype.draw = regl({
 var bunnyMesh = new Mesh(bunny.cells, bunny.positions, normals(bunny.cells, bunny.positions))
 var boxMesh = new Mesh(boxElements, boxPosition, boxNormal)
 
-
-
-//console.log("l: ", sphereMesh.positions, sphereMesh.normals, sphereMesh.cells)
-
-function randomRange (min, max) {
-  var t = Math.random()
-  return min * (1.0 - t) + max * t
-}
-
-function randomColor (c, variance) {
-  return [
-    c[0] + randomRange(-variance, +variance),
-    c[1] + randomRange(-variance, +variance),
-    c[2] + randomRange(-variance, +variance),
-  ]
-}
-
-
-
 regl.frame(({tick, viewportWidth, viewportHeight}) => {
   regl.updateTimer()
 
   fbo.resize(viewportWidth, viewportHeight)
 
   globalScope(() => {
+    // First we draw all geometry, and output their normals,
+    // positions and albedo colors to the G-buffer
     outputGBuffer(() => {
       regl.clear({
         color: [0, 0, 0, 255],
@@ -377,6 +363,8 @@ regl.frame(({tick, viewportWidth, viewportHeight}) => {
       boxMesh.draw({scale: [S, S, T], translate: [0, S / 2, -S / 2], color: C})
     })
 
+    // We have a single directional light in the scene.
+    // We draw it as a full-screen pass.
     drawDirectionalLight()
 
     pointLights = []
@@ -432,6 +420,7 @@ regl.frame(({tick, viewportWidth, viewportHeight}) => {
       {radius:20.0, translate: [60.0, 0.0, 0.0], ambientLight: [0.0, 0.2, 0.0], diffuseLight: [0.0, 0.6, 0.0]}
     ]
 
+    // next, we draw all point lights as sphere.
     drawPointLight(pointLights)
   })
 
