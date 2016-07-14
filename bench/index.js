@@ -181,6 +181,7 @@ function button (text, onClick) {
 
 var json = {}
 
+
 Object.keys(CASES).map(function (caseName) {
 
   var sample = benchmark(caseName, CASES[caseName])
@@ -206,4 +207,4 @@ Object.keys(CASES).map(function (caseName) {
 // if headless, we output info through stdout.
 
 if(isHeadless)
-  console.log(json)
+  console.log(JSON.stringify(json))
