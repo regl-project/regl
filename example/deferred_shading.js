@@ -288,6 +288,7 @@ Mesh.prototype.draw = regl({
 var bunnyMesh = new Mesh(bunny.cells, bunny.positions, normals(bunny.cells, bunny.positions))
 var boxMesh = new Mesh(boxElements, boxPosition, boxNormal)
 
+
 var drawGeometry = () => {
   var S = 800 // plane size
   var T = 0.1 // plane thickness
@@ -346,6 +347,58 @@ var drawGeometry = () => {
 
 }
 
+var drawPointLights = (tick) => {
+  //
+  // First we place out the point lights
+  //
+  var pointLights = []
+
+  // There's lots of magic numbers below, and they were simply chosen because
+  // they make it looks good. There's no deeper meaning behind them.
+  function makeRose (args) {
+    var N = args.N // the number of points.
+    var n = args.n // See the wikipedia article for a definition of n and d.
+    var d = args.d // See the wikipedia article for a definition of n and d.
+    var v = args.v // how fast the points traverse on the curve.
+    var R = args.R // the radius of the rose curve.
+    var s = args.s // use this parameter to spread out the points on the rose curve.
+    var seed = args.seed // random seed
+
+    for (var j = 0; j < N; ++j) {
+      var theta = s * 2 * Math.PI * i * (1.0 / (N))
+      theta += tick * 0.01
+
+      var i = j + seed
+
+      var a = 0.8
+
+      var r = ((Math.abs(23232 * i * i + 100212) % 255) / 255) * 0.8452
+      var g = ((Math.abs(32278 * i + 213) % 255) / 255) * 0.8523
+      var b = ((Math.abs(3112 * i * i * i + 2137 + i) % 255) / 255) * 0.8523
+
+      var rad = ((Math.abs(3112 * i * i * i + 2137 + i * i + 232 * i) % 255) / 255) * 0.9 * 30.0 + 30.0
+      // See the wikipedia article for a definition of n and d.
+      var k = n / d
+      pointLights.push({radius: rad, translate:
+                        [R * Math.cos(k * theta * v) * Math.cos(theta * v), 20.9, R * Math.cos(k * theta * v) * Math.sin(theta * v)],
+                        ambientLight: [a * r, a * g, a * b], diffuseLight: [r, g, b]})
+    }
+  }
+
+  // We make the point lights move on rose curves. This looks rather cool.
+  // https://en.wikipedia.org/wiki/Rose_(mathematics)
+  makeRose({N: 10, n: 3, d: 1, v: 0.4, R: 300, seed: 0, s: 1})
+  makeRose({N: 20, n: 7, d: 4, v: 0.6, R: 350, seed: 3000, s: 1})
+  makeRose({N: 20, n: 10, d: 6, v: 0.7, R: 350, seed: 30000, s: 1})
+  makeRose({N: 40, n: 7, d: 9, v: 0.7, R: 450, seed: 60000, s: 10})
+
+  //
+  // Next, we draw all point lights as spheres.
+  //
+  drawPointLight(pointLights)
+}
+
+
 regl.frame(({tick, viewportWidth, viewportHeight}) => {
   regl.updateTimer()
 
@@ -369,46 +422,8 @@ regl.frame(({tick, viewportWidth, viewportHeight}) => {
     // We draw it as a full-screen pass.
     drawDirectionalLight()
 
-    var pointLights = []
-
-    function makeRose (args) {
-      var N = args.N
-      var n = args.n
-      var d = args.d
-      var v = args.v
-      var R = args.R
-      var s = args.s
-
-      var startI = args.startI
-
-      for (var j = 0; j < N; ++j) {
-        var theta = s * 2 * Math.PI * i * (1.0 / (N))
-        theta += tick * 0.01
-
-        var i = j + startI
-
-        var a = 0.8
-
-        var r = ((Math.abs(23232 * i * i + 100212) % 255) / 255) * 0.8452
-        var g = ((Math.abs(32278 * i + 213) % 255) / 255) * 0.8523
-        var b = ((Math.abs(3112 * i * i * i + 2137 + i) % 255) / 255) * 0.8523
-
-        var rad = ((Math.abs(3112 * i * i * i + 2137 + i * i + 232 * i) % 255) / 255) * 0.9 * 30.0 + 30.0
-
-        var k = n / d
-        pointLights.push({radius: rad, translate:
-                          [R * Math.cos(k * theta * v) * Math.cos(theta * v), 20.9, R * Math.cos(k * theta * v) * Math.sin(theta * v)],
-                          ambientLight: [a * r, a * g, a * b], diffuseLight: [r, g, b]})
-      }
-    }
-
-    makeRose({N: 10, n: 3, d: 1, v: 0.4, R: 300, startI: 0, s: 1})
-    makeRose({N: 20, n: 7, d: 4, v: 0.6, R: 350, startI: 3000, s: 1})
-    makeRose({N: 20, n: 10, d: 6, v: 0.7, R: 350, startI: 30000, s: 1})
-    makeRose({N: 40, n: 7, d: 9, v: 0.7, R: 450, startI: 60000, s: 10})
-
     // next, we draw all point lights as spheres.
-    drawPointLight(pointLights)
+    drawPointLights(tick)
   })
 
   camera.tick()
