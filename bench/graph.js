@@ -25,7 +25,7 @@ document.write(
   </style>
     <body>
 
-    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="bench/d3.v3.min.js"></script>
 
     <script>
 
@@ -60,6 +60,15 @@ document.write(
     if(req.readyState === 4 && (req.status === 200 || req.status == 0))
     {
       var json = JSON.parse(req.responseText)
+
+      Object.keys(json[0].testData).map(function (testCase) {
+        var header = document.createElement('h1')
+        header.innerHTML = testCase
+
+        document.body.appendChild(header)
+
+      })
+
       var data = []
 
       for (var i = 0; i < json.length; i++) {
