@@ -24,7 +24,7 @@ document.write(
   div.tooltip {
     position: absolute;
     text-align: left;
-     width: 360px;
+    width: 360px;
     padding: 10px;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 13px;
@@ -54,14 +54,14 @@ document.write(
     <script>
 
   function sigfigs (x) {
-  var xr = Math.round(x * 1000)
-  return (xr / 1000)
-}
+    var xr = Math.round(x * 1000)
+    return (xr / 1000)
+  }
 
   // Set the dimensions of the canvas / graph
   var margin = {top: 30, right: 20, bottom: 30, left: 50},
-  width = 600 - margin.left - margin.right,
-  height = 270 - margin.top - margin.bottom;
+      width = 600 - margin.left - margin.right,
+      height = 270 - margin.top - margin.bottom;
 
   // Parse the date / time
   var parseDate = d3.time.format("%d-%b-%y").parse;
@@ -102,89 +102,86 @@ document.write(
 
         document.body.appendChild(header)
 
-      })
+
+        var data = []
+
+        for (var i = 0; i < json.length; i++) {
+          data.push({
+            date: new Date(json[i].timestamp*1000),
+            title: json[i].title,
+            description: json[i].description,
+            hash: json[i].hash,
+            author: json[i].author,
+
+            testData: json[i].testData[testCase]
+          })
 
 
-      var data = []
+        }
 
-      for (var i = 0; i < json.length; i++) {
-        data.push({
-          date: new Date(json[i].timestamp*1000),
-          title: json[i].title,
-          description: json[i].description,
-          hash: json[i].hash,
-          author: json[i].author,
+        // Adds the svg canvas
+        var svg = d3.select("body")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform",
+                  "translate(" + margin.left + "," + margin.top + ")");
 
-          testData: json[i].testData.cube
-        })
+        // Scale the range of the data
+        x.domain(d3.extent(data, function(d) { return d.date; }));
+        y.domain([0, d3.max(data, function(d) { return d.testData.time.mean; })]);
 
-        console.log("d, ", json[i].testData.cube.time.mean)
+        // Add the valueline path.
+        svg.append("path")
+          .attr("class", "line")
+          .attr("d", valueline(data));
 
+        svg.selectAll("dot")
+	  .data(data)
+	  .enter().append("circle")
+	  .attr("r", 3)
+	  .attr("cx", function(d) { return x(d.date); })
+	  .attr("cy", function(d) { return y(d.testData.time.mean); })
+          .on("mouseover", function(d) {
+            div.transition()
+              .duration(200)
+              .style("opacity", .9);
 
-      }
+            var desc = d.title + d.description
+            var shortenedDesc = desc.length > 70 ? desc.substring(0,69)+'...' : desc
+            var commitUrl = 'https://github.com/mikolalysenko/regl/commit/' + d.hash
+            console.log("link: ", commitUrl)
 
-      // Adds the svg canvas
-      var svg = d3.select("body")
-          .append("svg")
-          .attr("width", width + margin.left + margin.right)
-          .attr("height", height + margin.top + margin.bottom)
-          .append("g")
-          .attr("transform",
-                "translate(" + margin.left + "," + margin.top + ")");
-
-      // Scale the range of the data
-      x.domain(d3.extent(data, function(d) { return d.date; }));
-      y.domain([0, d3.max(data, function(d) { return d.testData.time.mean; })]);
-
-      // Add the valueline path.
-      svg.append("path")
-        .attr("class", "line")
-        .attr("d", valueline(data));
-
-
-      svg.selectAll("dot")
-	.data(data)
-	.enter().append("circle")
-	.attr("r", 3)
-	.attr("cx", function(d) { return x(d.date); })
-	.attr("cy", function(d) { return y(d.testData.time.mean); })
-        .on("mouseover", function(d) {
-          div.transition()
-            .duration(200)
-            .style("opacity", .9);
-
-          var desc = d.title + d.description
-          var shortenedDesc = desc.length > 70 ? desc.substring(0,69)+'...' : desc
-          var commitUrl = 'https://github.com/mikolalysenko/regl/commit/' + d.hash
-          console.log("link: ", commitUrl)
-
-              div.html(
-                "<b>Hash: </b>" + '<a href="' + commitUrl + '"><code>'+d.hash+'</code></a>' + "<br/>" +
+            div.html(
+              "<b>Hash: </b>" + '<a href="' + commitUrl + '"><code>'+d.hash+'</code></a>' + "<br/>" +
                 "<b>Desc.: </b>" + shortenedDesc + "<br/>" +
                 "<b>Avg. time: </b>" + sigfigs(d.testData.time.mean) + '∓' + sigfigs(d.testData.time.stddev)  + "ms" + "<br/>" +
                 "<b>Author: </b>" + d.author + "<br/>" +
                 "<b>Date: </b>" + d.date + "<br/>"
-          )
+            )
 
-            .style("left", (d3.event.pageX) + "px")
-            .style("top", (d3.event.pageY - 28) + "px");
+              .style("left", (d3.event.pageX) + "px")
+              .style("top", (d3.event.pageY - 28) + "px");
 
-          console.log(htmlCode)
+            console.log(htmlCode)
 
-        })
+          })
+
+        // Add the X Axis
+        svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis);
+
+        // Add the Y Axis
+        svg.append("g")
+          .attr("class", "y axis")
+          .call(yAxis);
+
+      })
 
 
-
-      // Add the X Axis
-      svg.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0," + height + ")")
-        .call(xAxis);
-
-      // Add the Y Axis
-      svg.append("g")
-        .attr("class", "y axis")
-        .call(yAxis);
     }
   }
   req.send(null);
