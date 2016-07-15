@@ -229,8 +229,6 @@ var boxMesh = new Mesh(boxElements, boxPosition, boxNormal)
 var planeMesh = new Mesh(planeElements, planePosition, planeNormal)
 
 regl.frame(({tick}) => {
-  regl.updateTimer()
-
   var drawMeshes = () => {
     regl.clear({
       color: [0, 0, 0, 255],
