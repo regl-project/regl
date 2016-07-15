@@ -4,8 +4,8 @@ document.write(
   `
     <!DOCTYPE html>
     <meta charset="utf-8">
-    <style>
 
+    <style>
 
   path {
     stroke: steelblue;
@@ -23,23 +23,40 @@ document.write(
 
   div.tooltip {
     position: absolute;
-    text-align: center;
-    width: 60px;
-    height: 28px;
-    padding: 2px;
-    font: 12px sans-serif;
-    background: lightsteelblue;
-    border: 0px;
+    text-align: left;
+     width: 360px;
+    padding: 10px;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+
+    background: white;
+    border: 2px;
     border-radius: 8px;
     pointer-events: none;
-}
+
+    border-style: solid;
+    border-color: #000;
+  }
+
+  text {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    fill: #666;
+    font-size: 14px;
+  }
 
   </style>
+
+
     <body>
 
     <script src="bench/d3.v3.min.js"></script>
 
     <script>
+
+  function sigfigs (x) {
+  var xr = Math.round(x * 1000)
+  return (xr / 1000)
+}
 
   // Set the dimensions of the canvas / graph
   var margin = {top: 30, right: 20, bottom: 30, left: 50},
@@ -65,10 +82,10 @@ document.write(
       .x(function(d) { return x(d.date); })
       .y(function(d) { return y(d.testData.time.mean); });
 
-// Define the div for the tooltip
-var div = d3.select("body").append("div")
-    .attr("class", "tooltip")
-    .style("opacity", 0);
+  // Define the div for the tooltip
+  var div = d3.select("body").append("div")
+      .attr("class", "tooltip")
+      .style("opacity", 0);
 
   var req = new XMLHttpRequest();
   req.open("GET", 'bench/test_data.json', true);
@@ -94,7 +111,11 @@ var div = d3.select("body").append("div")
       for (var i = 0; i < json.length; i++) {
         data.push({
           date: new Date(json[i].timestamp*1000),
-          close: json[i].testData.cube.time.mean,
+          title: json[i].title,
+          description: json[i].description,
+          hash: json[i].hash,
+          author: json[i].author,
+
           testData: json[i].testData.cube
         })
 
@@ -125,17 +146,36 @@ var div = d3.select("body").append("div")
       svg.selectAll("dot")
 	.data(data)
 	.enter().append("circle")
-	.attr("r", 2)
+	.attr("r", 3)
 	.attr("cx", function(d) { return x(d.date); })
 	.attr("cy", function(d) { return y(d.testData.time.mean); })
         .on("mouseover", function(d) {
-            div.transition()
-                .duration(200)
-                .style("opacity", .9);
-            div	.html("loltime" + "<br/>"  + d.testData.time.mean )
-                .style("left", (d3.event.pageX) + "px")
-                .style("top", (d3.event.pageY - 28) + "px");
-            })
+          div.transition()
+            .duration(200)
+            .style("opacity", .9);
+
+
+          var desc = d.title + d.description
+          var shortenedDesc = desc.length > 70 ? desc.substring(0,69)+'...' : desc
+
+          div.html(
+            "<b>Hash: </b>" + '<code>'+d.hash+'</code>' + "<br/>"
+            +
+              "<b>Desc.: </b>" + shortenedDesc + "<br/>" +
+
+            "<b>Avg. time: </b>" + sigfigs(d.testData.time.mean) + '∓' + sigfigs(d.testData.time.stddev)  + "ms" + "<br/>" +
+
+            "<b>Author: </b>" + d.author + "<br/>" +
+
+            "<b>Date: </b>" + d.date + "<br/>"
+
+
+
+          )
+
+            .style("left", (d3.event.pageX) + "px")
+            .style("top", (d3.event.pageY - 28) + "px");
+        })
 
 
 
