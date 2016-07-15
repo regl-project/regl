@@ -193,10 +193,6 @@ var drawCalls = [
 var statsWidget = createStatsWidget(drawCalls)
 
 regl.frame(() => {
-  regl.updateTimer()
-
-  regl.updateTimer()
-
   regl.clear({
     color: [0, 0, 0, 255],
     depth: 1

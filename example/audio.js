@@ -172,10 +172,8 @@ require('resl')({
       data: new Uint8Array(N)
     }
     const freqSamples = new Uint8Array(N)
-    regl.frame(({frameCount}) => {
-      regl.updateTimer()
-
-      const offsetRow = frameCount % N
+    regl.frame(({tick}) => {
+      const offsetRow = tick % N
 
       // Clear background
       regl.clear({

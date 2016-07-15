@@ -54,8 +54,6 @@ const draw = regl({
 
 // Here we register a per-frame callback to draw the whole scene
 regl.frame(function () {
-  regl.updateTimer()
-
   regl.clear({
     color: [0, 0, 0, 1]
   })
