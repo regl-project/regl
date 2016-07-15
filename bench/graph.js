@@ -32,10 +32,10 @@ document.write(
     background: white;
     border: 2px;
     border-radius: 8px;
-    pointer-events: none;
 
     border-style: solid;
     border-color: #000;
+
   }
 
   text {
@@ -91,8 +91,7 @@ document.write(
   req.open("GET", 'bench/test_data.json', true);
   req.onreadystatechange = function ()
   {
-    if(req.readyState === 4 && (req.status === 200 || req.status == 0))
-    {
+    if(req.readyState === 4 && (req.status === 200 || req.status == 0)) {
       var json = JSON.parse(req.responseText)
 
       Object.keys(json[0].testData).map(function (testCase) {
@@ -154,27 +153,24 @@ document.write(
             .duration(200)
             .style("opacity", .9);
 
-
           var desc = d.title + d.description
           var shortenedDesc = desc.length > 70 ? desc.substring(0,69)+'...' : desc
+          var commitUrl = 'https://github.com/mikolalysenko/regl/commit/' + d.hash
+          console.log("link: ", commitUrl)
 
-          div.html(
-            "<b>Hash: </b>" + '<code>'+d.hash+'</code>' + "<br/>"
-            +
-              "<b>Desc.: </b>" + shortenedDesc + "<br/>" +
-
-            "<b>Avg. time: </b>" + sigfigs(d.testData.time.mean) + '∓' + sigfigs(d.testData.time.stddev)  + "ms" + "<br/>" +
-
-            "<b>Author: </b>" + d.author + "<br/>" +
-
-            "<b>Date: </b>" + d.date + "<br/>"
-
-
-
+              div.html(
+                "<b>Hash: </b>" + '<a href="' + commitUrl + '"><code>'+d.hash+'</code></a>' + "<br/>" +
+                "<b>Desc.: </b>" + shortenedDesc + "<br/>" +
+                "<b>Avg. time: </b>" + sigfigs(d.testData.time.mean) + '∓' + sigfigs(d.testData.time.stddev)  + "ms" + "<br/>" +
+                "<b>Author: </b>" + d.author + "<br/>" +
+                "<b>Date: </b>" + d.date + "<br/>"
           )
 
             .style("left", (d3.event.pageX) + "px")
             .style("top", (d3.event.pageY - 28) + "px");
+
+          console.log(htmlCode)
+
         })
 
 
@@ -197,3 +193,5 @@ document.write(
   </script>
     </body>
     `);
+
+//https://github.com/mikolalysenko/regl/commit/
