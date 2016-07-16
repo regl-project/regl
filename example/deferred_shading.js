@@ -411,8 +411,6 @@ var drawPointLights = (tick) => {
 }
 
 regl.frame(({tick, viewportWidth, viewportHeight}) => {
-  regl.updateTimer()
-
   fbo.resize(viewportWidth, viewportHeight)
 
   globalScope(() => {
