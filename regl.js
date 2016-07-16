@@ -246,7 +246,9 @@ module.exports = function wrapREGL () {
     var opts = separateDynamic(flattenNestedOptions(options))
 
     var stats = {
-      gpuTime: 0.0
+      gpuTime: 0.0,
+      cpuTime: 0.0,
+      count: 0
     }
 
     var compiled = core.compile(opts, attributes, uniforms, context, stats)

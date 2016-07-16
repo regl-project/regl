@@ -192,49 +192,55 @@ var drawCalls = [
 ]
 var statsWidget = createStatsWidget(drawCalls)
 
+var enableStats = regl({
+  profile: regl.prop('profile')
+})
+
 regl.frame(() => {
-  regl.clear({
-    color: [0, 0, 0, 255],
-    depth: 1
-  })
-
-  const deltaTime = 0.017
-
-  statsWidget.update(deltaTime)
-
-  scope1({}, () => {
-    var boxes = []
-    var x
-    var z
-    var X_COUNT = 5
-    var Z_COUNT = 5
-
-    // place out boxes.
-    var SPACING = -100
-    for (x = 0; x < X_COUNT; x++) {
-      for (z = 0; z < Z_COUNT; z++) {
-        boxes.push({scale: 50.7, position: [-200.0 + x * SPACING, 40, 200 + z * SPACING]})
-      }
-    }
-
-    scope2({}, () => {
-      drawBox(boxes)
+  enableStats({profile: true}, () => {
+    regl.clear({
+      color: [0, 0, 0, 255],
+      depth: 1
     })
 
-    // place out bunnies
-    SPACING = 100
-    var bunnies = []
-    for (x = 0; x < X_COUNT; x++) {
-      for (z = 0; z < Z_COUNT; z++) {
-        bunnies.push({scale: 5.2, position: [x * SPACING, 3.3, -80.0 + z * SPACING]})
+    const deltaTime = 0.017
+
+    statsWidget.update(deltaTime)
+
+    scope1({}, () => {
+      var boxes = []
+      var x
+      var z
+      var X_COUNT = 5
+      var Z_COUNT = 5
+
+      // place out boxes.
+      var SPACING = -100
+      for (x = 0; x < X_COUNT; x++) {
+        for (z = 0; z < Z_COUNT; z++) {
+          boxes.push({scale: 50.7, position: [-200.0 + x * SPACING, 40, 200 + z * SPACING]})
+        }
       }
-    }
 
-    scope3({}, () => {
-      drawPlane({scale: 2000.0, position: [0.0, 0.0, 0.0]})
-      drawBunny(bunnies)
+      scope2({}, () => {
+        drawBox(boxes)
+      })
+
+      // place out bunnies
+      SPACING = 100
+      var bunnies = []
+      for (x = 0; x < X_COUNT; x++) {
+        for (z = 0; z < Z_COUNT; z++) {
+          bunnies.push({scale: 5.2, position: [x * SPACING, 3.3, -80.0 + z * SPACING]})
+        }
+      }
+
+      scope3({}, () => {
+        drawPlane({scale: 2000.0, position: [0.0, 0.0, 0.0]})
+        drawBunny(bunnies)
+      })
+
+      camera.tick()
     })
-
-    camera.tick()
   })
 })

@@ -46,12 +46,14 @@
 
 ## Next
 
+* Add performance monitoring hooks for commands.  Now tracks draw call count, cpu time and gpu time (if disjoint timer extension supported).
+* Performance monitoring hooks for commands can be enabled/disabled using the `profile` property.
 * Finish API documentation for framebuffers
 * Optimize constructors/updates for framebuffers
 * More test cases for framebuffers
 * Clean up renderbuffer constructor and improve test coverage
 * Added `resize` method to textures, renderbuffers and framebuffers
-* Added performance monitoring hooks via `regl.stats`
+* Added global performance monitoring hooks via `regl.stats`
 * Rename `count` context variable to `tick`
 * Remove `deltaTime` context variable
 * Uniform validation fixes
