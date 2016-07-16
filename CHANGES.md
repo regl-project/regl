@@ -2,18 +2,24 @@
 
 ## Planned
 
-* Cubic frame buffer objects
-
 * Implement a standard method for handling context creation errors
 * Add a mechanism for managing webgl extensions
     + Should be able to report errors when extensions are missing
     + Allow users to disable extensions for testing/mocking
+* Add a mechanism for users to specify minimum resource requirements (texture size, varying units, etc.)
 
-* Context loss handling
+* Cubic frame buffer objects
+
+* Context loss
 
 * Write comparison suite
 
 * More performance monitoring hooks
+    + Track currently used resource requirements
+    + Output should be serializable -> works as input to constructor checks
+
+* More validation
+    + Should not be possible to write regl code that crashes on some systems
 
 * Benchmark suite
     + Dashboard for test cases and benchmarks
@@ -22,19 +28,28 @@
 * A pretty printer for the generated code
 
 * Documentation
+    + All interface methods must be documented
+    + Examples for all major features
+    + Set up/quick start guides
+    + Examples on codepen/requirebin/regl.party
+    + Live coding videos on youtube
+    + Talks?  (what conferences can we present these results at?)
+    + Core library modules need better comments
+    + Work flow for development and testing needs documentation
 
 * Testing
     + Instancing
-    + Texture generation
-    + Framebuffers
-    + Element buffer rendering primitives
+    + Float textures / framebuffers and their filtering modes
     + Constant attributes
-    + Viewport change notifications
-    + RAF/frame behavior
-    + Complete coverage for all code generation pathways
-    + Test weird invocation sequences
+    + RAF/regl.frame behavior
+    + Initialization pathways
+    + General code coverage
 
 * Build a website (preview at [regl.party](http://regl.party))
+
+* Helper modules
+    + A camera helper module to make getting started with 3D code easier
+    + Debugging tools for inspecting the state of framebuffers, textures, buffers
 
 * Recipe book/example set
     + Globe
@@ -45,6 +60,8 @@
     + Asset loading (obj, ply, etc.)
 
 ## Next
+
+## 0.9.0
 
 * Add performance monitoring hooks for commands.  Now tracks draw call count, cpu time and gpu time (if disjoint timer extension supported).
 * Performance monitoring hooks for commands can be enabled/disabled using the `profile` property.
