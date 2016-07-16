@@ -32,7 +32,7 @@ path {
 div.tooltip {
     position: absolute;
     text-align: left;
-    width: 360px;
+    width: 200px;
     padding: 10px;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     color: #222;
@@ -54,6 +54,8 @@ text {
   <body>
 
   <script src="bench/d3.v3.min.js"></script>
+  <script src="bench/moment.min.js"></script>
+
   <script>
 
   function sigfigs (x) {
@@ -91,6 +93,10 @@ text {
       var json = JSON.parse(req.responseText)
 
       Object.keys(json[0].testData).map(function (testCase) {
+
+        if (testCase !== 'cube') {
+          return
+        }
 
         // create header.
         var header = document.createElement('h1')
@@ -132,32 +138,40 @@ text {
         svg.selectAll("dot")
 	  .data(data)
 	  .enter().append("circle")
-	  .attr("r", 3)
+	  .attr("r", 5)
 	  .attr("cx", function(d) { return x(d.date); })
 	  .attr("cy", function(d) { return y(d.testData.time.mean); })
 
         // show tooltip on hover.
           .on("mouseover", function(d) {
             div.transition()
-              .duration(200)
-              .style("opacity", .9);
+              .duration(0)
+              .style("opacity", .8);
 
             var desc = d.title + d.description
             var shortenedDesc = desc.length > 70 ? desc.substring(0,69)+'...' : desc
             var commitUrl = 'https://github.com/mikolalysenko/regl/commit/' + d.hash
+
+            var timeDiff = moment(d.date).fromNow()
+
             console.log("link: ", commitUrl)
 
             div.html(
-              "<b>Hash: </b>" + '<a href="' + commitUrl + '"><code>'+d.hash+'</code></a>' + "<br/>" +
+              "<b>Hash: </b>" + '<a href="' + commitUrl + '"><code>'+ d.hash.substring(0,7) +'</code></a>' + "<br/>" +
                 "<b>Desc.: </b>" + shortenedDesc + "<br/>" +
-                "<b>Avg. time: </b>" + sigfigs(d.testData.time.mean) + '∓' + sigfigs(d.testData.time.stddev)  + "ms" + "<br/>" +
+                "<b>Time: </b>" + sigfigs(d.testData.time.mean) + '∓' + sigfigs(d.testData.time.stddev)  + "ms" + "<br/>" +
                 "<b>Author: </b>" + d.author + "<br/>" +
-                "<b>Date: </b>" + d.date + "<br/>"
+                "<b>Date: </b>" + timeDiff + "<br/>"
             )
               .style("left", (d3.event.pageX) + "px")
               .style("top", (d3.event.pageY - 28) + "px");
           })
-
+      /*  .on("mouseout", function(d) {
+            div.transition()
+                .duration(500)
+                .style("opacity", 0);
+        });
+*/
         // X-axis
         svg.append("g")
           .attr("class", "x axis")
