@@ -4,80 +4,76 @@ document.write(
   `
     <!DOCTYPE html>
     <meta charset="utf-8">
-
     <style>
+h1 {
+  text-align: center;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 50px;
 
-  path {
+}
+
+body {
+    margin: 0 auto;
+    max-width: 760px;
+}
+
+path {
     stroke: steelblue;
     stroke-width: 2;
     fill: none;
-  }
-
-    .axis path,
-    .axis line {
-      fill: none;
-      stroke: grey;
-      stroke-width: 1;
-      shape-rendering: crispEdges;
-    }
-
-  div.tooltip {
+}
+.axis path,
+.axis line {
+    fill: none;
+    stroke: grey;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+div.tooltip {
     position: absolute;
     text-align: left;
     width: 360px;
     padding: 10px;
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-size: 13px;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #222;
 
+    font-size: 14px;
     background: white;
     border: 2px;
     border-radius: 8px;
-
     border-style: solid;
     border-color: #000;
-
-  }
-
-  text {
+}
+text {
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     fill: #666;
     font-size: 14px;
-  }
-
+}
   </style>
 
+  <body>
 
-    <body>
-
-    <script src="bench/d3.v3.min.js"></script>
-
-    <script>
+  <script src="bench/d3.v3.min.js"></script>
+  <script>
 
   function sigfigs (x) {
     var xr = Math.round(x * 1000)
     return (xr / 1000)
   }
 
-  // Set the dimensions of the canvas / graph
+  // Setup margins.
   var margin = {top: 30, right: 20, bottom: 30, left: 50},
       width = 600 - margin.left - margin.right,
       height = 270 - margin.top - margin.bottom;
 
-  // Parse the date / time
-  var parseDate = d3.time.format("%d-%b-%y").parse;
-
-  // Set the ranges
   var x = d3.time.scale().range([0, width]);
   var y = d3.scale.linear().range([height, 0]);
 
-  // Define the axes
   var xAxis = d3.svg.axis().scale(x)
       .orient("bottom").ticks(5);
-
   var yAxis = d3.svg.axis().scale(y)
       .orient("left").ticks(5);
 
-  // Define the line
   var valueline = d3.svg.line()
       .x(function(d) { return x(d.date); })
       .y(function(d) { return y(d.testData.time.mean); });
@@ -85,7 +81,7 @@ document.write(
   // Define the div for the tooltip
   var div = d3.select("body").append("div")
       .attr("class", "tooltip")
-      .style("opacity", 0);
+      .style("opacity", 0); // initially, the div is invisible.
 
   var req = new XMLHttpRequest();
   req.open("GET", 'bench/test_data.json', true);
@@ -95,16 +91,14 @@ document.write(
       var json = JSON.parse(req.responseText)
 
       Object.keys(json[0].testData).map(function (testCase) {
-        //               console.log('testCase: ', testCase)
 
+        // create header.
         var header = document.createElement('h1')
         header.innerHTML = testCase
-
         document.body.appendChild(header)
 
-
+        // gather test data for this test case.
         var data = []
-
         for (var i = 0; i < json.length; i++) {
           data.push({
             date: new Date(json[i].timestamp*1000),
@@ -115,11 +109,9 @@ document.write(
 
             testData: json[i].testData[testCase]
           })
-
-
         }
 
-        // Adds the svg canvas
+        // add svg canvas.
         var svg = d3.select("body")
             .append("svg")
             .attr("width", width + margin.left + margin.right)
@@ -128,21 +120,23 @@ document.write(
             .attr("transform",
                   "translate(" + margin.left + "," + margin.top + ")");
 
-        // Scale the range of the data
         x.domain(d3.extent(data, function(d) { return d.date; }));
         y.domain([0, d3.max(data, function(d) { return d.testData.time.mean; })]);
 
-        // Add the valueline path.
+        // draw line chart.
         svg.append("path")
           .attr("class", "line")
           .attr("d", valueline(data));
 
+        // draw data point dots.
         svg.selectAll("dot")
 	  .data(data)
 	  .enter().append("circle")
 	  .attr("r", 3)
 	  .attr("cx", function(d) { return x(d.date); })
 	  .attr("cy", function(d) { return y(d.testData.time.mean); })
+
+        // show tooltip on hover.
           .on("mouseover", function(d) {
             div.transition()
               .duration(200)
@@ -160,35 +154,39 @@ document.write(
                 "<b>Author: </b>" + d.author + "<br/>" +
                 "<b>Date: </b>" + d.date + "<br/>"
             )
-
               .style("left", (d3.event.pageX) + "px")
               .style("top", (d3.event.pageY - 28) + "px");
-
-            console.log(htmlCode)
-
           })
 
-        // Add the X Axis
+        // X-axis
         svg.append("g")
           .attr("class", "x axis")
           .attr("transform", "translate(0," + height + ")")
-          .call(xAxis);
+          .call(xAxis)
+        .append("text")
+      .attr("class", "label")
+      .attr("x", width+20)
+      .attr("y", -6)
+      .style("text-anchor", "end")
+      .text("Commit Time");
 
-        // Add the Y Axis
+        // Y-axis
         svg.append("g")
           .attr("class", "y axis")
-          .call(yAxis);
+          .call(yAxis)
+        .append("text")
+      .attr("class", "label")
+      .attr("y", -20)
+      .attr("x", 40)
+      .attr("dy", ".7em")
+      .style("text-anchor", "end")
+      .text("Runtime(ms)");
 
       })
-
-
     }
   }
   req.send(null);
 
-
   </script>
-    </body>
+  </body>
     `);
-
-//https://github.com/mikolalysenko/regl/commit/
