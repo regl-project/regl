@@ -21,6 +21,7 @@
     - [Attributes](#attributes)
     - [Drawing](#drawing)
     - [Render target](#render-target)
+    - [Profiling](#profiling)
     - [Depth buffer](#depth-buffer)
     - [Blending](#blending)
     - [Stencil](#stencil)
@@ -636,6 +637,46 @@ var command = regl({
 **Related WebGL APIs**
 
 * [`gl.bindFramebuffer`](https://www.opengl.org/sdk/docs/man4/html/glBindFramebuffer.xhtml)
+
+---------------------------------------
+#### Profiling
+`regl` can optionally instrument commands to track profiling data.  This is enabled/disabled by setting the `profile` flag on each command.
+
+```javascript
+var myScope = regl({
+  profile: true
+})
+
+var drawA = regl({ ... })
+var drawB = regl({ ... })
+
+regl.frame(function () {
+  myScope(function () {
+    drawA()
+    drawB()
+  })
+
+  console.log(drawA.stats.count)
+  console.log(drawB.stats.count)
+})
+```
+
+The following stats are tracked for each command in the `.stats` property:
+
+| Statistic | Meaning |
+|-----------|---------|
+| `count` | The number of times the command has been called |
+| `cpuTime` | The cumulative CPU time spent executing the command in milliseconds |
+| `gpuTime` | The cumulative GPU time spent executing the command in milliseconds (requires the [EXT_disjoint_timer_query](https://www.khronos.org/registry/webgl/extensions/EXT_disjoint_timer_query/) extension) |
+
+**Notes**
+
+* GPU timer queries update asynchronously.  If you are not using `regl.frame()` to tick your application, then you should periodically call `regl.poll()` each frame to update the timer statistics.
+* CPU time uses `performance.now` if available, otherwise it falls back to `Date.now`
+
+**Related WebGL APIs**
+
+* [EXT_disjoint_timer_query](https://www.khronos.org/registry/webgl/extensions/EXT_disjoint_timer_query/)
 
 ---------------------------------------
 #### Depth buffer
@@ -1975,7 +2016,7 @@ regl exposes info about the WebGL context limits and capabilities via the `regl.
 
 ---------------------------------------
 ### Performance metrics
-`regl` tracks several metrics per command.  These can be read using the `regl.stats` object:
+`regl` tracks several metrics for performance monitoring.  These can be read using the `regl.stats` object:
 
 | Metric | Meaning |
 |--------|---------|
@@ -1986,9 +2027,6 @@ regl exposes info about the WebGL context limits and capabilities via the `regl.
 | `textureCount` | The number of textures currently allocated |
 | `cubeCount` | The number of cube maps currently allocated |
 | `renderbufferCount` | The number of rnderbuffers currently allocated |
-
-#### Per-command stats
-**TODO**
 
 ---------------------------------------
 ### Clean up
@@ -2029,9 +2067,13 @@ Note that you must call `regl._refresh()` if you have changed the WebGL state.
 
 ### Preallocate memory
 
+* Reuse property objects passed to commands to avoid garbage collection
+
 ### Debug vs release
 
 * Debug mode inserts many checks
 * Compiling in release mode removes these assertions, improves performance and reduces bundle size
+
+### Profiling
 
 ### Context loss mitigation
