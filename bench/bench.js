@@ -1,3 +1,4 @@
+/* global performance*/
 // TODO: verify that headless actually correctly executes the examples with `regl.read`
 var CASES = require('./list')
 var extend = require('../lib/util/extend')
@@ -15,12 +16,11 @@ var prettyPrint = false // only used for headless.
 if (isHeadless) {
   gl = require('gl')(WIDTH, HEIGHT)
 
-  var args = process.argv.slice(2);
-  if(args.length > 0 && args[0] === '--pretty') {
-    console.log("") // new-line
+  var args = process.argv.slice(2)
+  if (args.length > 0 && args[0] === '--pretty') {
+    console.log('') // new-line
     prettyPrint = true
   }
-
 } else {
   canvas = document.createElement('canvas')
   gl = canvas.getContext('webgl', {
@@ -57,20 +57,10 @@ function analyze (samples, fmt) {
   var mean = m1 / m0
   var stddev = Math.sqrt(m2 / m0 - Math.pow(mean, 2))
 
-  // Order stats
-  var sorted = samples.slice().sort(function (a, b) {
-    return a - b
-  })
-
   return {
     mean: mean,
     stddev: stddev
   }
-  /*
-  return [
-
-//    'μ=', fmt(mean), '∓', fmt(stddev),
-  ].join('')*/
 }
 
 function sigfigs (x) {
@@ -99,7 +89,6 @@ function formatMemory (x) {
 }
 
 function benchmark (caseName, testCase) {
-
   var procedure
   if (caseName === 'cube-webgl') {
     procedure = testCase.proc(gl, WIDTH, HEIGHT)
@@ -123,8 +112,9 @@ function benchmark (caseName, testCase) {
     timeSamples.push(present() - start)
 
     // dont have this in headless.
-    if(!isHeadless)
+    if (!isHeadless) {
       heapSamples.push(performance.memory.usedJSHeapSize)
+    }
   }
 
   return function run () {
@@ -145,14 +135,15 @@ function benchmark (caseName, testCase) {
       sample(i)
     }
 
-    //    console.log("samples: ", timeSamples)
+    //    console.log('samples: ', timeSamples)
     var ret = {
       n: timeSamples.length,
       time: analyze(timeSamples, formatTime)
     }
 
-    if(!isHeadless)
+    if (!isHeadless) {
       ret.space = analyze(heapSamples, formatMemory)
+    }
 
     return ret
   }
@@ -185,9 +176,7 @@ function button (text, onClick) {
 
 var json = {}
 
-
 Object.keys(CASES).map(function (caseName) {
-
   var sample = benchmark(caseName, CASES[caseName])
 
   if (isHeadless) {
@@ -212,5 +201,6 @@ Object.keys(CASES).map(function (caseName) {
 })
 
 // if headless, we output info through stdout.
-if(isHeadless && !prettyPrint)
+if (isHeadless && !prettyPrint) {
   console.log(JSON.stringify(json))
+}
