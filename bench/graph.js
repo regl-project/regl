@@ -29,6 +29,7 @@ path {
     stroke-width: 1;
     shape-rendering: crispEdges;
 }
+
 div.tooltip {
     position: absolute;
     text-align: left;
@@ -42,12 +43,14 @@ div.tooltip {
     border: 2px;
     border-radius: 8px;
     border-style: solid;
-    border-color: #000;
+  border-color: #000;
+
 }
 text {
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     fill: #666;
-    font-size: 14px;
+  font-size: 14px;
+
 }
   </style>
 
@@ -137,15 +140,24 @@ text {
         // draw data point dots.
         svg.selectAll("dot")
 	  .data(data)
-	  .enter().append("circle")
+	  .enter()
+          .append('a')
+          .attr("xlink:href",
+                function(d) {
+                  return 'https://github.com/mikolalysenko/regl/commit/' + d.hash
+                })
+          .attr("target", '"_blank"')
+          .append("circle")
+
 	  .attr("r", 5)
 	  .attr("cx", function(d) { return x(d.date); })
 	  .attr("cy", function(d) { return y(d.testData.time.mean); })
 
+
         // show tooltip on hover.
           .on("mouseover", function(d) {
             div.transition()
-              .duration(0)
+              .duration(100)
               .style("opacity", .9);
 
             var desc = d.title + d.description
@@ -161,7 +173,7 @@ text {
               '<tbody>' +
 
               '<tr>' +
-              "<td><b>Hash: </b></td>  <td>" + '<a href="' + commitUrl + '"><code>'+ d.hash.substring(0,7) +'</code></a>' + "</td>" +
+              "<td><b>Hash: </b></td>  <td>" + '<code>'+ d.hash.substring(0,7) +'</code>' + "</td>" +
               '</tr>' +
 
               '<tr>' +
@@ -185,18 +197,22 @@ text {
 
 
             )
-              .style("left", (d3.event.pageX) + "px")
+              .style("left", (d3.event.pageX　+ 10) + "px")
               .style("top", (d3.event.pageY - 28) + "px");
 
 
-
           })
-      /*  .on("mouseout", function(d) {
-            div.transition()
-                .duration(500)
-                .style("opacity", 0);
+        　  .on("mouseout", function(d) {
+          div.transition()
+            .duration(100)
+            .style("opacity", 0);
+
         });
-*/
+
+
+
+
+
         // X-axis
         svg.append("g")
           .attr("class", "x axis")
