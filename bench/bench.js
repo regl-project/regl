@@ -10,9 +10,17 @@ var regl
 var isHeadless = typeof document === 'undefined'
 var canvas
 var gl
+var prettyPrint = false // only used for headless.
 
 if (isHeadless) {
   gl = require('gl')(WIDTH, HEIGHT)
+
+  var args = process.argv.slice(2);
+  if(args.length > 0 && args[0] === '--pretty') {
+    console.log("") // new-line
+    prettyPrint = true
+  }
+
 } else {
   canvas = document.createElement('canvas')
   gl = canvas.getContext('webgl', {
@@ -185,7 +193,10 @@ Object.keys(CASES).map(function (caseName) {
   if (isHeadless) {
     var bench = sample()
     json[caseName] = bench
-//    console.log(caseName + ' : ' + 'n:' + bench.n + ', t:(' + bench.time + '),')
+    if (prettyPrint) {
+      var time = ['μ=', formatTime(bench.time.mean), '∓', formatTime(bench.time.stddev)].join('')
+      console.log(caseName + ' : ' + 'n:' + bench.n + ', t:(' + time + '),')
+    }
   } else {
     var result
     result = button(caseName, function () {
@@ -201,6 +212,5 @@ Object.keys(CASES).map(function (caseName) {
 })
 
 // if headless, we output info through stdout.
-
-if(isHeadless)
+if(isHeadless && !prettyPrint)
   console.log(JSON.stringify(json))
