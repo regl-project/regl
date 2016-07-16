@@ -55,6 +55,7 @@
     "bench-browser": "budo bench/bench.js --open",
     "bench-node": "node bench/bench.js",
     "bench-node-pretty": "node bench/bench.js --pretty",
+    "bench-history": "node bench/bench-history",
     "build": "npm run build-script && npm run build-min && npm run build-bench && npm run build-gallery",
     "build-script": "browserify regl.js --standalone reglInit > dist/regl.js",
     "build-min": "node bin/build-min.js",
