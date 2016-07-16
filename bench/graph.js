@@ -32,7 +32,7 @@ path {
 div.tooltip {
     position: absolute;
     text-align: left;
-    width: 200px;
+    width: 230px;
     padding: 10px;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     color: #222;
@@ -146,7 +146,7 @@ text {
           .on("mouseover", function(d) {
             div.transition()
               .duration(0)
-              .style("opacity", .8);
+              .style("opacity", .9);
 
             var desc = d.title + d.description
             var shortenedDesc = desc.length > 70 ? desc.substring(0,69)+'...' : desc
@@ -157,14 +157,39 @@ text {
             console.log("link: ", commitUrl)
 
             div.html(
-              "<b>Hash: </b>" + '<a href="' + commitUrl + '"><code>'+ d.hash.substring(0,7) +'</code></a>' + "<br/>" +
-                "<b>Desc.: </b>" + shortenedDesc + "<br/>" +
-                "<b>Time: </b>" + sigfigs(d.testData.time.mean) + '∓' + sigfigs(d.testData.time.stddev)  + "ms" + "<br/>" +
-                "<b>Author: </b>" + d.author + "<br/>" +
-                "<b>Date: </b>" + timeDiff + "<br/>"
+              '<table>' +
+              '<tbody>' +
+
+              '<tr>' +
+              "<td><b>Hash: </b></td>  <td>" + '<a href="' + commitUrl + '"><code>'+ d.hash.substring(0,7) +'</code></a>' + "</td>" +
+              '</tr>' +
+
+              '<tr>' +
+              "<td><b>Desc.: </b></td>  <td>" + shortenedDesc + "</td>" +
+                '</tr>' +
+
+              '<tr>' +
+              "<td><b>Time: </b></td>  <td>" + sigfigs(d.testData.time.mean) + '∓' + sigfigs(d.testData.time.stddev)  + "ms" + "</td>" +
+                '</tr>' +
+
+              '<tr>' +
+              "<td><b>Author: </b></td>  <td>" + d.author + "</td>" +
+                '</tr>' +
+
+              '<tr>' +
+              "<td><b>Date: </b></td>  <td>" + timeDiff + "</td>" +
+              '</tr>' +
+
+              '</tbody>' +
+              '</table>'
+
+
             )
               .style("left", (d3.event.pageX) + "px")
               .style("top", (d3.event.pageY - 28) + "px");
+
+
+
           })
       /*  .on("mouseout", function(d) {
             div.transition()
