@@ -127,8 +127,6 @@ function benchmark (caseName, testCase) {
         depth: 1,
         stencil: 0
       })
-      regl.updateTimer()
-
       procedure({tick: i})
     }
 
@@ -136,8 +134,6 @@ function benchmark (caseName, testCase) {
     heapSamples.length = 0
 
     for (i = 0; i < samples; i++) {
-      regl.updateTimer()
-
       sample(i)
     }
 
