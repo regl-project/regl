@@ -29,6 +29,7 @@ module.exports = function (regl) {
   ]
 
   return regl({
+    profile: false,
     frag: `
     precision mediump float;
     varying vec2 vUv;

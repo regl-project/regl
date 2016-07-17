@@ -1,5 +1,6 @@
 module.exports = function (regl) {
   var draw = regl({
+    profile: false,
     frag: [
       'precision mediump float;',
       'uniform vec4 color;',
