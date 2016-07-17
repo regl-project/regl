@@ -32,10 +32,21 @@ fs.writeFileSync(outputFile,
     <meta charset="utf-8">
     <style>
 h1 {
-  text-align: center;
+  text-align: left;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 50px;
+}
 
+h2 {
+  text-align: left;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 30px;
+}
+
+p {
+  text-align: left;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
 }
 
 body {
@@ -94,6 +105,7 @@ function createGraph (json) {
     var xr = Math.round(x * 1000)
     return (xr / 1000)
   }
+  console.log("josn; ", json)
 
   // Setup margins.
   var margin = {top: 30, right: 20, bottom: 30, left: 50}
@@ -117,27 +129,48 @@ function createGraph (json) {
       .attr('class', 'tooltip')
       .style('opacity', 0) // initially, the div is invisible.
 
-  Object.keys(json[0].testData).map(function (testCase) {
-    if (testCase !== 'cube') {
+
+  // create header.
+  var header = document.createElement('h1')
+  header.innerHTML = "Benchmark Results"
+  document.body.appendChild(header)
+
+  header = document.createElement('h2')
+  header.innerHTML = 'Device Info</br> '
+  document.body.appendChild(header)
+
+  par = document.createElement('p')
+  par.innerHTML =
+    '<b>CPU: </b>' + json.deviceInfo.cpu + '</br>' +
+    '<b>OS: </b>' + json.deviceInfo.platform + ' ' +
+    json.deviceInfo.release + ' ' +
+    json.deviceInfo.arch
+    '</br>' +
+
+  document.body.appendChild(par)
+
+  Object.keys(json.testResults[0].testData).map(function (testCase) {
+    /*if (testCase !== 'cube') {
       return
-    }
+    }*/
+    console.log("test case: ", testCase)
 
     // create header.
-    var header = document.createElement('h1')
-    header.innerHTML = testCase
+    var header = document.createElement('h2')
+    header.innerHTML = 'Test Case: ' + testCase
     document.body.appendChild(header)
 
     // gather test data for this test case.
     var data = []
-    for (var i = 0; i < json.length; i++) {
+    for (var i = 0; i < json.testResults.length; i++) {
       data.push({
-        date: new Date(json[i].timestamp * 1000),
-        title: json[i].title,
-        description: json[i].description,
-        hash: json[i].hash,
-        author: json[i].author,
+        date: new Date(json.testResults[i].timestamp * 1000),
+        title: json.testResults[i].title,
+        description: json.testResults[i].description,
+        hash: json.testResults[i].hash,
+        author: json.testResults[i].author,
 
-        testData: json[i].testData[testCase]
+        testData: json.testResults[i].testData[testCase]
       })
     }
 
