@@ -1850,8 +1850,8 @@ var texFBO = regl.framebuffer({
 | Color type | Description |
 |------------|-------------|
 | `'uint8'` | `gl.UNSIGNED_BYTE` |
-| `'half float'` | 16 bit float, requires  |
-| `'float'` | 32 bit float` |
+| `'half float'` | 16 bit float, requires [OES_texture_half_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_half_float/)  |
+| `'float'` | 32 bit float, requires [OES_texture_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_float/) |
 
 **Notes**
 
