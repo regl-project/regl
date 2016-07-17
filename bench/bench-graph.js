@@ -109,8 +109,8 @@ function createGraph (json) {
 
   // Setup margins.
   var margin = {top: 30, right: 20, bottom: 30, left: 50}
-  var width = 600 - margin.left - margin.right
-  var height = 270 - margin.top - margin.bottom
+  var width = 660 - margin.left - margin.right
+  var height = 297 - margin.top - margin.bottom
 
   var x = d3.time.scale().range([0, width])
   var y = d3.scale.linear().range([height, 0])
@@ -203,7 +203,7 @@ function createGraph (json) {
       .attr('target', '"_blank"')
       .append('circle')
 
-      .attr('r', 5)
+      .attr('r', 3)
       .attr('cx', function (d) { return x(d.date) })
       .attr('cy', function (d) { return y(d.testData.time.mean) })
 
