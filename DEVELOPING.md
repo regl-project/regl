@@ -31,13 +31,13 @@ npm run test-browser
 ```
 npm run coverage
 ```
-* To run benchmarks, use this command:
+* To run the benchmarks, use this command:
 
 ```
 npm run bench-node
 ```
 
-This will run the benchmarks in `node.js`, and output the results in
+This will run the benchmarks in `node.js`, and output the results to `stdout` in
 json-format. If you want to see prettified benchmarks results, run
 
 ```
@@ -58,12 +58,15 @@ npm run bench-history 10
 ```
 
 This script will, starting from the current HEAD, run the benchmarks
-through all the 10 latest commits, and write all the data as json to a
+through all the 10 latest commits, and write all the benchmark data as json to a
 file.
 
 Note that the script will run `git stash` before switching to the old
-commits, and then switch to the original HEAD and run `git stash pop`,
-in order to ensure that uncommited changes are lost.
+commits, and then in the end it will switch to the original HEAD and run `git stash pop`,
+in order to ensure that no uncommited changes are lost.
+
+Also note that there is a so-called ancestor commit, and the script will NOT run any benchmarks beyond the ancestor commit. This is because that beyond this ancestor commit, the benchmarking environment had not yet been properly 
+set up, so the benchmarking results produced by these commits should not be used. 
 
 Then you can create pretty graphs from the benchmark data outputted
 from `bench-history`. Just do
