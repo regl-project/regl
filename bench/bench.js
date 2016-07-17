@@ -1,5 +1,4 @@
 /* global performance*/
-// TODO: verify that headless actually correctly executes the examples with `regl.read`
 var CASES = require('./list')
 var extend = require('../lib/util/extend')
 var createREGL = require('../../regl')
