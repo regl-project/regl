@@ -32,9 +32,51 @@ npm run test-browser
 npm run coverage
 ```
 * To run benchmarks, use this command:
+
 ```
-npm run bench
+npm run bench-node
 ```
+
+This will run the benchmarks in `node.js`, and output the results in
+json-format. If you want to see prettified benchmarks results, run
+
+```
+npm run bench-node -- --pretty
+```
+
+If you want to run the benchmarks in the browser, just run
+
+```
+npm run bench-browser
+```
+
+If you want to run the benchmarks on a bunch of commits in the history
+of the repo, do
+
+```
+npm run bench-history 10
+```
+
+This script will, starting from the current HEAD, run the benchmarks
+through all the 10 latest commits, and write all the data as json to a
+file.
+
+Note that the script will run `git stash` before switching to the old
+commits, and then switch to the original HEAD and run `git stash pop`,
+in order to ensure that uncommited changes are lost.
+
+Then you can create pretty graphs from the benchmark data outputted
+from `bench-history`. Just do
+
+```
+npm run bench-graph bench/bench-result-2f95fbcf3e60dff98c4b.json
+```
+
+where `bench/bench-result-2f95fbcf3e60dff98c4b.json` is the file
+outputted by `bench-history`. The script will create an HTML-file with
+graphs made with `d3` from the data, and automatically open the HTML-file
+in your default browser.
+
 * The easiest way to add a new benchmark is to copy an existing benchmark (see for example `bench/clear.js`), modify it, and add an entry to `bench/list.js`
 
 ## Building
