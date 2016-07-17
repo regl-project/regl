@@ -1,5 +1,6 @@
 module.exports = function (regl) {
   return regl({
+    profile: false,
     // In a draw call, we can pass the shader source code to regl
     frag: [
       'precision mediump float;',
@@ -27,7 +28,9 @@ module.exports = function (regl) {
     uniforms: {
       color: [1, 0, 0, 1]
     },
-
+    depth: {
+      enable: false
+    },
     count: 3
   })
 }
