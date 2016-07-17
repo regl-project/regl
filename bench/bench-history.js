@@ -1,7 +1,7 @@
 var parseCommit = require('git-parse-commit')
 const execSync = require('child_process').execSync
 const os = require('os')
-drawingBufferWidth
+
 // gather device info.
 var deviceInfo
 deviceInfo += 'CPU Model: ' + os.cpus()[0].model + '\n'
