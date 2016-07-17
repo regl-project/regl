@@ -94,7 +94,7 @@ text {
   <body>
 
   <script src="https://d3js.org/d3.v3.min.js"></script>
-  <script src="http://momentjs.com/downloads/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.6.0/moment.min.js"></script>
 
   <script>
   ` +
