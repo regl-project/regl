@@ -7,7 +7,6 @@ tape('test gpuTime', function (t) {
   t.equals(gl.getError(), 0, 'error code ok')
 
   var regl = createREGL(gl)
-  regl = createREGL(gl)
 
   if (regl.hasExtension('ext_disjoint_timer_query')) {
     var obj = {
@@ -26,7 +25,8 @@ tape('test gpuTime', function (t) {
         color: [1, 0, 0, 1],
         offset: regl.prop('offset')
       },
-      count: 3
+      count: 3,
+      profile: true
     }
 
     var draw1 = regl(obj)
@@ -34,9 +34,9 @@ tape('test gpuTime', function (t) {
     var draw3 = regl(obj)
     var draw4 = regl(obj)
 
-    var scope1 = regl({})
-    var scope2 = regl({})
-    var scope3 = regl({})
+    var scope1 = regl({profile: true})
+    var scope2 = regl({profile: true})
+    var scope3 = regl({profile: true})
 
     t.ok(draw1.stats.gpuTime === 0, 'draw1.stats.gpuTime=0 at startup')
     t.ok(draw2.stats.gpuTime === 0, 'draw2.stats.gpuTime=0 at startup')
@@ -136,9 +136,18 @@ tape('test gpuTime', function (t) {
           var d3 = draw3.stats.gpuTime
           var d4 = draw4.stats.gpuTime
 
-          t.ok((d1 + d2 + d3 + d4) === scope1.stats.gpuTime, 'scope s1 === d1+d2+d3+d4')
-          t.ok((d1 + d2 + d3) === scope2.stats.gpuTime, 'scope s2 === d1+d2+d3')
-          t.ok((d1 + d3) === scope3.stats.gpuTime, 'scope s3 === d1+d3')
+          t.equals(
+            ((d1 + d2 + d3 + d4) * 1e3) | 0,
+            (scope1.stats.gpuTime * 1e3) | 0,
+            'scope s1 === d1+d2+d3+d4')
+          t.equals(
+            ((d1 + d2 + d3) * 1e3) | 0,
+            (scope2.stats.gpuTime * 1e3) | 0,
+            'scope s2 === d1+d2+d3')
+          t.equals(
+            ((d1 + d3) * 1e3) | 0,
+            (scope3.stats.gpuTime * 1e3) | 0,
+            'scope s3 === d1+d3')
         }
       }
     ]
@@ -165,6 +174,8 @@ tape('test gpuTime', function (t) {
     }
     processCase()
   } else {
+    regl.destroy()
+    createContext.destroy(gl)
     t.end()
   }
 })
