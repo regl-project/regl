@@ -59,7 +59,7 @@
     "build": "npm run build-script && npm run build-min && npm run build-bench && npm run build-gallery",
     "build-script": "browserify regl.js --standalone reglInit > dist/regl.js",
     "build-min": "node bin/build-min.js",
-    "build-bench": "browserify bench/index.js | indexhtmlify > www/bench.html",
+    "build-bench": "browserify bench/bench.js | indexhtmlify > www/bench.html",
     "build-gallery": "node bin/build-gallery.js"
   },
   "repository": {
