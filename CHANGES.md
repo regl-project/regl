@@ -54,10 +54,11 @@
 * Recipe book/example set
     + Globe
     + Compound scene
-    + Shadow mapping
     + Stencil shadows
+    + Point-light shadows(through cubic framebuffers)
     + Turing patterns
     + Asset loading (obj, ply, etc.)
+    + Water Reflection(though cubic-framebuffers)
 
 ## Next
 
