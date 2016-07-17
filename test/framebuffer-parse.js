@@ -195,46 +195,48 @@ tape('framebuffer parsing', function (t) {
 
   // TODO: float, half float types
 
-  t.throws(function () {
-    regl.framebuffer({
-      color: [
-        regl.texture({type: 'float'}),
-        regl.texture({type: 'uint8'})
-      ]}) },
-           /\(regl\)/,
-           '#1 check color attachments with different bit planes throws')
+  if (regl.hasExtension('WEBGL_draw_buffers')) {
+    t.throws(function () {
+      regl.framebuffer({
+        color: [
+          regl.texture({type: 'float'}),
+          regl.texture({type: 'uint8'})
+        ]}) },
+             /\(regl\)/,
+             '#1 check color attachments with different bit planes throws')
 
-  t.throws(function () {
-    regl.framebuffer({
-      color: [
-        regl.texture({type: 'uint8', format: 'rgb'}),
-        regl.texture({type: 'float', format: 'rgba'})
-      ]}) },
-           /\(regl\)/,
-           '#2 check color attachments with different bit planes throws')
+    t.throws(function () {
+      regl.framebuffer({
+        color: [
+          regl.texture({type: 'uint8', format: 'rgb'}),
+          regl.texture({type: 'float', format: 'rgba'})
+        ]}) },
+             /\(regl\)/,
+             '#2 check color attachments with different bit planes throws')
 
-  t.throws(function () {
-    regl.framebuffer({
-      color: [
-        regl.texture({type: 'half float', format: 'rgb'}),
-        regl.texture({type: 'uint8', format: 'rgba'})
-      ]}) },
-           /\(regl\)/,
-           '#3 check color attachments with different bit planes throws')
+    t.throws(function () {
+      regl.framebuffer({
+        color: [
+          regl.texture({type: 'half float', format: 'rgb'}),
+          regl.texture({type: 'uint8', format: 'rgba'})
+        ]}) },
+             /\(regl\)/,
+             '#3 check color attachments with different bit planes throws')
 
-  var thrown = false
-  try {
-    regl.framebuffer({
-      color: [
-        regl.texture({type: 'float'}),
-        regl.texture({type: 'float'})
-      ]})
-  } catch (e) {
-    thrown = true
+    var thrown = false
+    try {
+      regl.framebuffer({
+        color: [
+          regl.texture({type: 'float'}),
+          regl.texture({type: 'float'})
+        ]})
+    } catch (e) {
+      thrown = true
+    }
+
+    // TODO: multiple render targets
+    t.equals(thrown, false, 'check color attachments with same bit planes do not throw')
   }
-
-  // TODO: multiple render targets
-  t.equals(thrown, false, 'check color attachments with same bit planes do not throw')
 
   regl.destroy()
   createContext.destroy(gl)
