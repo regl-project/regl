@@ -32,15 +32,21 @@ var DYN_PROP = 1
 var DYN_CONTEXT = 2
 var DYN_STATE = 3
 
-module.exports = function wrapREGL () {
-  var args = initWebGL(Array.prototype.slice.call(arguments))
-  var gl = args.gl
-  var options = args.options
+module.exports = function wrapREGL (args) {
+  var config = initWebGL(args)
+  if (!config) {
+    return null
+  }
+
+  var gl = config.gl
+
+  var extensionState = wrapExtensions(gl, config)
+  if (!extensionState) {
+    return null
+  }
 
   var stringStore = createStringStore()
   var stats = createStats()
-
-  var extensionState = wrapExtensions(gl)
   var extensions = extensionState.extensions
   var timer = createTimer(gl, extensions)
 
@@ -57,7 +63,7 @@ module.exports = function wrapREGL () {
     framebufferHeight: HEIGHT,
     drawingBufferWidth: WIDTH,
     drawingBufferHeight: HEIGHT,
-    pixelRatio: options.pixelRatio
+    pixelRatio: config.pixelRatio
   }
   var uniformState = {}
   var drawState = {
@@ -109,7 +115,8 @@ module.exports = function wrapREGL () {
     shaderState,
     drawState,
     contextState,
-    timer)
+    timer,
+    config)
 
   var nextState = core.next
   var canvas = gl.canvas
@@ -187,9 +194,7 @@ module.exports = function wrapREGL () {
       timer.clear()
     }
 
-    if (options.onDestroy) {
-      options.onDestroy()
-    }
+    config.onDestroy()
   }
 
   function compileProcedure (options) {
@@ -299,8 +304,6 @@ module.exports = function wrapREGL () {
     return extend(REGLCommand, {
       stats: stats
     })
-
-//    return REGLCommand
   }
 
   function clear (options) {
@@ -386,7 +389,7 @@ module.exports = function wrapREGL () {
 
   refresh()
 
-  return extend(compileProcedure, {
+  var regl = extend(compileProcedure, {
     // Clear current FBO
     clear: clear,
 
@@ -443,4 +446,8 @@ module.exports = function wrapREGL () {
     // regl Statistics Information
     stats: stats
   })
+
+  config.onDone(null, regl)
+
+  return regl
 }
