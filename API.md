@@ -81,32 +81,50 @@
 ---------------------------------------
 ## Initialization
 
-##### As a fullscreen canvas
+#### As a fullscreen canvas
 By default calling `module.exports` on the `regl` package creates a full screen canvas element and WebGLRenderingContext.
 
 ```javascript
-var regl = require('regl')([options])
+var regl = require('regl')()
 ```
 
-##### From a container div
+#### From a container div
 Alternatively passing a container element as the first argument appends the generated canvas to its children.
 
 ```javascript
-var regl = require('regl')(element, [options])
+var regl = require('regl')(element)
+
+// or:
+
+var regl = require('regl')({
+  container: element
+})
 ```
 
-##### From a canvas
+#### From a canvas
 If the first argument is an HTMLCanvasElement, then `regl` will use this canvas to create a new WebGLRenderingContext that it renders into.
 
 ```javascript
-var regl = require('regl')(canvas, [options])
+var regl = require('regl')(canvas)
+
+// or:
+
+var regl = require('regl')({
+  canvas: canvas
+})
 ```
 
-##### From a WebGL context
+#### From a WebGL context
 Finally, if the first argument is a WebGLRenderingContext, then `regl` will just use this context without touching the DOM at all.
 
 ```javascript
-var regl = require('regl')(gl, [options])
+var regl = require('regl')(gl)
+
+// or:
+
+var regl = require('regl')({
+  gl: gl
+})
 ```
 
 Note that this form is compatible with [`headless-gl`](https://github.com/stackgl/headless-gl) and can be used to do offscreen rendering in node.js. For example,
@@ -116,9 +134,26 @@ Note that this form is compatible with [`headless-gl`](https://github.com/stackg
 var regl = require('regl')(require('gl')(256, 256))
 ```
 
-### Initialization options
+### All initialization options
 
-**TODO**
+
+| Options | Meaning |
+|---------|---------|
+| `gl` | A reference to a WebGL rendering context. (Default created from canvas) |
+| `canvas` | A reference to an HTML canvas element. (Default created and appending to container) |
+| `container` | A container element which regl inserts a canvas into. (Default `document.body`) |
+| `attributes` | The [context creation attributes](https://www.khronos.org/registry/webgl/specs/1.0/#WEBGLCONTEXTATTRIBUTES) passed to the WebGL context constructor.  See below for defaults. |
+| `pixelRatio` | A multiplier which is used to scale the canvas size relative to the container.  (Default `window.devicePixelRatio`)|
+| `extensions` | A list of extensions that must be supported by WebGL context. Default `[]` |
+| `optionalExtensions` | A list of extensions which are loaded opportunistically. Default `[]` |
+| `profile` | If set, turns on profiling for all commands by default. (Default `false`) |
+| `onDone` | An optional callback which accepts a pair of arguments, `(err, regl)` that is called after the application loads.  If not specified, context creation errors throw. |
+
+**Notes**
+
+* `canvas` or `container` may be a CSS selector string or a DOM element
+* `extensions` and `optionalExtensions` can be either arrays or comma separated strings representing all extensions.  For more information see the [WebGL extension registry](https://www.khronos.org/registry/webgl/extensions/)
+* `onDone` is called
 
 ---------------------------------------
 ## Commands
@@ -1977,6 +2012,39 @@ var tick = regl.frame(function (context) {
 // When we are done, we can unsubscribe by calling cancel on the callback
 tick.cancel()
 ```
+
+---------------------------------------
+### Extensions
+In `regl`, extensions must be declared before they can be used.  An extension may be specified as a 'hard' requirement, meaning that if it is not present then context creation fails or as a 'soft' requirement.  This can be done by passing a list of extensions to the `extensions` and `optionalExtensions` fields in the regl constructor respectively.
+
+```javascript
+require('regl')({
+  extensions: ['OES_texture_float'],
+  optionalExtensions: ['oes_texture_float_linear'],
+  onDone: function (err, regl) {
+    if (err) {
+      console.log(err)
+      return
+    }
+
+    // now we can use regl as usual
+
+    if (regl.hasExtension('oes_texture_float_linear')) {
+      // can use texture float linear
+    }
+  }
+})
+```
+
+The method `regl.hasExtension()` can be used to test if an extension is present.  Arguments to `regl.hasExtension()` are case insensitive.
+
+For more information on WebGL extensions, see the [WebGL extension registry](https://www.khronos.org/registry/webgl/extensions/).
+
+**Relevant WebGL APIs**
+
+* [WebGL Extension Registry](https://www.khronos.org/registry/webgl/extensions/)
+* `gl.getExtension`
+* `gl.getSupportedExtensions`
 
 ---------------------------------------
 ### Device capabilities and limits
