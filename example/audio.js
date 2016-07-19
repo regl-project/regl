@@ -1,5 +1,5 @@
 /* global AudioContext */
-const regl = require('../regl')({devicePixelRatio: 1})
+const regl = require('../regl')({pixelRatio: 1})
 const perspective = require('gl-mat4/perspective')
 const lookAt = require('gl-mat4/lookAt')
 
