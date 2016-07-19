@@ -1,6 +1,9 @@
 const webglCanvas = document.body.appendChild(document.createElement('canvas'))
 const fit = require('canvas-fit')
-const regl = require('../regl')(webglCanvas)
+const regl = require('../regl')({
+  canvas: webglCanvas,
+  extensions: 'oes_texture_float'
+})
 const mat4 = require('gl-mat4')
 const camera = require('canvas-orbit-camera')(webglCanvas)
 window.addEventListener('resize', fit(webglCanvas), false)
