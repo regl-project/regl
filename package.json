@@ -22,6 +22,7 @@
     "getusermedia": "^1.3.7",
     "gl": "^4.0.1",
     "gl-mat4": "^1.1.4",
+    "gl-vec2": "^1.0.0",
     "gl-vec3": "^1.0.3",
     "glob": "^7.0.3",
     "google-closure-compiler": "^20160315.2.0",

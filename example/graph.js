@@ -1,4 +1,6 @@
-const regl = require('../regl')()
+const regl = require('../regl')({
+  extensions: ['webgl_draw_buffers', 'oes_texture_float']
+})
 const mouse = require('mouse-change')()
 
 const VERTEX_TEXTURE_SIZE = 64

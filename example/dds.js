@@ -1,4 +1,6 @@
-const regl = require('../regl')()
+const regl = require('../regl')({
+  extensions: 'WEBGL_compressed_texture_s3tc'
+})
 const parseDDS = require('parse-dds')
 
 require('resl')({
