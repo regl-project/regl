@@ -46,10 +46,9 @@ tape('element arg parsing', function (t) {
     },
     'length')
 
-  var ext32Bit = gl.getExtension('OES_element_index_uint')
-  var defaultType = ext32Bit ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT
-  var defaultSize = ext32Bit ? 4 : 2
-  var DefaultArray = ext32Bit ? Uint32Array : Uint16Array
+  var defaultType = gl.UNSIGNED_SHORT
+  var defaultSize = 2
+  var DefaultArray = Uint16Array
 
   checkProperties(
     regl.elements([

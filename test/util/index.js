@@ -1,3 +1,4 @@
+require('../constructor')
 require('../accessor')
 require('../half-float')
 require('../clear')

@@ -1,6 +1,10 @@
 const webglCanvas = document.body.appendChild(document.createElement('canvas'))
 const fit = require('canvas-fit')
-const regl = require('../regl')(webglCanvas)
+const regl = require('../regl')({
+  canvas: webglCanvas,
+  extensions: 'ext_disjoint_timer_query',
+  profile: true
+})
 const mat4 = require('gl-mat4')
 const camera = require('canvas-orbit-camera')(webglCanvas)
 window.addEventListener('resize', fit(webglCanvas), false)
@@ -192,55 +196,49 @@ var drawCalls = [
 ]
 var statsWidget = createStatsWidget(drawCalls)
 
-var enableStats = regl({
-  profile: regl.prop('profile')
-})
-
 regl.frame(() => {
-  enableStats({profile: true}, () => {
-    regl.clear({
-      color: [0, 0, 0, 255],
-      depth: 1
+  regl.clear({
+    color: [0, 0, 0, 255],
+    depth: 1
+  })
+
+  const deltaTime = 0.017
+
+  statsWidget.update(deltaTime)
+
+  scope1({}, () => {
+    var boxes = []
+    var x
+    var z
+    var X_COUNT = 5
+    var Z_COUNT = 5
+
+    // place out boxes.
+    var SPACING = -100
+    for (x = 0; x < X_COUNT; x++) {
+      for (z = 0; z < Z_COUNT; z++) {
+        boxes.push({scale: 50.7, position: [-200.0 + x * SPACING, 40, 200 + z * SPACING]})
+      }
+    }
+
+    scope2({}, () => {
+      drawBox(boxes)
     })
 
-    const deltaTime = 0.017
-
-    statsWidget.update(deltaTime)
-
-    scope1({}, () => {
-      var boxes = []
-      var x
-      var z
-      var X_COUNT = 5
-      var Z_COUNT = 5
-
-      // place out boxes.
-      var SPACING = -100
-      for (x = 0; x < X_COUNT; x++) {
-        for (z = 0; z < Z_COUNT; z++) {
-          boxes.push({scale: 50.7, position: [-200.0 + x * SPACING, 40, 200 + z * SPACING]})
-        }
+    // place out bunnies
+    SPACING = 100
+    var bunnies = []
+    for (x = 0; x < X_COUNT; x++) {
+      for (z = 0; z < Z_COUNT; z++) {
+        bunnies.push({scale: 5.2, position: [x * SPACING, 3.3, -80.0 + z * SPACING]})
       }
+    }
 
-      scope2({}, () => {
-        drawBox(boxes)
-      })
-
-      // place out bunnies
-      SPACING = 100
-      var bunnies = []
-      for (x = 0; x < X_COUNT; x++) {
-        for (z = 0; z < Z_COUNT; z++) {
-          bunnies.push({scale: 5.2, position: [x * SPACING, 3.3, -80.0 + z * SPACING]})
-        }
-      }
-
-      scope3({}, () => {
-        drawPlane({scale: 2000.0, position: [0.0, 0.0, 0.0]})
-        drawBunny(bunnies)
-      })
-
-      camera.tick()
+    scope3({}, () => {
+      drawPlane({scale: 2000.0, position: [0.0, 0.0, 0.0]})
+      drawBunny(bunnies)
     })
+
+    camera.tick()
   })
 })

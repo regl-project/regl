@@ -2,10 +2,6 @@
 
 ## Planned
 
-* Implement a standard method for handling context creation errors
-* Add a mechanism for managing webgl extensions
-    + Should be able to report errors when extensions are missing
-    + Allow users to disable extensions for testing/mocking
 * Add a mechanism for users to specify minimum resource requirements (texture size, varying units, etc.)
 
 * Cubic frame buffer objects
@@ -61,6 +57,11 @@
     + Water Reflection(though cubic-framebuffers)
 
 ## Next
+
+* Implement a standard method for handling context creation errors
+* Add a mechanism for managing webgl extensions
+    + Should be able to report errors when extensions are missing
+    + Allow users to disable extensions for testing/mocking
 
 ## 0.9.0
 
