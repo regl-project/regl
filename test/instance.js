@@ -34,7 +34,7 @@ tape('instance', function (t) {
           0, 4]),
         offset: {
           buffer: regl.buffer([[0.0, 0.0], [0.05, 1.0]]),
-          divisor: 2 // regl.prop('divisor') // one separate color for every triangle
+          divisor: 2
         }
       },
 
@@ -55,12 +55,30 @@ tape('instance', function (t) {
       t.same(actual, divisor === 2 ? expected.div2Expected : expected.div1Expected, remark + ' - ' + suffix)
     }
 
-    for (var d = 1; d <= 2; d++) {
+    //
+    // Test when the offset-buffer is a static property.
+    //
+    var d
+    var command
+    for (d = 1; d <= 2; d++) {
       base.attributes.offset.divisor = d
-      var command = regl(base)
+      command = regl(base)
       regl.clear({color: [0, 0, 0, 0]})
-      command({divisor: d})
+      command()
       runCheck('static, divisor ' + d, d)
+    }
+
+    //
+    // Test when the offset-buffer is a dynamic property.
+    //
+    for (d = 1; d <= 2; d++) {
+      base.attributes.offset.divisor = d
+      base.attributes.buffer = regl.prop('offsetBuffer')
+
+      command = regl(base)
+      regl.clear({color: [0, 0, 0, 0]})
+      command({offsetBuffer: regl.buffer([[0.0, 0.0], [0.05, 1.0]])})
+      runCheck('dynamic, divisor ' + d, d)
     }
   }
 
@@ -109,6 +127,9 @@ tape('instance', function (t) {
       0, 0, 0, 0, 1, 0
     ]
   }, 'triangles')
+
+  // TODO: testcases for 'points', 'line loop', 'triangle strip', and
+  // 'triangle fan'
 
   regl.destroy()
   createContext.destroy(gl)
