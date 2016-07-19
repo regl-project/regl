@@ -6,7 +6,10 @@ tape('test gpuTime', function (t) {
   var gl = createContext(100, 100)
   t.equals(gl.getError(), 0, 'error code ok')
 
-  var regl = createREGL(gl)
+  var regl = createREGL({
+    gl: gl,
+    optionalExtensions: 'ext_disjoint_timer_query'
+  })
 
   if (regl.hasExtension('ext_disjoint_timer_query')) {
     var obj = {
