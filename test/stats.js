@@ -378,6 +378,7 @@ tape('test regl.stats', function (t) {
                'correct resized texture size' +
                ' for type \'' + testCase.type + '\' and format \'' + testCase.format + '\'')
     })
+    regl.destroy()
 
     //
     // test buffer.stats.size
@@ -434,6 +435,81 @@ tape('test regl.stats', function (t) {
       t.equals(stats.getTotalBufferSize(), totalSize,
                'stats.getTotalBufferSize() after destroy() buffer ' + i)
     })
+    regl.destroy()
+
+    //
+    // test renderbuffer.stats.size
+    //
+    regl = createREGL({
+      gl: gl,
+      profile: true,
+      optionalExtensions: [
+        'ext_srgb',
+        'ext_color_buffer_half_float',
+        'webgl_color_buffer_float'
+      ]
+    })
+    stats = regl.stats
+
+    var renderbufferTestCases = [
+      {format: 'rgba4', expected: 512},
+      {format: 'rgb5 a1', expected: 512},
+      {format: 'rgb565', expected: 512},
+      {format: 'depth', expected: 512},
+      {format: 'stencil', expected: 256},
+      {format: 'depth stencil', expected: 1024}
+    ]
+
+    if (regl.hasExtension('ext_srgb')) {
+      renderbufferTestCases.push({format: 'srgba', expected: 1024})
+    }
+
+    if (regl.hasExtension('ext_color_buffer_half_float')) {
+      renderbufferTestCases.push({format: 'rgba16f', expected: 2048})
+      renderbufferTestCases.push({format: 'rgb16f', expected: 1536})
+    }
+
+    if (regl.hasExtension('webgl_color_buffer_float')) {
+      renderbufferTestCases.push({format: 'rgba32f', expected: 4096})
+    }
+
+    totalSize = 0
+    var renderbuffers = []
+    renderbufferTestCases.forEach(function (testCase, i) {
+      var renderbuffer = regl.renderbuffer({shape: [16, 16], format: testCase.format})
+
+      t.equals(renderbuffer.stats.size, testCase.expected,
+               'correct renderbuffer size' +
+               ' for format \'' + testCase.format)
+      totalSize += testCase.expected
+      renderbuffers.push(tex)
+
+      t.equals(stats.getTotalRenderbufferSize(), totalSize, 'stats.getTotalRenderbufferSize() at testCase ' + i)
+    })
+
+    regl.destroy()
+    t.equals(stats.getTotalRenderbufferSize(), 0, 'stats.getTotalRenderbufferSize()==0 after regl.destroy()')
+
+    //
+    // test texture.stats.size after texture.resize()
+    //
+    regl = createREGL({gl: gl, profile: true, optionalExtensions: [
+      'ext_srgb',
+      'ext_color_buffer_half_float',
+      'webgl_color_buffer_float'
+    ]})
+    stats = regl.stats
+
+    renderbufferTestCases.forEach(function (testCase, i) {
+      var renderbuffer = regl.renderbuffer({shape: [16, 16], format: testCase.format})
+      renderbuffer.resize(8, 8)
+
+      // divide by four, since we resized.
+      t.equals(renderbuffer.stats.size, (testCase.expected / 4),
+               'correct resized renderbuffer size' +
+               ' for format \'' + testCase.format)
+    })
+
     regl.destroy()
 
     createContext.destroy(gl)
