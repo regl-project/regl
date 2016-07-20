@@ -97,7 +97,7 @@ module.exports = function wrapREGL (args) {
     gl,
     extensions,
     limits,
-    poll,
+    function () { core.procs.poll() },
     contextState,
     stats)
   var renderbufferState = wrapRenderbuffers(gl, extensions, limits, stats)
@@ -108,8 +108,6 @@ module.exports = function wrapREGL (args) {
     textureState,
     renderbufferState,
     stats)
-  var readPixels = wrapRead(gl, poll, contextState)
-
   var core = createCore(
     gl,
     stringStore,
@@ -126,6 +124,8 @@ module.exports = function wrapREGL (args) {
     contextState,
     timer,
     config)
+
+  var readPixels = wrapRead(gl, core.procs.poll, contextState)
 
   var nextState = core.next
   var canvas = gl.canvas
