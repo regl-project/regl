@@ -48,6 +48,7 @@ module.exports = function wrapREGL (args) {
   }
 
   var gl = config.gl
+  var glAttributes = gl.getContextAttributes()
 
   var extensionState = wrapExtensions(gl, config)
   if (!extensionState) {
@@ -124,8 +125,12 @@ module.exports = function wrapREGL (args) {
     contextState,
     timer,
     config)
-
-  var readPixels = wrapRead(gl, core.procs.poll, contextState)
+  var readPixels = wrapRead(
+    gl,
+    framebufferState,
+    core.procs.poll,
+    contextState,
+    glAttributes)
 
   var nextState = core.next
   var canvas = gl.canvas
@@ -436,7 +441,7 @@ module.exports = function wrapREGL (args) {
     },
 
     // Expose context attributes
-    attributes: gl.getContextAttributes(),
+    attributes: glAttributes,
 
     // Frame rendering
     frame: frame,

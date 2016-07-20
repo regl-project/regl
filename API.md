@@ -1981,7 +1981,21 @@ If an option is not present, then the corresponding buffer is not cleared
 ### Reading pixels
 
 ```javascript
-var pixels = regl.read([options])
+// read entire screen
+var snapshot = regl.read()
+
+// Can also reuse a buffer by passing it to regl.read()
+var bytes = new Uint8Array(100)
+regl.read(bytes)
+
+// It is also possible to specify a region to read from
+var pixels = regl.read({
+  x: 2,
+  y: 3,
+  width: 3,
+  height: 1,
+  data: new Uint8Array(12)
+})
 ```
 
 | Property | Description | Default |
@@ -1989,8 +2003,12 @@ var pixels = regl.read([options])
 | `data` | An optional `ArrayBufferView` which gets the result of reading the pixels | `null` |
 | `x` | The x-offset of the upper-left corner of the rectangle in pixels | `0` |
 | `y` | The y-offset of the upper-left corner of the rectangle in pixels | `0` |
-| `width` | The width of the rectangle in pixels | viewport.width |
-| `height` | The height of the rectangle in pixels | viewport.height |
+| `width` | The width of the rectangle in pixels | Current framebuffer width |
+| `height` | The height of the rectangle in pixels | Current framebuffer height |
+
+**Notes**
+
+* In order to read pixels from the drawing buffer, you must create your webgl context with `preserveDrawingBuffer` set to `true`.  If this is not set, then `regl.read` will throw an exception.
 
 **Relevant WebGL APIs**
 
