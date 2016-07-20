@@ -353,7 +353,7 @@ tape('test regl.stats', function (t) {
     //
     // test texture.stats.size after texture.resize()
     //
-    regl = createREGL({gl: gl, profile: true,       optionalExtensions: [
+    regl = createREGL({gl: gl, profile: true, optionalExtensions: [
       'oes_texture_float',
       'oes_texture_half_float',
       'ext_srgb',
@@ -361,17 +361,16 @@ tape('test regl.stats', function (t) {
     stats = regl.stats
 
     testCases.forEach(function (testCase, i) {
-
       // we skip compressed formats. We can't resize these formats.
       var arr = ['dxt', 'atc', 'pvrtc', 'etc']
       var isCompressed = false
-      arr.forEach((str) => { if (testCase.format.indexOf(str) > -1) isCompressed = true})
+      arr.forEach((str) => { if (testCase.format.indexOf(str) > -1) isCompressed = true })
       if (isCompressed) {
         return
       }
 
       var tex = regl.texture({shape: [16, 16], type: testCase.type, format: testCase.format})
-      tex.resize(8,8)
+      tex.resize(8, 8)
 
       // divide by four, since we resized.
       t.equals(tex.stats.size, (testCase.expected / 4),
