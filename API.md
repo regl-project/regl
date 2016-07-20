@@ -1558,9 +1558,9 @@ A data source from an image can be one of the following types:
 | `'rgba s3tc dxt1'` | `ext.COMPRESSED_RGBA_S3TC_DXT1_EXT` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
 | `'rgba s3tc dxt3'` | `ext.COMPRESSED_RGBA_S3TC_DXT3_EXT` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
 | `'rgba s3tc dxt5'` | `ext.COMPRESSED_RGBA_S3TC_DXT5_EXT` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
-| `'rgb arc'` | `ext.COMPRESSED_RGB_ATC_WEBGL` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
-| `'rgba arc explicit alpha'` | `ext.COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
-| `'rgba arc interpolated alpha'` | `ext.COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
+| `'rgb atc'` | `ext.COMPRESSED_RGB_ATC_WEBGL` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
+| `'rgba atc explicit alpha'` | `ext.COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
+| `'rgba atc interpolated alpha'` | `ext.COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
 | `'rgb pvrtc 4bppv1'` | `ext.COMPRESSED_RGB_PVRTC_4BPPV1_IMG` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
 | `'rgb pvrtc 2bppv1'` | `ext.COMPRESSED_RGB_PVRTC_2BPPV1_IMG` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
 | `'rgba pvrtc 4bppv1'` | `ext.COMPRESSED_RGBA_PVRTC_4BPPV1_IMG` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
