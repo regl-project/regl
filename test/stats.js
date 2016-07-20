@@ -229,9 +229,9 @@ tape('test regl.stats', function (t) {
         'webgl_compressed_texture_atc',
         'webgl_compressed_texture_pvrtc',
         'webgl_compressed_texture_etc1'
-
       ]
     })
+    stats = regl.stats
 
     var testCases = [
       {format: 'alpha', type: 'uint8', expected: 256},
@@ -311,6 +311,8 @@ tape('test regl.stats', function (t) {
       testCases.push({format: 'rgb etc1', type: 'uint8', expected: 128, data: getZeros(128)})
     }
 
+    var totalSize = 0
+    var textures = []
     testCases.forEach(function (testCase, i) {
       var arg = {shape: [16, 16], type: testCase.type, format: testCase.format}
       if (typeof testCase.data !== 'undefined') {
@@ -321,15 +323,32 @@ tape('test regl.stats', function (t) {
       t.equals(tex.stats.size, testCase.expected,
                'correct texture size' +
                ' for type \'' + testCase.type + '\' and format \'' + testCase.format + '\'')
+      totalSize += testCase.expected
+      textures.push(tex)
+
+      t.equals(stats.getTotalTextureSize(), totalSize, 'stats.getTotalTextureSize() at testCase ' + i)
+    })
+
+    // now destroy all textures, one after one.
+    Object.keys(textures).forEach(function (key, i) {
+      tex = textures[key]
+      totalSize -= tex.stats.size
+      tex.destroy()
+
+      t.equals(stats.getTotalTextureSize(), totalSize,
+               'stats.getTotalTextureSize() after destroy() texture ' + i)
     })
 
     //
     // test texture.stats.size for mipmaps.
     //
+    regl = createREGL({gl: gl, profile: true})
+    stats = regl.stats
 
     tex = regl.texture({shape: [16, 16], type: 'uint8', format: 'rgba', mipmap: true})
     t.equals(tex.stats.size, (16 * 16 + 8 * 8 + 4 * 4 + 2 * 2 + 1 * 1) * 4,
              'correct mipmapped texture size')
+    regl.destroy()
 
     createContext.destroy(gl)
     t.end()
