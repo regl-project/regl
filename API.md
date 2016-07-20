@@ -1999,7 +1999,7 @@ var pixels = regl.read([options])
 
 ---------------------------------------
 ### Per-frame callbacks
-`regl` also provides a common wrapper over `requestAnimationFrame` and `cancelAnimationFrame` that integrates gracefully with context loss events.
+`regl` also provides a common wrapper over `requestAnimationFrame` and `cancelAnimationFrame` that integrates gracefully with context loss events.  `regl.frame()` also calls `gl.flush` and drains several internal buffers, so you should try to do all your rendering to the drawing buffer within the frame callback.
 
 ```javascript
 // Hook a callback to execute each frame
@@ -2013,6 +2013,8 @@ var tick = regl.frame(function (context) {
 // When we are done, we can unsubscribe by calling cancel on the callback
 tick.cancel()
 ```
+
+It is possible to manage framecallbacks manually, however before any loop it is essential to call `regl.poll()` which updates all timers and viewports.
 
 ---------------------------------------
 ### Extensions
