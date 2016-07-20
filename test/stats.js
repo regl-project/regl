@@ -365,7 +365,7 @@ tape('test regl.stats', function (t) {
       // we skip compressed formats. We can't resize these formats.
       var arr = ['dxt', 'atc', 'pvrtc', 'etc']
       var isCompressed = false
-      arr.forEach((str) => { if (testCase.format.indexOf(str) > -1) isCompressed = true })
+      arr.forEach(function (str) { if (testCase.format.indexOf(str) > -1) isCompressed = true })
       if (isCompressed) {
         return
       }
