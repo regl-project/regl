@@ -1,6 +1,7 @@
 require('../constructor')
 require('../accessor')
 require('../half-float')
+require('../read')
 require('../clear')
 require('../buffer')
 require('../element-parse')

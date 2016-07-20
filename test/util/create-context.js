@@ -25,7 +25,7 @@ if (typeof document !== 'undefined') {
 
   module.exports.destroy = function (gl) { }
 } else {
-  var CONTEXT = require('gl')(1, 1)
+  var CONTEXT = require('gl')(1, 1, {preserveDrawingBuffer: true})
   var RESIZE = CONTEXT.getExtension('STACKGL_resize_drawingbuffer')
 
   module.exports = function (w, h) {
