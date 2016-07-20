@@ -75,7 +75,7 @@ module.exports = function wrapREGL (args) {
   }
 
   var limits = wrapLimits(gl, extensions)
-  var bufferState = wrapBuffers(gl, stats)
+  var bufferState = wrapBuffers(gl, stats, config)
   var elementState = wrapElements(gl, extensions, bufferState, stats)
   var attributeState = wrapAttributes(
     gl,
