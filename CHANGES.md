@@ -58,6 +58,7 @@
 
 ## Next
 
+* Add more test cases for `regl.read()` and improve validation
 * Implement a standard method for handling context creation errors
 * Add a mechanism for managing webgl extensions
     + Should be able to report errors when extensions are missing
