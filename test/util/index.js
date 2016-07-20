@@ -1,4 +1,5 @@
 require('../constructor')
+require('../frame')
 require('../accessor')
 require('../half-float')
 require('../clear')

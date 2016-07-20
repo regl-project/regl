@@ -32,6 +32,15 @@ var DYN_PROP = 1
 var DYN_CONTEXT = 2
 var DYN_STATE = 3
 
+function find (haystack, needle) {
+  for (var i = 0; i < haystack.length; ++i) {
+    if (haystack[i] === needle) {
+      return i
+    }
+  }
+  return -1
+}
+
 module.exports = function wrapREGL (args) {
   var config = initWebGL(args)
   if (!config) {
@@ -122,28 +131,32 @@ module.exports = function wrapREGL (args) {
   var canvas = gl.canvas
 
   var rafCallbacks = []
-  var activeRAF = 0
+  var activeRAF = null
   function handleRAF () {
+    if (rafCallbacks.length === 0) {
+      if (timer) {
+        timer.update()
+      }
+      activeRAF = null
+      return
+    }
+
     // schedule next animation frame
     activeRAF = raf.next(handleRAF)
-
-    // increment frame count
-    contextState.tick += 1
-
-    // Update time
-    contextState.time = (clock() - START_TIME) / 1000.0
 
     // poll for changes
     poll()
 
     // fire a callback for all pending rafs
-    for (var i = 0; i < rafCallbacks.length; ++i) {
+    for (var i = rafCallbacks.length - 1; i >= 0; --i) {
       var cb = rafCallbacks[i]
       cb(contextState, null, 0)
     }
 
     // flush all pending webgl calls
     gl.flush()
+
+    // poll GPU timers *after* gl.flush so we don't delay command dispatch
     if (timer) {
       timer.update()
     }
@@ -151,14 +164,14 @@ module.exports = function wrapREGL (args) {
 
   function startRAF () {
     if (!activeRAF && rafCallbacks.length > 0) {
-      handleRAF()
+      activeRAF = raf.next(handleRAF)
     }
   }
 
   function stopRAF () {
     if (activeRAF) {
       raf.cancel(handleRAF)
-      activeRAF = 0
+      activeRAF = null
     }
   }
 
@@ -334,20 +347,23 @@ module.exports = function wrapREGL (args) {
 
   function frame (cb) {
     check.type(cb, 'function', 'regl.frame() callback must be a function')
-
     rafCallbacks.push(cb)
 
     function cancel () {
-      var index = rafCallbacks.find(function (item) {
-        return item === cb
-      })
-      if (index < 0) {
-        return
+      // FIXME:  should we check something other than equals cb here?
+      // what if a user calls frame twice with the same callback...
+      //
+      var i = find(rafCallbacks, cb)
+      check(i >= 0, 'cannot cancel a frame twice')
+      function pendingCancel () {
+        var index = find(rafCallbacks, pendingCancel)
+        rafCallbacks[index] = rafCallbacks[rafCallbacks.length - 1]
+        rafCallbacks.length -= 1
+        if (rafCallbacks.length <= 0) {
+          stopRAF()
+        }
       }
-      rafCallbacks.splice(index, 1)
-      if (rafCallbacks.length <= 0) {
-        stopRAF()
-      }
+      rafCallbacks[i] = pendingCancel
     }
 
     startRAF()
@@ -375,6 +391,8 @@ module.exports = function wrapREGL (args) {
   }
 
   function poll () {
+    contextState.tick += 1
+    contextState.time = (clock() - START_TIME) / 1000.0
     pollViewport()
     core.procs.poll()
   }
@@ -437,7 +455,7 @@ module.exports = function wrapREGL (args) {
     _refresh: refresh,
 
     poll: function () {
-      core.procs.poll()
+      poll()
       if (timer) {
         timer.update()
       }
