@@ -1785,6 +1785,7 @@ var rgba_16x24 = regl.renderbuffer(16, 24)
 | `'rgb5 a1'` | `gl.RGB5_A1` |
 | `'depth'` | `gl.DEPTH_COMPONENT16` |
 | `'stencil'` | `gl.STENCIL_INDEX8` |
+| `'depth stencil'` | `gl.DEPTH_STENCIL` |
 | `'srgba'` | `ext.SRGB8_ALPHA8_EXT`, only if [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) supported |
 | `'rgba16f'` | 16 bit floating point RGBA buffer, only if [EXT_color_buffer_half_float](https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_half_float/) |
 | `'rgb16f'` | 16 bit floating point RGB buffer, only if [EXT_color_buffer_half_float](https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_half_float/) |
