@@ -1,6 +1,7 @@
 require('../constructor')
 require('../frame')
 require('../frame-destroy')
+require('../resize')
 require('../accessor')
 require('../half-float')
 require('../clear')
