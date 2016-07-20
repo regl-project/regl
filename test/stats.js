@@ -214,6 +214,9 @@ tape('test regl.stats', function (t) {
     // End Test stats.renderbufferCount
     //
 
+    //
+    // Test texture.stats.size for all possible formats.
+    //
     regl = createREGL({
       gl: gl,
       profile: true,
@@ -319,6 +322,14 @@ tape('test regl.stats', function (t) {
                'correct texture size' +
                ' for type \'' + testCase.type + '\' and format \'' + testCase.format + '\'')
     })
+
+    //
+    // test texture.stats.size for mipmaps.
+    //
+
+    tex = regl.texture({shape: [16, 16], type: 'uint8', format: 'rgba', mipmap: true})
+    t.equals(tex.stats.size, (16 * 16 + 8 * 8 + 4 * 4 + 2 * 2 + 1 * 1) * 4,
+             'correct mipmapped texture size')
 
     createContext.destroy(gl)
     t.end()
