@@ -8,13 +8,13 @@ tape('test regl.stats', function (t) {
   setTimeout(function () {
     var gl = createContext(2000, 2000)
     var regl
-    var stats
-
+    //    var stats
     //
     // Begin Test stats.bufferCount
     //
-    regl = createREGL(gl)
-    stats = regl.stats
+/*
+    regl = createREGL({gl: gl, profile: true})
+    var stats = regl.stats
 
     t.equals(stats.bufferCount, 0, 'stats.bufferCount==0 at start')
 
@@ -214,6 +214,113 @@ tape('test regl.stats', function (t) {
     //
     // End Test stats.renderbufferCount
     //
+*/
+    regl = createREGL({
+      gl: gl,
+      profile: true,
+      optionalExtensions: [
+        'oes_texture_float',
+        'oes_texture_half_float',
+        'ext_srgb',
+        'webgl_depth_texture',
+        'webgl_compressed_texture_s3tc',
+        'webgl_compressed_texture_atc',
+        'webgl_compressed_texture_pvrtc',
+        'webgl_compressed_texture_etc1'
+
+      ]
+    })
+
+    var testCases = [
+      {format: 'alpha', type: 'uint8', expected: 256},
+      {format: 'luminance', type: 'uint8', expected: 256},
+      {format: 'luminance alpha', type: 'uint8', expected: 512},
+      {format: 'rgb', type: 'uint8', expected: 768},
+      {format: 'rgba', type: 'uint8', expected: 1024},
+      {format: 'rgba4', type: 'rgba4', expected: 512},
+      {format: 'rgb5 a1', type: 'rgb5 a1', expected: 512},
+      {format: 'rgb565', type: 'rgb565', expected: 512}
+    ]
+
+    if (regl.hasExtension('ext_srgb')) {
+      testCases.push({format: 'srgba', type: 'uint8', expected: 1024})
+      testCases.push({format: 'srgb', type: 'uint8', expected: 768})
+    }
+
+    if (regl.hasExtension('oes_texture_float')) {
+      testCases.push({format: 'alpha', type: 'float', expected: 1024})
+      testCases.push({format: 'luminance', type: 'float', expected: 1024})
+      testCases.push({format: 'luminance alpha', type: 'float', expected: 2048})
+      testCases.push({format: 'rgb', type: 'float', expected: 3072})
+      testCases.push({format: 'rgba', type: 'float', expected: 4096})
+      if (regl.hasExtension('ext_srgb')) {
+        testCases.push({format: 'srgb', type: 'float', expected: 3072})
+        testCases.push({format: 'srgba', type: 'float', expected: 4096})
+      }
+    }
+
+    if (regl.hasExtension('oes_texture_half_float')) {
+      testCases.push({format: 'alpha', type: 'half float', expected: 512})
+      testCases.push({format: 'luminance', type: 'half float', expected: 512})
+      testCases.push({format: 'luminance alpha', type: 'half float', expected: 1024})
+      testCases.push({format: 'rgb', type: 'half float', expected: 1536})
+      testCases.push({format: 'rgba', type: 'half float', expected: 2048})
+      if (regl.hasExtension('ext_srgb')) {
+        testCases.push({format: 'srgb', type: 'half float', expected: 1536})
+        testCases.push({format: 'srgba', type: 'half float', expected: 2048})
+      }
+    }
+
+    if (regl.hasExtension('webgl_depth_texture')) {
+      testCases.push({format: 'depth', type: 'uint16', expected: 512})
+      testCases.push({format: 'depth', type: 'uint32', expected: 1024})
+      testCases.push({format: 'depth stencil', type: 'depth stencil', expected: 1024})
+    }
+
+    function getZeros (n) {
+      var a = []
+      for (var i = 0; i < n; i++) {
+        a[i] = 0
+      }
+      return new Uint8Array(a)
+    }
+
+    if (regl.hasExtension('webgl_compressed_texture_s3tc')) {
+      testCases.push({format: 'rgb s3tc dxt1', type: 'uint8', expected: 128, data: getZeros(128)})
+      // TODO: also test 'rgba s3tc dxt1'
+      testCases.push({format: 'rgba s3tc dxt3', type: 'uint8', expected: 256, data: getZeros(256)})
+      testCases.push({format: 'rgba s3tc dxt5', type: 'uint8', expected: 256, data: getZeros(256)})
+    }
+
+    if (regl.hasExtension('webgl_compressed_texture_atc')) {
+      // TODO: SPELLCHECK 'arc'
+      testCases.push({format: 'rgb arc', type: 'uint8', expected: 128, data: getZeros(128)})
+      testCases.push({format: 'rgba atc explicit alpha', type: 'uint8', expected: 256, data: getZeros(256)})
+      testCases.push({format: 'rgba atc interpolated alpha', type: 'uint8', expected: 256, data: getZeros(256)})
+    }
+
+    if (regl.hasExtension('webgl_compressed_texture_pvrtc')) {
+      testCases.push({format: 'rgb pvrtc 4bppv1', type: 'uint8', expected: 128, data: getZeros(128)})
+      testCases.push({format: 'rgb pvrtc 2bppv1', type: 'uint8', expected: 64, data: getZeros(64)})
+      testCases.push({format: 'rgba pvrtc 4bppv1', type: 'uint8', expected: 128, data: getZeros(128)})
+      testCases.push({format: 'rgba pvrtc 2bppv1', type: 'uint8', expected: 64, data: getZeros(64)})
+    }
+
+    if (regl.hasExtension('webgl_compressed_texture_etc1')) {
+      testCases.push({format: 'rgb etc1', type: 'uint8', expected: 128, data: getZeros(128)})
+    }
+
+    testCases.forEach(function (testCase, i) {
+      var arg = {shape: [16, 16], type: testCase.type, format: testCase.format}
+      if (typeof testCase.data !== 'undefined') {
+        arg.data = testCase.data
+      }
+      var tex = regl.texture(arg)
+
+      t.equals(tex.stats.size, testCase.expected,
+               'correct texture size' +
+               ' for type \'' + testCase.type + '\' and format \'' + testCase.format + '\'')
+    })
 
     createContext.destroy(gl)
     t.end()
