@@ -150,7 +150,9 @@ module.exports = function wrapREGL (args) {
     // fire a callback for all pending rafs
     for (var i = rafCallbacks.length - 1; i >= 0; --i) {
       var cb = rafCallbacks[i]
-      cb(contextState, null, 0)
+      if (cb) {
+        cb(contextState, null, 0)
+      }
     }
 
     // flush all pending webgl calls
@@ -189,6 +191,7 @@ module.exports = function wrapREGL (args) {
   }
 
   function destroy () {
+    rafCallbacks.length = 0
     stopRAF()
 
     if (canvas) {
