@@ -37,8 +37,6 @@
     + Instancing
     + Float textures / framebuffers and their filtering modes
     + Constant attributes
-    + RAF/regl.frame behavior
-    + Initialization pathways
     + General code coverage
 
 * Build a website (preview at [regl.party](http://regl.party))
@@ -62,6 +60,7 @@
 * Add a mechanism for managing webgl extensions
     + Should be able to report errors when extensions are missing
     + Allow users to disable extensions for testing/mocking
+* Fix several bugs related to `regl.frame` cancellation
 
 ## 0.9.0
 
