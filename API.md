@@ -1549,7 +1549,7 @@ A data source from an image can be one of the following types:
 | `'rgba'` | `gl.RGBA` | 4  | `'uint8','half float','float'`| ✖ | |
 | `'rgba4'` | `gl.RGBA4` | 4 | `'rgba4'` | ✖ | |
 | `'rgb5 a1'` | `gl.RGB5_A1` | 4 | `'rgb5 a1'` | ✖ | |
-| `'rgb5'` | `gl.RGB5` | 3 | `'rgb5'` | ✖ | |
+| `'rgb565'` | `gl.RGB565` | 3 | `'rgb565'` | ✖ | |
 | `'srgb'` | `ext.SRGB` | 3 | `'uint8','half float','float'` | ✖ | [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) |
 | `'srgba'` | `ext.RGBA` | 4  | `'uint8','half float','float'`| ✖ | [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) |
 | `'depth'` | `gl.DEPTH_COMPONENT` | 1 | `'uint16','uint32'`  | ✖ | [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) |
