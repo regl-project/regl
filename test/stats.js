@@ -12,7 +12,6 @@ tape('test regl.stats', function (t) {
     //
     // Begin Test stats.bufferCount
     //
-/*
     regl = createREGL({gl: gl, profile: true})
     var stats = regl.stats
 
@@ -214,7 +213,7 @@ tape('test regl.stats', function (t) {
     //
     // End Test stats.renderbufferCount
     //
-*/
+
     regl = createREGL({
       gl: gl,
       profile: true,
@@ -293,8 +292,7 @@ tape('test regl.stats', function (t) {
     }
 
     if (regl.hasExtension('webgl_compressed_texture_atc')) {
-      // TODO: SPELLCHECK 'arc'
-      testCases.push({format: 'rgb arc', type: 'uint8', expected: 128, data: getZeros(128)})
+      testCases.push({format: 'rgb atc', type: 'uint8', expected: 128, data: getZeros(128)})
       testCases.push({format: 'rgba atc explicit alpha', type: 'uint8', expected: 256, data: getZeros(256)})
       testCases.push({format: 'rgba atc interpolated alpha', type: 'uint8', expected: 256, data: getZeros(256)})
     }
