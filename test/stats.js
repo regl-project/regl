@@ -338,6 +338,7 @@ tape('test regl.stats', function (t) {
       t.equals(stats.getTotalTextureSize(), totalSize,
                'stats.getTotalTextureSize() after destroy() texture ' + i)
     })
+    regl.destroy()
 
     //
     // test texture.stats.size for mipmaps.
@@ -377,6 +378,63 @@ tape('test regl.stats', function (t) {
                'correct resized texture size' +
                ' for type \'' + testCase.type + '\' and format \'' + testCase.format + '\'')
     })
+
+    //
+    // test buffer.stats.size
+    //
+    regl = createREGL({
+      gl: gl,
+      profile: true,
+      optionalExtensions: [
+        'oes_texture_float',
+        'oes_texture_half_float',
+        'ext_srgb',
+        'webgl_depth_texture',
+        'webgl_compressed_texture_s3tc',
+        'webgl_compressed_texture_atc',
+        'webgl_compressed_texture_pvrtc',
+        'webgl_compressed_texture_etc1'
+      ]
+    })
+    stats = regl.stats
+
+    var bufferTestCases = [
+      {type: 'int8', expected: 256},
+      {type: 'int16', expected: 512},
+      {type: 'int32', expected: 1024},
+
+      {type: 'uint8', expected: 256},
+      {type: 'uint16', expected: 512},
+      {type: 'uint32', expected: 1024},
+
+      {type: 'float', expected: 1024}
+    ]
+
+    totalSize = 0
+    var buffers = []
+    bufferTestCases.forEach(function (testCase, i) {
+      var buf = regl.buffer({length: 256, type: testCase.type})
+
+      t.equals(buf.stats.size, testCase.expected,
+               'correct buffer size' +
+               ' for type \'' + testCase.type)
+
+      totalSize += testCase.expected
+      buffers.push(buf)
+
+      t.equals(stats.getTotalBufferSize(), totalSize, 'stats.getTotalBufferSize() at testCase ' + i)
+    })
+
+    // now destroy all buffers, one after one.
+    Object.keys(buffers).forEach(function (key, i) {
+      buf = buffers[key]
+      totalSize -= buf.stats.size
+      buf.destroy()
+
+      t.equals(stats.getTotalBufferSize(), totalSize,
+               'stats.getTotalBufferSize() after destroy() buffer ' + i)
+    })
+    regl.destroy()
 
     createContext.destroy(gl)
     t.end()
