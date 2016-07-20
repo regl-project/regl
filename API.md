@@ -1549,7 +1549,7 @@ A data source from an image can be one of the following types:
 | `'rgba'` | `gl.RGBA` | 4  | `'uint8','half float','float'`| ✖ | |
 | `'rgba4'` | `gl.RGBA4` | 4 | `'rgba4'` | ✖ | |
 | `'rgb5 a1'` | `gl.RGB5_A1` | 4 | `'rgb5 a1'` | ✖ | |
-| `'rgb5'` | `gl.RGB5` | 3 | `'rgb5'` | ✖ | |
+| `'rgb565'` | `gl.RGB565` | 3 | `'rgb565'` | ✖ | |
 | `'srgb'` | `ext.SRGB` | 3 | `'uint8','half float','float'` | ✖ | [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) |
 | `'srgba'` | `ext.RGBA` | 4  | `'uint8','half float','float'`| ✖ | [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) |
 | `'depth'` | `gl.DEPTH_COMPONENT` | 1 | `'uint16','uint32'`  | ✖ | [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) |
@@ -1558,9 +1558,9 @@ A data source from an image can be one of the following types:
 | `'rgba s3tc dxt1'` | `ext.COMPRESSED_RGBA_S3TC_DXT1_EXT` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
 | `'rgba s3tc dxt3'` | `ext.COMPRESSED_RGBA_S3TC_DXT3_EXT` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
 | `'rgba s3tc dxt5'` | `ext.COMPRESSED_RGBA_S3TC_DXT5_EXT` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
-| `'rgb arc'` | `ext.COMPRESSED_RGB_ATC_WEBGL` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
-| `'rgba arc explicit alpha'` | `ext.COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
-| `'rgba arc interpolated alpha'` | `ext.COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
+| `'rgb atc'` | `ext.COMPRESSED_RGB_ATC_WEBGL` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
+| `'rgba atc explicit alpha'` | `ext.COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
+| `'rgba atc interpolated alpha'` | `ext.COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
 | `'rgb pvrtc 4bppv1'` | `ext.COMPRESSED_RGB_PVRTC_4BPPV1_IMG` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
 | `'rgb pvrtc 2bppv1'` | `ext.COMPRESSED_RGB_PVRTC_2BPPV1_IMG` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
 | `'rgba pvrtc 4bppv1'` | `ext.COMPRESSED_RGBA_PVRTC_4BPPV1_IMG` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
@@ -1785,6 +1785,7 @@ var rgba_16x24 = regl.renderbuffer(16, 24)
 | `'rgb5 a1'` | `gl.RGB5_A1` |
 | `'depth'` | `gl.DEPTH_COMPONENT16` |
 | `'stencil'` | `gl.STENCIL_INDEX8` |
+| `'depth stencil'` | `gl.DEPTH_STENCIL` |
 | `'srgba'` | `ext.SRGB8_ALPHA8_EXT`, only if [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) supported |
 | `'rgba16f'` | 16 bit floating point RGBA buffer, only if [EXT_color_buffer_half_float](https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_half_float/) |
 | `'rgb16f'` | 16 bit floating point RGB buffer, only if [EXT_color_buffer_half_float](https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_half_float/) |
