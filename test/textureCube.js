@@ -357,6 +357,7 @@ tape('texture cube', function (t) {
   // TODO alignment and pixel storage
   // TODO float cube maps
   // TODO dom elements
+  // TODO: test resize
 
   regl.destroy()
   createContext.destroy(gl)

@@ -1241,7 +1241,7 @@ myBuffer({
 })
 ```
 
-The arguments to the update pathway are the same as the constructor and the returned value will be a reference to the buffer.  
+The arguments to the update pathway are the same as the constructor and the returned value will be a reference to the buffer.
 
 **Relevant WebGL APIs**
 
@@ -1295,6 +1295,13 @@ myBuffer.destroy()
 
 * [`gl.deleteBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteBuffer.xml)
 
+#### Profiling
+
+The following stats are tracked for each buffer in the `.stats` property:
+
+| Statistic | Meaning |
+|-----------|---------|
+| `size` | The size of the buffer in bytes |
 
 ---------------------------------------
 ### Elements
@@ -1674,6 +1681,15 @@ myTexture.destroy()
 
 *  [`gl.deleteTexture`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteTexture.xml)
 
+
+#### Profiling
+
+The following stats are tracked for each texture in the `.stats` property:
+
+| Statistic | Meaning |
+|-----------|---------|
+| `size` | The size of the texture in bytes |
+
 ---------------------------------------
 ### Cube maps
 
@@ -1743,6 +1759,13 @@ cube.subimage(face, data[, x, y, miplevel])
 * [`gl.copyTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexSubImage2D.xml)
 * [`gl.compressedTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexSubImage2D.xml)
 
+#### Profiling
+
+The following stats are tracked for each cube map in the `.stats` property:
+
+| Statistic | Meaning |
+|-----------|---------|
+| `size` | The size of the cube map in bytes |
 
 #### Destroy
 
@@ -1831,6 +1854,15 @@ rb.destroy()
 **Relevant WebGL APIs**
 
 * [`gl.deleteRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteRenderbuffer.xml)
+
+
+#### Profiling
+
+The following stats are tracked for each renderbuffer in the `.stats` property:
+
+| Statistic | Meaning |
+|-----------|---------|
+| `size` | The size of the renderbuffer in bytes |
 
 ---------------------------------------
 ### Framebuffers
@@ -2111,11 +2143,17 @@ regl exposes info about the WebGL context limits and capabilities via the `regl.
 |--------|---------|
 | `bufferCount` | The number of array buffers currently allocated |
 | `elementsCount` | The number of element buffers currently allocated |
-| `framebufferCount` | The number of framebuffer currently allocated |
+| `framebufferCount` | The number of framebuffers currently allocated |
 | `shaderCount` | The number of shaders currently allocated |
 | `textureCount` | The number of textures currently allocated |
 | `cubeCount` | The number of cube maps currently allocated |
-| `renderbufferCount` | The number of rnderbuffers currently allocated |
+| `renderbufferCount` | The number of renderbuffers currently allocated |
+| `getTotalTextureSize()` | The total amount of memory allocated for textures and cube maps |
+| `getTotalBufferSize()` | The total amount of memory allocated for array buffers and element buffers |
+| `getTotalRenderbufferSize()` | The total amount of memory allocated for renderbuffers |
+| `getMaxUniformsCount()` | The maximum number of uniforms in any shader |
+| `getMaxAttributesCount()` | The maximum number of attributes in any shader |
+| `maxTextureUnits()` | The maximum number of texture units used |
 
 ---------------------------------------
 ### Clean up
