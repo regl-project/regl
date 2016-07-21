@@ -566,6 +566,24 @@ tape('test regl.stats', function (t) {
     t.equals(stats.getMaxAttributesCount(), 0,
              'stats.getMaxAttributesCount()==0 after regl.destroy()')
 
+    //
+    // Test stats.maxTextureUnits
+    //
+    regl = createREGL({gl: gl, profile: true})
+    stats = regl.stats
+
+    var tex0 = regl.texture({})
+    var tex1 = regl.texture({})
+    var tex2 = regl.texture({})
+
+    tex0._texture.bind()
+    tex1._texture.bind()
+    tex2._texture.bind()
+
+    t.equals(stats.maxTextureUnits, 3, 'stats.maxTextureUnits')
+
+    regl.destroy()
+
     createContext.destroy(gl)
     t.end()
   }, 120)
