@@ -215,7 +215,7 @@ tape('test regl.stats', function (t) {
     //
 
     //
-    // Test texture.stats.size for all possible formats.
+    // Test texture.stats.size and cube.stats.size for all possible formats.
     // also test stats.getTotalTextureSize().
     //
     regl = createREGL({
@@ -321,10 +321,29 @@ tape('test regl.stats', function (t) {
       }
       var tex = regl.texture(arg)
 
+      arg = {radius: 16, type: testCase.type, format: testCase.format}
+      if (typeof testCase.data !== 'undefined') {
+        arg.faces = [
+          testCase.data,
+          testCase.data,
+          testCase.data,
+          testCase.data,
+          testCase.data,
+          testCase.data
+        ]
+      }
+      var c = regl.cube(arg)
+
       t.equals(tex.stats.size, testCase.expected,
                'correct texture size' +
                ' for type \'' + testCase.type + '\' and format \'' + testCase.format + '\'')
-      totalSize += testCase.expected
+      t.equals(c.stats.size, testCase.expected * 6,
+               'correct cube map size' +
+               ' for type \'' + testCase.type + '\' and format \'' + testCase.format + '\'')
+
+      totalSize += testCase.expected // texture size
+      totalSize += testCase.expected * 6 // cube map size.
+
       textures.push(tex)
 
       t.equals(stats.getTotalTextureSize(), totalSize, 'stats.getTotalTextureSize() at testCase ' + i)
@@ -342,18 +361,23 @@ tape('test regl.stats', function (t) {
     regl.destroy()
 
     //
-    // test texture.stats.size for mipmaps.
+    // test texture.stats.size and cube.stats.size for mipmaps.
     //
     regl = createREGL({gl: gl, profile: true})
     stats = regl.stats
 
-    tex = regl.texture({shape: [16, 16], type: 'uint8', format: 'rgba', mipmap: true})
+    var arg = {shape: [16, 16], type: 'uint8', format: 'rgba', mipmap: true}
+    tex = regl.texture(arg)
     t.equals(tex.stats.size, (16 * 16 + 8 * 8 + 4 * 4 + 2 * 2 + 1 * 1) * 4,
              'correct mipmapped texture size')
+
+    var c = regl.cube(arg)
+    t.equals(c.stats.size, (16 * 16 + 8 * 8 + 4 * 4 + 2 * 2 + 1 * 1) * 4 * 6,
+             'correct mipmapped cube map size')
     regl.destroy()
 
     //
-    // test texture.stats.size after texture.resize()
+    // test texture.stats.size and cube.stats.size after texture.resize()
     //
     regl = createREGL({gl: gl, profile: true, optionalExtensions: [
       'oes_texture_float',
@@ -374,9 +398,16 @@ tape('test regl.stats', function (t) {
       var tex = regl.texture({shape: [16, 16], type: testCase.type, format: testCase.format})
       tex.resize(8, 8)
 
+      var c = regl.cube({radius: 16, type: testCase.type, format: testCase.format})
+      c.resize(8, 8)
+
       // divide by four, since we resized.
       t.equals(tex.stats.size, (testCase.expected / 4),
                'correct resized texture size' +
+               ' for type \'' + testCase.type + '\' and format \'' + testCase.format + '\'')
+
+      t.equals(c.stats.size, ((testCase.expected * 6) / 4),
+               'correct resized cube map size' +
                ' for type \'' + testCase.type + '\' and format \'' + testCase.format + '\'')
     })
     regl.destroy()
