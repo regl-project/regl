@@ -1759,6 +1759,13 @@ cube.subimage(face, data[, x, y, miplevel])
 * [`gl.copyTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexSubImage2D.xml)
 * [`gl.compressedTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexSubImage2D.xml)
 
+#### Profiling
+
+The following stats are tracked for each cube map in the `.stats` property:
+
+| Statistic | Meaning |
+|-----------|---------|
+| `size` | The size of the cube map in bytes |
 
 #### Destroy
 
