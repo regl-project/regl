@@ -512,6 +512,60 @@ tape('test regl.stats', function (t) {
 
     regl.destroy()
 
+    //
+    // test stats.getMaxUniformsCount()
+    //
+    regl = createREGL({gl: gl, profile: true})
+    stats = regl.stats
+
+    regl({
+      frag: [
+        'precision mediump float;',
+
+        'uniform vec2 u3;',
+        'uniform vec2 u4;',
+
+        'void main () { gl_FragColor = vec4(u3+u4, 0.0, 1.0); } '
+      ].join('\n'),
+      vert: [
+        'precision mediump float;',
+
+        'attribute vec2 a0;',
+        'attribute vec2 a1;',
+        'attribute vec2 a2;',
+
+        'uniform vec2 u0;',
+        'uniform vec2 u1;',
+        'uniform vec2 u2;',
+
+        'void main () {gl_Position = vec4(a0 + a1 + a2 + u0 + u1 + u2, 0, 1); }'
+      ].join('\n'),
+      attributes: {
+        a0: [[-1, 0]],
+        a1: [[-1, 0]],
+        a2: [[-1, 0]]
+      },
+      uniforms: {
+        u0: [1, 0],
+        u1: [1, 0],
+        u2: [1, 0],
+
+        u3: [1, 0],
+        u4: [1, 0]
+      },
+      count: 1
+    })
+
+    t.equals(stats.getMaxUniformsCount(), 5, 'stats.getMaxUniformsCount()')
+    t.equals(stats.getMaxAttributesCount(), 3, 'stats.getMaxAttributesCount()')
+
+    regl.destroy()
+
+    t.equals(stats.getMaxUniformsCount(), 0,
+             'stats.getMaxUniformsCount()==0 after regl.destroy()')
+    t.equals(stats.getMaxAttributesCount(), 0,
+             'stats.getMaxAttributesCount()==0 after regl.destroy()')
+
     createContext.destroy(gl)
     t.end()
   }, 120)
