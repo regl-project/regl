@@ -1295,6 +1295,13 @@ myBuffer.destroy()
 
 * [`gl.deleteBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteBuffer.xml)
 
+#### Profiling
+
+The following stats are tracked for each buffer in the `.stats` property:
+
+| Statistic | Meaning |
+|-----------|---------|
+| `size` | The size of the buffer in bytes |
 
 ---------------------------------------
 ### Elements
@@ -1674,6 +1681,15 @@ myTexture.destroy()
 
 *  [`gl.deleteTexture`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteTexture.xml)
 
+
+#### Profiling
+
+The following stats are tracked for each texture in the `.stats` property:
+
+| Statistic | Meaning |
+|-----------|---------|
+| `size` | The size of the texture in bytes |
+
 ---------------------------------------
 ### Cube maps
 
@@ -1831,6 +1847,15 @@ rb.destroy()
 **Relevant WebGL APIs**
 
 * [`gl.deleteRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteRenderbuffer.xml)
+
+
+#### Profiling
+
+The following stats are tracked for each renderbuffer in the `.stats` property:
+
+| Statistic | Meaning |
+|-----------|---------|
+| `size` | The size of the renderbuffer in bytes |
 
 ---------------------------------------
 ### Framebuffers
