@@ -1785,6 +1785,7 @@ var rgba_16x24 = regl.renderbuffer(16, 24)
 | `'rgb5 a1'` | `gl.RGB5_A1` |
 | `'depth'` | `gl.DEPTH_COMPONENT16` |
 | `'stencil'` | `gl.STENCIL_INDEX8` |
+| `'depth stencil'` | `gl.DEPTH_STENCIL` |
 | `'srgba'` | `ext.SRGB8_ALPHA8_EXT`, only if [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) supported |
 | `'rgba16f'` | 16 bit floating point RGBA buffer, only if [EXT_color_buffer_half_float](https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_half_float/) |
 | `'rgb16f'` | 16 bit floating point RGB buffer, only if [EXT_color_buffer_half_float](https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_half_float/) |
@@ -1980,7 +1981,21 @@ If an option is not present, then the corresponding buffer is not cleared
 ### Reading pixels
 
 ```javascript
-var pixels = regl.read([options])
+// read entire screen
+var snapshot = regl.read()
+
+// Can also reuse a buffer by passing it to regl.read()
+var bytes = new Uint8Array(100)
+regl.read(bytes)
+
+// It is also possible to specify a region to read from
+var pixels = regl.read({
+  x: 2,
+  y: 3,
+  width: 3,
+  height: 1,
+  data: new Uint8Array(12)
+})
 ```
 
 | Property | Description | Default |
@@ -1988,8 +2003,12 @@ var pixels = regl.read([options])
 | `data` | An optional `ArrayBufferView` which gets the result of reading the pixels | `null` |
 | `x` | The x-offset of the upper-left corner of the rectangle in pixels | `0` |
 | `y` | The y-offset of the upper-left corner of the rectangle in pixels | `0` |
-| `width` | The width of the rectangle in pixels | viewport.width |
-| `height` | The height of the rectangle in pixels | viewport.height |
+| `width` | The width of the rectangle in pixels | Current framebuffer width |
+| `height` | The height of the rectangle in pixels | Current framebuffer height |
+
+**Notes**
+
+* In order to read pixels from the drawing buffer, you must create your webgl context with `preserveDrawingBuffer` set to `true`.  If this is not set, then `regl.read` will throw an exception.
 
 **Relevant WebGL APIs**
 
@@ -1998,7 +2017,7 @@ var pixels = regl.read([options])
 
 ---------------------------------------
 ### Per-frame callbacks
-`regl` also provides a common wrapper over `requestAnimationFrame` and `cancelAnimationFrame` that integrates gracefully with context loss events.
+`regl` also provides a common wrapper over `requestAnimationFrame` and `cancelAnimationFrame` that integrates gracefully with context loss events.  `regl.frame()` also calls `gl.flush` and drains several internal buffers, so you should try to do all your rendering to the drawing buffer within the frame callback.
 
 ```javascript
 // Hook a callback to execute each frame
@@ -2012,6 +2031,8 @@ var tick = regl.frame(function (context) {
 // When we are done, we can unsubscribe by calling cancel on the callback
 tick.cancel()
 ```
+
+It is possible to manage framecallbacks manually, however before any loop it is essential to call `regl.poll()` which updates all timers and viewports.
 
 ---------------------------------------
 ### Extensions
