@@ -2,18 +2,17 @@
 
 ## Planned
 
-* Add a mechanism for users to specify minimum resource requirements (texture size, varying units, etc.)
-
 * Cubic frame buffer objects
-
-* Context loss
-
-* Write comparison suite
 
 * More performance monitoring hooks
     + Track currently used resource requirements
     + Output should be serializable -> works as input to constructor checks
 
+* Context loss
+
+* Write comparison suite
+
+* Add a mechanism for users to specify minimum resource requirements (texture size, varying units, etc.)
 * More validation
     + Should not be possible to write regl code that crashes on some systems
 
@@ -37,8 +36,6 @@
     + Instancing
     + Float textures / framebuffers and their filtering modes
     + Constant attributes
-    + RAF/regl.frame behavior
-    + Initialization pathways
     + General code coverage
 
 * Build a website (preview at [regl.party](http://regl.party))
@@ -58,10 +55,15 @@
 
 ## Next
 
-* Implement a standard method for handling context creation errors
+## 0.10.0
+
 * Add a mechanism for managing webgl extensions
     + Should be able to report errors when extensions are missing
     + Allow users to disable extensions for testing/mocking
+* Doc clean up
+* Add more test cases for `regl.read()` and improve validation
+* Implement a standard method for handling context creation errors
+* Fix several bugs related to `regl.frame` cancellation
 
 ## 0.9.0
 
