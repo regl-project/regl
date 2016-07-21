@@ -1938,6 +1938,21 @@ fbo.destroy()
 ---------------------------------------
 ### Cubic frame buffers
 
+
+| Color format | Description | Attachment |
+|--------------|-------------|------------|
+| `'alpha'` | `gl.ALPHA` | Texture |
+| `'luminance'` | `gl.LUMINANCE` | Texture |
+| `'luminance alpha'` | `gl.LUMINANCE_ALPHA` | Texture |
+| `'rgb'` | `gl.RGB` | Texture |
+| `'rgba'` | `gl.RGBA` | Texture |
+
+| Color type | Description |
+|------------|-------------|
+| `'uint8'` | `gl.UNSIGNED_BYTE` |
+| `'half float'` | 16 bit float, requires [OES_texture_half_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_half_float/)  |
+| `'float'` | 32 bit float, requires [OES_texture_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_float/) |
+
 **TODO**
 
 #### Constructor
