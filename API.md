@@ -1241,7 +1241,7 @@ myBuffer({
 })
 ```
 
-The arguments to the update pathway are the same as the constructor and the returned value will be a reference to the buffer.  
+The arguments to the update pathway are the same as the constructor and the returned value will be a reference to the buffer.
 
 **Relevant WebGL APIs**
 
@@ -2111,11 +2111,17 @@ regl exposes info about the WebGL context limits and capabilities via the `regl.
 |--------|---------|
 | `bufferCount` | The number of array buffers currently allocated |
 | `elementsCount` | The number of element buffers currently allocated |
-| `framebufferCount` | The number of framebuffer currently allocated |
+| `framebufferCount` | The number of framebuffers currently allocated |
 | `shaderCount` | The number of shaders currently allocated |
 | `textureCount` | The number of textures currently allocated |
 | `cubeCount` | The number of cube maps currently allocated |
-| `renderbufferCount` | The number of rnderbuffers currently allocated |
+| `renderbufferCount` | The number of renderbuffers currently allocated |
+| `getTotalTextureSize()` | The total amount of memory allocated for textures and cube maps |
+| `getTotalBufferSize()` | The total amount of memory allocated for array buffers and element buffers |
+| `getTotalRenderbufferSize()` | The total amount of memory allocated for renderbuffers |
+| `getMaxUniformsCount()` | The maximum number of uniforms in any shader |
+| `getMaxAttributesCount()` | The maximum number of attributes in any shader |
+| `maxTextureUnits()` | The maximum number of texture units used |
 
 ---------------------------------------
 ### Clean up

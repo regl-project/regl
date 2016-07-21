@@ -216,6 +216,7 @@ tape('test regl.stats', function (t) {
 
     //
     // Test texture.stats.size for all possible formats.
+    // also test stats.getTotalTextureSize().
     //
     regl = createREGL({
       gl: gl,
@@ -514,6 +515,7 @@ tape('test regl.stats', function (t) {
 
     //
     // test stats.getMaxUniformsCount()
+    // test stats.getMaxAttributesCount()
     //
     regl = createREGL({gl: gl, profile: true})
     stats = regl.stats
