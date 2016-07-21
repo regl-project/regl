@@ -111,7 +111,7 @@ You can also use `regl` as a standalone script if you are really stubborn.  The 
 
 ### Comparisons
 
-In this section, we show how you can implement a spinning textured cube in `regl`, and compare it with other WebGL frameworks. 
+In this section, we show how you can implement a spinning textured cube in `regl`, and compare it with other WebGL frameworks.
 
 ![](images/cube_example.png)
 
@@ -548,6 +548,13 @@ TODO
 You can run benchmarks locally using `npm run bench` or check them out here:
 
 * [Interactive benchmarks](https://mikolalysenko.github.io/regl/www/bench.html)
+
+You can also check out our benchmarking results for the last couple of days:
+
+* [Benchmarking Results](https://mikolalysenko.github.io/regl/www/bench-results/bench-result-702e3a47801d502c5b5d.html)
+
+The benchmarking results were created by using our custom scripts `bench-history` and
+`bench-graph`. You can read more about them in [DEVELOPING.md](DEVELOPING.md).
 
 ## [API](API.md)
 
