@@ -1507,12 +1507,37 @@ A data source from an image can be one of the following types:
 | `format` | Texture format (see table) | `'rgba'` |
 | `type` | Texture type (see table) | `'uint8'` |
 | `data` | Input data (see below) | |
-| `mipmap` | If set, regenerate mipmaps | `false` |
+| `mipmap` | See below for a description | `false` |
 | `flipY` | Flips textures vertically when uploading | `false` |
 | `alignment` | Sets unpack alignment per pixel | `1` |
 | `premultiplyAlpha` | Premultiply alpha when unpacking | `false` |
 | `colorSpace` | Sets colorspace conversion | `'none'` |
 | `data` | Image data for the texture | `null` |
+
+* `mipmap`. If `boolean`, then it sets whether or not we should regenerate the mipmaps. If a `string`, it allows you to specify a hint to the mipmap generator. It can be one of the hints below
+
+| Mipmap Hint | Description |
+|-------|-------------|
+| `'don't care'`, `'dont care'`  | `gl.DONT_CARE` |
+| `'nice'` | `gl.NICEST` |
+| `'fast'` | `gl.FASTEST` |
+
+and if a hint is specified, then also the mipmaps will be regenerated. Finally, `mipmap` can also be an array of arrays. In this case, every subarray will be one of the mipmaps, and you can thus use this option to manually specify the mipmaps of the image. Like this:
+
+```javascript
+regl.texture({
+  shape: [4, 4],
+  mipmap: [
+    [ 0, 1, 2, 3,
+      4, 5, 6, 7,
+      8, 9, 10, 11,
+      12, 13, 14, 15 ],
+    [ 0, 1,
+      2, 3 ],
+    [ 0 ]
+  ]
+})
+```
 
 * `shape` can be used as an array shortcut for `[width, height, channels]` of image
 * `radius` can be specified for square images and sets both `width` and `height`
@@ -1603,7 +1628,9 @@ A data source from an image can be one of the following types:
 * [`gl.compressedTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexImage2D.xml)
 * [`gl.copyTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexImage2D.xml)
 * [`gl.generateMipmap`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGenerateMipmap.xml)
+* [`gl.hint`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glHint.xml)
 
+https://www.khronos.org/opengles/sdk/docs/man/xhtml/glHint.xml
 #### Update
 Like buffers, textures can be reinitialized in place.  Calling the texture as a function re-evaluates the constructor and initializes the texture to a new value:
 
