@@ -85,7 +85,7 @@ module.exports = function wrapREGL (args) {
   }
 
   var limits = wrapLimits(gl, extensions)
-  var bufferState = wrapBuffers(gl, stats)
+  var bufferState = wrapBuffers(gl, stats, config)
   var elementState = wrapElements(gl, extensions, bufferState, stats)
   var attributeState = wrapAttributes(
     gl,
@@ -93,15 +93,16 @@ module.exports = function wrapREGL (args) {
     limits,
     bufferState,
     stringStore)
-  var shaderState = wrapShaders(gl, stringStore, stats)
+  var shaderState = wrapShaders(gl, stringStore, stats, config)
   var textureState = wrapTextures(
     gl,
     extensions,
     limits,
     function () { core.procs.poll() },
     contextState,
-    stats)
-  var renderbufferState = wrapRenderbuffers(gl, extensions, limits, stats)
+    stats,
+    config)
+  var renderbufferState = wrapRenderbuffers(gl, extensions, limits, stats, config)
   var framebufferState = wrapFramebuffers(
     gl,
     extensions,
@@ -436,9 +437,7 @@ module.exports = function wrapREGL (args) {
     cube: textureState.createCube,
     renderbuffer: renderbufferState.create,
     framebuffer: framebufferState.create,
-    framebufferCube: function (options) {
-      check.raise('framebuffer cube not yet implemented')
-    },
+    framebufferCube: framebufferState.createCube,
 
     // Expose context attributes
     attributes: glAttributes,
