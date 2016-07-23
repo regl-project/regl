@@ -4,7 +4,11 @@ var tape = require('tape')
 
 tape('texture 2d', function (t) {
   var gl = createContext(16, 16)
-  var regl = createREGL(gl)
+  var regl = createREGL(
+    {
+      gl: gl,
+      optionalExtensions: ['webgl_compressed_texture_s3tc']
+    })
 
   var renderTexture = regl({
     vert: [
@@ -24,11 +28,7 @@ tape('texture 2d', function (t) {
     ].join('\n'),
 
     attributes: {
-      position: [
-        0, -4,
-        -4, 4,
-        4, 4
-      ]
+      position: [0, -4, -4, 4, 4, 4]
     },
 
     uniforms: {
@@ -92,11 +92,7 @@ tape('texture 2d', function (t) {
     ].join('\n'),
 
     attributes: {
-      position: [
-        0, -4,
-        -4, 4,
-        4, 4
-      ]
+      position: [0, -4, -4, 4, 4, 4]
     },
 
     uniforms: {
@@ -120,6 +116,17 @@ tape('texture 2d', function (t) {
     }, /\(regl\)/, name + ' throws')
   }
 
+  function checkShouldNotThrow (desc, name) {
+    var thrown = false
+    try {
+      regl.texture(desc)
+    } catch (e) {
+      thrown = true
+    }
+
+    t.ok(!thrown, name + ' should not throw')
+  }
+
   function comparePixels (texture, width, height, expected, tolerance, name) {
     var i
     createContext.resize(gl, width, height)
@@ -138,7 +145,7 @@ tape('texture 2d', function (t) {
         for (i = 0; i < floats.length; ++i) {
           if (!(Math.abs(floats[i] - expected[4 * i + c]) <= tolerance)) {
             t.fail(name + ' @ index ' + i + '[' + c + ']' + ' ' +
-              expected[4 * i + c] + ' - ' + floats[i])
+                   expected[4 * i + c] + ' - ' + floats[i])
             return
           }
         }
@@ -191,7 +198,7 @@ tape('texture 2d', function (t) {
 
     if (regl.hasExtension('ext_texture_filter_anisotropic')) {
       var aniso = gl.getTexParameter(gl.TEXTURE_2D,
-        gl.getExtension('ext_texture_filter_anisotropic').TEXTURE_MAX_ANISOTROPY_EXT)
+                                     gl.getExtension('ext_texture_filter_anisotropic').TEXTURE_MAX_ANISOTROPY_EXT)
       t.equals(aniso, props.anisotropic || 1, name + ': aniso ext')
     }
   }
@@ -602,22 +609,14 @@ tape('texture 2d', function (t) {
       regl.texture({
         width: 2,
         height: 2,
-        data: new Float32Array([
-          1, 2, 3, 4,
-          -5, -6, -7, -8,
-          1000, 10000, 100000, 1000000,
-          0, 0.25, -0.25, 0.5
-        ])
+        data: new Float32Array(
+          [1, 2, 3, 4, -5, -6, -7, -8, 1000, 10000, 100000, 1000000, 0, 0.25, -0.25, 0.5])
       }),
       {
         width: 2,
         height: 2,
-        pixels: new Float32Array([
-          1, 2, 3, 4,
-          -5, -6, -7, -8,
-          1000, 10000, 100000, 1000000,
-          0, 0.25, -0.25, 0.5
-        ])
+        pixels: new Float32Array(
+          [1, 2, 3, 4, -5, -6, -7, -8, 1000, 10000, 100000, 1000000, 0, 0.25, -0.25, 0.5])
       },
       'float')
 
@@ -642,8 +641,44 @@ tape('texture 2d', function (t) {
   }
 
   // TODO Test 'mipmapHint'
-  // TODO test compressed textures
   // TODO test half float
+  function getZeros (n) {
+    var a = []
+    for (var i = 0; i < n; i++) {
+      a[i] = 0
+    }
+    return new Uint8Array(a)
+  }
+
+  // test to make sure that only dimensions divisble by 4 are accepted for compressed textures:
+  if (regl.hasExtension('webgl_compressed_texture_s3tc')) {
+    var dxtTestCases = []
+
+    dxtTestCases.push({shape: [6, 6], format: 'rgb s3tc dxt1', data: getZeros(18), isThrow: true})
+    dxtTestCases.push({shape: [6, 6], format: 'rgba s3tc dxt1', data: getZeros(18), isThrow: true})
+    dxtTestCases.push({shape: [6, 6], format: 'rgba s3tc dxt3', data: getZeros(36), isThrow: true})
+    dxtTestCases.push({shape: [6, 6], format: 'rgba s3tc dxt5', data: getZeros(36), isThrow: true})
+
+    dxtTestCases.push({shape: [8, 8], format: 'rgb s3tc dxt1', data: getZeros(32), isThrow: false})
+    dxtTestCases.push({shape: [8, 8], format: 'rgba s3tc dxt1', data: getZeros(32), isThrow: false})
+    dxtTestCases.push({shape: [8, 8], format: 'rgba s3tc dxt3', data: getZeros(64), isThrow: false})
+    dxtTestCases.push({shape: [8, 8], format: 'rgba s3tc dxt5', data: getZeros(64), isThrow: false})
+
+    for (var i = 0; i < dxtTestCases.length; i++) {
+      var testCase = dxtTestCases[i]
+
+      var arg = {shape: testCase.shape, type: 'uint8', format: testCase.format, data: testCase.data}
+      var name = 'compressed texture of shape ' + testCase.shape + ' and format ' + testCase.format
+
+      if (testCase.isThrow) {
+        checkShouldThrow(arg, name)
+      } else {
+        checkShouldNotThrow(arg, name)
+      }
+    }
+
+    // TODO test rest of compressed textures features.
+  }
 
   // test subimage
   var baseTexture = regl.texture(5, 5)
