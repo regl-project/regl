@@ -184,7 +184,6 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeElementsBuffers)
 
-
     // set texture.
     gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, cubeTexture)
@@ -198,7 +197,6 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
   }
 
   function drawScene (args) {
-
     const t = 0.01 * args.tick
     var m = lookAt(
       [5 * Math.cos(t), 2.5 * Math.sin(t), 5 * Math.sin(t)], [0, 0.0, 0], [0, 1, 0])
@@ -342,6 +340,6 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
 
   return {
     proc: drawScene,
-    setup: setupScene,
+    setup: setupScene
   }
 }
