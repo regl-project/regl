@@ -437,9 +437,7 @@ module.exports = function wrapREGL (args) {
     cube: textureState.createCube,
     renderbuffer: renderbufferState.create,
     framebuffer: framebufferState.create,
-    framebufferCube: function (options) {
-      check.raise('framebuffer cube not yet implemented')
-    },
+    framebufferCube: framebufferState.createCube,
 
     // Expose context attributes
     attributes: glAttributes,

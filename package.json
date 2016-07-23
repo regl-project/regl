@@ -17,8 +17,10 @@
     "canvas-fit": "^1.5.0",
     "canvas-orbit-camera": "^1.0.2",
     "control-panel": "^1.2.0",
+    "conway-hart": "^0.1.0",
     "falafel": "^1.2.0",
     "faucet": "0.0.1",
+    "fuse-vertices": "^0.1.2",
     "getusermedia": "^1.3.7",
     "git-commits": "^1.2.0",
     "git-parse-commit": "^1.0.0",
@@ -45,6 +47,7 @@
     "standard": "^6.0.7",
     "tap-browser-color": "^0.1.2",
     "tape": "^4.4.0",
+    "teapot": "^1.0.0",
     "through2": "^2.0.1",
     "vectorize-text": "^3.0.2"
   },
