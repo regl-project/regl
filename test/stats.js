@@ -290,7 +290,7 @@ tape('test regl.stats', function (t) {
 
     if (regl.hasExtension('webgl_compressed_texture_s3tc')) {
       testCases.push({format: 'rgb s3tc dxt1', type: 'uint8', expected: 128, data: getZeros(128)})
-      // TODO: also test 'rgba s3tc dxt1'
+      testCases.push({format: 'rgba s3tc dxt1', type: 'uint8', expected: 128, data: getZeros(128)})
       testCases.push({format: 'rgba s3tc dxt3', type: 'uint8', expected: 256, data: getZeros(256)})
       testCases.push({format: 'rgba s3tc dxt5', type: 'uint8', expected: 256, data: getZeros(256)})
     }
