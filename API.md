@@ -1760,6 +1760,9 @@ const cube = regl.cube(8)
 
 // Reset cube map
 cube(4)
+
+// Resize cube map
+cube.resize(16)
 ```
 
 ##### In-place update
