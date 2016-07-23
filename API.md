@@ -1938,6 +1938,29 @@ fbo.destroy()
 ---------------------------------------
 ### Cubic frame buffers
 
+#### Constructor
+
+```javascript
+var cubeFbo = regl.framebufferCube(512)
+
+var cubeAlt = regl.framebufferCube({
+  radius: 32,
+  color: regl.cube(32),
+  depth: false,
+  stencil: false
+})
+```
+
+| Parameter | Description |
+|-----------|-------------|
+| `radius` | The size of the cube buffer |
+| `color` | The color buffer attachment |
+| `colorFormat` | Format of color buffer to create |
+| `colorType` | Type of color buffer |
+| `colorCount` | Number of color attachments |
+| `depth` | Depth buffer attachment |
+| `stencil` | Stencil buffer attachment |
+| `depthStencil` | Depth-stencil attachment |
 
 | Color format | Description | Attachment |
 |--------------|-------------|------------|
@@ -1953,13 +1976,22 @@ fbo.destroy()
 | `'half float'` | 16 bit float, requires [OES_texture_half_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_half_float/)  |
 | `'float'` | 32 bit float, requires [OES_texture_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_float/) |
 
-**TODO**
-
-#### Constructor
-
 #### Update
 
+```javascript
+// reinitialize
+fboCube({
+  radius: 10
+})
+
+fboCube.resize(128)
+```
+
 #### Destroy
+
+```javascript
+fboCube.destroy()
+```
 
 ---------------------------------------
 ## Other features
