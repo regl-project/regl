@@ -172,7 +172,7 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
   }
 
-  function drawScene (args) {
+  function setupScene () {
     // bind buffers.
     gl.bindBuffer(gl.ARRAY_BUFFER, cubePositionBuffer)
     gl.enableVertexAttribArray(cubePositionAttribute)
@@ -184,6 +184,7 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeElementsBuffers)
 
+
     // set texture.
     gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, cubeTexture)
@@ -192,10 +193,13 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
     gl.useProgram(shaderProgram)
     gl.uniform1i(gl.getUniformLocation(shaderProgram, 'tex'), 0)
 
-    const t = 0.01 * args.tick
     var perspectiveMatrix = perspective(Math.PI / 4, canvasWidth / canvasHeight, 0.01, 10.0)
     gl.uniformMatrix4fv(projectionUniformLocation, false, new Float32Array(perspectiveMatrix))
+  }
 
+  function drawScene (args) {
+
+    const t = 0.01 * args.tick
     var m = lookAt(
       [5 * Math.cos(t), 2.5 * Math.sin(t), 5 * Math.sin(t)], [0, 0.0, 0], [0, 1, 0])
     gl.uniformMatrix4fv(viewUniformLocation, false, new Float32Array(m))
@@ -336,5 +340,8 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
     ]
   }
 
-  return drawScene
+  return {
+    proc: drawScene,
+    setup: setupScene,
+  }
 }
