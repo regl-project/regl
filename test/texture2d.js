@@ -641,6 +641,7 @@ tape('texture 2d', function (t) {
     }, 'float missing')
   }
 
+  // TODO Test 'mipmapHint'
   // TODO test compressed textures
   // TODO test half float
 
