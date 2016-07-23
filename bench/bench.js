@@ -90,7 +90,15 @@ function formatMemory (x) {
 function benchmark (caseName, testCase) {
   var procedure
   if (caseName === 'cube-webgl') {
-    procedure = testCase.proc(gl, WIDTH, HEIGHT)
+
+    var obj = testCase.proc(gl, WIDTH, HEIGHT)
+
+    var procedure = obj.proc
+    obj.setup()
+
+
+
+
   } else {
     procedure = testCase.proc(regl)
   }
