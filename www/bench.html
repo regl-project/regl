@@ -100,7 +100,15 @@ function formatMemory (x) {
 function benchmark (caseName, testCase) {
   var procedure
   if (caseName === 'cube-webgl') {
-    procedure = testCase.proc(gl, WIDTH, HEIGHT)
+
+    var obj = testCase.proc(gl, WIDTH, HEIGHT)
+
+    var procedure = obj.proc
+    obj.setup()
+
+
+
+
   } else {
     procedure = testCase.proc(regl)
   }
@@ -409,7 +417,7 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
   }
 
-  function drawScene (args) {
+  function setupScene () {
     // bind buffers.
     gl.bindBuffer(gl.ARRAY_BUFFER, cubePositionBuffer)
     gl.enableVertexAttribArray(cubePositionAttribute)
@@ -421,6 +429,7 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeElementsBuffers)
 
+
     // set texture.
     gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, cubeTexture)
@@ -429,10 +438,13 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
     gl.useProgram(shaderProgram)
     gl.uniform1i(gl.getUniformLocation(shaderProgram, 'tex'), 0)
 
-    const t = 0.01 * args.tick
     var perspectiveMatrix = perspective(Math.PI / 4, canvasWidth / canvasHeight, 0.01, 10.0)
     gl.uniformMatrix4fv(projectionUniformLocation, false, new Float32Array(perspectiveMatrix))
+  }
 
+  function drawScene (args) {
+
+    const t = 0.01 * args.tick
     var m = lookAt(
       [5 * Math.cos(t), 2.5 * Math.sin(t), 5 * Math.sin(t)], [0, 0.0, 0], [0, 1, 0])
     gl.uniformMatrix4fv(viewUniformLocation, false, new Float32Array(m))
@@ -573,7 +585,10 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
     ]
   }
 
-  return drawScene
+  return {
+    proc: drawScene,
+    setup: setupScene,
+  }
 }
 
 },{}],5:[function(require,module,exports){
@@ -828,7 +843,9 @@ module.exports = function (regl) {
 module.exports = {
   'clear': {proc: require('./clear'), warmupSamples: 1000, samples: 30000},
   'cube': {proc: require('./cube'), warmupSamples: 3000, samples: 30000},
+
   'cube-webgl': {proc: require('./cube-webgl'), warmupSamples: 3000, samples: 30000},
+
   'buffer': {proc: require('./buffer'), warmupSamples: 3000, samples: 30000},
   'draw-static': {proc: require('./draw-static'), warmupSamples: 3000, samples: 30000},
   'draw-dynamic': {proc: require('./draw-dynamic'), warmupSamples: 3000, samples: 30000},
@@ -3104,6 +3121,10 @@ module.exports = function reglCore (
           TYPE, '="type" in ', VALUE, '?',
           shared.glTypes, '[', VALUE, '.type]:', BUFFER, '.dtype;',
           result.normalized, '=!!', VALUE, '.normalized;')
+        block.exit(
+          'if(', result.isStream, '){',
+          BUFFER_STATE, '.destroyStream(', BUFFER, ');',
+          '}')
         function emitReadRecord (name) {
           block(result[name], '=', VALUE, '.', name, '|0;')
         }
@@ -5078,7 +5099,7 @@ module.exports = function wrapFBOState (
     if (typeof attachment === 'object') {
       data = attachment.data
       if ('target' in attachment) {
-//        target = attachment.target | 0
+        target = attachment.target | 0
       }
     }
 
@@ -5521,15 +5542,197 @@ module.exports = function wrapFBOState (
 
     reglFramebuffer(a0, a1)
 
-    reglFramebuffer.resize = resize
-    reglFramebuffer._reglType = 'framebuffer'
-    reglFramebuffer._framebuffer = framebuffer
-    reglFramebuffer.destroy = function () {
-      destroy(framebuffer)
-      decFBORefs(framebuffer)
+    return extend(reglFramebuffer, {
+      resize: resize,
+      _reglType: 'framebuffer',
+      _framebuffer: framebuffer,
+      destroy: function () {
+        destroy(framebuffer)
+        decFBORefs(framebuffer)
+      }
+    })
+  }
+
+  function createCubeFBO (options) {
+    var faces = Array(6)
+
+    function reglFramebufferCube (a) {
+      var i
+
+      check(faces.indexOf(framebufferState.next) < 0,
+        'can not update framebuffer which is currently in use')
+
+      var extDrawBuffers = extensions.webgl_draw_buffers
+
+      var params = {
+        color: null
+      }
+
+      var radius = 0
+
+      var colorBuffer = null
+      var colorFormat = 'rgba'
+      var colorType = 'uint8'
+      var colorCount = 1
+
+      if (typeof a === 'number') {
+        radius = a | 0
+      } else if (!a) {
+        radius = 1
+      } else {
+        check.type(a, 'object', 'invalid arguments for framebuffer')
+        var options = a
+
+        if ('shape' in options) {
+          var shape = options.shape
+          check(
+            Array.isArray(shape) && shape.length >= 2,
+            'invalid shape for framebuffer')
+          check(
+            shape[0] === shape[1],
+            'cube framebuffer must be square')
+          radius = shape[0]
+        } else {
+          if ('radius' in options) {
+            radius = options.radius | 0
+          }
+          if ('width' in options) {
+            radius = options.width | 0
+            if ('height' in options) {
+              check(options.height === radius, 'must be square')
+            }
+          } else if ('height' in options) {
+            radius = options.height | 0
+          }
+        }
+
+        if ('color' in options ||
+            'colors' in options) {
+          colorBuffer =
+            options.color ||
+            options.colors
+          if (Array.isArray(colorBuffer)) {
+            check(
+              colorBuffer.length === 1 || extDrawBuffers,
+              'multiple render targets not supported')
+          }
+        }
+
+        if (!colorBuffer) {
+          if ('colorCount' in options) {
+            colorCount = options.colorCount | 0
+            check(colorCount > 0, 'invalid color buffer count')
+          }
+
+          if ('colorType' in options) {
+            check.oneOf(
+              options.colorType, colorTypes,
+              'invalid color type')
+            colorType = options.colorType
+          }
+
+          if ('colorFormat' in options) {
+            colorFormat = options.colorFormat
+            check.oneOf(
+              options.colorFormat, colorTextureFormats,
+              'invalid color format for texture')
+          }
+        }
+
+        if ('depth' in options) {
+          params.depth = options.depth
+        }
+
+        if ('stencil' in options) {
+          params.stencil = options.stencil
+        }
+
+        if ('depthStencil' in options) {
+          params.depthStencil = options.depthStencil
+        }
+      }
+
+      var colorCubes
+      if (colorBuffer) {
+        if (Array.isArray(colorBuffer)) {
+          for (i = 0; i < colorBuffer.length; ++i) {
+
+          }
+        } else {
+          colorCubes = [ colorBuffer ]
+        }
+      } else {
+        colorCubes = Array(colorCount)
+        var cubeMapParams = {
+          radius: radius,
+          format: colorFormat,
+          type: colorType
+        }
+        for (i = 0; i < colorCount; ++i) {
+          colorCubes[i] = textureState.createCube(cubeMapParams)
+        }
+      }
+
+      // Check color cubes
+      params.color = Array(colorCubes.length)
+      for (i = 0; i < colorCubes.length; ++i) {
+        var cube = colorCubes[i]
+        check(
+          typeof cube === 'function' && cube._reglType === 'textureCube',
+          'invalid cube map')
+        radius = radius || cube.width
+        check(
+          cube.width === radius && cube.height === radius,
+          'invalid cube map shape')
+        params.color[i] = {
+          target: GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+          data: colorCubes[i]
+        }
+      }
+
+      for (i = 0; i < 6; ++i) {
+        for (var j = 0; j < colorCubes.length; ++j) {
+          params.color[j].target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + i
+        }
+        // reuse depth-stencil attachments across all cube maps
+        if (i > 0) {
+          params.depth = faces[0].depth
+          params.stencil = faces[0].stencil
+          params.depthStencil = faces[0].depthStencil
+        }
+        if (faces[i]) {
+          (faces[i])(params)
+        } else {
+          faces[i] = createFBO(params)
+        }
+      }
+
+      return extend(reglFramebufferCube, {
+        width: radius,
+        height: radius,
+        color: colorCubes
+      })
     }
 
-    return reglFramebuffer
+    function resize (radius) {
+      for (var i = 0; i < 6; ++i) {
+        faces[i].resize(radius)
+      }
+      return reglFramebufferCube
+    }
+
+    reglFramebufferCube(options)
+
+    return extend(reglFramebufferCube, {
+      faces: faces,
+      resize: resize,
+      _reglType: 'framebufferCube',
+      destroy: function () {
+        faces.forEach(function (f) {
+          f.destroy()
+        })
+      }
+    })
   }
 
   return extend(framebufferState, {
@@ -5543,6 +5746,7 @@ module.exports = function wrapFBOState (
       return null
     },
     create: createFBO,
+    createCube: createCubeFBO,
     clear: function () {
       values(framebufferSet).forEach(destroy)
     }
@@ -10757,9 +10961,7 @@ module.exports = function wrapREGL (args) {
     cube: textureState.createCube,
     renderbuffer: renderbufferState.create,
     framebuffer: framebufferState.create,
-    framebufferCube: function (options) {
-      check.raise('framebuffer cube not yet implemented')
-    },
+    framebufferCube: framebufferState.createCube,
 
     // Expose context attributes
     attributes: glAttributes,
