@@ -142,11 +142,6 @@ tape('batch mode attributes', function (t) {
     0, 0, 0, 0, 0
   ], 'offset - batch')
 
-  // check instancing
-  if (gl.getExtension('angle_instanced_arrays')) {
-    // todo
-  }
-
   regl.destroy()
   createContext.destroy(gl)
   t.end()
