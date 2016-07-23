@@ -1,0 +1,261 @@
+
+    <!DOCTYPE html>
+    <meta charset="utf-8">
+    <style>
+h1 {
+  text-align: left;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 50px;
+}
+
+h2 {
+  text-align: left;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 30px;
+}
+
+p {
+  text-align: left;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+}
+
+body {
+    margin: 0 auto;
+    max-width: 760px;
+}
+
+path {
+    stroke: steelblue;
+    stroke-width: 2;
+    fill: none;
+}
+.axis path,
+.axis line {
+    fill: none;
+    stroke: grey;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+
+div.tooltip {
+    position: absolute;
+    text-align: left;
+    width: 230px;
+    padding: 10px;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #222;
+
+    font-size: 14px;
+    background: white;
+    border: 2px;
+    border-radius: 8px;
+    border-style: solid;
+  border-color: #000;
+
+}
+text {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    fill: #666;
+  font-size: 14px;
+
+}
+  </style>
+
+  <body>
+
+  <script src="https://d3js.org/d3.v3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.6.0/moment.min.js"></script>
+
+  <script>
+  
+function createGraph (json) {
+  function sigfigs (x) {
+    var xr = Math.round(x * 1000)
+    return (xr / 1000)
+  }
+  console.log("josn; ", json)
+
+  // Setup margins.
+  var margin = {top: 30, right: 20, bottom: 30, left: 50}
+  var width = 660 - margin.left - margin.right
+  var height = 297 - margin.top - margin.bottom
+
+  var x = d3.time.scale().range([0, width])
+  var y = d3.scale.linear().range([height, 0])
+
+  var xAxis = d3.svg.axis().scale(x)
+      .orient('bottom').ticks(5)
+  var yAxis = d3.svg.axis().scale(y)
+      .orient('left').ticks(5)
+
+  var valueline = d3.svg.line()
+      .x(function (d) { return x(d.date) })
+      .y(function (d) { return y(d.testData.time.mean) })
+
+  // Define the div for the tooltip
+  var div = d3.select('body').append('div')
+      .attr('class', 'tooltip')
+      .style('opacity', 0) // initially, the div is invisible.
+
+
+  // create header.
+  var header = document.createElement('h1')
+  header.innerHTML = "Benchmark Results"
+  document.body.appendChild(header)
+
+  header = document.createElement('h2')
+  header.innerHTML = 'Device Info</br> '
+  document.body.appendChild(header)
+
+  par = document.createElement('p')
+  par.innerHTML =
+    '<b>CPU: </b>' + json.deviceInfo.cpu + '</br>' +
+    '<b>OS: </b>' + json.deviceInfo.platform + ' ' +
+    json.deviceInfo.release + ' ' +
+    json.deviceInfo.arch
+    '</br>' +
+
+  document.body.appendChild(par)
+
+  Object.keys(json.testResults[0].testData).map(function (testCase) {
+    /*if (testCase !== 'cube') {
+      return
+    }*/
+    console.log("test case: ", testCase)
+
+    // create header.
+    var header = document.createElement('h2')
+    header.innerHTML = 'Test Case: ' + testCase
+    document.body.appendChild(header)
+
+    // gather test data for this test case.
+    var data = []
+    for (var i = 0; i < json.testResults.length; i++) {
+      data.push({
+        date: new Date(json.testResults[i].timestamp * 1000),
+        title: json.testResults[i].title,
+        description: json.testResults[i].description,
+        hash: json.testResults[i].hash,
+        author: json.testResults[i].author,
+
+        testData: json.testResults[i].testData[testCase]
+      })
+    }
+
+    // add svg canvas.
+    var svg = d3.select('body')
+        .append('svg')
+        .attr('width', width + margin.left + margin.right)
+        .attr('height', height + margin.top + margin.bottom)
+        .append('g')
+        .attr('transform',
+              'translate(' + margin.left + ',' + margin.top + ')')
+
+    x.domain(d3.extent(data, function (d) { return d.date }))
+    y.domain([0, d3.max(data, function (d) { return d.testData.time.mean })])
+
+    // draw line chart.
+    svg.append('path')
+      .attr('class', 'line')
+      .attr('d', valueline(data))
+
+    // draw data point dots.
+    svg.selectAll('dot')
+      .data(data)
+      .enter()
+      .append('a')
+      .attr('xlink:href',
+            function (d) {
+              return 'https://github.com/mikolalysenko/regl/commit/' + d.hash
+            })
+      .attr('target', '"_blank"')
+      .append('circle')
+
+      .attr('r', 3)
+      .attr('cx', function (d) { return x(d.date) })
+      .attr('cy', function (d) { return y(d.testData.time.mean) })
+
+    // show tooltip on hover.
+      .on('mouseover', function (d) {
+        div
+          .transition()
+          .duration(100)
+          .style('opacity', 0.9)
+
+        var desc = d.title + d.description
+        var shortenedDesc = desc.length > 70 ? desc.substring(0, 69) + '...' : desc
+        var commitUrl = 'https://github.com/mikolalysenko/regl/commit/' + d.hash
+
+        var timeDiff = moment(d.date).fromNow()
+
+        console.log('link: ', commitUrl)
+
+        div.html(
+          '<table>' +
+            '<tbody>' +
+
+          '<tr>' +
+            '<td><b>Hash: </b></td>  <td>' + '<code>' + d.hash.substring(0, 7) + '</code>' + '</td>' +
+            '</tr>' +
+
+          '<tr>' +
+            '<td><b>Desc.: </b></td>  <td>' + shortenedDesc + '</td>' +
+            '</tr>' +
+
+          '<tr>' +
+            '<td><b>Time: </b></td>  <td>' + sigfigs(d.testData.time.mean) + '∓' + sigfigs(d.testData.time.stddev) + 'ms' + '</td>' +
+            '</tr>' +
+
+          '<tr>' +
+            '<td><b>Author: </b></td>  <td>' + d.author + '</td>' +
+            '</tr>' +
+
+          '<tr>' +
+            '<td><b>Date: </b></td>  <td>' + timeDiff + '</td>' +
+            '</tr>' +
+
+          '</tbody>' +
+            '</table>'
+        )
+          .style('left', (d3.event.pageX + 10) + 'px')
+          .style('top', (d3.event.pageY - 28) + 'px')
+      }).on('mouseout',
+            function (d) {
+              div.transition()
+                .duration(100)
+                .style('opacity', 0)
+            })
+
+    // X-axis
+    svg.append('g')
+      .attr('class', 'x axis')
+      .attr('transform', 'translate(0,' + height + ')')
+      .call(xAxis)
+      .append('text')
+      .attr('class', 'label')
+      .attr('x', width + 20)
+      .attr('y', -6)
+      .style('text-anchor', 'end')
+      .text('Commit Time')
+
+    // Y-axis
+    svg.append('g')
+      .attr('class', 'y axis')
+      .call(yAxis)
+      .append('text')
+      .attr('class', 'label')
+      .attr('y', -20)
+      .attr('x', 40)
+      .attr('dy', '.7em')
+      .style('text-anchor', 'end')
+      .text('Runtime(ms)')
+  })
+}
+
+
+createGraph({"testResults":[{"hash":"e146b0a5b55031387382c9889c81fca20614c5f8","author":"Eric Arnebäck","timestamp":1469121688,"title":"Merge pull request #102 from mikolalysenko/improved-stats","description":"Improved stats\n","testData":{"clear":{"n":30000,"time":{"mean":0.016162653198838233,"stddev":0.15560523817679814}},"cube":{"n":30000,"time":{"mean":0.01924400524199009,"stddev":0.040036966844066414}},"cube-webgl":{"n":30000,"time":{"mean":0.027246649875243504,"stddev":0.06686569162698654}},"buffer":{"n":30000,"time":{"mean":0.008898741602897643,"stddev":0.026504851953935527}},"draw-static":{"n":30000,"time":{"mean":0.01538889643351237,"stddev":0.0872782255852763}},"draw-dynamic":{"n":30000,"time":{"mean":0.01331955523987611,"stddev":0.05471927015579869}},"draw-batch":{"n":30000,"time":{"mean":0.04713145074446996,"stddev":0.038485148204954835}}}},{"hash":"8cdf3de5ac7bbb91010b0c6824bcf49c1ec18c5a","author":"Eric Arnebäck","timestamp":1469121026,"title":"API.md: Documented `cube.stats.size`.","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015016580308477084,"stddev":0.13395679110900874}},"cube":{"n":30000,"time":{"mean":0.018377996116876603,"stddev":0.1896682317987402}},"cube-webgl":{"n":30000,"time":{"mean":0.024157730428377787,"stddev":0.06990671554601866}},"buffer":{"n":30000,"time":{"mean":0.008392990061640739,"stddev":0.024397853963054217}},"draw-static":{"n":30000,"time":{"mean":0.014899783353010813,"stddev":0.08710118911470205}},"draw-dynamic":{"n":30000,"time":{"mean":0.01286492167810599,"stddev":0.05853988329924244}},"draw-batch":{"n":30000,"time":{"mean":0.042468123257160185,"stddev":0.02054576668961999}}}},{"hash":"ba64a7d6667055280695ae8183608a8fb759d3cb","author":"Eric Arnebäck","timestamp":1469120970,"title":"Now `stats.size` is also implemented for `cube`.","description":"Tested the above.\n","testData":{"clear":{"n":30000,"time":{"mean":0.015189957705140113,"stddev":0.13951014086996374}},"cube":{"n":30000,"time":{"mean":0.017705575770139693,"stddev":0.04416487636927916}},"cube-webgl":{"n":30000,"time":{"mean":0.025686928528547287,"stddev":0.07130367193268598}},"buffer":{"n":30000,"time":{"mean":0.008047712936004004,"stddev":0.006532599528434657}},"draw-static":{"n":30000,"time":{"mean":0.015733015524347624,"stddev":0.09189415581932993}},"draw-dynamic":{"n":30000,"time":{"mean":0.01332260392208894,"stddev":0.06695365294409346}},"draw-batch":{"n":30000,"time":{"mean":0.043255325493216513,"stddev":0.023133020955826717}}}},{"hash":"19c44437d60a9fee521e1c4d99b459d56c896e7e","author":"Eric Arnebäck","timestamp":1469109576,"title":"API.md: documented the following:","description":"texture.stats.size\nbuffer.stats.size\nrenderbuffer.stats.size\n","testData":{"clear":{"n":30000,"time":{"mean":0.015308066448569298,"stddev":0.13717348103789825}},"cube":{"n":30000,"time":{"mean":0.017466405215859414,"stddev":0.04101525297857039}},"cube-webgl":{"n":30000,"time":{"mean":0.02503784808019797,"stddev":0.06901081774470777}},"buffer":{"n":30000,"time":{"mean":0.00838412899672985,"stddev":0.006806330585196071}},"draw-static":{"n":30000,"time":{"mean":0.01559979820350806,"stddev":0.09449686311208037}},"draw-dynamic":{"n":30000,"time":{"mean":0.013500806911786397,"stddev":0.06404087486426867}},"draw-batch":{"n":30000,"time":{"mean":0.04442114709119002,"stddev":0.021105967263453478}}}},{"hash":"993214a4cf7a47fa923d5c746b8238e5daf63056","author":"Eric Arnebäck","timestamp":1469108997,"title":"API.md: Documented the following:","description":" `getTotalTextureSize()`\n `getTotalBufferSize()` |\n `getTotalRenderbufferSize()`\n `getMaxUniformsCount()`\n `getMaxAttributesCount()`\n `maxTextureUnits()`\n","testData":{"clear":{"n":30000,"time":{"mean":0.015317918512225151,"stddev":0.1394212841047173}},"cube":{"n":30000,"time":{"mean":0.01894095602830251,"stddev":0.0430213590590666}},"cube-webgl":{"n":30000,"time":{"mean":0.02625585500895977,"stddev":0.07619021709968235}},"buffer":{"n":30000,"time":{"mean":0.00848503975669543,"stddev":0.006768559146112492}},"draw-static":{"n":30000,"time":{"mean":0.015665217070778212,"stddev":0.09425371664699544}},"draw-dynamic":{"n":30000,"time":{"mean":0.013405710792541504,"stddev":0.06059771749729385}},"draw-batch":{"n":30000,"time":{"mean":0.04772682377497355,"stddev":0.023868102025583583}}}},{"hash":"08b7bdc2f33d5f84c242ded247bb97304df5ae3d","author":"Eric Arnebäck","timestamp":1469108179,"title":"Add a property stats.maxTextureUnits, for keeping track of the maximum","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015374750783046086,"stddev":0.13931745655493177}},"cube":{"n":30000,"time":{"mean":0.01858550601899624,"stddev":0.045689549465357686}},"cube-webgl":{"n":30000,"time":{"mean":0.027435798993706705,"stddev":0.08591401289150799}},"buffer":{"n":30000,"time":{"mean":0.008975476071238518,"stddev":0.01982328260436769}},"draw-static":{"n":30000,"time":{"mean":0.015481885764996211,"stddev":0.0887793311137291}},"draw-dynamic":{"n":30000,"time":{"mean":0.013453823513785998,"stddev":0.06086314673009124}},"draw-batch":{"n":30000,"time":{"mean":0.044691273472706475,"stddev":0.022239545349419992}}}},{"hash":"20b70916dbd9e24d0e208ce9a6a31ef8249bd6e6","author":"Eric Arnebäck","timestamp":1469105516,"title":"Added to new method `stats.getMaxUniformsCount()` and","description":"self-explanatory.\n\nAdded test cases for the above.\n","testData":{"clear":{"n":30000,"time":{"mean":0.015314066291848819,"stddev":0.1349986225329712}},"cube":{"n":30000,"time":{"mean":0.01742807475924492,"stddev":0.041155829813948705}},"cube-webgl":{"n":30000,"time":{"mean":0.02631867591738701,"stddev":0.08894640664216363}},"buffer":{"n":30000,"time":{"mean":0.008658407790462177,"stddev":0.03979566301093241}},"draw-static":{"n":30000,"time":{"mean":0.015059701645374297,"stddev":0.08883786801584491}},"draw-dynamic":{"n":30000,"time":{"mean":0.013443353035052617,"stddev":0.06457995625168292}},"draw-batch":{"n":30000,"time":{"mean":0.044658486289779344,"stddev":0.02114713420991041}}}},{"hash":"278d21ab95248f0d17bd34e2116b3ebc3302a292","author":"Eric Arnebäck","timestamp":1469081054,"title":"Merge branch 'gh-pages' into improved-stats","description":"# Please enter a commit message to explain why this merge is necessary,\n# especially if it merges an updated upstream into a topic branch.\n#\n# Lines starting with '#' will be ignored, and an empty message aborts\n# the commit.\n","testData":{"clear":{"n":30000,"time":{"mean":0.015053487237294515,"stddev":0.13624195781631201}},"cube":{"n":30000,"time":{"mean":0.01742712228099505,"stddev":0.04333019490199118}},"cube-webgl":{"n":30000,"time":{"mean":0.025876173240939777,"stddev":0.08201364346924948}},"buffer":{"n":30000,"time":{"mean":0.008277210601170858,"stddev":0.029273055867947793}},"draw-static":{"n":30000,"time":{"mean":0.015534433056910832,"stddev":0.09306887606299795}},"draw-dynamic":{"n":30000,"time":{"mean":0.01353201487561067,"stddev":0.05626162101000069}},"draw-batch":{"n":30000,"time":{"mean":0.04491992410024007,"stddev":0.01986150959047343}}}},{"hash":"ab8a69c7dd1836b9f70502362c363e54e90a9fbc","author":"Eric Arnebäck","timestamp":1469077900,"title":"lib/buffer.js: Add todo.","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015333312919735909,"stddev":0.1457550153730401}},"cube":{"n":30000,"time":{"mean":0.01769536264638106,"stddev":0.04043196027201097}},"cube-webgl":{"n":30000,"time":{"mean":0.024914791771769522,"stddev":0.07542632385438822}},"buffer":{"n":30000,"time":{"mean":0.007994272202253341,"stddev":0.015120070326593574}},"draw-static":{"n":30000,"time":{"mean":0.01564595309495926,"stddev":0.09382022318562595}},"draw-dynamic":{"n":30000,"time":{"mean":0.013466036024689675,"stddev":0.06367797441228061}},"draw-batch":{"n":30000,"time":{"mean":0.0451205996910731,"stddev":0.022053263102717564}}}},{"hash":"98cf7bcbaf30df450feee01d4d87ae8f8393bbd3","author":"Eric Arnebäck","timestamp":1469047862,"title":"Implemented a property `renderbuffer.stats.size` for keeping track of the","description":"\nImplemented a function `stats.getTotalRenderbufferSize()`, for keeping track\nof the total memory used for renderbuffers.\n\nWrote test cases for all the above.\n","testData":{"clear":{"n":30000,"time":{"mean":0.015195042193929354,"stddev":0.13582790231192163}},"cube":{"n":30000,"time":{"mean":0.01740531405111154,"stddev":0.0439336246720102}},"cube-webgl":{"n":30000,"time":{"mean":0.025502512286106744,"stddev":0.07372400690172766}},"buffer":{"n":30000,"time":{"mean":0.008143834434946378,"stddev":0.025852712730735205}},"draw-static":{"n":30000,"time":{"mean":0.015644179301460583,"stddev":0.08857736571512168}},"draw-dynamic":{"n":30000,"time":{"mean":0.013504768961668015,"stddev":0.06065720862854695}},"draw-batch":{"n":30000,"time":{"mean":0.045224575833479566,"stddev":0.021390688189979853}}}},{"hash":"20caf1a50340c5638585a0a35159ed993b7cf72f","author":"Mikola Lysenko","timestamp":1469046708,"title":"Merge pull request #99 from mikolalysenko/npmignore","description":"Update npmignore, should not publish code coverage results\n","testData":{"clear":{"n":30000,"time":{"mean":0.01540595641831557,"stddev":0.14248337534057468}},"cube":{"n":30000,"time":{"mean":0.018815014438827833,"stddev":0.04351968770520419}},"cube-webgl":{"n":30000,"time":{"mean":0.027571129382650057,"stddev":0.07558872807145885}},"buffer":{"n":30000,"time":{"mean":0.007795670400063197,"stddev":0.024983053807138566}},"draw-static":{"n":30000,"time":{"mean":0.015651923521359763,"stddev":0.0921439202140866}},"draw-dynamic":{"n":30000,"time":{"mean":0.012986474098761877,"stddev":0.05082232102415776}},"draw-batch":{"n":30000,"time":{"mean":0.047863431562980015,"stddev":0.02233960382687544}}}},{"hash":"38345364a7172b6d69cb15143e29c346ffb5f372","author":"mikolalysenko","timestamp":1469046553,"title":"update npmignore, should not publish code coverage results","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015389157303174337,"stddev":0.13502932780893745}},"cube":{"n":30000,"time":{"mean":0.02133352329234282,"stddev":0.05214381384662874}},"cube-webgl":{"n":30000,"time":{"mean":0.02902813736796379,"stddev":0.08840981103687857}},"buffer":{"n":30000,"time":{"mean":0.008055922421813012,"stddev":0.015735712336292965}},"draw-static":{"n":30000,"time":{"mean":0.01491533468067646,"stddev":0.08602393491451343}},"draw-dynamic":{"n":30000,"time":{"mean":0.012904656118154527,"stddev":0.050145916341900965}},"draw-batch":{"n":30000,"time":{"mean":0.047546185461680095,"stddev":0.02236306092504213}}}},{"hash":"4153506ffe3f9ab198bf46c40a76ac4678406b40","author":"Mikola Lysenko","timestamp":1469046046,"title":"Merge pull request #98 from mikolalysenko/0.10.0","description":"0.10.0\n","testData":{"clear":{"n":30000,"time":{"mean":0.015214057395855586,"stddev":0.13708442514572863}},"cube":{"n":30000,"time":{"mean":0.02023968096176783,"stddev":0.04785420728608736}},"cube-webgl":{"n":30000,"time":{"mean":0.02817006172935168,"stddev":0.0827166344362115}},"buffer":{"n":30000,"time":{"mean":0.007947118410468102,"stddev":0.015447408313877658}},"draw-static":{"n":30000,"time":{"mean":0.01484222208360831,"stddev":0.08297104420029594}},"draw-dynamic":{"n":30000,"time":{"mean":0.01283570153216521,"stddev":0.05429583902001862}},"draw-batch":{"n":30000,"time":{"mean":0.04860623326698939,"stddev":0.021378753282702646}}}},{"hash":"0f7304e6dc896a1104b416769aa36e090991fbf8","author":"mikolalysenko","timestamp":1469045874,"title":"update change log","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015238700162371,"stddev":0.1423469516839129}},"cube":{"n":30000,"time":{"mean":0.020391153422991436,"stddev":0.04360730141602169}},"cube-webgl":{"n":30000,"time":{"mean":0.02930420028269291,"stddev":0.07830810370633516}},"buffer":{"n":30000,"time":{"mean":0.008456883438428243,"stddev":0.015082652983786065}},"draw-static":{"n":30000,"time":{"mean":0.014859818851947785,"stddev":0.08169981306753274}},"draw-dynamic":{"n":30000,"time":{"mean":0.012873812671502432,"stddev":0.05394439931049296}},"draw-batch":{"n":30000,"time":{"mean":0.04691459091703097,"stddev":0.02067820430753124}}}},{"hash":"6a8a92b312ebe0e9994999f4d3c39a90df1c530f","author":"mikolalysenko","timestamp":1469045738,"title":"0.10.0","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015400698737303415,"stddev":0.1459467269528022}},"cube":{"n":30000,"time":{"mean":0.01829047894378503,"stddev":0.04359784887632701}},"cube-webgl":{"n":30000,"time":{"mean":0.025560236738125484,"stddev":0.07929342217291598}},"buffer":{"n":30000,"time":{"mean":0.00813673187494278,"stddev":0.01585231937139843}},"draw-static":{"n":30000,"time":{"mean":0.015211199135581652,"stddev":0.09226577445092282}},"draw-dynamic":{"n":30000,"time":{"mean":0.013066020222504934,"stddev":0.0578670835184298}},"draw-batch":{"n":30000,"time":{"mean":0.044599799592296284,"stddev":0.020354585660439264}}}},{"hash":"97d72936058b45a4e1bd8edc2388507af09da698","author":"Mikola Lysenko","timestamp":1469045481,"title":"Merge pull request #96 from mikolalysenko/read-tests","description":"Read tests\n","testData":{"clear":{"n":30000,"time":{"mean":0.015356456542015076,"stddev":0.13666200510672571}},"cube":{"n":30000,"time":{"mean":0.018441713825861614,"stddev":0.04260779583074501}},"cube-webgl":{"n":30000,"time":{"mean":0.027719102495908737,"stddev":0.08656032265062401}},"buffer":{"n":30000,"time":{"mean":0.008911519255240759,"stddev":0.03906393405319374}},"draw-static":{"n":30000,"time":{"mean":0.015442084043224653,"stddev":0.08896103607825732}},"draw-dynamic":{"n":30000,"time":{"mean":0.013535491239031156,"stddev":0.056856059576779236}},"draw-batch":{"n":30000,"time":{"mean":0.05279980224271615,"stddev":0.030042076832484006}}}},{"hash":"89888f5cc5b9798270ff0fe9209503032ccb3944","author":"mikolalysenko","timestamp":1469045219,"title":"merge gh-pages","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.01657891077597936,"stddev":0.14986169779226646}},"cube":{"n":30000,"time":{"mean":0.019173620573679606,"stddev":0.04546622599905548}},"cube-webgl":{"n":30000,"time":{"mean":0.028590827946861585,"stddev":0.09655508123901518}},"buffer":{"n":30000,"time":{"mean":0.009088351782162983,"stddev":0.038811916171599625}},"draw-static":{"n":30000,"time":{"mean":0.014560846799612046,"stddev":0.06992949568581375}},"draw-dynamic":{"n":30000,"time":{"mean":0.013156381845474243,"stddev":0.04257642670216283}},"draw-batch":{"n":30000,"time":{"mean":0.052136641483505566,"stddev":0.02725733601581203}}}},{"hash":"e084d9f4f1f5144354dba7eb9c7d31dbeaa24d1b","author":"Mikola Lysenko","timestamp":1469044945,"title":"Merge pull request #95 from mikolalysenko/raf-test","description":"Test cases and bug fixes for `regl.frame()`\n","testData":{"clear":{"n":30000,"time":{"mean":0.01589261699616909,"stddev":0.1494502026869803}},"cube":{"n":30000,"time":{"mean":0.020190439999103547,"stddev":0.04580577308644919}},"cube-webgl":{"n":30000,"time":{"mean":0.028458409830927848,"stddev":0.08034175631224967}},"buffer":{"n":30000,"time":{"mean":0.008248348966240883,"stddev":0.026813643722273024}},"draw-static":{"n":30000,"time":{"mean":0.015081491089860599,"stddev":0.08627106080356217}},"draw-dynamic":{"n":30000,"time":{"mean":0.012994709241390229,"stddev":0.05790260208575018}},"draw-batch":{"n":30000,"time":{"mean":0.044508809051911034,"stddev":0.021083316978594245}}}},{"hash":"e9f605b189f9fb753f77ea2b0bce8bf3f593ff83","author":"Mikola Lysenko","timestamp":1469044767,"title":"Merge branch 'gh-pages' into raf-test","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015308106475075085,"stddev":0.14146074113606907}},"cube":{"n":30000,"time":{"mean":0.018920255490144092,"stddev":0.04554836259186644}},"cube-webgl":{"n":30000,"time":{"mean":0.028593731143077214,"stddev":0.08071716706998928}},"buffer":{"n":30000,"time":{"mean":0.008346323511004448,"stddev":0.015115813563309167}},"draw-static":{"n":30000,"time":{"mean":0.015037033400932948,"stddev":0.08519021738163772}},"draw-dynamic":{"n":30000,"time":{"mean":0.01295359099706014,"stddev":0.053484471050020875}},"draw-batch":{"n":30000,"time":{"mean":0.047742768384019536,"stddev":0.02075091340786295}}}},{"hash":"7778bed3f89a795a174e0b510ac1bfa385084ea9","author":"Eric Arnebäck","timestamp":1469044617,"title":"Merge pull request #94 from mikolalysenko/api.md-add-depth-stencil-format","description":"Added 'depth stencil' format to renderbuffer docs\n","testData":{"clear":{"n":30000,"time":{"mean":0.01546644153992335,"stddev":0.13429936614136395}},"cube":{"n":30000,"time":{"mean":0.019516556733846665,"stddev":0.045436625099392}},"cube-webgl":{"n":30000,"time":{"mean":0.02828317437271277,"stddev":0.08123634740103326}},"buffer":{"n":30000,"time":{"mean":0.00816828594605128,"stddev":0.006234987572342839}},"draw-static":{"n":30000,"time":{"mean":0.01489355584581693,"stddev":0.08276686039309043}},"draw-dynamic":{"n":30000,"time":{"mean":0.012968055790662765,"stddev":0.05376209700436678}},"draw-batch":{"n":30000,"time":{"mean":0.04575416250725587,"stddev":0.020809270225341486}}}},{"hash":"c6aa2926be900da13867d75ac6122504b398ce75","author":"Eric Arnebäck","timestamp":1469044360,"title":"Added 'depth stencil' format to renderbuffer docs","description":"'depth stencil' is also a supported renderbuffer format, but it was not mentioned in the API. Added.\n","testData":{"clear":{"n":30000,"time":{"mean":0.015383064740896225,"stddev":0.15124278718902043}},"cube":{"n":30000,"time":{"mean":0.018050151411692302,"stddev":0.043953048439429744}},"cube-webgl":{"n":30000,"time":{"mean":0.025386177612344425,"stddev":0.08086340371440776}},"buffer":{"n":30000,"time":{"mean":0.007871655477086703,"stddev":0.015842421010001117}},"draw-static":{"n":30000,"time":{"mean":0.014870332499345143,"stddev":0.08775228872002536}},"draw-dynamic":{"n":30000,"time":{"mean":0.01292943364183108,"stddev":0.05955100210537986}},"draw-batch":{"n":30000,"time":{"mean":0.04377153938710689,"stddev":0.020777260291835895}}}},{"hash":"3597c57933aacf61f9b8c67db5c65d9728b3d425","author":"mikolalysenko","timestamp":1469043288,"title":"texture polling and regl.read() shouldn't reset viewport","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015669024022420246,"stddev":0.1460488978221241}},"cube":{"n":30000,"time":{"mean":0.01885123469432195,"stddev":0.04667846933853206}},"cube-webgl":{"n":30000,"time":{"mean":0.026954448608557384,"stddev":0.09130095828911913}},"buffer":{"n":30000,"time":{"mean":0.008157719487945239,"stddev":0.038251330047897214}},"draw-static":{"n":30000,"time":{"mean":0.015634733831882477,"stddev":0.09336200598066975}},"draw-dynamic":{"n":30000,"time":{"mean":0.013197100739677748,"stddev":0.06214918063090751}},"draw-batch":{"n":30000,"time":{"mean":0.04508892370859782,"stddev":0.021613783162620817}}}},{"hash":"2713669379cf51a067589cf28dea18b3dd4c8988","author":"Eric Arnebäck","timestamp":1469040840,"title":"test/stats.js: replace arrow function with anonymous function due to CircleCI.","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.01581451761027177,"stddev":0.1456930626946143}},"cube":{"n":30000,"time":{"mean":0.01765192074974378,"stddev":0.04167248600142871}},"cube-webgl":{"n":30000,"time":{"mean":0.026885592784484227,"stddev":0.07607644473764469}},"buffer":{"n":30000,"time":{"mean":0.00841223618487517,"stddev":0.025168681534672607}},"draw-static":{"n":30000,"time":{"mean":0.016033314943313597,"stddev":0.09475110285705664}},"draw-dynamic":{"n":30000,"time":{"mean":0.014040030627449353,"stddev":0.06264125536901433}},"draw-batch":{"n":30000,"time":{"mean":0.04397263002494971,"stddev":0.021519547021991776}}}},{"hash":"005e9f6f92f3cfaf7f994dbdd7cc414fe4d8ffed","author":"Eric Arnebäck","timestamp":1469040512,"title":"Implemented a property `buffer.stats.size` for keeping track of the","description":"\nImplemented a function `stats.getTotalBufferSize()`, for keeping track\nof the total memory used for buffers.\n\nWrote test cases for all the above.\n","testData":{"clear":{"n":30000,"time":{"mean":0.01503223938047886,"stddev":0.13738622082940244}},"cube":{"n":30000,"time":{"mean":0.018504926020900408,"stddev":0.0385708813386515}},"cube-webgl":{"n":30000,"time":{"mean":0.027212347531318664,"stddev":0.07406713949411806}},"buffer":{"n":30000,"time":{"mean":0.008650318448742231,"stddev":0.024723228569336026}},"draw-static":{"n":30000,"time":{"mean":0.015255120153228443,"stddev":0.08664155101730482}},"draw-dynamic":{"n":30000,"time":{"mean":0.013295815785725912,"stddev":0.058557931231829785}},"draw-batch":{"n":30000,"time":{"mean":0.0436733857601881,"stddev":0.022946758422720336}}}},{"hash":"703d666ddef0110f36a5ce77c5ecd8b213fef1a7","author":"Eric Arnebäck","timestamp":1469036274,"title":"Fix \"standard\"","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015296458054582279,"stddev":0.13815865366585192}},"cube":{"n":30000,"time":{"mean":0.017019659814238548,"stddev":0.04134051499497082}},"cube-webgl":{"n":30000,"time":{"mean":0.025134526321291924,"stddev":0.07516445251421516}},"buffer":{"n":30000,"time":{"mean":0.008916299025217692,"stddev":0.024641718454750407}},"draw-static":{"n":30000,"time":{"mean":0.015391846653819085,"stddev":0.09252202066354939}},"draw-dynamic":{"n":30000,"time":{"mean":0.013582560605804126,"stddev":0.06056611667803794}},"draw-batch":{"n":30000,"time":{"mean":0.04252404642403126,"stddev":0.020918003844658358}}}},{"hash":"39a235bae2a423336e953f9597d1dc7acbf403de","author":"Eric Arnebäck","timestamp":1469036027,"title":"Fix so that `texture.stats.size` is updated on `texture.resize()`","description":"Also, unit test the above.\n","testData":{"clear":{"n":30000,"time":{"mean":0.015145772308111191,"stddev":0.13622777733284583}},"cube":{"n":30000,"time":{"mean":0.017346384580930074,"stddev":0.042838420933744514}},"cube-webgl":{"n":30000,"time":{"mean":0.02535243453880151,"stddev":0.08352918023036131}},"buffer":{"n":30000,"time":{"mean":0.008104011487960815,"stddev":0.037344091874875564}},"draw-static":{"n":30000,"time":{"mean":0.015880149321754772,"stddev":0.09370877749943965}},"draw-dynamic":{"n":30000,"time":{"mean":0.013531968961159388,"stddev":0.06350838187486488}},"draw-batch":{"n":30000,"time":{"mean":0.04254625480274359,"stddev":0.021378693692188096}}}},{"hash":"fbe1847e715a17aecbb9eeaaecc1e04f27584985","author":"Eric Arnebäck","timestamp":1469033346,"title":"Implement method `stats.getTotalTextureSize()`, for keeping track of","description":"\nWrote test cases for the above method.\n","testData":{"clear":{"n":30000,"time":{"mean":0.015348100757598878,"stddev":0.13988108859218634}},"cube":{"n":30000,"time":{"mean":0.016675479517380395,"stddev":0.03867658242739169}},"cube-webgl":{"n":30000,"time":{"mean":0.02767350555459658,"stddev":0.07378037643990652}},"buffer":{"n":30000,"time":{"mean":0.008297896040479343,"stddev":0.024604339620994734}},"draw-static":{"n":30000,"time":{"mean":0.015239908895889918,"stddev":0.08096192854000371}},"draw-dynamic":{"n":30000,"time":{"mean":0.01348902715841929,"stddev":0.05574333330967228}},"draw-batch":{"n":30000,"time":{"mean":0.047734165423115094,"stddev":0.020101556669421358}}}},{"hash":"7b335e4bac6c83d730bf54d2fb8aa3cd759862de","author":"Eric Arnebäck","timestamp":1469031772,"title":"Now texture.stats.size is correctly computed for a mipmapped texture.","description":"Added unit tests for the above.\n","testData":{"clear":{"n":30000,"time":{"mean":0.015456159994999568,"stddev":0.13172009262494994}},"cube":{"n":30000,"time":{"mean":0.018279069942235947,"stddev":0.043258660426886114}},"cube-webgl":{"n":30000,"time":{"mean":0.02726246369679769,"stddev":0.0750241063931965}},"buffer":{"n":30000,"time":{"mean":0.008185760101675987,"stddev":0.014954088093553988}},"draw-static":{"n":30000,"time":{"mean":0.01565335369904836,"stddev":0.089350965946253}},"draw-dynamic":{"n":30000,"time":{"mean":0.013670565023024876,"stddev":0.058950687619583705}},"draw-batch":{"n":30000,"time":{"mean":0.04519588612119357,"stddev":0.020017884526316573}}}},{"hash":"61cebe89ff14a5c51b7a2bb0ad8d4e64847d66a0","author":"Eric Arnebäck","timestamp":1469030801,"title":"Get rid of unused crap in lib/texture.js","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015371575150887171,"stddev":0.13344125777609386}},"cube":{"n":30000,"time":{"mean":0.017365461086233457,"stddev":0.03985654577986318}},"cube-webgl":{"n":30000,"time":{"mean":0.024942599842945733,"stddev":0.08353265475467629}},"buffer":{"n":30000,"time":{"mean":0.008332404510180155,"stddev":0.03591687875675155}},"draw-static":{"n":30000,"time":{"mean":0.015604687321186066,"stddev":0.09399226363827602}},"draw-dynamic":{"n":30000,"time":{"mean":0.013405505219101907,"stddev":0.06319895211552863}},"draw-batch":{"n":30000,"time":{"mean":0.042208063594500224,"stddev":0.020672157120741493}}}},{"hash":"f8362e1c9181c7453159db13ad7bb0a10a7a2753","author":"Eric Arnebäck","timestamp":1469030745,"title":"Fix 'arc' => 'atc'","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.014970652346809705,"stddev":0.13329691615416328}},"cube":{"n":30000,"time":{"mean":0.01677514067987601,"stddev":0.04498485253883379}},"cube-webgl":{"n":30000,"time":{"mean":0.025668961429595946,"stddev":0.08068440674747845}},"buffer":{"n":30000,"time":{"mean":0.008210928781827291,"stddev":0.014819939489806394}},"draw-static":{"n":30000,"time":{"mean":0.015589906552433967,"stddev":0.0910743662545163}},"draw-dynamic":{"n":30000,"time":{"mean":0.013437052941322327,"stddev":0.062451115583743104}},"draw-batch":{"n":30000,"time":{"mean":0.043419920167326924,"stddev":0.019979200874430888}}}},{"hash":"bbf903590826813e66e387bc8d4bfb73f242303d","author":"Eric Arnebäck","timestamp":1469030638,"title":"Merge branch 'gh-pages' into improved-stats","description":"# Please enter a commit message to explain why this merge is necessary,\n# especially if it merges an updated upstream into a topic branch.\n#\n# Lines starting with '#' will be ignored, and an empty message aborts\n# the commit.\n","testData":{"clear":{"n":30000,"time":{"mean":0.015146876702706018,"stddev":0.13675891595091424}},"cube":{"n":30000,"time":{"mean":0.01716869396964709,"stddev":0.04019398670599284}},"cube-webgl":{"n":30000,"time":{"mean":0.0257290600925684,"stddev":0.06946657445263918}},"buffer":{"n":30000,"time":{"mean":0.008065250909328461,"stddev":0.028087080438639386}},"draw-static":{"n":30000,"time":{"mean":0.01535664329926173,"stddev":0.09012555658370319}},"draw-dynamic":{"n":30000,"time":{"mean":0.013296798293789228,"stddev":0.06776361950748434}},"draw-batch":{"n":30000,"time":{"mean":0.04269375817875067,"stddev":0.021588755549718987}}}},{"hash":"c2a093bdb5bec02fb0e177f33415bc8d15ab0903","author":"Eric Arnebäck","timestamp":1469029163,"title":"Merge pull request #93 from mikolalysenko/texture.js.fix-arc-to-atc","description":"lib/texture.js: fix 'rgb arc' => 'rgb atc'\n","testData":{"clear":{"n":30000,"time":{"mean":0.015203742201129595,"stddev":0.14334045080028399}},"cube":{"n":30000,"time":{"mean":0.017066856667399405,"stddev":0.04422602460824352}},"cube-webgl":{"n":30000,"time":{"mean":0.02486825932065646,"stddev":0.07297420876256036}},"buffer":{"n":30000,"time":{"mean":0.008052621645728748,"stddev":0.02469046034757137}},"draw-static":{"n":30000,"time":{"mean":0.015591742790738742,"stddev":0.09567714737141116}},"draw-dynamic":{"n":30000,"time":{"mean":0.013482196532686551,"stddev":0.0672343176384402}},"draw-batch":{"n":30000,"time":{"mean":0.04342477251589298,"stddev":0.022162165390590044}}}},{"hash":"e4d038092ce18db71b7f5c6f11a278ca86ddf557","author":"Eric Arnebäck","timestamp":1469028832,"title":"lib/texture.js: fix 'rgb arc' => 'rgb atc'","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015017438035209973,"stddev":0.13422554758181915}},"cube":{"n":30000,"time":{"mean":0.01735723413924376,"stddev":0.03949418688049215}},"cube-webgl":{"n":30000,"time":{"mean":0.025771572000781694,"stddev":0.079604516691156}},"buffer":{"n":30000,"time":{"mean":0.00785662533144156,"stddev":0.014831617167417377}},"draw-static":{"n":30000,"time":{"mean":0.015809148333470028,"stddev":0.09844624366630146}},"draw-dynamic":{"n":30000,"time":{"mean":0.013352219162384668,"stddev":0.0654954270851585}},"draw-batch":{"n":30000,"time":{"mean":0.042520050573349,"stddev":0.020212427469780407}}}},{"hash":"f75a80793da8e8570a32ec60303eb56b9f1d7bad","author":"Eric Arnebäck","timestamp":1469026696,"title":"Remove blank line.","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015480936268965403,"stddev":0.1403647159663205}},"cube":{"n":30000,"time":{"mean":0.017824332062403362,"stddev":0.044249033113864904}},"cube-webgl":{"n":30000,"time":{"mean":0.02558527325093746,"stddev":0.07744873613590324}},"buffer":{"n":30000,"time":{"mean":0.0076381888588269555,"stddev":0.00586466294154758}},"draw-static":{"n":30000,"time":{"mean":0.015943526808420816,"stddev":0.09545371328470281}},"draw-dynamic":{"n":30000,"time":{"mean":0.013634313689668973,"stddev":0.06513248226626799}},"draw-batch":{"n":30000,"time":{"mean":0.041917862703402836,"stddev":0.020793392208157745}}}},{"hash":"9618b7cc706e11b7c0ba4ff861149894e4b29c0c","author":"Eric Arnebäck","timestamp":1469026496,"title":"Fix: COMPRESSED_RGB_PVRTC_ => GL_COMPRESSED_RGB_PVRTC_","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015086289737621944,"stddev":0.12756848856267633}},"cube":{"n":30000,"time":{"mean":0.018206711066762606,"stddev":0.036758801724894506}},"cube-webgl":{"n":30000,"time":{"mean":0.02656664249698321,"stddev":0.06696320727457224}},"buffer":{"n":30000,"time":{"mean":0.008385988688468933,"stddev":0.024425005426874508}},"draw-static":{"n":30000,"time":{"mean":0.015615248693029085,"stddev":0.08957399254903892}},"draw-dynamic":{"n":30000,"time":{"mean":0.013534453216195107,"stddev":0.0608759337768167}},"draw-batch":{"n":30000,"time":{"mean":0.0435947602669398,"stddev":0.020273243291938726}}}},{"hash":"d9c4931fdae2a5f8de765062db10e5ededa4fa25","author":"Eric Arnebäck","timestamp":1469026111,"title":"Merge pull request #92 from mikolalysenko/api.md-fix-arc-to-atc","description":"arc => atc\n","testData":{"clear":{"n":30000,"time":{"mean":0.015606933495402335,"stddev":0.14232702250254411}},"cube":{"n":30000,"time":{"mean":0.018033965612451235,"stddev":0.04502024934984302}},"cube-webgl":{"n":30000,"time":{"mean":0.025343256801366808,"stddev":0.07530106455632905}},"buffer":{"n":30000,"time":{"mean":0.007997979587316514,"stddev":0.01554940993477114}},"draw-static":{"n":30000,"time":{"mean":0.01597058632671833,"stddev":0.093146564435486}},"draw-dynamic":{"n":30000,"time":{"mean":0.013912324831883113,"stddev":0.06337674030698666}},"draw-batch":{"n":30000,"time":{"mean":0.042440667634209,"stddev":0.020227452680179357}}}},{"hash":"b287cb31f71888395afa37a678963aff8ad486f3","author":"Eric Arnebäck","timestamp":1469025820,"title":"arc => atc","description":"'atc' was mistakenly written 'arc' in some places in API.md. Fixed that.\n","testData":{"clear":{"n":30000,"time":{"mean":0.01516534508963426,"stddev":0.13804543243303996}},"cube":{"n":30000,"time":{"mean":0.017365929673115413,"stddev":0.042136343718897275}},"cube-webgl":{"n":30000,"time":{"mean":0.024312642027934393,"stddev":0.07150243708261572}},"buffer":{"n":30000,"time":{"mean":0.008159036681056022,"stddev":0.014695803886407548}},"draw-static":{"n":30000,"time":{"mean":0.015510822986563047,"stddev":0.09197653184462228}},"draw-dynamic":{"n":30000,"time":{"mean":0.013318578845262528,"stddev":0.06407576603025487}},"draw-batch":{"n":30000,"time":{"mean":0.04193197663128376,"stddev":0.020137534727317982}}}},{"hash":"da9193b86ebe54dedfac9f3210a1a91854f28634","author":"Eric Arnebäck","timestamp":1469016367,"title":"Merge pull request #91 from mikolalysenko/Fix-rgb5-to-rgb565","description":"Fix `rgb565` => `rgb5`\n","testData":{"clear":{"n":30000,"time":{"mean":0.01492008960445722,"stddev":0.1312938801589536}},"cube":{"n":30000,"time":{"mean":0.017633851286768913,"stddev":0.044137495048052776}},"cube-webgl":{"n":30000,"time":{"mean":0.024506148473421734,"stddev":0.06701049045029261}},"buffer":{"n":30000,"time":{"mean":0.008082207490007083,"stddev":0.025398038198271296}},"draw-static":{"n":30000,"time":{"mean":0.015289722607533137,"stddev":0.08052424540130163}},"draw-dynamic":{"n":30000,"time":{"mean":0.013495164295037587,"stddev":0.052373360247372464}},"draw-batch":{"n":30000,"time":{"mean":0.04710540081063906,"stddev":0.020549407187289294}}}},{"hash":"8eb40217259c548e58fd5a62e5195c1385492496","author":"Eric Arnebäck","timestamp":1469016204,"title":"Update API.md","description":"`rgb565` was mistakenly written as `rgb5` in some places in API.md. Fixed that.\n","testData":{"clear":{"n":30000,"time":{"mean":0.015074131899078688,"stddev":0.13314377207802838}},"cube":{"n":30000,"time":{"mean":0.01702103760242462,"stddev":0.03934459026529056}},"cube-webgl":{"n":30000,"time":{"mean":0.02466211500366529,"stddev":0.07225783368316921}},"buffer":{"n":30000,"time":{"mean":0.008008448615670204,"stddev":0.025070650756950544}},"draw-static":{"n":30000,"time":{"mean":0.015344714524348577,"stddev":0.09162785649717563}},"draw-dynamic":{"n":30000,"time":{"mean":0.01332354709704717,"stddev":0.06497392286395569}},"draw-batch":{"n":30000,"time":{"mean":0.04166858663856983,"stddev":0.019990432929276318}}}},{"hash":"6791ae0f54ec71eb061122cab8f5fc426118ae94","author":"mikolalysenko","timestamp":1469004680,"title":"fix bounds check in read","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015436917925874392,"stddev":0.13226623977717977}},"cube":{"n":30000,"time":{"mean":0.019339521418015163,"stddev":0.03915061789392245}},"cube-webgl":{"n":30000,"time":{"mean":0.02640231763223807,"stddev":0.0700958070683996}},"buffer":{"n":30000,"time":{"mean":0.00821514622271061,"stddev":0.025224958371253808}},"draw-static":{"n":30000,"time":{"mean":0.01566851322154204,"stddev":0.08864924579783795}},"draw-dynamic":{"n":30000,"time":{"mean":0.013663030899564424,"stddev":0.06184710924345926}},"draw-batch":{"n":30000,"time":{"mean":0.04318978505730629,"stddev":0.02012963719418919}}}},{"hash":"49f07e8d49c4ea8a6a47e29a720b6edf19c1b7cc","author":"mikolalysenko","timestamp":1468993207,"title":"update regl.read() and improve test coverage","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.014895030752817789,"stddev":0.12908818790727777}},"cube":{"n":30000,"time":{"mean":0.017391306367516516,"stddev":0.04136182969157592}},"cube-webgl":{"n":30000,"time":{"mean":0.02536589002609253,"stddev":0.072224416359569}},"buffer":{"n":30000,"time":{"mean":0.008067685758074124,"stddev":0.014714624362642646}},"draw-static":{"n":30000,"time":{"mean":0.015628830706079802,"stddev":0.08908335816624155}},"draw-dynamic":{"n":30000,"time":{"mean":0.013509867031375567,"stddev":0.061996565234668476}},"draw-batch":{"n":30000,"time":{"mean":0.044382830306887625,"stddev":0.020649801037745698}}}},{"hash":"e0ffdba7a672b5a8bed75a13fefc2f1c9671dfa1","author":"mikolalysenko","timestamp":1468990949,"title":"add test case for context resize polling","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015104728015263875,"stddev":0.14035490398724831}},"cube":{"n":30000,"time":{"mean":0.01703890597919623,"stddev":0.041129578585973145}},"cube-webgl":{"n":30000,"time":{"mean":0.025993076587716737,"stddev":0.07994351751272295}},"buffer":{"n":30000,"time":{"mean":0.008395110991597175,"stddev":0.03706265745727975}},"draw-static":{"n":30000,"time":{"mean":0.015564835807681084,"stddev":0.09141890203537245}},"draw-dynamic":{"n":30000,"time":{"mean":0.013396392283837,"stddev":0.06513297989960222}},"draw-batch":{"n":30000,"time":{"mean":0.042784887671470644,"stddev":0.020827699243041314}}}},{"hash":"b380f8003b3a3375331415f4907f8037f979aabe","author":"mikolalysenko","timestamp":1468990256,"title":"update change log","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015091508267323176,"stddev":0.14050502917455945}},"cube":{"n":30000,"time":{"mean":0.018255782197912535,"stddev":0.04147682282834225}},"cube-webgl":{"n":30000,"time":{"mean":0.025348357235391934,"stddev":0.08342686849282148}},"buffer":{"n":30000,"time":{"mean":0.008307778024673461,"stddev":0.03944853389595316}},"draw-static":{"n":30000,"time":{"mean":0.01580113525688648,"stddev":0.0964587639658493}},"draw-dynamic":{"n":30000,"time":{"mean":0.013379493936896324,"stddev":0.0669209503197371}},"draw-batch":{"n":30000,"time":{"mean":0.041840338626503944,"stddev":0.020967426336855288}}}},{"hash":"7b4b2e215361e00ae23a803ee12a316eec46e423","author":"mikolalysenko","timestamp":1468990189,"title":"update docs on regl.frame","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015188419039050738,"stddev":0.13728064215075086}},"cube":{"n":30000,"time":{"mean":0.01702175114750862,"stddev":0.041300969524828444}},"cube-webgl":{"n":30000,"time":{"mean":0.024576969740788143,"stddev":0.07285052688451746}},"buffer":{"n":30000,"time":{"mean":0.008216577562689781,"stddev":0.01524907186309389}},"draw-static":{"n":30000,"time":{"mean":0.015596240571141243,"stddev":0.09476713888229722}},"draw-dynamic":{"n":30000,"time":{"mean":0.013345768624544143,"stddev":0.06339170045976888}},"draw-batch":{"n":30000,"time":{"mean":0.042508909859259925,"stddev":0.020214868907632993}}}},{"hash":"8d10c74479cf5f0fa40446fd20933c9ce99036bc","author":"mikolalysenko","timestamp":1468989425,"title":"add a test case and fix behavior for regl.frame and regl.destroy","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015116146862506867,"stddev":0.13773084187247192}},"cube":{"n":30000,"time":{"mean":0.01711172113418579,"stddev":0.0398706256874037}},"cube-webgl":{"n":30000,"time":{"mean":0.02459996670484543,"stddev":0.07027732055575062}},"buffer":{"n":30000,"time":{"mean":0.007497838233908018,"stddev":0.014681723948160337}},"draw-static":{"n":30000,"time":{"mean":0.015135257369279861,"stddev":0.07995132680548495}},"draw-dynamic":{"n":30000,"time":{"mean":0.013491479276617369,"stddev":0.053455008040425654}},"draw-batch":{"n":30000,"time":{"mean":0.042960043224692344,"stddev":0.020689785643399235}}}},{"hash":"cb1ffb13aff767128a60052f9161b6ad6fe73f9c","author":"mikolalysenko","timestamp":1468988960,"title":"test regl.frame() and frame cancellation","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.015136837284763654,"stddev":0.13574007526974072}},"cube":{"n":30000,"time":{"mean":0.016934239069620768,"stddev":0.03944922788417504}},"cube-webgl":{"n":30000,"time":{"mean":0.0246518079439799,"stddev":0.06869180031081663}},"buffer":{"n":30000,"time":{"mean":0.007814354082942008,"stddev":0.02962499431553684}},"draw-static":{"n":30000,"time":{"mean":0.015583082937200864,"stddev":0.09333513090610428}},"draw-dynamic":{"n":30000,"time":{"mean":0.01339367506901423,"stddev":0.06588334397285954}},"draw-batch":{"n":30000,"time":{"mean":0.04172204054395358,"stddev":0.020643571450090468}}}},{"hash":"d0ad026d2f0a2f05a115a48e402952313ecd015f","author":"Eric Arnebäck","timestamp":1468927269,"title":"Merge pull request #87 from mikolalysenko/rebuild-gallery","description":"Rebuild gallery.\n","testData":{"clear":{"n":30000,"time":{"mean":0.015503314442435901,"stddev":0.1432859529113399}},"cube":{"n":30000,"time":{"mean":0.01762632285952568,"stddev":0.04232233275171289}},"cube-webgl":{"n":30000,"time":{"mean":0.025215128780404727,"stddev":0.06630266728756284}},"buffer":{"n":30000,"time":{"mean":0.008264466097950935,"stddev":0.024428732229282362}},"draw-static":{"n":30000,"time":{"mean":0.015696501111984253,"stddev":0.08923375342519631}},"draw-dynamic":{"n":30000,"time":{"mean":0.013669402148326237,"stddev":0.05815767763826719}},"draw-batch":{"n":30000,"time":{"mean":0.04332797922194004,"stddev":0.021879441712422384}}}},{"hash":"ee12ea786ac3fd445278bd19e350bb71dc597ba5","author":"Eric Arnebäck","timestamp":1468927060,"title":"Rebuild gallery.","description":"","testData":{"clear":{"n":30000,"time":{"mean":0.01505905394355456,"stddev":0.13337945282906238}},"cube":{"n":30000,"time":{"mean":0.01715956649283568,"stddev":0.041716963371324065}},"cube-webgl":{"n":30000,"time":{"mean":0.02516319261789322,"stddev":0.07347740758815446}},"buffer":{"n":30000,"time":{"mean":0.008123930829763412,"stddev":0.015760735866066466}},"draw-static":{"n":30000,"time":{"mean":0.015498974894483885,"stddev":0.09325032250129511}},"draw-dynamic":{"n":30000,"time":{"mean":0.01335342044432958,"stddev":0.06556996909956549}},"draw-batch":{"n":30000,"time":{"mean":0.04170783676902453,"stddev":0.02025984310085498}}}},{"hash":"109617d4f46f447e3cfcc132320daee5cd5a0487","author":"Eric Arnebäck","timestamp":1468926624,"title":"Merge pull request #86 from mikolalysenko/fix-instance-examples","description":"Fix the instance examples\n","testData":{"clear":{"n":30000,"time":{"mean":0.015356306365132332,"stddev":0.14292192261372372}},"cube":{"n":30000,"time":{"mean":0.01730271379649639,"stddev":0.042323540044577286}},"cube-webgl":{"n":30000,"time":{"mean":0.02523952037791411,"stddev":0.07010079797736259}},"buffer":{"n":30000,"time":{"mean":0.00801549874941508,"stddev":0.028538276306878444}},"draw-static":{"n":30000,"time":{"mean":0.01614341846505801,"stddev":0.09842896365807663}},"draw-dynamic":{"n":30000,"time":{"mean":0.013638330228130022,"stddev":0.06776230215826609}},"draw-batch":{"n":30000,"time":{"mean":0.0428802965571483,"stddev":0.023229910605131004}}}}],"deviceInfo":{"cpu":"Intel(R) Core(TM) i5-4278U CPU @ 2.60GHz","platform":"darwin","release":"14.3.0","arch":"x64"}})
+  </script>
+
+  </body>
+    
