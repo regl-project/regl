@@ -1343,7 +1343,7 @@ var starElements = regl.elements({
 | Primitive type | Description |
 |-------|-------------|
 | `'points'` | `gl.POINTS` |
-| `'lines'` | gl.LINES` |
+| `'lines'` | `gl.LINES` |
 | `'line strip'` | `gl.LINE_STRIP` |
 | `'line loop` | `gl.LINE_LOOP` |
 | `'triangles` | `gl.TRIANGLES` |
