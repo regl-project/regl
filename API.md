@@ -1241,7 +1241,7 @@ myBuffer({
 })
 ```
 
-The arguments to the update pathway are the same as the constructor and the returned value will be a reference to the buffer.  
+The arguments to the update pathway are the same as the constructor and the returned value will be a reference to the buffer.
 
 **Relevant WebGL APIs**
 
@@ -1295,6 +1295,13 @@ myBuffer.destroy()
 
 * [`gl.deleteBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteBuffer.xml)
 
+#### Profiling
+
+The following stats are tracked for each buffer in the `.stats` property:
+
+| Statistic | Meaning |
+|-----------|---------|
+| `size` | The size of the buffer in bytes |
 
 ---------------------------------------
 ### Elements
@@ -1336,7 +1343,7 @@ var starElements = regl.elements({
 | Primitive type | Description |
 |-------|-------------|
 | `'points'` | `gl.POINTS` |
-| `'lines'` | gl.LINES` |
+| `'lines'` | `gl.LINES` |
 | `'line strip'` | `gl.LINE_STRIP` |
 | `'line loop` | `gl.LINE_LOOP` |
 | `'triangles` | `gl.TRIANGLES` |
@@ -1500,12 +1507,37 @@ A data source from an image can be one of the following types:
 | `format` | Texture format (see table) | `'rgba'` |
 | `type` | Texture type (see table) | `'uint8'` |
 | `data` | Input data (see below) | |
-| `mipmap` | If set, regenerate mipmaps | `false` |
+| `mipmap` | See below for a description | `false` |
 | `flipY` | Flips textures vertically when uploading | `false` |
 | `alignment` | Sets unpack alignment per pixel | `1` |
 | `premultiplyAlpha` | Premultiply alpha when unpacking | `false` |
 | `colorSpace` | Sets colorspace conversion | `'none'` |
 | `data` | Image data for the texture | `null` |
+
+* `mipmap`. If `boolean`, then it sets whether or not we should regenerate the mipmaps. If a `string`, it allows you to specify a hint to the mipmap generator. It can be one of the hints below
+
+| Mipmap Hint | Description |
+|-------|-------------|
+| `'don't care'`, `'dont care'`  | `gl.DONT_CARE` |
+| `'nice'` | `gl.NICEST` |
+| `'fast'` | `gl.FASTEST` |
+
+and if a hint is specified, then also the mipmaps will be regenerated. Finally, `mipmap` can also be an array of arrays. In this case, every subarray will be one of the mipmaps, and you can thus use this option to manually specify the mipmaps of the image. Like this:
+
+```javascript
+regl.texture({
+  shape: [4, 4],
+  mipmap: [
+    [ 0, 1, 2, 3,
+      4, 5, 6, 7,
+      8, 9, 10, 11,
+      12, 13, 14, 15 ],
+    [ 0, 1,
+      2, 3 ],
+    [ 0 ]
+  ]
+})
+```
 
 * `shape` can be used as an array shortcut for `[width, height, channels]` of image
 * `radius` can be specified for square images and sets both `width` and `height`
@@ -1596,7 +1628,9 @@ A data source from an image can be one of the following types:
 * [`gl.compressedTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexImage2D.xml)
 * [`gl.copyTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexImage2D.xml)
 * [`gl.generateMipmap`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGenerateMipmap.xml)
+* [`gl.hint`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glHint.xml)
 
+https://www.khronos.org/opengles/sdk/docs/man/xhtml/glHint.xml
 #### Update
 Like buffers, textures can be reinitialized in place.  Calling the texture as a function re-evaluates the constructor and initializes the texture to a new value:
 
@@ -1674,6 +1708,15 @@ myTexture.destroy()
 
 *  [`gl.deleteTexture`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteTexture.xml)
 
+
+#### Profiling
+
+The following stats are tracked for each texture in the `.stats` property:
+
+| Statistic | Meaning |
+|-----------|---------|
+| `size` | The size of the texture in bytes |
+
 ---------------------------------------
 ### Cube maps
 
@@ -1743,6 +1786,13 @@ cube.subimage(face, data[, x, y, miplevel])
 * [`gl.copyTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexSubImage2D.xml)
 * [`gl.compressedTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexSubImage2D.xml)
 
+#### Profiling
+
+The following stats are tracked for each cube map in the `.stats` property:
+
+| Statistic | Meaning |
+|-----------|---------|
+| `size` | The size of the cube map in bytes |
 
 #### Destroy
 
@@ -1831,6 +1881,15 @@ rb.destroy()
 **Relevant WebGL APIs**
 
 * [`gl.deleteRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteRenderbuffer.xml)
+
+
+#### Profiling
+
+The following stats are tracked for each renderbuffer in the `.stats` property:
+
+| Statistic | Meaning |
+|-----------|---------|
+| `size` | The size of the renderbuffer in bytes |
 
 ---------------------------------------
 ### Framebuffers
@@ -1938,13 +1997,60 @@ fbo.destroy()
 ---------------------------------------
 ### Cubic frame buffers
 
-**TODO**
-
 #### Constructor
+
+```javascript
+var cubeFbo = regl.framebufferCube(512)
+
+var cubeAlt = regl.framebufferCube({
+  radius: 32,
+  color: regl.cube(32),
+  depth: false,
+  stencil: false
+})
+```
+
+| Parameter | Description |
+|-----------|-------------|
+| `radius` | The size of the cube buffer |
+| `color` | The color buffer attachment |
+| `colorFormat` | Format of color buffer to create |
+| `colorType` | Type of color buffer |
+| `colorCount` | Number of color attachments |
+| `depth` | Depth buffer attachment |
+| `stencil` | Stencil buffer attachment |
+| `depthStencil` | Depth-stencil attachment |
+
+| Color format | Description | Attachment |
+|--------------|-------------|------------|
+| `'alpha'` | `gl.ALPHA` | Texture |
+| `'luminance'` | `gl.LUMINANCE` | Texture |
+| `'luminance alpha'` | `gl.LUMINANCE_ALPHA` | Texture |
+| `'rgb'` | `gl.RGB` | Texture |
+| `'rgba'` | `gl.RGBA` | Texture |
+
+| Color type | Description |
+|------------|-------------|
+| `'uint8'` | `gl.UNSIGNED_BYTE` |
+| `'half float'` | 16 bit float, requires [OES_texture_half_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_half_float/)  |
+| `'float'` | 32 bit float, requires [OES_texture_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_float/) |
 
 #### Update
 
+```javascript
+// reinitialize
+fboCube({
+  radius: 10
+})
+
+fboCube.resize(128)
+```
+
 #### Destroy
+
+```javascript
+fboCube.destroy()
+```
 
 ---------------------------------------
 ## Other features
@@ -2111,11 +2217,17 @@ regl exposes info about the WebGL context limits and capabilities via the `regl.
 |--------|---------|
 | `bufferCount` | The number of array buffers currently allocated |
 | `elementsCount` | The number of element buffers currently allocated |
-| `framebufferCount` | The number of framebuffer currently allocated |
+| `framebufferCount` | The number of framebuffers currently allocated |
 | `shaderCount` | The number of shaders currently allocated |
 | `textureCount` | The number of textures currently allocated |
 | `cubeCount` | The number of cube maps currently allocated |
-| `renderbufferCount` | The number of rnderbuffers currently allocated |
+| `renderbufferCount` | The number of renderbuffers currently allocated |
+| `getTotalTextureSize()` | The total amount of memory allocated for textures and cube maps |
+| `getTotalBufferSize()` | The total amount of memory allocated for array buffers and element buffers |
+| `getTotalRenderbufferSize()` | The total amount of memory allocated for renderbuffers |
+| `getMaxUniformsCount()` | The maximum number of uniforms in any shader |
+| `getMaxAttributesCount()` | The maximum number of attributes in any shader |
+| `maxTextureUnits()` | The maximum number of texture units used |
 
 ---------------------------------------
 ### Clean up

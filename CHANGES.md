@@ -2,8 +2,6 @@
 
 ## Planned
 
-* Cubic frame buffer objects
-
 * More performance monitoring hooks
     + Track currently used resource requirements
     + Output should be serializable -> works as input to constructor checks
@@ -11,6 +9,9 @@
 * Context loss
 
 * Write comparison suite
+
+* Make error messages more helpful
+    + When possible, try to suggest a fix for any errors which are raised
 
 * Add a mechanism for users to specify minimum resource requirements (texture size, varying units, etc.)
 * More validation
@@ -37,6 +38,7 @@
     + Float textures / framebuffers and their filtering modes
     + Constant attributes
     + General code coverage
+    + Cube framebuffer objects
 
 * Build a website (preview at [regl.party](http://regl.party))
 
@@ -54,6 +56,8 @@
     + Water Reflection(though cubic-framebuffers)
 
 ## Next
+
+* Cubic frame buffer objects
 
 ## 0.10.0
 
