@@ -215,15 +215,22 @@ tape('framebuffer parsing', function (t) {
     {tex: false, colorFormat: 'rgb5 a1', expectedFormat: gl.RGB5_A1}
   ]
 
+  // these test cases should fail.
+  var badTestCases = [
+    {colorFormat: 'alpha', colorType: 'uint8'},
+    {colorFormat: 'luminance', colorType: 'uint8'},
+    {colorFormat: 'luminance alpha', colorType: 'uint8'}
+  ]
+
   if (regl.hasExtension('oes_texture_float')) {
     testCases.push({tex: true, colorFormat: 'rgba', colorType: 'float', expectedFormat: gl.RGBA, expectedType: gl.FLOAT})
-   // testCases.push({tex: true, colorFormat: 'rgb', colorType: 'float', expectedFormat: gl.RGB, expectedType: gl.FLOAT})
+    badTestCases.push({colorFormat: 'rgb', colorType: 'float'})
   }
 
   if (regl.hasExtension('oes_texture_half_float')) {
     var GL_HALF_FLOAT_OES = 0x8D61
     testCases.push({tex: true, colorFormat: 'rgba', colorType: 'half float', expectedFormat: gl.RGBA, expectedType: GL_HALF_FLOAT_OES})
-//    testCases.push({tex: true, colorFormat: 'rgb', colorType: 'half float', expectedFormat: gl.RGB, expectedType: GL_HALF_FLOAT_OES})
+    badTestCases.push({colorFormat: 'rgb', colorType: 'half float'})
   }
 
   // We'll skip testing the renderbuffer formats rgba32f, rgba16f, rgb16f.
@@ -269,6 +276,19 @@ tape('framebuffer parsing', function (t) {
         }
       },
       'for colorFormat=' + testCase.colorFormat + (testCase.tex ? (' and colorType=' + testCase.colorType) : ''))
+  })
+
+  badTestCases.forEach(function (testCase, i) {
+    var fboArgs = {
+      shape: [10, 10],
+      colorFormat: testCase.colorFormat,
+      colorType: testCase.colorType
+    }
+
+    t.throws(
+      function () { regl.framebuffer(fboArgs) },
+        /\(regl\)/,
+      'throws for colorFormat=' + testCase.colorFormat + ' and colorType=' + testCase.colorType)
   })
 
   if (
