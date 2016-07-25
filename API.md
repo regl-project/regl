@@ -1941,8 +1941,8 @@ var texFBO = regl.framebuffer({
 | `'rgba4'` | `gl.RGBA4` | Renderbuffer |
 | `'rgb565'` | `gl.RGB565` | Renderbuffer |
 | `'rgb5 a1'` | `gl.RGB5_A1` | Renderbuffer |
-| `'rgb16f'` | `gl.RGBA4` | Renderbuffer |
-| `'rgba16f'` | `gl.RGB565` | Renderbuffer |
+| `'rgb16f'` | `gl.RGB16F` | Renderbuffer |
+| `'rgba16f'` | `gl.RGBA16F` | Renderbuffer |
 | `'rgba32f'` | `gl.RGBA32F` | Renderbuffer |
 
 | Color type | Description |
