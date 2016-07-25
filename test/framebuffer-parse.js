@@ -6,7 +6,7 @@ tape('framebuffer parsing', function (t) {
   var gl = createContext(16, 16)
   var regl = createREGL({
     gl: gl,
-    optionalExtensions: 'webgl_draw_buffers'
+    optionalExtensions: ['webgl_draw_buffers', 'oes_texture_float', 'oes_texture_half_float']
   })
 
   function checkProperties (framebuffer, props, prefix) {
@@ -197,8 +197,31 @@ tape('framebuffer parsing', function (t) {
     'color renderbuffer')
 
   // TODO: float, half float types
+  /* checkProperties(
+    regl.framebuffer({
+      shape: [10, 10],
+      colorType: 'uint8',
+      colorFormat: 'rgba'
+    }),
+    {
+      width: 10,
+      height: 10,
+      color: [{
+        target: gl.TEXTURE_2D,
+        format: gl.RGBA,
+        //        type: gl.UNSIGNED_BYTE
+        type: gl.FLOAT
 
-  if (regl.hasExtension('WEBGL_draw_buffers')) {
+      }],
+      depthStencil: {
+        target: gl.RENDERBUFFER,
+        format: gl.DEPTH_STENCIL
+      }
+    },
+    'testing')
+*/
+  if (
+    regl.hasExtension('WEBGL_draw_buffers') && regl.hasExtension('oes_texture_float') && regl.hasExtension('oes_texture_half_float')) {
     t.throws(function () {
       regl.framebuffer({
         color: [
@@ -237,9 +260,10 @@ tape('framebuffer parsing', function (t) {
       thrown = true
     }
 
-    // TODO: multiple render targets
     t.equals(thrown, false, 'check color attachments with same bit planes do not throw')
   }
+
+  // TODO: multiple render targets
 
   regl.destroy()
   createContext.destroy(gl)
