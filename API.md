@@ -1953,7 +1953,7 @@ var texFBO = regl.framebuffer({
 
 **Notes**
 
-* If `color` is not specified, then color attachments are created manually
+* If `color` is not specified, then color attachments are created automatically
 * Instead of passing width/height, it is also possible to pass in `shape` to the framebuffer constructor.
 
 **Relevant WebGL APIs**
