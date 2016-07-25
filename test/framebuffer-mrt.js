@@ -4,7 +4,10 @@ var tape = require('tape')
 
 tape('framebuffer - multiple draw buffers', function (t) {
   var gl = createContext(16, 16)
-  var regl = createREGL(gl)
+  var regl = createREGL({
+    gl: gl,
+    optionalExtensions: 'webgl_draw_buffers'
+  })
 
   var renderTexture = regl({
     vert: [
