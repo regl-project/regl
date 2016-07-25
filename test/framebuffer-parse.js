@@ -6,7 +6,13 @@ tape('framebuffer parsing', function (t) {
   var gl = createContext(16, 16)
   var regl = createREGL({
     gl: gl,
-    optionalExtensions: ['webgl_draw_buffers', 'oes_texture_float', 'oes_texture_half_float']
+    optionalExtensions: [
+      'webgl_draw_buffers',
+      'oes_texture_float',
+      'oes_texture_half_float',
+      'webgl_color_buffer_float',
+      'ext_color_buffer_half_float',
+      'ext_srgb']
   })
 
   function checkProperties (framebuffer, props, prefix) {
@@ -170,7 +176,7 @@ tape('framebuffer parsing', function (t) {
       height: 10,
       color: [{
         target: gl.RENDERBUFFER,
-        format: gl.RGB5_A1,
+        format: gl.RGB5_A1
       }],
       depthStencil: {
         target: gl.RENDERBUFFER,
@@ -200,30 +206,71 @@ tape('framebuffer parsing', function (t) {
     },
     'color renderbuffer')
 
-  // TODO: float, half float types
-  /* checkProperties(
-    regl.framebuffer({
-      shape: [10, 10],
-      colorType: 'uint8',
-      colorFormat: 'rgba'
-    }),
-    {
-      width: 10,
-      height: 10,
-      color: [{
-        target: gl.TEXTURE_2D,
-        format: gl.RGBA,
-        //        type: gl.UNSIGNED_BYTE
-        type: gl.FLOAT
+  // next, we will 'colorType' and 'colorFormat'. We test for all possible combinations of these values.
 
-      }],
-      depthStencil: {
-        target: gl.RENDERBUFFER,
-        format: gl.DEPTH_STENCIL
+  var testCases = [
+    {tex: true, colorFormat: 'rgba', colorType: 'uint8', expectedFormat: gl.RGBA, expectedType: gl.UNSIGNED_BYTE},
+    {tex: false, colorFormat: 'rgba4', expectedFormat: gl.RGBA4},
+    {tex: false, colorFormat: 'rgb565', expectedFormat: gl.RGB565},
+    {tex: false, colorFormat: 'rgb5 a1', expectedFormat: gl.RGB5_A1}
+  ]
+
+  if (regl.hasExtension('oes_texture_float')) {
+    testCases.push({tex: true, colorFormat: 'rgba', colorType: 'float', expectedFormat: gl.RGBA, expectedType: gl.FLOAT})
+   // testCases.push({tex: true, colorFormat: 'rgb', colorType: 'float', expectedFormat: gl.RGB, expectedType: gl.FLOAT})
+  }
+
+  if (regl.hasExtension('oes_texture_half_float')) {
+    var GL_HALF_FLOAT_OES = 0x8D61
+    testCases.push({tex: true, colorFormat: 'rgba', colorType: 'half float', expectedFormat: gl.RGBA, expectedType: GL_HALF_FLOAT_OES})
+//    testCases.push({tex: true, colorFormat: 'rgb', colorType: 'half float', expectedFormat: gl.RGB, expectedType: GL_HALF_FLOAT_OES})
+  }
+
+  // We'll skip testing the renderbuffer formats rgba32f, rgba16f, rgb16f.
+  // Because the extensions 'ext_color_buffer_half_float' and
+  // 'webgl_color_buffer_float' have really spotty browser support.
+  // For me, they are available in Firefox, but not in Chrome, for some reason.
+
+  if (regl.hasExtension('ext_srgb')) {
+    var GL_SRGB8_ALPHA8_EXT = 0x8C43
+    testCases.push({tex: false, colorFormat: 'srgba', expectedFormat: GL_SRGB8_ALPHA8_EXT})
+  }
+
+  testCases.forEach(function (testCase, i) {
+    var fboArgs = {
+      shape: [10, 10],
+      colorFormat: testCase.colorFormat
+    }
+
+    var expected
+    if (testCase.tex) {
+      expected = {
+        target: gl.TEXTURE_2D,
+        format: testCase.expectedFormat,
+        type: testCase.expectedType
       }
-    },
-    'testing')
-*/
+      fboArgs.colorType = testCase.colorType
+    } else {
+      expected = {
+        target: gl.RENDERBUFFER,
+        format: testCase.expectedFormat
+      }
+    }
+
+    checkProperties(
+      regl.framebuffer(fboArgs),
+      {
+        width: 10,
+        height: 10,
+        color: [expected],
+        depthStencil: {
+          target: gl.RENDERBUFFER,
+          format: gl.DEPTH_STENCIL
+        }
+      },
+      'for colorFormat=' + testCase.colorFormat + (testCase.tex ? (' and colorType=' + testCase.colorType) : ''))
+  })
+
   if (
     regl.hasExtension('WEBGL_draw_buffers') && regl.hasExtension('oes_texture_float') && regl.hasExtension('oes_texture_half_float')) {
     t.throws(function () {
