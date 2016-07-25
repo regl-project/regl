@@ -59,6 +59,8 @@ tape('framebuffer resizing', function (t) {
   t.equals(fbo.color[0].height, 3, 'color height ok')
   t.equals(fbo.depthStencil.width, 2, 'depth stencil width ok')
   t.equals(fbo.depthStencil.height, 3, 'depth stencil width ok')
+  
+  // TODO: also test MRT
 
   regl.destroy()
   createContext.destroy(gl)
