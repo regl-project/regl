@@ -4,7 +4,10 @@ var tape = require('tape')
 
 tape('framebuffer parsing', function (t) {
   var gl = createContext(16, 16)
-  var regl = createREGL(gl)
+  var regl = createREGL({
+    gl: gl,
+    optionalExtensions: 'webgl_draw_buffers'
+  })
 
   function checkProperties (framebuffer, props, prefix) {
     var _framebuffer = framebuffer._framebuffer

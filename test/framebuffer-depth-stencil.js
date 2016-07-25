@@ -6,7 +6,10 @@ tape('framebuffer - depth stencil attachment', function (t) {
   var N = 5
 
   var gl = createContext(N, N)
-  var regl = createREGL(gl)
+  var regl = createREGL({
+    gl: gl,
+    optionalExtensions: 'webgl_depth_texture'
+  })
 
   var drawLine = regl({
     frag: [
