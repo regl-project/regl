@@ -1931,19 +1931,16 @@ var texFBO = regl.framebuffer({
 | `colorCount` | Sets the number of color buffers. Values > 1 require [WEBGL_draw_buffers](https://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/) | `1` |
 | `depthTexture` | Toggles whether depth/stencil attachments should be in texture. Requires [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) | `false` |
 
-| Color format | Description | Attachment |
-|--------------|-------------|------------|
-| `'alpha'` | `gl.ALPHA` | Texture |
-| `'luminance'` | `gl.LUMINANCE` | Texture |
-| `'luminance alpha'` | `gl.LUMINANCE_ALPHA` | Texture |
-| `'rgb'` | `gl.RGB` | Texture |
-| `'rgba'` | `gl.RGBA` | Texture |
-| `'rgba4'` | `gl.RGBA4` | Renderbuffer |
-| `'rgb565'` | `gl.RGB565` | Renderbuffer |
-| `'rgb5 a1'` | `gl.RGB5_A1` | Renderbuffer |
-| `'rgb16f'` | `gl.RGB16F` | Renderbuffer |
-| `'rgba16f'` | `gl.RGBA16F` | Renderbuffer |
-| `'rgba32f'` | `gl.RGBA32F` | Renderbuffer |
+| Color format | Description | Attachment | Notes
+|--------------|-------------|------------|-----|
+| `'rgba'` | `gl.RGBA` | Texture |              |
+| `'rgba4'` | `gl.RGBA4` | Renderbuffer |    |
+| `'rgb565'` | `gl.RGB565` | Renderbuffer |    |
+| `'rgb5 a1'` | `gl.RGB5_A1` | Renderbuffer |    |
+| `'rgb16f'` | `gl.RGB16F` | Renderbuffer |   only if [EXT_color_buffer_half_float](https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_half_float/)  |
+| `'rgba16f'` | `gl.RGBA16F` | Renderbuffer | only if [EXT_color_buffer_half_float](https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_half_float/)   |
+| `'rgba32f'` | `gl.RGBA32F` | Renderbuffer |  only if [WEBGL_color_buffer_float](https://www.khronos.org/registry/webgl/extensions/WEBGL_color_buffer_float/) supported  |
+| `'srgba'` | `gl.SRGB8_ALPHA8` | Renderbuffer | only if [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) supported  |
 
 | Color type | Description |
 |------------|-------------|
