@@ -58,12 +58,10 @@ tape('framebuffer parsing', function (t) {
           label + ' object assoc')
       } else {
         t.equals(actual.renderbuffer, null, label + '.renderbuffer')
-        /*
         t.equals(
-          actual.texture._texture.params.internalformat,
+          actual.texture._texture.internalformat,
           expected.format,
           label + '.format')
-        */
         t.equals(actual.texture.width, props.width, label + '.width')
         t.equals(actual.texture.height, props.height, label + '.height')
         t.equals(
