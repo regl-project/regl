@@ -62,6 +62,10 @@ tape('framebuffer parsing', function (t) {
           actual.texture._texture.internalformat,
           expected.format,
           label + '.format')
+        t.equals(
+          actual.texture._texture.type,
+          expected.type,
+          label + '.type')
         t.equals(actual.texture.width, props.width, label + '.width')
         t.equals(actual.texture.height, props.height, label + '.height')
         t.equals(
@@ -122,7 +126,8 @@ tape('framebuffer parsing', function (t) {
       height: 1,
       color: [{
         target: gl.TEXTURE_2D,
-        format: gl.RGBA
+        format: gl.RGBA,
+        type: gl.UNSIGNED_BYTE
       }],
       depthStencil: {
         target: gl.RENDERBUFFER,
@@ -142,7 +147,8 @@ tape('framebuffer parsing', function (t) {
       height: 5,
       color: [{
         target: gl.TEXTURE_2D,
-        format: gl.RGBA
+        format: gl.RGBA,
+        type: gl.UNSIGNED_BYTE
       }],
       stencil: {
         target: gl.RENDERBUFFER,
@@ -164,7 +170,7 @@ tape('framebuffer parsing', function (t) {
       height: 10,
       color: [{
         target: gl.RENDERBUFFER,
-        format: gl.RGB5_A1
+        format: gl.RGB5_A1,
       }],
       depthStencil: {
         target: gl.RENDERBUFFER,
