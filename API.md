@@ -1984,6 +1984,9 @@ Framebuffers can be resized using the `.resize()` method.  This method will also
 var framebuffer = regl.framebuffer(20, 4)
 
 framebuffer.resize(3, 3)
+
+// set both width and height to 3.
+framebuffer.resize(3)
 ```
 
 #### Destroy
