@@ -7,7 +7,7 @@ tape('texture 2d', function (t) {
   var regl = createREGL(
     {
       gl: gl,
-      optionalExtensions: ['webgl_compressed_texture_s3tc']
+      optionalExtensions: ['webgl_compressed_texture_s3tc', 'ext_texture_filter_anisotropic']
     })
 
   var renderTexture = regl({

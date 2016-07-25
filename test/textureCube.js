@@ -4,7 +4,10 @@ var tape = require('tape')
 
 tape('texture cube', function (t) {
   var gl = createContext(16, 16)
-  var regl = createREGL(gl)
+  var regl = createREGL({
+    gl: gl,
+    optionalExtensions: ['ext_texture_filter_anisotropic']
+  })
 
   var renderCubeFace = regl({
     vert: [

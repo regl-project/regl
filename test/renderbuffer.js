@@ -4,7 +4,10 @@ var tape = require('tape')
 
 tape('renderbuffer parsing', function (t) {
   var gl = createContext(16, 16)
-  var regl = createREGL(gl)
+  var regl = createREGL({
+    gl: gl,
+    optionalExtensions: ['ext_srgb', 'ext_color_buffer_half_float', 'webgl_color_buffer_float']
+  })
 
   function checkProperties (prefix, renderbuffer, props) {
     t.equals(gl.getError(), 0, prefix + ' no gl error')
