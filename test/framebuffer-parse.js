@@ -291,8 +291,36 @@ tape('framebuffer parsing', function (t) {
       'throws for colorFormat=' + testCase.colorFormat + ' and colorType=' + testCase.colorType)
   })
 
+  // we create the maximum number of possible color attachments.
+  // and make that colorType and colorFormat is applied for them all.
+  if (regl.hasExtension('webgl_draw_buffers')) {
+    var expected = {
+      width: 1,
+      height: 1,
+      color: [],
+      depthStencil: {
+        target: gl.RENDERBUFFER,
+        format: gl.DEPTH_STENCIL
+      }
+    }
+
+    for (var i = 0; i < regl.limits.maxColorAttachments; i++) {
+      expected.color[i] = {target: gl.TEXTURE_2D, format: gl.RGBA, type: gl.UNSIGNED_BYTE}
+    }
+
+    checkProperties(
+      regl.framebuffer({colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments}),
+      expected,
+      'for MRT with colorCount: ' + regl.limits.maxColorAttachments)
+
+    t.throws(
+      function () { regl.framebuffer({colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments + 1}) },
+        /\(regl\)/,
+      'throws for exceeding regl.limits.maxColorAttachments')
+  }
+
   if (
-    regl.hasExtension('WEBGL_draw_buffers') && regl.hasExtension('oes_texture_float') && regl.hasExtension('oes_texture_half_float')) {
+    regl.hasExtension('webgl_draw_buffers') && regl.hasExtension('oes_texture_float') && regl.hasExtension('oes_texture_half_float')) {
     t.throws(function () {
       regl.framebuffer({
         color: [
