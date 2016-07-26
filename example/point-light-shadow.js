@@ -18,7 +18,7 @@ var sphere = require('primitive-sphere')(1.0, {
 camera.rotate([0.0, 0.0], [0.0, -0.4])
 camera.zoom(10.0)
 
-var lightPos = [0.0, 50.0, 0.0]
+var lightPos = [0.0, 30.0, 0.0]
 
 const CUBE_MAP_SIZE = 512*2
 const shadowFbo = regl.framebufferCube({
@@ -99,6 +99,10 @@ const drawDepth = regl({
       0.25,
       1000.0),
     view: function (context, props, batchId) {
+
+
+/*    batchId = 2
+
         const view = []
         for (let i = 0; i < 16; ++i) {
           view[i] = 0
@@ -116,12 +120,12 @@ const drawDepth = regl({
           break
         case 2: // +y
           view[0] = +1
-          view[6] = -1
+          view[6] = +1 // should be +1
           view[9] = +1
           break
         case 3: // -y
-          view[0] = -1
-          view[6] = +1
+          view[0] = -1 // should be +1
+          view[6] = +1 // should be -1
           view[9] = -1
           break
         case 4: // +z
@@ -142,8 +146,37 @@ const drawDepth = regl({
             -lightPos[1],
             -lightPos[2]
         ])
+*/
+      const view = []
 
-     /* var m = view
+    //   batchId = 2
+
+        switch (batchId) {
+        case 0: // +x
+          mat4.lookAt(view, lightPos, [lightPos[0] + 1.0, lightPos[1], lightPos[2]  ], [0.0, -1.0, 0.0])
+          break
+        case 1: // -x
+          mat4.lookAt(view, lightPos, [lightPos[0] - 1.0, lightPos[1], lightPos[2]  ], [0.0, -1.0, 0.0])
+          break
+        case 2: // +y
+          mat4.lookAt(view, lightPos, [lightPos[0], lightPos[1] + 1.0, lightPos[2]  ], [0.0, 0.0, 1.0])
+          break
+        case 3: // -y
+          mat4.lookAt(view, lightPos, [lightPos[0], lightPos[1] - 1.0, lightPos[2]  ], [0.0, 0.0, -1.0])
+          break
+        case 4: // +z
+          mat4.lookAt(view, lightPos, [lightPos[0], lightPos[1], lightPos[2] + 1.0  ], [0.0, -1.0, 0.0])
+          break
+        case 5: // -z
+          mat4.lookAt(view, lightPos, [lightPos[0], lightPos[1], lightPos[2] - 1.0  ], [0.0, -1.0, 0.0])
+          break
+        }
+
+
+
+
+      /*
+     var m = view
       mat4.transpose(m, m)
       if(flag) {
       console.log("batch:" + batchId + ":\n",
@@ -157,7 +190,9 @@ const drawDepth = regl({
 
       if (batchId === 5) {
         flag = false
-      }*/
+      }
+      */
+
 
         return view
       }
@@ -223,12 +258,12 @@ const drawNormal = regl({
     float cosTheta = dot(vNormal, lightDir);
     vec3 diffuse = diffuseLightAmount * color * clamp(cosTheta , 0.0, 1.0 );
 
-    vec3 tex = normalize(vPosition - lightPos);
+    vec3 tex = (vPosition - lightPos);
     vec4 env = textureCube(shadowCube, tex);
 
 //    float v = 1.0;
 
-    float v = (env.x+20.0) < (distance(vPosition, lightPos)) ? 0.0 : 1.0;
+    float v = (env.x+0.3) < (distance(vPosition, lightPos)) ? 0.0 : 1.0;
 
 //    v = 1.0;
     gl_FragColor = vec4((ambient + diffuse * v), 1.0);
@@ -331,3 +366,6 @@ regl.frame(({tick}) => {
 
   camera.tick()
 })
+
+// this is necessary?
+//    gl_FragDepth = lightDistance;
