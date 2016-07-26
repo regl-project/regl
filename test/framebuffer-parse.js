@@ -6,7 +6,13 @@ tape('framebuffer parsing', function (t) {
   var gl = createContext(16, 16)
   var regl = createREGL({
     gl: gl,
-    optionalExtensions: 'webgl_draw_buffers'
+    optionalExtensions: [
+      'webgl_draw_buffers',
+      'oes_texture_float',
+      'oes_texture_half_float',
+      'webgl_color_buffer_float',
+      'ext_color_buffer_half_float',
+      'ext_srgb']
   })
 
   function checkProperties (framebuffer, props, prefix) {
@@ -58,12 +64,14 @@ tape('framebuffer parsing', function (t) {
           label + ' object assoc')
       } else {
         t.equals(actual.renderbuffer, null, label + '.renderbuffer')
-        /*
         t.equals(
-          actual.texture._texture.params.internalformat,
+          actual.texture._texture.internalformat,
           expected.format,
           label + '.format')
-        */
+        t.equals(
+          actual.texture._texture.type,
+          expected.type,
+          label + '.type')
         t.equals(actual.texture.width, props.width, label + '.width')
         t.equals(actual.texture.height, props.height, label + '.height')
         t.equals(
@@ -124,7 +132,8 @@ tape('framebuffer parsing', function (t) {
       height: 1,
       color: [{
         target: gl.TEXTURE_2D,
-        format: gl.RGBA
+        format: gl.RGBA,
+        type: gl.UNSIGNED_BYTE
       }],
       depthStencil: {
         target: gl.RENDERBUFFER,
@@ -144,7 +153,8 @@ tape('framebuffer parsing', function (t) {
       height: 5,
       color: [{
         target: gl.TEXTURE_2D,
-        format: gl.RGBA
+        format: gl.RGBA,
+        type: gl.UNSIGNED_BYTE
       }],
       stencil: {
         target: gl.RENDERBUFFER,
@@ -196,9 +206,121 @@ tape('framebuffer parsing', function (t) {
     },
     'color renderbuffer')
 
-  // TODO: float, half float types
+  // next, we will 'colorType' and 'colorFormat'. We test for all possible combinations of these values.
 
-  if (regl.hasExtension('WEBGL_draw_buffers')) {
+  var testCases = [
+    {tex: true, colorFormat: 'rgba', colorType: 'uint8', expectedFormat: gl.RGBA, expectedType: gl.UNSIGNED_BYTE},
+    {tex: false, colorFormat: 'rgba4', expectedFormat: gl.RGBA4},
+    {tex: false, colorFormat: 'rgb565', expectedFormat: gl.RGB565},
+    {tex: false, colorFormat: 'rgb5 a1', expectedFormat: gl.RGB5_A1}
+  ]
+
+  // these test cases should fail.
+  var badTestCases = [
+    {colorFormat: 'alpha', colorType: 'uint8'},
+    {colorFormat: 'luminance', colorType: 'uint8'},
+    {colorFormat: 'luminance alpha', colorType: 'uint8'}
+  ]
+
+  if (regl.hasExtension('oes_texture_float')) {
+    testCases.push({tex: true, colorFormat: 'rgba', colorType: 'float', expectedFormat: gl.RGBA, expectedType: gl.FLOAT})
+    badTestCases.push({colorFormat: 'rgb', colorType: 'float'})
+  }
+
+  if (regl.hasExtension('oes_texture_half_float')) {
+    var GL_HALF_FLOAT_OES = 0x8D61
+    testCases.push({tex: true, colorFormat: 'rgba', colorType: 'half float', expectedFormat: gl.RGBA, expectedType: GL_HALF_FLOAT_OES})
+    badTestCases.push({colorFormat: 'rgb', colorType: 'half float'})
+  }
+
+  // We'll skip testing the renderbuffer formats rgba32f, rgba16f, rgb16f.
+  // Because the extensions 'ext_color_buffer_half_float' and
+  // 'webgl_color_buffer_float' have really spotty browser support.
+  // For me, they are available in Firefox, but not in Chrome, for some reason.
+
+  if (regl.hasExtension('ext_srgb')) {
+    var GL_SRGB8_ALPHA8_EXT = 0x8C43
+    testCases.push({tex: false, colorFormat: 'srgba', expectedFormat: GL_SRGB8_ALPHA8_EXT})
+  }
+
+  testCases.forEach(function (testCase, i) {
+    var fboArgs = {
+      shape: [10, 10],
+      colorFormat: testCase.colorFormat
+    }
+
+    var expected
+    if (testCase.tex) {
+      expected = {
+        target: gl.TEXTURE_2D,
+        format: testCase.expectedFormat,
+        type: testCase.expectedType
+      }
+      fboArgs.colorType = testCase.colorType
+    } else {
+      expected = {
+        target: gl.RENDERBUFFER,
+        format: testCase.expectedFormat
+      }
+    }
+
+    checkProperties(
+      regl.framebuffer(fboArgs),
+      {
+        width: 10,
+        height: 10,
+        color: [expected],
+        depthStencil: {
+          target: gl.RENDERBUFFER,
+          format: gl.DEPTH_STENCIL
+        }
+      },
+      'for colorFormat=' + testCase.colorFormat + (testCase.tex ? (' and colorType=' + testCase.colorType) : ''))
+  })
+
+  badTestCases.forEach(function (testCase, i) {
+    var fboArgs = {
+      shape: [10, 10],
+      colorFormat: testCase.colorFormat,
+      colorType: testCase.colorType
+    }
+
+    t.throws(
+      function () { regl.framebuffer(fboArgs) },
+        /\(regl\)/,
+      'throws for colorFormat=' + testCase.colorFormat + ' and colorType=' + testCase.colorType)
+  })
+
+  // we create the maximum number of possible color attachments.
+  // and make that colorType and colorFormat is applied for them all.
+  if (regl.hasExtension('webgl_draw_buffers')) {
+    var expected = {
+      width: 1,
+      height: 1,
+      color: [],
+      depthStencil: {
+        target: gl.RENDERBUFFER,
+        format: gl.DEPTH_STENCIL
+      }
+    }
+
+    for (var i = 0; i < regl.limits.maxColorAttachments; i++) {
+      expected.color[i] = {target: gl.TEXTURE_2D, format: gl.RGBA, type: gl.UNSIGNED_BYTE}
+    }
+
+    checkProperties(
+      regl.framebuffer({colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments}),
+      expected,
+      'for MRT with colorCount: ' + regl.limits.maxColorAttachments)
+
+    t.throws(
+      function () { regl.framebuffer({colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments + 1}) },
+        /\(regl\)/,
+      'throws for exceeding regl.limits.maxColorAttachments')
+  }
+
+  if (
+    regl.hasExtension('webgl_draw_buffers') && regl.hasExtension('oes_texture_float') && regl.hasExtension('oes_texture_half_float')) {
     t.throws(function () {
       regl.framebuffer({
         color: [
@@ -237,9 +359,10 @@ tape('framebuffer parsing', function (t) {
       thrown = true
     }
 
-    // TODO: multiple render targets
     t.equals(thrown, false, 'check color attachments with same bit planes do not throw')
   }
+
+  // TODO: multiple render targets
 
   regl.destroy()
   createContext.destroy(gl)

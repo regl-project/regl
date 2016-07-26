@@ -72,7 +72,6 @@ const setupCubeFace = regl({
 })
 
 const cubeProps = {
-  eye: null,
   projection: new Float32Array(16),
   view: new Float32Array(16),
   cubeFBO: null
@@ -89,6 +88,9 @@ function setupCube ({center, fbo}, block) {
   cubeProps.cubeFBO = fbo
   cubeProps.center = center
 
+  // execute `setupCubeFace` 6 times, where each time will be
+  // a different batch, and the batchIds of the 6 batches will be
+  // 0, 1, 2, 3, 4, 5
   setupCubeFace.call(cubeProps, 6, block)
 }
 
@@ -129,7 +131,7 @@ const vertexShader = `
     vec4 worldNormal = model * vec4(normal, 0);
 
     fragNormal = normalize(worldNormal.xyz);
-    eyeDir = normalize(eye - worldPos.xyz / worldPos.w);
+    eyeDir = normalize(eye - worldPos.xyz);
     gl_Position = projection * view * worldPos;
   }
 `
@@ -194,12 +196,12 @@ const drawTeapot = regl({
     projection: regl.context('projection'),
     eye: regl.context('eye'),
     tint: regl.prop('tint'),
-    indexOfRefraction: regl.prop('refract'),
     envMap: teapotFBO.color[0],
     model: (context, {position}) => mat4.translate([], mat4.identity([]), position)
   }
 })
 
+// draw checkered floor.
 const drawGround = regl({
   frag: `
   precision highp float;
