@@ -109,12 +109,12 @@ You can also use `regl` as a standalone script if you are really stubborn.  The 
 ## Why use `regl`?
 `regl` is basically all of WebGL without all of the shared state.  You can do anything you could in regular WebGL with little overhead and way less debugging. Selling points of `regl` are:
 
-* `regl` makes it easy to load extensions and to adapt the program after the limits of the target device, and exposes many WebGL extensions for easy usage. See [API.md](API.md) for more info. 
-* `regl`, in difference to many other WebGL frameworks, has support for easy usage of instanced rendering. See [this example](https://github.com/mikolalysenko/regl/blob/gh-pages/example/instance-triangle.js) for more details. 
+* `regl` makes it easy to load extensions and to adapt the program after the limits of the target device, and exposes many WebGL extensions for easy usage. See [API.md](API.md) for more info.
+* `regl`, in difference to many other WebGL frameworks, has support for easy usage of instanced rendering. See [this example](https://github.com/mikolalysenko/regl/blob/gh-pages/example/instance-triangle.js) for more details.
 * `regl` integrates easily with modules from `stack.gl`, such `gl-mat4` and `gl-vec3`.
-* `regl` is small and bloat-free; A minimized version of [`three.js`](http://threejs.org/) is ~500Kb, while a minimized version of `regl` is only `71Kb`. 
-* `regl` has little overhead, and is near as fast as hand-optimized WebGL. You can compare the performance at the [interactive benchmarks](https://mikolalysenko.github.io/regl/www/bench.html). The benchmark `cube` measures the performance of rendering a textured cube in `regl`, and `cube-webgl` does the same thing, but in raw WebGL. 
-* `regl` performs strong error validation and sanity checking in debug builds. But for production builds of `regl`, all validation will be stripped away. 
+* `regl` is small and bloat-free; A minimized version of [`three.js`](http://threejs.org/) is ~500Kb, while a minimized version of `regl` is only `71Kb`.
+* `regl` has little overhead, and is near as fast as hand-optimized WebGL. You can compare the performance at the [interactive benchmarks](https://mikolalysenko.github.io/regl/www/bench.html). The benchmark `cube` measures the performance of rendering a textured cube in `regl`, and `cube-webgl` does the same thing, but in raw WebGL.
+* `regl` performs strong error validation and sanity checking in debug builds. But for production builds of `regl`, all validation will be stripped away.
 
 
 ### Comparisons
@@ -559,7 +559,7 @@ You can run benchmarks locally using `npm run bench` or check them out here:
 
 You can also check out our benchmarking results for the last couple of days:
 
-* [Benchmarking Results](https://mikolalysenko.github.io/regl/www/bench-results/bench-result-702e3a47801d502c5b5d)
+* [Benchmarking Results](https://mikolalysenko.github.io/regl/www/bench-results/bench-result-8ea4a7e806beed0b9732)
 
 The benchmarking results were created by using our custom scripts `bench-history` and
 `bench-graph`. You can read more about them in [DEVELOPING.md](DEVELOPING.md).
