@@ -147,7 +147,7 @@ tape('texture cube', function (t) {
     ]
   })
 
-  checkProperties('empty - object', regl.cube(), {
+  checkProperties('empty - object', regl.cube({}), {
     width: 1,
     height: 1,
     faces: [
