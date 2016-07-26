@@ -296,10 +296,6 @@ tape('texture 2d', function (t) {
       ]
     }, '2d nested array')
 
-  checkShouldThrow({
-    shape: [0, 0]
-  }, '0x0')
-
   checkProperties(
     regl.texture({
       shape: [2, 2, 2],
