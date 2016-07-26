@@ -163,15 +163,18 @@ function createGraph (json) {
     // gather test data for this test case.
     var data = []
     for (var i = 0; i < json.testResults.length; i++) {
-      data.push({
-        date: new Date(json.testResults[i].timestamp * 1000),
-        title: json.testResults[i].title,
-        description: json.testResults[i].description,
-        hash: json.testResults[i].hash,
-        author: json.testResults[i].author,
 
-        testData: json.testResults[i].testData[testCase]
-      })
+      if(json.testResults[i].testData[testCase]) {
+        data.push({
+          date: new Date(json.testResults[i].timestamp * 1000),
+          title: json.testResults[i].title,
+          description: json.testResults[i].description,
+          hash: json.testResults[i].hash,
+          author: json.testResults[i].author,
+
+          testData: json.testResults[i].testData[testCase]
+        })
+      }
     }
 
     // add svg canvas.
