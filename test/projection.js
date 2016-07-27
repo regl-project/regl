@@ -21,7 +21,7 @@ tape('glsl projection test', function (t) {
         'uniform vec2 offset;',
         'void main () {',
         '  vec2 pixel = p + offset;',
-        '  vec2 clip = 2.0 * (pixel - float(' + 0.5 * RESOLUTION + ') + 1.0) / float(' + RESOLUTION + ');',
+        '  vec2 clip = 0.25 * (pixel - 3.5);',
         '  gl_Position = vec4(clip, 0, 1);',
         '}'
       ].join('\n')
