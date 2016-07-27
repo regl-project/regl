@@ -12,7 +12,7 @@ function find (array, pred) {
 
 tape('batch', function (t) {
   setTimeout(function () {
-    var gl = createContext(5, 5)
+    var gl = createContext(8, 8)
     var regl = createREGL(gl)
 
     var points = [
@@ -38,7 +38,7 @@ tape('batch', function (t) {
         'attribute vec2 position;',
         'uniform vec2 offset;',
         'void main() {',
-        '  gl_Position = vec4(position + offset, 0, 1);',
+        '  gl_Position = vec4(0.25 * (position + offset - 3.5), 0, 1);',
         '}'
       ].join('\n'),
 
@@ -70,7 +70,7 @@ tape('batch', function (t) {
         'attribute vec2 position;',
         'uniform vec2 offset;',
         'void main() {',
-        '  gl_Position = vec4(position + offset, 0, 1);',
+        '  gl_Position = vec4(0.25 * (position + offset - 3.5), 0, 1);',
         '}'
       ].join('\n'),
 
@@ -82,8 +82,7 @@ tape('batch', function (t) {
 
       uniforms: {
         offset: function (context, props, batchId) {
-          var p = points[batchId]
-          return [(p[0] - 2.0) / 2.1, (p[1] - 2.0) / 2.1]
+          return points[batchId]
         }
       },
 
@@ -97,9 +96,9 @@ tape('batch', function (t) {
     function runTest () {
       var pixels = regl.read()
 
-      for (var i = 0; i < 5; ++i) {
-        for (var j = 0; j < 5; ++j) {
-          var ptr = 4 * (5 * i + j)
+      for (var i = 0; i < 8; ++i) {
+        for (var j = 0; j < 8; ++j) {
+          var ptr = 4 * (8 * i + j)
           var hit = !!find(points, function (p) {
             return p[0] === i && p[1] === j
           })
@@ -117,7 +116,7 @@ tape('batch', function (t) {
 
     drawBatch(points.map(function (p) {
       return {
-        offset: [(p[0] - 2.0) / 2.1, (p[1] - 2.0) / 2.1]
+        offset: p
       }
     }))
     runTest()
