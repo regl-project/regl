@@ -2107,7 +2107,7 @@ var pixels = regl.read({
 })
 
 // You can also read from the currently bound fbo.
-// Note that `pixels`  will be of type `Float32Array`
+// Note that `pixels` will be of type `Float32Array`
 // in this case.
 fbo = regl.framebuffer({
   width: W,
@@ -2137,7 +2137,6 @@ regl({framebuffer: fbo})(() => {
 
 * You can only read pixels from a framebuffer of type `'uint8'` or
   `'float'`. Furthermore, it is not possible to read from a renderbuffer.
-  renderbuffer.
 
 **Relevant WebGL APIs**
 
