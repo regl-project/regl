@@ -2105,6 +2105,20 @@ var pixels = regl.read({
   height: 1,
   data: new Uint8Array(12)
 })
+
+// You can also read from the currently bound fbo.
+// Note that `pixels` will be of type `Float32Array`
+// in this case.
+fbo = regl.framebuffer({
+  width: W,
+  height: H,
+  colorFormat: 'rgba',
+  colorType: 'float'
+})
+regl({framebuffer: fbo})(() => {
+  regl.clear({color: [0.5, 0.25, 0.5, 0.25]})
+  var pixels = regl.read()
+})
 ```
 
 | Property | Description | Default |
@@ -2117,7 +2131,12 @@ var pixels = regl.read({
 
 **Notes**
 
-* In order to read pixels from the drawing buffer, you must create your webgl context with `preserveDrawingBuffer` set to `true`.  If this is not set, then `regl.read` will throw an exception.
+* In order to read pixels from the drawing buffer, you must create
+  your webgl context with `preserveDrawingBuffer` set to `true`.  If
+  this is not set, then `regl.read` will throw an exception.
+
+* You can only read pixels from a framebuffer of type `'uint8'` or
+  `'float'`. Furthermore, it is not possible to read from a renderbuffer.
 
 **Relevant WebGL APIs**
 
