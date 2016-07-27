@@ -1,5 +1,6 @@
 require('../constructor')
 require('../projection')
+require('../projection-lines')
 require('../frame')
 require('../frame-destroy')
 require('../resize')
