@@ -72,20 +72,20 @@ tape('read pixels', function (t) {
     colorFormat: 'rgba',
     colorType: 'uint8'
   })
-  regl({framebuffer: fbo})(() => {
+  regl({framebuffer: fbo})(function () {
     regl.clear({color: [0.5, 0, 0, 1]})
     pixels = regl.read()
     checkFBO(pixels, [128, 0, 0, 255], 'read uint8 fbo ok')
   })
 
-  regl({framebuffer: fbo})(() => {
+  regl({framebuffer: fbo})(function () {
     regl.clear({color: [0.5, 0, 0, 1]})
     pixels = new Uint8Array(W * H * 4)
     regl.read({data: pixels})
     checkFBO(pixels, [128, 0, 0, 255], 'read uint8 fbo, reuse buffer, ok')
   })
 
-  regl({framebuffer: fbo})(() => {
+  regl({framebuffer: fbo})(function () {
     pixels = new Float32Array(W * H * 4)
     throws('throws if attempt use Float32Array to uint8 fbo', [{data: pixels}])
     throws('throws if attempt use object to uint8 fbo', [{data: {}}])
@@ -100,20 +100,20 @@ tape('read pixels', function (t) {
       colorType: 'float'
     })
 
-    regl({framebuffer: fbo})(() => {
+    regl({framebuffer: fbo})(function () {
       regl.clear({color: [0.5, 0.25, 0.5, 0.25]})
       pixels = regl.read()
       checkFBO(pixels, [0.5, 0.25, 0.5, 0.25], 'read float fbo ok')
     })
 
-    regl({framebuffer: fbo})(() => {
+    regl({framebuffer: fbo})(function () {
       regl.clear({color: [0.5, 0.25, 0.5, 0.25]})
       pixels = new Float32Array(W * H * 4)
       regl.read({data: pixels})
       checkFBO(pixels, [0.5, 0.25, 0.5, 0.25], 'read float fbo, reuse buffer, ok')
     })
 
-    regl({framebuffer: fbo})(() => {
+    regl({framebuffer: fbo})(function () {
       pixels = new Uint8Array(W * H * 4)
       throws('throws if attempt use Uint8Array to float fbo', [{data: pixels}])
       throws('throws if attempt use object to float fbo', [{data: {}}])
@@ -134,7 +134,7 @@ tape('read pixels', function (t) {
       width: W,
       height: H
     })
-    regl({framebuffer: fbo})(() => {
+    regl({framebuffer: fbo})(function () {
       throws('attempt to read from renderbuffer of type ' + testCase, [{}])
     })
   })
