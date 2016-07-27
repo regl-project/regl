@@ -3,13 +3,13 @@ var createREGL = require('../../regl')
 var tape = require('tape')
 
 tape('scope', function (t) {
-  var gl = createContext(5, 5)
+  var gl = createContext(8, 8)
   var regl = createREGL(gl)
 
   function checkPixmap (expected, remark) {
     var pixels = regl.read()
-    var actual = Array(25)
-    for (var i = 0; i < 25; ++i) {
+    var actual = Array(64)
+    for (var i = 0; i < 64; ++i) {
       actual[i] = Math.min(1, pixels[4 * i])
     }
     t.same(actual, expected, remark)
@@ -28,7 +28,7 @@ tape('scope', function (t) {
       'attribute vec2 position;',
       'varying vec4 fragColor;',
       'void main() {',
-      'gl_Position=vec4((position - 2.0) / 2.1, 0, 1);',
+      'gl_Position=vec4(0.25 * (position - 3.5), 0, 1);',
       '}'
     ].join('\n'),
 
@@ -73,11 +73,14 @@ tape('scope', function (t) {
       primitive: 'points'
     })
     checkPixmap([
-      0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0,
-      0, 0, 1, 0, 0,
-      0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 1, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0
     ], 'scope (draw - batch - draw) : first draw')
 
     scope([{
@@ -87,21 +90,27 @@ tape('scope', function (t) {
       primitive: 'points'
     }])
     checkPixmap([
-      0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0,
-      0, 0, 1, 0, 0,
-      0, 0, 0, 1, 0,
-      0, 0, 0, 0, 0
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 1, 0, 0, 0, 0, 0,
+      0, 0, 0, 1, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0
     ], 'scope (draw - batch - draw) : second draw')
 
     regl.draw()
   })
   checkPixmap([
-    1, 0, 0, 0, 1,
-    0, 0, 0, 0, 0,
-    0, 0, 1, 0, 0,
-    0, 0, 0, 1, 0,
-    1, 0, 0, 0, 1
+    1, 0, 0, 0, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 1, 0, 0, 0, 0, 0,
+    0, 0, 0, 1, 0, 0, 0, 0,
+    1, 0, 0, 0, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
   ], 'scope (draw - batch - draw) : result')
 
   // test setting uniforms with scope
