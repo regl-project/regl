@@ -3,7 +3,7 @@ var createREGL = require('../../regl')
 var tape = require('tape')
 
 tape('this / state variables', function (t) {
-  var gl = createContext(5, 5)
+  var gl = createContext(8, 8)
   var regl = createREGL(gl)
 
   function checkPixmap (slots, args, expected, remark) {
@@ -21,7 +21,7 @@ tape('this / state variables', function (t) {
         'varying vec4 fragColor;',
         'uniform vec2 offset;',
         'void main() {',
-        'gl_Position=vec4((offset + position - 2.0) / 2.1, 0, 1);',
+        'gl_Position=vec4(0.25 * (offset + position - 3.5), 0, 1);',
         '}'
       ].join('\n'),
 
@@ -40,8 +40,8 @@ tape('this / state variables', function (t) {
 
     function checkPixels (suffix) {
       var pixels = regl.read()
-      var actual = new Array(25)
-      for (var i = 0; i < 25; ++i) {
+      var actual = new Array(64)
+      for (var i = 0; i < 64; ++i) {
         actual[i] = Math.min(1, pixels[4 * i])
       }
       t.same(actual, expected, remark + ' - ' + suffix)
@@ -69,11 +69,14 @@ tape('this / state variables', function (t) {
     _offset: 1,
     __offset: [0, 0]
   }, [
-    0, 0, 0, 0, 1,
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-    1, 0, 0, 0, 1
+    0, 0, 0, 0, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    1, 0, 0, 0, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
   ], 'draw state')
 
   checkPixmap({
@@ -85,17 +88,15 @@ tape('this / state variables', function (t) {
   }, {
     offset: [2, 2]
   }, [
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-    0, 0, 1, 0, 0,
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 1, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
   ], 'uniforms')
-
-  // TODO :
-  //   * attributes
-  //   * elements
-  //   * gl properties
 
   regl.destroy()
   createContext.destroy(gl)
