@@ -66,7 +66,7 @@ tape('read pixels', function (t) {
   throws('throws if attempt use object to null fbo', [{data: {}}])
 
   // now do it for an uint8 fbo
-  let fbo = regl.framebuffer({
+  var fbo = regl.framebuffer({
     width: W,
     height: H,
     colorFormat: 'rgba',
