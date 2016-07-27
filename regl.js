@@ -131,7 +131,7 @@ module.exports = function wrapREGL (args) {
     framebufferState,
     core.procs.poll,
     contextState,
-    glAttributes)
+    glAttributes, extensions)
 
   var nextState = core.next
   var canvas = gl.canvas
