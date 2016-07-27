@@ -8,7 +8,7 @@ tape('read pixels', function (t) {
   var gl = createContext(W, H)
   var regl = createREGL({
     gl: gl,
-    optionalExtensions: 'oes_texture_float'
+    optionalExtensions: ['oes_texture_float', 'ext_srgb']
   })
 
   function checkFBO (pixels, color, name) {
@@ -62,8 +62,8 @@ tape('read pixels', function (t) {
   checkFBO(pixels, [128, 0, 0, 255], 'read null fbo, reuse buffer, ok')
 
   pixels = new Float32Array(W * H * 4)
-  throws('attempt use Float32Array to null fbo', [{data: pixels}])
-  throws('attempt use object to null fbo', [{data: {}}])
+  throws('throws if attempt use Float32Array to null fbo', [{data: pixels}])
+  throws('throws if attempt use object to null fbo', [{data: {}}])
 
   // now do it for an uint8 fbo
   let fbo = regl.framebuffer({
@@ -87,8 +87,8 @@ tape('read pixels', function (t) {
 
   regl({framebuffer: fbo})(() => {
     pixels = new Float32Array(W * H * 4)
-    throws('attempt use Float32Array to uint8 fbo', [{data: pixels}])
-    throws('attempt use object to uint8 fbo', [{data: {}}])
+    throws('throws if attempt use Float32Array to uint8 fbo', [{data: pixels}])
+    throws('throws if attempt use object to uint8 fbo', [{data: {}}])
   })
 
   // now do it for an float fbo
@@ -115,10 +115,29 @@ tape('read pixels', function (t) {
 
     regl({framebuffer: fbo})(() => {
       pixels = new Uint8Array(W * H * 4)
-      throws('attempt use Uint8Array to float fbo', [{data: pixels}])
-      throws('attempt use object to float fbo', [{data: {}}])
+      throws('throws if attempt use Uint8Array to float fbo', [{data: pixels}])
+      throws('throws if attempt use object to float fbo', [{data: {}}])
     })
   }
+
+  var badTestCases = []
+  badTestCases.push('rgba4')
+  badTestCases.push('rgb565')
+  badTestCases.push('rgb5 a1')
+  if (regl.hasExtension('ext_srgb')) {
+    badTestCases.push('srgba')
+  }
+
+  badTestCases.forEach(function (testCase, i) {
+    fbo = regl.framebuffer({
+      colorFormat: testCase,
+      width: W,
+      height: H
+    })
+    regl({framebuffer: fbo})(() => {
+      throws('attempt to read from renderbuffer of type ' + testCase, [{}])
+    })
+  })
 
   regl.destroy()
   createContext.destroy(gl)
