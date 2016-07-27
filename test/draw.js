@@ -3,7 +3,7 @@ var createREGL = require('../../regl')
 var tape = require('tape')
 
 tape('drawing', function (t) {
-  var gl = createContext(5, 5)
+  var gl = createContext(8, 8)
   var regl = createREGL(gl)
 
   function checkPixmap (args, expected, remark) {
@@ -20,7 +20,7 @@ tape('drawing', function (t) {
         'attribute vec2 position;',
         'varying vec4 fragColor;',
         'void main() {',
-        'gl_Position=vec4((position - 2.0) / 2.1, 0, 1);',
+        'gl_Position=vec4(0.25 * (position - 3.5), 0, 1);',
         '}'
       ].join('\n'),
 
@@ -37,8 +37,8 @@ tape('drawing', function (t) {
 
     function runCheck (suffix) {
       var pixels = regl.read()
-      var actual = new Array(25)
-      for (var i = 0; i < 25; ++i) {
+      var actual = new Array(64)
+      for (var i = 0; i < 64; ++i) {
         actual[i] = Math.min(1, pixels[4 * i])
       }
       t.same(actual, expected, remark + ' - ' + suffix)
@@ -66,11 +66,14 @@ tape('drawing', function (t) {
     primitive: 'points',
     count: 4
   }, [
-    1, 0, 0, 0, 1,
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-    1, 0, 0, 0, 1
+    1, 0, 0, 0, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    1, 0, 0, 0, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
   ], 'point')
 
   // lines
@@ -78,11 +81,14 @@ tape('drawing', function (t) {
     primitive: 'lines',
     count: 2
   }, [
-    1, 1, 1, 1, 1,
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0
+    1, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
   ], 'line')
 
   // line strip
@@ -90,11 +96,14 @@ tape('drawing', function (t) {
     primitive: 'line strip',
     count: 3
   }, [
-    1, 1, 1, 1, 1,
-    0, 0, 0, 0, 1,
-    0, 0, 0, 0, 1,
-    0, 0, 0, 0, 1,
-    0, 0, 0, 0, 1
+    1, 1, 1, 1, 1, 0, 0, 0,
+    0, 0, 0, 0, 1, 0, 0, 0,
+    0, 0, 0, 0, 1, 0, 0, 0,
+    0, 0, 0, 0, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
   ], 'line strip')
 
   // line loop
@@ -102,11 +111,14 @@ tape('drawing', function (t) {
     primitive: 'line loop',
     count: 4
   }, [
-    1, 1, 1, 1, 1,
-    1, 0, 0, 0, 1,
-    1, 0, 0, 0, 1,
-    1, 0, 0, 0, 1,
-    1, 1, 1, 1, 1
+    1, 1, 1, 1, 1, 0, 0, 0,
+    1, 0, 0, 0, 1, 0, 0, 0,
+    1, 0, 0, 0, 1, 0, 0, 0,
+    1, 0, 0, 0, 1, 0, 0, 0,
+    1, 1, 1, 1, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
   ], 'line loop')
 
   // triangles
@@ -114,11 +126,14 @@ tape('drawing', function (t) {
     primitive: 'triangles',
     count: 3
   }, [
-    1, 1, 1, 1, 1,
-    0, 1, 1, 1, 1,
-    0, 0, 1, 1, 1,
-    0, 0, 0, 1, 1,
-    0, 0, 0, 0, 1
+    1, 1, 1, 1, 0, 0, 0, 0,
+    0, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 1, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
   ], 'triangles')
 
   // triangle strip
@@ -126,11 +141,14 @@ tape('drawing', function (t) {
     primitive: 'triangle strip',
     count: 4
   }, [
-    1, 1, 1, 1, 1,
-    0, 1, 1, 1, 1,
-    0, 0, 1, 1, 1,
-    0, 1, 1, 1, 1,
-    1, 1, 1, 1, 1
+    1, 1, 1, 1, 0, 0, 0, 0,
+    0, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, 1, 1, 0, 0, 0, 0,
+    0, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
   ], 'triangle strip')
 
   // triangle fan
@@ -138,11 +156,14 @@ tape('drawing', function (t) {
     primitive: 'triangle fan',
     count: 4
   }, [
-    1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1
+    1, 1, 1, 1, 0, 0, 0, 0,
+    1, 1, 1, 1, 0, 0, 0, 0,
+    1, 1, 1, 1, 0, 0, 0, 0,
+    1, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
   ], 'triangle fan')
 
   regl.destroy()
