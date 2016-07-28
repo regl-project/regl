@@ -62,7 +62,7 @@
     "bench-graph": "node bench/bench-graph.js",
     "bench-history": "node bench/bench-history",
     "build": "npm run build-script && npm run build-min && npm run build-bench && npm run build-gallery && npm run size",
-    "size": "browserify --full-paths regl.js | discify > www/size.html",
+    "size": "browserify --full-paths --transform ./bin/remove-check.js regl.js | discify > www/size.html",
     "build-script": "browserify regl.js --standalone reglInit > dist/regl.js",
     "build-min": "node bin/build-min.js",
     "build-bench": "browserify bench/bench.js | indexhtmlify > www/bench.html",
