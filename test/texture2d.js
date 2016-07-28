@@ -140,6 +140,8 @@ tape('texture 2d', function (t) {
           component: c
         })
 
+        t.equals(gl.getError(), 0, name + ': error code is ok')
+
         var bits = regl.read()
         var floats = new Float32Array(bits.buffer)
         for (i = 0; i < floats.length; ++i) {
@@ -155,6 +157,8 @@ tape('texture 2d', function (t) {
         texture: texture,
         shape: [width, height]
       })
+
+      t.equals(gl.getError(), 0, name + ': error code is ok')
 
       var actual = regl.read()
       for (i = 0; i < expected.length; ++i) {
@@ -714,6 +718,76 @@ tape('texture 2d', function (t) {
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     ])
   }, 'copyTexSubImage')
+
+  // Test resize
+  var initTexture = regl.texture({
+    width: 2,
+    height: 2,
+    data: [
+      255, 0, 255, 255, 255, 0, 255, 255,
+      255, 0, 255, 255, 255, 0, 255, 255
+    ]
+  })
+
+  checkProperties(initTexture, {
+    width: 2,
+    height: 2,
+    pixels: new Uint8Array([
+      255, 0, 255, 255, 255, 0, 255, 255,
+      255, 0, 255, 255, 255, 0, 255, 255
+    ])
+  }, 'simple before resize')
+
+  initTexture.resize(3, 3)
+
+  checkProperties(initTexture, {
+    width: 3,
+    height: 3,
+    pixels: new Uint8Array([
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ])
+  }, 'simple after resize')
+
+  var mipTexture = regl.texture({
+    width: 4,
+    height: 4,
+    min: 'mipmap',
+    mag: 'linear',
+    data: [
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
+    ]
+  })
+
+  checkProperties(mipTexture, {
+    width: 4,
+    height: 4,
+    magFilter: gl.LINEAR,
+    minFilter: gl.LINEAR_MIPMAP_LINEAR,
+    pixels: new Uint8Array([
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
+    ])
+  }, 'mipmap before resize')
+
+  mipTexture.resize(2)
+
+  checkProperties(mipTexture, {
+    width: 2,
+    height: 2,
+    magFilter: gl.LINEAR,
+    minFilter: gl.LINEAR_MIPMAP_LINEAR,
+    pixels: new Uint8Array([
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0
+    ])
+  }, 'mipmap after resize')
 
   function runDOMTests () {
     var canvas = document.createElement('canvas')
