@@ -52,14 +52,14 @@ tape('read pixels', function (t) {
   throws('small typedarray', [new Uint8Array(1)])
 
   // check pixels for default framebuffer
-  regl.clear({color: [0.5, 0, 0, 1]})
+  regl.clear({color: [1, 0, 0, 1]})
   var pixels = regl.read()
-  checkFBO(pixels, [128, 0, 0, 255], 'read null fbo ok')
+  checkFBO(pixels, [255, 0, 0, 255], 'read null fbo ok')
 
-  regl.clear({color: [0.5, 0, 0, 1]})
+  regl.clear({color: [1, 0, 0, 1]})
   pixels = new Uint8Array(W * H * 4)
   regl.read({data: pixels})
-  checkFBO(pixels, [128, 0, 0, 255], 'read null fbo, reuse buffer, ok')
+  checkFBO(pixels, [255, 0, 0, 255], 'read null fbo, reuse buffer, ok')
 
   pixels = new Float32Array(W * H * 4)
   throws('throws if attempt use Float32Array to null fbo', [{data: pixels}])
@@ -73,16 +73,16 @@ tape('read pixels', function (t) {
     colorType: 'uint8'
   })
   regl({framebuffer: fbo})(function () {
-    regl.clear({color: [0.5, 0, 0, 1]})
+    regl.clear({color: [1, 0, 0, 1]})
     pixels = regl.read()
-    checkFBO(pixels, [128, 0, 0, 255], 'read uint8 fbo ok')
+    checkFBO(pixels, [255, 0, 0, 255], 'read uint8 fbo ok')
   })
 
   regl({framebuffer: fbo})(function () {
-    regl.clear({color: [0.5, 0, 0, 1]})
+    regl.clear({color: [1, 0, 0, 1]})
     pixels = new Uint8Array(W * H * 4)
     regl.read({data: pixels})
-    checkFBO(pixels, [128, 0, 0, 255], 'read uint8 fbo, reuse buffer, ok')
+    checkFBO(pixels, [255, 0, 0, 255], 'read uint8 fbo, reuse buffer, ok')
   })
 
   regl({framebuffer: fbo})(function () {
