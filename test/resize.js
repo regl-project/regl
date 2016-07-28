@@ -4,7 +4,10 @@ var tape = require('tape')
 
 tape('test drawing buffer size polling', function (t) {
   var gl = createContext(5, 5)
-  var regl = createREGL(gl)
+  var regl = createREGL({
+    gl: gl,
+    pixelRatio: 1
+  })
 
   var frame = regl.frame(function (context) {
     if (context.tick === 1) {
