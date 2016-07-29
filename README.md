@@ -113,7 +113,7 @@ You can also use `regl` as a standalone script if you are really stubborn.  The 
 * `regl`, in difference to many other WebGL frameworks, has support for easy usage of instanced rendering. See [this example](https://github.com/mikolalysenko/regl/blob/gh-pages/example/instance-triangle.js) for more details.
 * `regl` integrates easily with modules from `stack.gl`, such `gl-mat4` and `gl-vec3`.
 * `regl` is small and bloat-free; A minimized version of [`three.js`](http://threejs.org/) is ~500Kb, while a minimized version of `regl` is only `71Kb`.
-* `regl` has little overhead, and is near as fast as hand-optimized WebGL. You can compare the performance at the [interactive benchmarks](https://mikolalysenko.github.io/regl/www/bench.html). The benchmark `cube` measures the performance of rendering a textured cube in `regl`, and `cube-webgl` does the same thing, but in raw WebGL.
+* `regl` has little overhead, and is near as fast as hand-optimized WebGL. You can compare the performance at the [interactive benchmarks](https://mikolalysenko.github.io/regl/www/bench.html). The benchmark `cube` measures the performance of rendering a textured cube in `regl`, and `cube-webgl` does the same thing, but in raw WebGL. And `cube-threejs` does the same thing, but in `three.js`. In particular, notice how much faster `regl` is than `three.js`
 * `regl` performs strong error validation and sanity checking in debug builds. But for production builds of `regl`, all validation will be stripped away.
 
 

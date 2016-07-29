@@ -49,6 +49,7 @@
     "tap-browser-color": "^0.1.2",
     "tape": "^4.4.0",
     "teapot": "^1.0.0",
+    "three": "^0.79.0",
     "through2": "^2.0.1",
     "vectorize-text": "^3.0.2"
   },
