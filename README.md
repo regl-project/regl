@@ -81,7 +81,7 @@ See this example [live](http://regl.party/examples/?basic)
 
 #### More examples
 
-Check out the [gallery](http://mikolalysenko.github.io/regl/www/gallery.html). The source code of all the gallery examples can be found [here](https://github.com/mikolalysenko/regl/tree/gh-pages/example). 
+Check out the [gallery](http://mikolalysenko.github.io/regl/www/gallery.html). The source code of all the gallery examples can be found [here](https://github.com/mikolalysenko/regl/tree/gh-pages/example).
 
 ## Setup
 
@@ -562,6 +562,7 @@ TODO
     var camera;
     var renderer;
     var mesh;
+    var tick;
 
     function start() {
       init();
@@ -570,7 +571,7 @@ TODO
     }
 
     function drawShape() {
-      var geo = new THREE.CubeGeometry(10, 10, 10);
+      var geo = new THREE.CubeGeometry(1.0, 1.0, 1.0);
 
       var texture = THREE.ImageUtils.loadTexture('../example/assets/lena.png');
       var mats = [];
@@ -582,6 +583,8 @@ TODO
       mesh = new THREE.Mesh(geo, mat);
 
       scene.add(mesh);
+
+      tick = 0;
     }
 
     function init() {
@@ -592,16 +595,16 @@ TODO
       renderer.setPixelRatio( window.devicePixelRatio );
       renderer.setSize( window.innerWidth, window.innerHeight );
 
-      camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 );
-      camera.position.z = 30;
+      camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 100 );
     }
 
     function rotateCube() {
-      var SPEED = 0.01;
+      tick += 1
+      var t = tick * 0.01
 
-      mesh.rotation.x -= SPEED;
-      mesh.rotation.y -= SPEED;
-      mesh.rotation.z -= SPEED;
+      camera.position.set(5 * Math.cos(t), 2.5 * Math.sin(t), 5 * Math.sin(t))
+      camera.up = new THREE.Vector3(0, 1, 0)
+      camera.lookAt(new THREE.Vector3(0, 0, 0))
     }
 
     function render() {
@@ -618,6 +621,7 @@ TODO
     </canvas>
   </body>
 </html>
+
 ```
 
 
