@@ -85,11 +85,21 @@ tape('framebuffer', function (t) {
     checkFBO(props, prefix)
   }
 
+  var i
+
   var testFBO1 = regl.framebuffer({
     radius: 5
   })
 
   var testFBO2 = regl.framebuffer({
+    radius: 8
+  })
+
+  var testCubeFBO1 = regl.framebufferCube({
+    radius: 5
+  })
+
+  var testCubeFBO2 = regl.framebufferCube({
     radius: 8
   })
 
@@ -111,6 +121,21 @@ tape('framebuffer', function (t) {
     }, 'fbo 1 - static')
   })
 
+  if (typeof document !== 'undefined') {
+    for (i = 0; i < 6; i++) {
+      setFramebufferStatic({
+        framebuffer: testCubeFBO1.faces[i]
+      }, function () {
+        clearCheck({
+          width: 5,
+          height: 5,
+          framebuffer: testCubeFBO1.faces[i],
+          color: [0, 255, 0, 255]
+        }, 'cube fbo 1 - static, face #' + i)
+      })
+    }
+  }
+
   clearCheck({
     width: 16,
     height: 16,
@@ -130,6 +155,22 @@ tape('framebuffer', function (t) {
     }, 'fbo 2 - dynamic')
   })
 
+  if (typeof document !== 'undefined') {
+    for (i = 0; i < 6; i++) {
+      setFramebufferDynamic({
+        framebuffer: testCubeFBO2.faces[i],
+        color: [0, 0, 0, 0]
+      }, function () {
+        clearCheck({
+          width: 8,
+          height: 8,
+          framebuffer: testCubeFBO2.faces[i],
+          color: [0, 0, 255, 255]
+        }, 'cube fbo 2 - dynamic, face #' + i)
+      })
+    }
+  }
+
   clearCheck({
     width: 16,
     height: 16,
@@ -148,6 +189,22 @@ tape('framebuffer', function (t) {
       color: [0, 255, 0, 255]
     }, 'fbo 1 - restore')
   })
+
+  if (typeof document !== 'undefined') {
+    for (i = 0; i < 6; i++) {
+      setFramebufferStatic({
+        framebuffer: testCubeFBO1.faces[i]
+      }, function () {
+        regl.clear({ depth: 1 })
+        checkFBO({
+          width: 5,
+          height: 5,
+          framebuffer: testCubeFBO1.faces[i],
+          color: [0, 255, 0, 255]
+        }, 'cube fbo 1 - restore, face #' + i)
+      })
+    }
+  }
 
   setFramebufferDynamic({
     framebuffer: testFBO2,
@@ -204,6 +261,65 @@ tape('framebuffer', function (t) {
     }, 'fbo 2 - restore')
   })
 
+  if (typeof document !== 'undefined') {
+    for (i = 0; i < 6; i++) {
+      setFramebufferDynamic({
+        framebuffer: testCubeFBO2.faces[i],
+        color: [0, 0, 0, 0]
+      }, function () {
+        regl.clear({ depth: 1 })
+        checkFBO({
+          width: 8,
+          height: 8,
+          framebuffer: testCubeFBO2.faces[i],
+          color: [0, 0, 255, 255]
+        }, 'cube fbo 2 - restore, face #' + i)
+
+        setFramebufferDynamic({
+          framebuffer: null,
+          color: [0, 0, 0, 0]
+        }, function () {
+          regl.clear({ depth: 1 })
+          checkFBO({
+            width: 16,
+            height: 16,
+            framebuffer: null,
+            color: [0, 0, 0, 255]
+          }, 'draw buffer nested')
+
+          setFramebufferDynamic({
+            framebuffer: testCubeFBO1.faces[(i + 1) % 6],
+            color: [0, 0, 0, 0]
+          }, function () {
+            regl.clear({ depth: 1 })
+            checkFBO({
+              width: 5,
+              height: 5,
+              framebuffer: testCubeFBO1.faces[(i + 1) % 6],
+              color: [0, 255, 0, 255]
+            }, 'cube fbo 1 - nested, face #' + (i + 1) % 6)
+          })
+
+          regl.clear({ depth: 1 })
+          checkFBO({
+            width: 16,
+            height: 16,
+            framebuffer: null,
+            color: [0, 0, 0, 255]
+          }, 'draw buffer nested return')
+        })
+
+        regl.clear({ depth: 1 })
+        checkFBO({
+          width: 8,
+          height: 8,
+          framebuffer: testCubeFBO2.faces[i],
+          color: [0, 0, 255, 255]
+        }, 'cube fbo 2 - restore, face #' + i)
+      })
+    }
+  }
+
   function checkContents (fbo, color, prefix) {
     setFramebufferDynamic({
       framebuffer: fbo,
@@ -232,6 +348,16 @@ tape('framebuffer', function (t) {
   })
   gl.finish()
 
+  /* if (typeof document !== 'undefined') {
+    for (i = 0; i < 6; i++) {
+      setFramebufferDynamic({
+        framebuffer: testCubeFBO1.faces[i],
+        color: [0, 1, 1, 1]
+      })
+    }
+  }*/
+  gl.finish()
+
   setFramebufferDynamic({
     framebuffer: testFBO2,
     color: [1, 1, 0, 1]
@@ -239,8 +365,16 @@ tape('framebuffer', function (t) {
   gl.finish()
 
   checkContents(null, [255, 0, 255, 255], 'draw drawing buffer')
-  checkContents(testFBO1, [0, 255, 255, 255], 'draw first fbo')
-  checkContents(testFBO2, [255, 255, 0, 255], 'draw second fbo')
+  checkContents(testFBO1, [0, 255, 255, 255], 'draw fbo 1')
+  checkContents(testFBO2, [255, 255, 0, 255], 'draw fbo 2')
+
+  // this test doesn't seem to pass.
+  // TODO: fix
+  /* if (typeof document !== 'undefined') {
+    for (i = 0; i < 6; i++) {
+      checkContents(testCubeFBO1.faces[i], [0, 255, 255, 255], 'cube draw fbo 1, face #' + i)
+    }
+  }*/
 
   // batch mode
   setFramebufferDynamic([
@@ -258,8 +392,8 @@ tape('framebuffer', function (t) {
     }
   ])
   checkContents(null, [0, 255, 0, 255], 'batch drawing fbo')
-  checkContents(testFBO1, [255, 0, 0, 255], 'batch first fbo')
-  checkContents(testFBO2, [0, 0, 255, 255], 'batch second fbo')
+  checkContents(testFBO1, [255, 0, 0, 255], 'batch fbo 1')
+  checkContents(testFBO2, [0, 0, 255, 255], 'batch fbo 2')
 
   regl.destroy()
   createContext.destroy(gl)
