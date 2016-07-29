@@ -129,15 +129,6 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
   var projectionUniformLocation
   var viewUniformLocation
 
-  gl.clearColor(0.0, 0.0, 0.0, 1.0)
-  gl.enable(gl.DEPTH_TEST)
-  gl.enable(gl.CULL_FACE)
-  gl.viewport(0, 0, canvasWidth, canvasHeight)
-
-  initShaders()
-  initBuffers()
-  initTextures()
-
   function initBuffers () {
     cubePositionBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, cubePositionBuffer)
@@ -173,6 +164,15 @@ module.exports = function (gl, canvasWidth, canvasHeight) {
   }
 
   function setupScene () {
+    gl.clearColor(0.0, 0.0, 0.0, 1.0)
+    gl.enable(gl.DEPTH_TEST)
+    gl.enable(gl.CULL_FACE)
+    gl.viewport(0, 0, canvasWidth, canvasHeight)
+
+    initShaders()
+    initBuffers()
+    initTextures()
+
     // bind buffers.
     gl.bindBuffer(gl.ARRAY_BUFFER, cubePositionBuffer)
     gl.enableVertexAttribArray(cubePositionAttribute)
