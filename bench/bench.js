@@ -190,6 +190,9 @@ Object.keys(CASES).map(function (caseName) {
   var sample = benchmark(caseName, CASES[caseName])
 
   if (isHeadless) {
+    if (caseName === 'cube-threejs') {
+      return // can't run this one in headless. Skip
+    }
     var bench = sample()
     json[caseName] = bench
     if (prettyPrint) {
