@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+  <head>
+    <title>threejs cube</title>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r79/three.min.js"></script>
+    <script type="text/javascript">
+    var scene;
+    var camera;
+    var renderer;
+    var mesh;
+
+    function start() {
+      init();
+      drawShape();
+      render();
+    }
+
+    function drawShape() {
+      var geo = new THREE.CubeGeometry(10, 10, 10);
+
+      var texture = THREE.ImageUtils.loadTexture('../example/assets/lena.png');
+      var mats = [];
+      for (var i = 0; i < 6; i++) {
+        mats.push(new THREE.MeshBasicMaterial({map: texture}));
+      }
+      var mat = new THREE.MeshFaceMaterial(mats);
+
+      mesh = new THREE.Mesh(geo, mat);
+
+      scene.add(mesh);
+    }
+
+    function init() {
+      scene = new THREE.Scene();
+
+      var canvas = document.getElementById('glcanvas');
+      renderer = new THREE.WebGLRenderer({canvas: canvas});
+      renderer.setPixelRatio( window.devicePixelRatio );
+      renderer.setSize( window.innerWidth, window.innerHeight );
+
+      camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 );
+      camera.position.z = 30;
+    }
+
+    function rotateCube() {
+      var SPEED = 0.01;
+
+      mesh.rotation.x -= SPEED;
+      mesh.rotation.y -= SPEED;
+      mesh.rotation.z -= SPEED;
+    }
+
+    function render() {
+      requestAnimationFrame(render);
+      rotateCube();
+      renderer.render(scene, camera);
+    }
+
+    </script>
+  </head>
+  <body onload="start()">
+    <canvas id="glcanvas" width="640" height="480">
+      Your browser doesn't appear to support the <code>&lt;canvas&gt;</code> element.
+    </canvas>
+  </body>
+</html>
