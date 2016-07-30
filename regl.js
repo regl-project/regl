@@ -284,6 +284,8 @@ module.exports = function wrapREGL (args) {
     var batch = compiled.batch
     var scope = compiled.scope
 
+    // FIXME: we should modify code generation for batch commands so this
+    // isn't necessary
     var EMPTY_ARRAY = []
     function reserve (count) {
       while (EMPTY_ARRAY.length < count) {
