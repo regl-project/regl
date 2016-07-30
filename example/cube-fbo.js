@@ -161,7 +161,7 @@ const drawBunny = regl({
     projection: regl.context('projection'),
     eye: regl.context('eye'),
     tint: regl.prop('tint'),
-    envMap: bunnyFBO.color[0],
+    envMap: bunnyFBO,
     model: (context, {position}) => mat4.translate(
       [], mat4.identity([]), position)
   }
@@ -196,7 +196,7 @@ const drawTeapot = regl({
     projection: regl.context('projection'),
     eye: regl.context('eye'),
     tint: regl.prop('tint'),
-    envMap: teapotFBO.color[0],
+    envMap: teapotFBO,
     model: (context, {position}) => mat4.translate([], mat4.identity([]), position)
   }
 })

@@ -172,7 +172,7 @@ const blurPass = regl({
   },
   uniforms: {
     src: (context, props) => {
-      return props.src.color[0]
+      return props.src
     },
     axis: (context, props) => {
       let result = [0, 0]
@@ -347,7 +347,7 @@ const renderPoints = regl({
     id: VERTEX_ID_BUFFER
   },
   uniforms: {
-    vertexState: ({tick}) => VERTEX_STATE[tick % 2].color[0]
+    vertexState: ({tick}) => VERTEX_STATE[tick % 2]
   },
   depth: {enable: false, mask: false},
   primitive: 'points',
@@ -389,7 +389,7 @@ const renderEdges = regl({
     arcDir: ARCS.map((arc, i) => i % 2)
   },
   uniforms: {
-    vertexState: ({tick}) => VERTEX_STATE[tick % 2].color[0],
+    vertexState: ({tick}) => VERTEX_STATE[tick % 2],
     dir: regl.prop('dir')
   },
   depth: {enable: false, mask: false},
@@ -431,7 +431,7 @@ function step ({tick}) {
     regl.clear({ color: [0, 0, 0, 1] })
     splatMouse()
     splatVerts({
-      vertexState: VERTEX_STATE[(tick + 1) % 2].color[0]
+      vertexState: VERTEX_STATE[(tick + 1) % 2]
     })
   })
   for (let i = 0; i < 2 * BLUR_PASSES; ++i) {
@@ -443,16 +443,16 @@ function step ({tick}) {
   }
   gradPass({
     dest: FIELDS[1],
-    src: FIELDS[0].color[0]
+    src: FIELDS[0]
   })
   applySpringForces({
     dest: VERTEX_STATE[(tick + 1) % 2],
-    src: VERTEX_STATE[tick % 2].color[0]
+    src: VERTEX_STATE[tick % 2]
   })
   integrateVerts({
     dest: VERTEX_STATE[tick % 2],
-    src: VERTEX_STATE[(tick + 1) % 2].color[0],
-    field: FIELDS[1].color[0]
+    src: VERTEX_STATE[(tick + 1) % 2],
+    field: FIELDS[1]
   })
 }
 

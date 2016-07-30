@@ -118,7 +118,7 @@ const drawNormal = regl({
                        viewportWidth / viewportHeight,
                        0.01,
                        2000),
-    shadowMap: () => fbo.color[0],
+    shadowMap: fbo,
     minBias: () => 0.005,
     maxBias: () => 0.03
   },
