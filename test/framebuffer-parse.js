@@ -526,6 +526,11 @@ tape('framebuffer parsing', function (t) {
       function () { regl.framebuffer(fboArgs) },
         /\(regl\)/,
       'throws for colorFormat=' + testCase.colorFormat + ' and colorType=' + testCase.colorType)
+
+    t.throws(
+      function () { regl.framebufferCube(fboArgs) },
+        /\(regl\)/,
+      'throws for cubic fbo, colorFormat=' + testCase.colorFormat + ' and colorType=' + testCase.colorType)
   })
 
   // we create the maximum number of possible color attachments.
