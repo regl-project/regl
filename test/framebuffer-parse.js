@@ -283,6 +283,8 @@ tape('framebuffer parsing', function (t) {
     },
     'empty cube')
 
+  // TODO: we need to test parsing of explicitly specified renderbuffers.
+
   checkPropertiesCube(
     regl.framebufferCube({
       color: regl.cube(32),
