@@ -100,10 +100,18 @@ npm i -S regl
 For more info on how to use npm, [check out the official docs](https://docs.npmjs.com/).
 
 #### Standalone script tag
-You can also use `regl` as a standalone script if you are really stubborn.  The most recent versions can be found under the [releases tab](releases).  To do this, add the following script tag to your HTML:
+You can also use `regl` as a standalone script if you are really stubborn.  The most recent versions can be found in the `dist/` folder.  Alternatively, you can directly import regl using npm cdn.
+
+* Unminified:
 
 ```html
-<script src="[some cdn tbd]/regl.min.js"></script>
+<script src="https://npmcdn.com/regl/dist/regl.js"></script>
+```
+
+* Minified:
+
+```html
+<script src="https://npmcdn.com/regl/dist/regl.min.js"></script>
 ```
 
 ## Why use `regl`?
