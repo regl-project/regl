@@ -2026,10 +2026,6 @@ var cubeAlt = regl.framebufferCube({
 
 | Color format | Description | Attachment |
 |--------------|-------------|------------|
-| `'alpha'` | `gl.ALPHA` | Texture |
-| `'luminance'` | `gl.LUMINANCE` | Texture |
-| `'luminance alpha'` | `gl.LUMINANCE_ALPHA` | Texture |
-| `'rgb'` | `gl.RGB` | Texture |
 | `'rgba'` | `gl.RGBA` | Texture |
 
 | Color type | Description |

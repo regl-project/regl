@@ -81,7 +81,7 @@ See this example [live](http://regl.party/examples/?basic)
 
 #### More examples
 
-Check out the [gallery](http://mikolalysenko.github.io/regl/www/gallery.html). The source code of all the gallery examples can be found [here](https://github.com/mikolalysenko/regl/tree/gh-pages/example). 
+Check out the [gallery](http://mikolalysenko.github.io/regl/www/gallery.html). The source code of all the gallery examples can be found [here](https://github.com/mikolalysenko/regl/tree/gh-pages/example).
 
 ## Setup
 
@@ -113,7 +113,7 @@ You can also use `regl` as a standalone script if you are really stubborn.  The 
 * `regl`, in difference to many other WebGL frameworks, has support for easy usage of instanced rendering. See [this example](https://github.com/mikolalysenko/regl/blob/gh-pages/example/instance-triangle.js) for more details.
 * `regl` integrates easily with modules from `stack.gl`, such `gl-mat4` and `gl-vec3`.
 * `regl` is small and bloat-free; A minimized version of [`three.js`](http://threejs.org/) is ~500Kb, while a minimized version of `regl` is only `71Kb`.
-* `regl` has little overhead, and is near as fast as hand-optimized WebGL. You can compare the performance at the [interactive benchmarks](https://mikolalysenko.github.io/regl/www/bench.html). The benchmark `cube` measures the performance of rendering a textured cube in `regl`, and `cube-webgl` does the same thing, but in raw WebGL.
+* `regl` has little overhead, and is near as fast as hand-optimized WebGL. You can compare the performance at the [interactive benchmarks](https://mikolalysenko.github.io/regl/www/bench.html). The benchmark `cube` measures the performance of rendering a textured cube in `regl`, and `cube-webgl` does the same thing, but in raw WebGL. And `cube-threejs` does the same thing, but in `three.js`. In particular, notice how much faster `regl` is than `three.js`
 * `regl` performs strong error validation and sanity checking in debug builds. But for production builds of `regl`, all validation will be stripped away.
 
 
@@ -548,8 +548,81 @@ TODO
 #### [TWGL]()
 TODO
 
-#### [three.js]()
-TODO
+#### [three.js](https://mikolalysenko.github.io/regl/compare/threejs_cube.html)
+```html
+<!doctype html>
+<html>
+  <head>
+    <title>threejs cube</title>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r79/three.min.js"></script>
+    <script type="text/javascript">
+    var scene;
+    var camera;
+    var renderer;
+    var mesh;
+    var tick;
+
+    function start() {
+      init();
+      drawShape();
+      render();
+    }
+
+    function drawShape() {
+      var geo = new THREE.CubeGeometry(1.0, 1.0, 1.0);
+
+      var texture = THREE.ImageUtils.loadTexture('../example/assets/lena.png');
+      var mats = [];
+      for (var i = 0; i < 6; i++) {
+        mats.push(new THREE.MeshBasicMaterial({map: texture}));
+      }
+      var mat = new THREE.MeshFaceMaterial(mats);
+
+      mesh = new THREE.Mesh(geo, mat);
+
+      scene.add(mesh);
+
+      tick = 0;
+    }
+
+    function init() {
+      scene = new THREE.Scene();
+
+      var canvas = document.getElementById('glcanvas');
+      renderer = new THREE.WebGLRenderer({canvas: canvas});
+      renderer.setPixelRatio( window.devicePixelRatio );
+      renderer.setSize( window.innerWidth, window.innerHeight );
+
+      camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 100 );
+    }
+
+    function rotateCube() {
+      tick += 1
+      var t = tick * 0.01
+
+      camera.position.set(5 * Math.cos(t), 2.5 * Math.sin(t), 5 * Math.sin(t))
+      camera.up = new THREE.Vector3(0, 1, 0)
+      camera.lookAt(new THREE.Vector3(0, 0, 0))
+    }
+
+    function render() {
+      requestAnimationFrame(render);
+      rotateCube();
+      renderer.render(scene, camera);
+    }
+
+    </script>
+  </head>
+  <body onload="start()">
+    <canvas id="glcanvas" width="640" height="480">
+      Your browser doesn't appear to support the <code>&lt;canvas&gt;</code> element.
+    </canvas>
+  </body>
+</html>
+
+```
 
 
 ### Benchmarks
