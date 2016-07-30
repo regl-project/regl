@@ -57,6 +57,7 @@
 
 ## Next
 
+* Can now use framebuffers as texture.  By default color attachment 0 is used
 * Support for dynamic properties with nested objects like attributes
 * Cubic frame buffer objects
 

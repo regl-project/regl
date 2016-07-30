@@ -151,7 +151,7 @@ const drawNormal = regl({
                        viewportWidth / viewportHeight,
                        0.01,
                        1000),
-    shadowCube: shadowFbo.color[0]
+    shadowCube: shadowFbo
   },
   frag: `
   precision mediump float;

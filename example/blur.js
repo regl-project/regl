@@ -274,7 +274,7 @@ const drawFboBlurred = regl({
     position: [ -4, -4, 4, -4, 0, 4 ]
   },
   uniforms: {
-    tex: ({count}) => fbo.color[0],
+    tex: ({count}) => fbo,
     wRcp: ({viewportWidth}) => 1.0 / viewportWidth,
     hRcp: ({viewportHeight}) => 1.0 / viewportHeight
   },
