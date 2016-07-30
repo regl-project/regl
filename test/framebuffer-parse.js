@@ -604,6 +604,8 @@ tape('framebuffer parsing', function (t) {
     t.equals(thrown, false, 'check color attachments with same bit planes do not throw')
   }
 
+  // TODO: test MRT for cubic fbo.
+
   regl.destroy()
   createContext.destroy(gl)
   t.end()

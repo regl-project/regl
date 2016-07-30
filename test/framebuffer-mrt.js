@@ -70,13 +70,22 @@ tape('framebuffer - multiple draw buffers', function (t) {
     var draw = regl({
       framebuffer: regl.prop('fbo'),
 
+      uniforms: {
+        color0: regl.prop('color0'),
+        color1: regl.prop('color1'),
+        color2: regl.prop('color2')
+      },
+
       frag: [
         '#extension GL_EXT_draw_buffers : require',
         'precision mediump float;',
+        'uniform vec4 color0;',
+        'uniform vec4 color1;',
+        'uniform vec4 color2;',
         'void main() {',
-        '  gl_FragData[0] = vec4(1, 0, 0, 1);',
-        '  gl_FragData[1] = vec4(0, 1, 0, 1);',
-        '  gl_FragData[2] = vec4(0, 0, 1, 1);',
+        '  gl_FragData[0] = color0;',
+        '  gl_FragData[1] = color1;',
+        '  gl_FragData[2] = color2;',
         '}'
       ].join('\n'),
 
@@ -107,7 +116,12 @@ tape('framebuffer - multiple draw buffers', function (t) {
     })
     t.equals(fbo.color.length, 3, 'color length ok')
 
-    draw({fbo: fbo})
+    draw({
+      fbo: fbo,
+      color0: [1.0, 0.0, 0.0, 1.0],
+      color1: [0.0, 1.0, 0.0, 1.0],
+      color2: [0.0, 0.0, 1.0, 1.0]
+    })
     checkTexture(fbo.color[0], [255, 0, 0, 255], 'color 0')
     checkTexture(fbo.color[1], [0, 255, 0, 255], 'color 1')
     checkTexture(fbo.color[2], [0, 0, 255, 255], 'color 2')
@@ -128,7 +142,12 @@ tape('framebuffer - multiple draw buffers', function (t) {
     t.equals(fbo2.color[1], textures[1], 'ref 1 ok')
     t.equals(fbo2.color[2], textures[2], 'ref 2 ok')
 
-    draw({fbo: fbo2})
+    draw({
+      fbo: fbo2,
+      color0: [1.0, 0.0, 0.0, 1.0],
+      color1: [0.0, 1.0, 0.0, 1.0],
+      color2: [0.0, 0.0, 1.0, 1.0]
+    })
     checkTexture(textures[0], [255, 0, 0, 255], 'color 0')
     checkTexture(textures[1], [0, 255, 0, 255], 'color 1')
     checkTexture(textures[2], [0, 0, 255, 255], 'color 2')
