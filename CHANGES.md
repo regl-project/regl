@@ -57,6 +57,7 @@
 
 ## Next
 
+* Support for dynamic properties with nested objects like attributes
 * Cubic frame buffer objects
 
 ## 0.10.0
