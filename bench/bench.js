@@ -89,16 +89,6 @@ function formatMemory (x) {
 
 function benchmark (caseName, testCase) {
   var procedure
-  if (caseName === 'cube-webgl') {
-    var obj = testCase.proc(gl, WIDTH, HEIGHT)
-
-    procedure = obj.proc
-    obj.setup()
-  } else {
-    procedure = testCase.proc(regl)
-  }
-  var samples = testCase.samples
-  var warmupSamples = testCase.warmupSamples
 
   var timeSamples = []
   var heapSamples = []
@@ -120,6 +110,24 @@ function benchmark (caseName, testCase) {
   }
 
   return function run () {
+    var obj
+    if (caseName === 'cube-webgl') {
+      obj = testCase.proc(gl, WIDTH, HEIGHT)
+
+      procedure = obj.proc
+      obj.setup()
+    } else if (caseName === 'cube-threejs') {
+      obj = testCase.proc(canvas, WIDTH, HEIGHT)
+
+      procedure = obj.proc
+      obj.setup()
+    } else {
+      procedure = testCase.proc(regl)
+      regl.poll()
+    }
+    var samples = testCase.samples
+    var warmupSamples = testCase.warmupSamples
+
     var i
     for (i = 0; i < warmupSamples; ++i) {
       regl.clear({
@@ -182,6 +190,9 @@ Object.keys(CASES).map(function (caseName) {
   var sample = benchmark(caseName, CASES[caseName])
 
   if (isHeadless) {
+    if (caseName === 'cube-threejs') {
+      return // can't run this one in headless. Skip
+    }
     var bench = sample()
     json[caseName] = bench
     if (prettyPrint) {
