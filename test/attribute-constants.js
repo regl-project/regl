@@ -9,8 +9,8 @@ tape('attribute constants', function (t) {
 
   var vert = [
     'precision highp float;',
-    'attribute vec4 color;',
     'attribute vec2 position;',
+    'attribute vec4 color;',
     'varying vec4 fragColor;',
     'void main () {',
     '  fragColor = color;',
@@ -31,9 +31,9 @@ tape('attribute constants', function (t) {
     frag: frag,
     attributes: {
       position: [
-        -4, 0,
-        4, 4,
-        -4, 4
+        0, -4,
+        -4, 4,
+        4, 4
       ]
     },
     count: 3,
@@ -42,10 +42,15 @@ tape('attribute constants', function (t) {
   }
 
   var colors = {
+    'scalar': 1,
     '1': [1],
     '2': [1, 1],
     '3': [1, 0, 1],
-    '4': [1, 0, 0, 1]
+    '4': [1, 0, 0, 1],
+    '1-typed': new Float32Array([1]),
+    '2-typed': new Float32Array([1, 1]),
+    '3-typed': new Float32Array([1, 0, 1]),
+    '4-typed': new Float32Array([1, 0, 0, 1])
   }
 
   var commands = {
@@ -151,9 +156,15 @@ tape('attribute constants', function (t) {
   function checkPixels (color) {
     var pixels = regl.read()
     for (var i = 0; i < 2 * 2; ++i) {
-      for (var j = 0; j < color.length; ++j) {
-        if (pixels[4 * i + j] !== color[j] * 255) {
+      if (typeof color === 'number') {
+        if (pixels[4 * i] !== color * 255) {
           return false
+        }
+      } else {
+        for (var j = 0; j < color.length; ++j) {
+          if (pixels[4 * i + j] !== color[j] * 255) {
+            return false
+          }
         }
       }
     }
@@ -171,7 +182,7 @@ tape('attribute constants', function (t) {
           color: [0, 0, 0, 0]
         })
         caseCode(command, color)
-        t.ok(checkPixels(color), caseName + ',' + commandName + ' ' + count + 'f')
+        t.ok(checkPixels(color), caseName + ',' + commandName + ' ' + count)
       })
     })
   })
