@@ -468,6 +468,7 @@ var loop = require('./util/loop')
 var isTypedArray = require('./util/is-typed-array')
 var isNDArray = require('./util/is-ndarray')
 var isArrayLike = require('./util/is-array-like')
+var dynamic = require('./dynamic')
 
 var primTypes = require('./constants/primitives.json')
 var glTypes = require('./constants/dtypes.json')
@@ -484,6 +485,7 @@ var DYN_FUNC = 0
 var DYN_PROP = 1
 var DYN_CONTEXT = 2
 var DYN_STATE = 3
+var DYN_THUNK = 4
 
 var S_DITHER = 'dither'
 var S_BLEND_ENABLE = 'blend.enable'
@@ -534,6 +536,18 @@ var S_VIEWPORT_HEIGHT = S_VIEWPORT + SUFFIX_HEIGHT
 var S_DRAWINGBUFFER = 'drawingBuffer'
 var S_DRAWINGBUFFER_WIDTH = S_DRAWINGBUFFER + SUFFIX_WIDTH
 var S_DRAWINGBUFFER_HEIGHT = S_DRAWINGBUFFER + SUFFIX_HEIGHT
+
+var NESTED_OPTIONS = [
+  S_BLEND_FUNC,
+  S_BLEND_EQUATION,
+  S_STENCIL_FUNC,
+  S_STENCIL_OPFRONT,
+  S_STENCIL_OPBACK,
+  S_SAMPLE_COVERAGE,
+  S_VIEWPORT,
+  S_SCISSOR_BOX,
+  S_POLYGON_OFFSET_OFFSET
+]
 
 var GL_ARRAY_BUFFER = 34962
 var GL_ELEMENT_ARRAY_BUFFER = 34963
@@ -693,6 +707,13 @@ function createDynamicDecl (dyn, append) {
       true,
       numArgs >= 1,
       numArgs >= 2,
+      append)
+  } else if (type === DYN_THUNK) {
+    var data = dyn.data
+    return new Declaration(
+      data.thisDep,
+      data.contextDep,
+      data.propDep,
       append)
   } else {
     return new Declaration(
@@ -946,6 +967,9 @@ module.exports = function reglCore (
           return block.def(shared.context, x.data)
         case DYN_STATE:
           return block.def('this', x.data)
+        case DYN_THUNK:
+          x.data.append(env, block)
+          return x.data.ref
       }
     }
 
@@ -2107,6 +2131,7 @@ module.exports = function reglCore (
             'invalid data for attribute ' + attribute)
           if (value.constant) {
             var constant = value.constant
+            record.buffer = 'null'
             record.state = ATTRIB_STATE_CONSTANT
             if (typeof constant === 'number') {
               record.x = constant
@@ -2229,7 +2254,7 @@ module.exports = function reglCore (
             BUFFER_STATE + '.getBuffer(' + VALUE + '.buffer)||' +
             '("constant" in ' + VALUE +
             '&&(typeof ' + VALUE + '.constant==="number"||' +
-            shared.isArrayLike + '(' + VALUE + '))))',
+            shared.isArrayLike + '(' + VALUE + '.constant))))',
             'invalid dynamic attribute "' + attribute + '"')
         })
 
@@ -2254,15 +2279,21 @@ module.exports = function reglCore (
           BUFFER, '=', BUFFER_STATE, '.getBuffer(', VALUE, ');',
           'if(', BUFFER, '){',
           TYPE, '=', BUFFER, '.dtype;',
-          '}else if(', VALUE, '.constant){',
+          '}else if("constant" in ', VALUE, '){',
           result.state, '=', ATTRIB_STATE_CONSTANT, ';',
+          'if(typeof ' + VALUE + '.constant === "number"){',
+          result[CUTE_COMPONENTS[0]], '=', VALUE, '.constant;',
+          CUTE_COMPONENTS.slice(1).map(function (n) {
+            return result[n]
+          }).join('='), '=0;',
+          '}else{',
           CUTE_COMPONENTS.map(function (name, i) {
             return (
-              result[name] + '=' + VALUE + '.length>=' + i +
-              '?' + VALUE + '[' + i + ']:0;'
+              result[name] + '=' + VALUE + '.constant.length>=' + i +
+              '?' + VALUE + '.constant[' + i + ']:0;'
             )
           }).join(''),
-          '}else{',
+          '}}else{',
           BUFFER, '=', BUFFER_STATE, '.getBuffer(', VALUE, '.buffer);',
           TYPE, '="type" in ', VALUE, '?',
           shared.glTypes, '[', VALUE, '.type]:', BUFFER, '.dtype;',
@@ -2623,9 +2654,8 @@ module.exports = function reglCore (
 
       function emitBuffer () {
         scope(
-          'if(!', BINDING, '.pointer){',
-          GL, '.enableVertexAttribArray(', LOCATION, ');',
-          BINDING, '.pointer=true;}')
+          'if(!', BINDING, '.buffer){',
+          GL, '.enableVertexAttribArray(', LOCATION, ');}')
 
         var TYPE = record.type
         var SIZE
@@ -2669,9 +2699,8 @@ module.exports = function reglCore (
 
       function emitConstant () {
         scope(
-          'if(', BINDING, '.pointer){',
+          'if(', BINDING, '.buffer){',
           GL, '.disableVertexAttribArray(', LOCATION, ');',
-          BINDING, '.pointer=false;',
           '}if(', CUTE_COMPONENTS.map(function (c, i) {
             return BINDING + '.' + c + '!==' + CONST_COMPONENTS[i]
           }).join('||'), '){',
@@ -3509,6 +3538,81 @@ module.exports = function reglCore (
     scope('a1(', env.shared.context, ',a0,', env.batchId, ');')
   }
 
+  function isDynamicObject (object) {
+    if (typeof object !== 'object') {
+      return
+    }
+    var props = Object.keys(object)
+    for (var i = 0; i < props.length; ++i) {
+      if (dynamic.isDynamic(object[props[i]])) {
+        return true
+      }
+    }
+    return false
+  }
+
+  function splatObject (env, options, name) {
+    var object = options.static[name]
+    if (!object || !isDynamicObject(object)) {
+      return
+    }
+
+    var globals = env.global
+    var keys = Object.keys(object)
+    var thisDep = false
+    var contextDep = false
+    var propDep = false
+    var objectRef = env.global.def('{}')
+    keys.forEach(function (key) {
+      var value = object[key]
+      if (dynamic.isDynamic(value)) {
+        var deps = createDynamicDecl(value, null)
+        thisDep = thisDep || deps.thisDep
+        propDep = propDep || deps.propDep
+        contextDep = contextDep || deps.contextDep
+      } else {
+        globals(objectRef, '.', key, '=')
+        switch (typeof value) {
+          case 'number':
+            globals(value)
+            break
+          case 'string':
+            globals('"', value, '"')
+            break
+          case 'object':
+            if (Array.isArray(value)) {
+              globals('[', value.join(), ']')
+            }
+            break
+          default:
+            globals(env.link(value))
+            break
+        }
+        globals(';')
+      }
+    })
+
+    function appendBlock (env, block) {
+      keys.forEach(function (key) {
+        var value = object[key]
+        if (!dynamic.isDynamic(value)) {
+          return
+        }
+        var ref = env.invoke(block, value)
+        block(objectRef, '.', key, '=', ref, ';')
+      })
+    }
+
+    options.dynamic[name] = new dynamic.DynamicVariable(DYN_THUNK, {
+      thisDep: thisDep,
+      contextDep: contextDep,
+      propDep: propDep,
+      ref: objectRef,
+      append: appendBlock
+    })
+    delete options.static[name]
+  }
+
   // ===========================================================================
   // ===========================================================================
   // MAIN DRAW COMMAND
@@ -3519,6 +3623,14 @@ module.exports = function reglCore (
 
     // link stats, so that we can easily access it in the program.
     env.stats = env.link(stats)
+
+    // splat options and attributes to allow for dynamic nested properties
+    Object.keys(attributes.static).forEach(function (key) {
+      splatObject(env, attributes, key)
+    })
+    NESTED_OPTIONS.forEach(function (name) {
+      splatObject(env, options, name)
+    })
 
     var args = parseArguments(options, attributes, uniforms, context)
 
@@ -3617,7 +3729,7 @@ module.exports = function reglCore (
   }
 }
 
-},{"./constants/dtypes.json":4,"./constants/primitives.json":5,"./util/check":20,"./util/codegen":22,"./util/is-array-like":24,"./util/is-ndarray":25,"./util/is-typed-array":26,"./util/loop":27}],8:[function(require,module,exports){
+},{"./constants/dtypes.json":4,"./constants/primitives.json":5,"./dynamic":8,"./util/check":20,"./util/codegen":22,"./util/is-array-like":24,"./util/is-ndarray":25,"./util/is-typed-array":26,"./util/loop":27}],8:[function(require,module,exports){
 var VARIABLE_COUNTER = 0
 
 var DYN_FUNC = 0
@@ -3688,6 +3800,7 @@ function unbox (x, path) {
 }
 
 module.exports = {
+  DynamicVariable: DynamicVariable,
   define: defineDynamic,
   isDynamic: isDynamic,
   unbox: unbox,
@@ -8063,7 +8176,6 @@ module.exports = function createEnvironment () {
       .replace(/}/g, '}\n')
       .replace(/{/g, '{\n')
     var proc = Function.apply(null, linkedNames.concat(src))
-    // console.log('src: ', src)
     return proc.apply(null, linkedValues)
   }
 
@@ -8778,6 +8890,8 @@ module.exports = function wrapREGL (args) {
     var batch = compiled.batch
     var scope = compiled.scope
 
+    // FIXME: we should modify code generation for batch commands so this
+    // isn't necessary
     var EMPTY_ARRAY = []
     function reserve (count) {
       while (EMPTY_ARRAY.length < count) {
