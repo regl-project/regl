@@ -233,8 +233,10 @@ tape('framebuffer - multiple draw buffers', function (t) {
       colorCount: 3
     })
 
-    for (var i = 0; i < 6; i++) {
-      var td = testData[i]
+    var td
+    var i
+    for (i = 0; i < 6; i++) {
+      td = testData[i]
       draw({
         fbo: cubeFbo.faces[i],
         color0: td[0], color1: td[1], color2: td[2]
@@ -260,8 +262,8 @@ tape('framebuffer - multiple draw buffers', function (t) {
     t.equals(cubeFbo2.color[1], cubemaps[1], 'cube ref 1 ok')
     t.equals(cubeFbo2.color[2], cubemaps[2], 'cube ref 2 ok')
 
-    for (var i = 0; i < 6; i++) {
-      var td = testData[i]
+    for (i = 0; i < 6; i++) {
+      td = testData[i]
       draw({
         fbo: cubeFbo2.faces[i],
         color0: td[0], color1: td[1], color2: td[2]

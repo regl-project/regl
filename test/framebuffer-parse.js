@@ -561,6 +561,33 @@ tape('framebuffer parsing', function (t) {
       'throws for exceeding regl.limits.maxColorAttachments')
   }
 
+  // Test MRT for cubic fbo. we create the maximum number of possible color attachments.
+  // and make that colorType and colorFormat is applied for them all.
+  if (regl.hasExtension('webgl_draw_buffers')) {
+    expected = {
+      width: 1,
+      height: 1,
+      color: [],
+      depthStencil: {
+        target: gl.RENDERBUFFER,
+        format: gl.DEPTH_STENCIL
+      }
+    }
+
+    for (i = 0; i < regl.limits.maxColorAttachments; i++) {
+      expected.color[i] = {target: gl.TEXTURE_2D, format: gl.RGBA, type: gl.UNSIGNED_BYTE}
+    }
+    checkPropertiesCube(
+      regl.framebufferCube({colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments}),
+      expected,
+      'cube, for MRT with colorCount: ' + regl.limits.maxColorAttachments)
+
+    t.throws(
+      function () { regl.framebufferCube({colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments + 1}) },
+        /\(regl\)/,
+      'throws for exceeding regl.limits.maxColorAttachments on cube')
+  }
+
   if (
     regl.hasExtension('webgl_draw_buffers') && regl.hasExtension('oes_texture_float') && regl.hasExtension('oes_texture_half_float')) {
     t.throws(function () {
@@ -603,8 +630,6 @@ tape('framebuffer parsing', function (t) {
 
     t.equals(thrown, false, 'check color attachments with same bit planes do not throw')
   }
-
-  // TODO: test MRT for cubic fbo.
 
   regl.destroy()
   createContext.destroy(gl)
