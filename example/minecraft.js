@@ -1,3 +1,7 @@
+/*
+  <p>This example shows how you can implement a simple Minecraft renderer in regl.</p>
+ */
+
 const canvas = document.body.appendChild(document.createElement('canvas'))
 const fit = require('canvas-fit')
 const regl = require('../regl')(canvas)

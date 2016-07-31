@@ -1,3 +1,8 @@
+/*
+  <p>This example shows how you can render reflections with an environment map.</p>
+
+ */
+
 const regl = require('../regl')()
 const mat4 = require('gl-mat4')
 const bunny = require('bunny')
