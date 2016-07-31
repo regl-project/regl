@@ -1,3 +1,7 @@
+/*
+  <p>This example shows how to implement a movable camera with regl.</p>
+ */
+
 const mat4 = require('gl-mat4')
 const bunny = require('bunny')
 const fit = require('canvas-fit')

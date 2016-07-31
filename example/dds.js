@@ -1,3 +1,7 @@
+/*
+  <p>This example shows how you can parse dds files with resl.</p>
+ */
+
 const regl = require('../regl')({
   extensions: 'WEBGL_compressed_texture_s3tc'
 })

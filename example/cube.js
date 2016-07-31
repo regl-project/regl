@@ -1,3 +1,8 @@
+/*
+  <p>This examples renders a spinning textured cube.</p>
+
+ */
+
 const regl = require('../regl')()
 const mat4 = require('gl-mat4')
 

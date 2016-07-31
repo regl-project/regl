@@ -1,3 +1,7 @@
+/*
+  <p>This example shows how you can apply multiple light sources to a model</p>
+
+ */
 const regl = require('../regl')()
 const normals = require('angle-normals')
 const mat4 = require('gl-mat4')

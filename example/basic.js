@@ -1,4 +1,7 @@
-// This example is a simple demonstration of how to use regl.
+/*
+  <p> This example is a simple demonstration of how to use regl to draw a triangle. </p>
+ */
+
 // The default method exposed by the module wraps a canvas element
 const regl = require('../regl')()
 
