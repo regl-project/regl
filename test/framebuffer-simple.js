@@ -370,12 +370,14 @@ tape('framebuffer', function (t) {
 
   // this test doesn't seem to pass.
   // TODO: fix
+  // we will uncomment this once issue #154 is resolved.
   /* if (typeof document !== 'undefined') {
     for (i = 0; i < 6; i++) {
       checkContents(testCubeFBO1.faces[i], [0, 255, 255, 255], 'cube draw fbo 1, face #' + i)
     }
   }*/
 
+  // TODO: write tests for cubic fbos once issue #154 is resolved.
   // batch mode
   setFramebufferDynamic([
     {
