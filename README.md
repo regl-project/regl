@@ -81,7 +81,7 @@ See this example [live](http://regl.party/examples/?basic)
 
 #### More examples
 
-Check out the [gallery](http://mikolalysenko.github.io/regl/www/gallery.html). The source code of all the gallery examples can be found [here](https://github.com/mikolalysenko/regl/tree/gh-pages/example).
+Check out the [gallery](https://mikolalysenko.github.io/regl/www/gallery.html). The source code of all the gallery examples can be found [here](https://github.com/mikolalysenko/regl/tree/gh-pages/example).
 
 ## Setup
 

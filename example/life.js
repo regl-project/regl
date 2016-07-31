@@ -1,3 +1,8 @@
+/*
+  <p>This example implements the game of life in regl.</p>
+
+ */
+
 const regl = require('../regl')()
 
 const RADIUS = 512
