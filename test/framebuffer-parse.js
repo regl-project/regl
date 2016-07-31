@@ -458,6 +458,32 @@ tape('framebuffer parsing', function (t) {
   t.equals(fbo.color[0], tex, 'same texture is used')
   t.equals(fbo.depthStencil, rb, 'same renderbuffer is used')
 
+  var cube = regl.cube(1)
+
+  var cubeFbo = regl.framebufferCube({color: cube, depthStencil: rb})
+
+  checkPropertiesCube(
+    cubeFbo,
+    {
+      width: 1,
+      height: 1,
+      color: [{
+        target: gl.TEXTURE_2D,
+        format: gl.RGBA,
+        type: gl.UNSIGNED_BYTE
+      }],
+      depthStencil: {
+        target: gl.RENDERBUFFER,
+        format: gl.DEPTH_STENCIL
+      }
+    },
+    'explict color and depth stencil, cube')
+  t.equals(cubeFbo.color[0], cube, 'same cube is used, cube')
+
+  for (var i = 0; i < 6; i++) {
+    t.equals(cubeFbo.faces[i].depthStencil, rb, 'same renderbuffer is used, cube, face #' + i)
+  }
+
   // next, we will 'colorType' and 'colorFormat'. We test for all possible combinations of these values.
   var testCases = [
     {tex: true, colorFormat: 'rgba', colorType: 'uint8', expectedFormat: gl.RGBA, expectedType: gl.UNSIGNED_BYTE},
@@ -577,7 +603,7 @@ tape('framebuffer parsing', function (t) {
       }
     }
 
-    for (var i = 0; i < regl.limits.maxColorAttachments; i++) {
+    for (i = 0; i < regl.limits.maxColorAttachments; i++) {
       expected.color[i] = {target: gl.TEXTURE_2D, format: gl.RGBA, type: gl.UNSIGNED_BYTE}
     }
 
