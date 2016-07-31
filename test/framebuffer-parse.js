@@ -197,7 +197,7 @@ tape('framebuffer parsing', function (t) {
       }
 
       if (expected.target === gl.RENDERBUFFER) {
-        t.equals(actual.target, gl.RENDERBUFFER, label + '.target deptij')
+        t.equals(actual.target, gl.RENDERBUFFER, label + '.target depth')
 
         t.equals(actual.texture, null, label + '.texture')
         t.equals(
@@ -282,8 +282,6 @@ tape('framebuffer parsing', function (t) {
       }
     },
     'empty cube')
-
-  // TODO: we need to test parsing of explicitly specified renderbuffers.
 
   checkPropertiesCube(
     regl.framebufferCube({
@@ -428,8 +426,39 @@ tape('framebuffer parsing', function (t) {
     },
     'color renderbuffer')
 
-  // next, we will 'colorType' and 'colorFormat'. We test for all possible combinations of these values.
+  var tex = regl.texture({
+    radius: 1,
+    format: 'rgba',
+    type: 'uint8'
+  })
 
+  var rb = regl.renderbuffer({
+    radius: 1,
+    format: 'depth stencil',
+  })
+
+  var fbo = regl.framebuffer({color: tex, depthStencil: rb})
+
+  checkProperties(
+    fbo,
+    {
+      width: 1,
+      height: 1,
+      color: [{
+        target: gl.TEXTURE_2D,
+        format: gl.RGBA,
+        type: gl.UNSIGNED_BYTE
+      }],
+      depthStencil: {
+        target: gl.RENDERBUFFER,
+        format: gl.DEPTH_STENCIL
+      }
+    },
+    'explict color and depth stencil')
+  t.equals(fbo.color[0], tex, 'same texture is used')
+  t.equals(fbo.depthStencil, rb, 'same renderbuffer is used')
+
+  // next, we will 'colorType' and 'colorFormat'. We test for all possible combinations of these values.
   var testCases = [
     {tex: true, colorFormat: 'rgba', colorType: 'uint8', expectedFormat: gl.RGBA, expectedType: gl.UNSIGNED_BYTE},
     {tex: false, colorFormat: 'rgba4', expectedFormat: gl.RGBA4},
