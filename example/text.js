@@ -1,3 +1,8 @@
+/*
+  <p>This example shows how you can draw vectorized text in regl.</p>
+
+ */
+
 const regl = require('../regl')()
 const vectorizeText = require('vectorize-text')
 const perspective = require('gl-mat4/perspective')

@@ -1,9 +1,10 @@
 /*
-  This example shows how you can render shadows for point-lights using `regl.framebufferCube`
+  <p>This example shows how you can render shadows for point-lights using `regl.framebufferCube` </p>
 
-  You can read more about shadows for point-lights here:
-  http://http.developer.nvidia.com/GPUGems/gpugems_ch12.html
-  http://learnopengl.com/#!Advanced-Lighting/Shadows/Point-Shadows
+  <p>
+  You can read more about shadows for point-lights <a href="http://http.developer.nvidia.com/GPUGems/gpugems_ch12.html">here</a> and
+<a href="http://learnopengl.com/#!Advanced-Lighting/Shadows/Point-Shadows">here</a>
+  </p>
 */
 
 const webglCanvas = document.body.appendChild(document.createElement('canvas'))
