@@ -46,7 +46,6 @@
     "runscript": "^1.1.0",
     "snazzy": "^3.0.0",
     "standard": "^6.0.7",
-    "tap-browser-color": "^0.1.2",
     "tape": "^4.4.0",
     "teapot": "^1.0.0",
     "three": "^0.79.0",
