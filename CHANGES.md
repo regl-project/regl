@@ -60,6 +60,7 @@
 * Can now use framebuffers as texture.  By default color attachment 0 is used
 * Support for dynamic properties with nested objects like attributes
 * Cubic frame buffer objects
+* Alias `float16` for `half float` and `float32` for `float`
 
 ## 0.10.0
 
