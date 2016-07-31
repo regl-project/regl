@@ -2,6 +2,8 @@ var createContext = require('./util/create-context')
 var createREGL = require('../../regl')
 var tape = require('tape')
 
+var GL_TEXTURE_CUBE_MAP_POSITIVE_X = 0x8515
+
 tape('framebuffer parsing', function (t) {
   var gl = createContext(16, 16)
   var regl = createREGL({
@@ -124,6 +126,128 @@ tape('framebuffer parsing', function (t) {
       gl.DEPTH_STENCIL_ATTACHMENT)
   }
 
+  function checkPropertiesCube (cubeFbo, props, prefix) {
+    var i
+    t.equals(cubeFbo.width, props.width, prefix + '.width')
+    t.equals(cubeFbo.height, props.height, prefix + '.height')
+
+    for (i = 0; i < 6; i++) {
+      t.equals(cubeFbo.faces[i].width, props.width, prefix + '.width for face #' + i)
+      t.equals(cubeFbo.faces[i].width, props.height, prefix + '.height for face #' + i)
+    }
+
+    for (i = 0; i < 6; i++) {
+      var suffix = ' for face #' + i
+      var _framebuffer = cubeFbo.faces[i]._framebuffer
+      var framebuffer = cubeFbo.faces[i]
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, _framebuffer.framebuffer)
+
+      if (props.color) {
+        t.equals(
+          framebuffer.color.length,
+          props.color.length,
+          prefix + ' colorCount' + suffix)
+
+        for (var j = 0; j < props.color.length; j++) {
+          diffAttachmentsCube(
+            _framebuffer.colorAttachments[j] || _framebuffer.colorAttachments,
+            props.color[j],
+            'color[' + j + ']' + suffix,
+            gl.COLOR_ATTACHMENT0 + j,
+            i)
+
+          diffAttachmentsCube(
+            _framebuffer.depthAttachment,
+            props.depth || null,
+            'depth stencil',
+            gl.DEPTH_ATTACHMENT, i)
+
+          diffAttachmentsCube(
+            _framebuffer.stencilAttachment,
+            props.stencil || null,
+            'depth stencil',
+            gl.STENCIL_ATTACHMENT, i)
+
+          diffAttachmentsCube(
+            _framebuffer.depthStencilAttachment,
+            props.depthStencil || null,
+            'depth stencil',
+            gl.DEPTH_STENCIL_ATTACHMENT, i)
+        }
+      }
+    }
+
+    function diffAttachmentsCube (actual, expected, sprefix, attachment, i) {
+      var label = prefix + ' ' + sprefix
+      function getParameter (pname) {
+        return gl.getFramebufferAttachmentParameter(
+          gl.FRAMEBUFFER,
+          attachment,
+          pname)
+      }
+
+      if (!expected) {
+        t.equals(actual, null, label + ' is null')
+        t.equals(
+          getParameter(gl.FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE),
+          0,
+          label + ' object type')
+        return
+      }
+
+      if (expected.target === gl.RENDERBUFFER) {
+        t.equals(actual.target, gl.RENDERBUFFER, label + '.target depth')
+
+        t.equals(actual.texture, null, label + '.texture')
+        t.equals(
+          actual.renderbuffer._renderbuffer.format,
+          expected.format,
+          label + '.format')
+        t.equals(actual.renderbuffer.width, props.width, label + '.width')
+        t.equals(actual.renderbuffer.height, props.height, label + '.height')
+        t.equals(
+          getParameter(gl.FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE),
+          gl.RENDERBUFFER,
+          label + ' object type')
+        t.equals(
+          getParameter(gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME),
+          actual.renderbuffer._renderbuffer.renderbuffer,
+          label + ' object assoc')
+      } else {
+        t.equals(actual.target, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, label + '.target')
+
+        t.equals(actual.renderbuffer, null, label + '.renderbuffer')
+        t.equals(
+          actual.texture._texture.internalformat,
+          expected.format,
+          label + '.format')
+        t.equals(
+          actual.texture._texture.type,
+          expected.type,
+          label + '.type')
+        t.equals(actual.texture.width, props.width, label + '.width')
+        t.equals(actual.texture.height, props.height, label + '.height')
+        t.equals(
+          getParameter(gl.FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE),
+          gl.TEXTURE,
+          label + ' object type')
+        t.equals(
+          getParameter(gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME),
+          actual.texture._texture.texture,
+          label + ' object assoc')
+        t.equals(
+          getParameter(gl.FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL),
+          0,
+          label + ' miplevel')
+        t.equals(
+          getParameter(gl.FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE),
+          GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+          label + ' cube face')
+      }
+    }
+  }
+
   // empty constructor
   checkProperties(
     regl.framebuffer(),
@@ -142,10 +266,85 @@ tape('framebuffer parsing', function (t) {
     },
     'empty')
 
-  checkProperties(
-    regl.framebuffer({
+  checkPropertiesCube(
+    regl.framebufferCube(),
+    {
+      width: 1,
+      height: 1,
+      color: [{
+        target: gl.TEXTURE_2D,
+        format: gl.RGBA,
+        type: gl.UNSIGNED_BYTE
+      }],
+      depthStencil: {
+        target: gl.RENDERBUFFER,
+        format: gl.DEPTH_STENCIL
+      }
+    },
+    'empty cube')
+
+  checkPropertiesCube(
+    regl.framebufferCube({
+      color: regl.cube(32),
+      stencil: true,
+      depth: false
+    }),
+    {
+      width: 32,
+      height: 32,
+      color: [{
+        target: gl.TEXTURE_2D,
+        format: gl.RGBA,
+        type: gl.UNSIGNED_BYTE
+      }],
+      stencil: {
+        target: gl.RENDERBUFFER,
+        format: gl.STENCIL_INDEX8
+      }
+    },
+    'explicit color cube')
+
+  checkPropertiesCube(
+    regl.framebufferCube({
+      radius: 5,
+      stencil: true,
+      depth: true
+    }),
+    {
       width: 5,
       height: 5,
+      color: [{
+        target: gl.TEXTURE_2D,
+        format: gl.RGBA,
+        type: gl.UNSIGNED_BYTE
+      }],
+      depthStencil: {
+        target: gl.RENDERBUFFER,
+        format: gl.DEPTH_STENCIL
+      }
+    },
+    'radius cube')
+
+  checkPropertiesCube(
+    regl.framebufferCube(5),
+    {
+      width: 5,
+      height: 5,
+      color: [{
+        target: gl.TEXTURE_2D,
+        format: gl.RGBA,
+        type: gl.UNSIGNED_BYTE
+      }],
+      depthStencil: {
+        target: gl.RENDERBUFFER,
+        format: gl.DEPTH_STENCIL
+      }
+    },
+    'only number argument cube')
+
+  checkProperties(
+    regl.framebuffer({
+      shape: [5, 5],
       depth: false
     }),
     {
@@ -162,6 +361,27 @@ tape('framebuffer parsing', function (t) {
       }
     },
     'shape and no depth')
+
+  checkPropertiesCube(
+    regl.framebufferCube({
+      shape: [5, 5],
+      depth: false,
+      stencil: true
+    }),
+    {
+      width: 5,
+      height: 5,
+      color: [{
+        target: gl.TEXTURE_2D,
+        format: gl.RGBA,
+        type: gl.UNSIGNED_BYTE
+      }],
+      stencil: {
+        target: gl.RENDERBUFFER,
+        format: gl.STENCIL_INDEX8
+      }
+    },
+    'shape and no depth cube')
 
   checkProperties(
     regl.framebuffer({
@@ -206,8 +426,65 @@ tape('framebuffer parsing', function (t) {
     },
     'color renderbuffer')
 
-  // next, we will 'colorType' and 'colorFormat'. We test for all possible combinations of these values.
+  var tex = regl.texture({
+    radius: 1,
+    format: 'rgba',
+    type: 'uint8'
+  })
 
+  var rb = regl.renderbuffer({
+    radius: 1,
+    format: 'depth stencil'
+  })
+
+  var fbo = regl.framebuffer({color: tex, depthStencil: rb})
+
+  checkProperties(
+    fbo,
+    {
+      width: 1,
+      height: 1,
+      color: [{
+        target: gl.TEXTURE_2D,
+        format: gl.RGBA,
+        type: gl.UNSIGNED_BYTE
+      }],
+      depthStencil: {
+        target: gl.RENDERBUFFER,
+        format: gl.DEPTH_STENCIL
+      }
+    },
+    'explict color and depth stencil')
+  t.equals(fbo.color[0], tex, 'same texture is used')
+  t.equals(fbo.depthStencil, rb, 'same renderbuffer is used')
+
+  var cube = regl.cube(1)
+
+  var cubeFbo = regl.framebufferCube({color: cube, depthStencil: rb})
+
+  checkPropertiesCube(
+    cubeFbo,
+    {
+      width: 1,
+      height: 1,
+      color: [{
+        target: gl.TEXTURE_2D,
+        format: gl.RGBA,
+        type: gl.UNSIGNED_BYTE
+      }],
+      depthStencil: {
+        target: gl.RENDERBUFFER,
+        format: gl.DEPTH_STENCIL
+      }
+    },
+    'explict color and depth stencil, cube')
+  t.equals(cubeFbo.color[0], cube, 'same cube is used, cube')
+
+  for (var i = 0; i < 6; i++) {
+    t.equals(cubeFbo.faces[i].depthStencil, rb, 'same renderbuffer is used, cube, face #' + i)
+  }
+
+  // next, we will 'colorType' and 'colorFormat'. We test for all possible combinations of these values.
   var testCases = [
     {tex: true, colorFormat: 'rgba', colorType: 'uint8', expectedFormat: gl.RGBA, expectedType: gl.UNSIGNED_BYTE},
     {tex: false, colorFormat: 'rgba4', expectedFormat: gl.RGBA4},
@@ -276,6 +553,23 @@ tape('framebuffer parsing', function (t) {
         }
       },
       'for colorFormat=' + testCase.colorFormat + (testCase.tex ? (' and colorType=' + testCase.colorType) : ''))
+
+    // if not renderbuffer, also do the test for cubic fbo.
+    if (testCase.tex) {
+      console.log()
+      checkPropertiesCube(
+        regl.framebufferCube(fboArgs),
+        {
+          width: 10,
+          height: 10,
+          color: [expected],
+          depthStencil: {
+            target: gl.RENDERBUFFER,
+            format: gl.DEPTH_STENCIL
+          }
+        },
+        'cubic fbo, for colorFormat=' + testCase.colorFormat + (testCase.tex ? (' and colorType=' + testCase.colorType) : ''))
+    }
   })
 
   badTestCases.forEach(function (testCase, i) {
@@ -289,6 +583,11 @@ tape('framebuffer parsing', function (t) {
       function () { regl.framebuffer(fboArgs) },
         /\(regl\)/,
       'throws for colorFormat=' + testCase.colorFormat + ' and colorType=' + testCase.colorType)
+
+    t.throws(
+      function () { regl.framebufferCube(fboArgs) },
+        /\(regl\)/,
+      'throws for cubic fbo, colorFormat=' + testCase.colorFormat + ' and colorType=' + testCase.colorType)
   })
 
   // we create the maximum number of possible color attachments.
@@ -304,7 +603,7 @@ tape('framebuffer parsing', function (t) {
       }
     }
 
-    for (var i = 0; i < regl.limits.maxColorAttachments; i++) {
+    for (i = 0; i < regl.limits.maxColorAttachments; i++) {
       expected.color[i] = {target: gl.TEXTURE_2D, format: gl.RGBA, type: gl.UNSIGNED_BYTE}
     }
 
@@ -317,6 +616,33 @@ tape('framebuffer parsing', function (t) {
       function () { regl.framebuffer({colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments + 1}) },
         /\(regl\)/,
       'throws for exceeding regl.limits.maxColorAttachments')
+  }
+
+  // Test MRT for cubic fbo. we create the maximum number of possible color attachments.
+  // and make that colorType and colorFormat is applied for them all.
+  if (regl.hasExtension('webgl_draw_buffers')) {
+    expected = {
+      width: 1,
+      height: 1,
+      color: [],
+      depthStencil: {
+        target: gl.RENDERBUFFER,
+        format: gl.DEPTH_STENCIL
+      }
+    }
+
+    for (i = 0; i < regl.limits.maxColorAttachments; i++) {
+      expected.color[i] = {target: gl.TEXTURE_2D, format: gl.RGBA, type: gl.UNSIGNED_BYTE}
+    }
+    checkPropertiesCube(
+      regl.framebufferCube({colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments}),
+      expected,
+      'cube, for MRT with colorCount: ' + regl.limits.maxColorAttachments)
+
+    t.throws(
+      function () { regl.framebufferCube({colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments + 1}) },
+        /\(regl\)/,
+      'throws for exceeding regl.limits.maxColorAttachments on cube')
   }
 
   if (

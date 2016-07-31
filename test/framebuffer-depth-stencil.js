@@ -144,6 +144,14 @@ tape('framebuffer - depth stencil attachment', function (t) {
     })
   }
 
+  function testFBOCube (name, fbo, depth, stencil) {
+    for (var i = 0; i < 6; i++) {
+      setFBO({ fbo: fbo.faces[i] }, function () {
+        testDraw(name + 'face #' + i, depth, stencil)
+      })
+    }
+  }
+
   var attributes = gl.getContextAttributes()
   testFBO('drawing buffer', null, attributes.depth, attributes.stencil)
 
@@ -153,6 +161,17 @@ tape('framebuffer - depth stencil attachment', function (t) {
       depthStencil: false
     }),
     false, false)
+
+  // TODO: rendering to depth-stencil does not seem to work in headless
+  // we should look into this.
+  if (typeof document !== 'undefined') {
+    testFBOCube('color buffer only, cube fbo, ',
+      regl.framebufferCube({
+        radius: N,
+        depthStencil: false
+      }),
+      false, false)
+  }
 
   /*
   if (typeof document === 'undefined') {
@@ -192,6 +211,15 @@ tape('framebuffer - depth stencil attachment', function (t) {
     }),
     true, true)
 
+  if (typeof document !== 'undefined') {
+    testFBOCube('depth-stencil renderbuffer - implicit, cube fbo, ',
+      regl.framebufferCube({
+        radius: N,
+        depthStencil: true
+      }),
+      true, true)
+  }
+
   testFBO('depth-stencil renderbuffer',
     regl.framebuffer({
       radius: N,
@@ -202,6 +230,18 @@ tape('framebuffer - depth stencil attachment', function (t) {
     }),
     true, true)
 
+  if (typeof document !== 'undefined') {
+    testFBOCube('depth-stencil renderbuffer, cube fbo, ',
+      regl.framebufferCube({
+        radius: N,
+        depthStencil: regl.renderbuffer({
+          radius: N,
+          format: 'depth stencil'
+        })
+      }),
+      true, true)
+  }
+
   // try rendering with depth buffer in a broken configuration
   t.throws(function () {
     regl.framebuffer({
@@ -209,6 +249,13 @@ tape('framebuffer - depth stencil attachment', function (t) {
       depth: regl.renderbuffer(N)
     })
   }, /\(regl\)/, 'bad depth buffer throws')
+
+  t.throws(function () {
+    regl.framebufferCube({
+      radius: N,
+      depth: regl.renderbuffer(N)
+    })
+  }, /\(regl\)/, 'bad depth buffer throws, cube fbo')
 
   t.throws(function () {
     regl.framebuffer({
@@ -219,6 +266,16 @@ tape('framebuffer - depth stencil attachment', function (t) {
       })
     })
   }, /\(regl\)/, 'bad color buffer throws')
+
+  t.throws(function () {
+    regl.framebufferCube({
+      radius: N,
+      color: regl.renderbuffer({
+        radius: N,
+        format: 'depth'
+      })
+    })
+  }, /\(regl\)/, 'bad color buffer throws, cube fbo')
 
   if (regl.hasExtension('webgl_depth_texture')) {
     if (typeof document === 'undefined') {

@@ -4,7 +4,6 @@ var tape = require('tape')
 
 tape('test gpuTime', function (t) {
   var gl = createContext(100, 100)
-  t.equals(gl.getError(), 0, 'error code ok')
 
   var regl = createREGL({
     gl: gl,
@@ -12,6 +11,8 @@ tape('test gpuTime', function (t) {
   })
 
   if (regl.hasExtension('ext_disjoint_timer_query')) {
+    t.equals(gl.getError(), 0, 'error code ok')
+
     var obj = {
       frag: [
         'precision mediump float;',
