@@ -1,12 +1,12 @@
 /*
-  This example is a simple implementation of deferred shading.
+  <p> This example is a simple implementation of deferred shading. </p>
 
-  The focus of this implementation was readability, so it is not an
+  <p> The focus of this implementation was readability, so it is not an
   optimized implementation, and can certainly be made more efficient.
   (by for instance getting rid of the "position" render target.
-  It can be computed from the depth buffer. )
+  It can be computed from the depth buffer. ) </p>
 
-  This example demonstrates the usage of Multiple-render targets in regl.
+  <p> This example demonstrates the usage of Multiple-render targets in regl. </p>
  */
 const webglCanvas = document.body.appendChild(document.createElement('canvas'))
 const fit = require('canvas-fit')

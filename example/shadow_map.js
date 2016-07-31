@@ -1,3 +1,7 @@
+/*
+  <p>This example shows how you can render a shadow map for a directional light source in regl.</p>
+ */
+
 const webglCanvas = document.body.appendChild(document.createElement('canvas'))
 const fit = require('canvas-fit')
 const regl = require('../regl')({

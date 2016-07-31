@@ -4,149 +4,233 @@
         <title>regl gallery</title>
         <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
         <meta charset=utf-8>
+        <style>
+
+body {
+    margin: 0 auto;
+    max-width: 860px;
+}
+
+li a {
+  text-decoration: none;
+  color: #000;
+}
+
+li a:hover {
+  color: #666;
+}
+
+p a {
+  text-decoration: none;
+  color: #00C;
+}
+
+p a:visited {
+  color: #009;
+}
+
+p a:hover {
+  color: #00F;
+}
+
+
+* {margin: 0; padding: 0;}
+
+div {
+  margin: 20px;
+}
+
+ul {
+  list-style-type: none;
+}
+
+h3 {
+  font: 700 1.27em verdana;
+  margin-top: 50px;
+  margin-bottom: 20px;
+}
+
+h1 {
+  font: 700 3.27em verdana;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+li img {
+  float: right;
+  margin: 40px 15px 0 0;
+}
+
+li iframe {
+  float: right;
+  margin: 40px 15px 0 0;
+}
+
+li p {
+  font: 95%/1.3 verdana;
+  max-width: 390px;
+  padding-bottom: 16px;
+}
+
+li {
+  padding: 50px;
+  overflow: auto;
+  list-style-type: none;
+}
+       </style>
       </head>
-      <body>
-        <ul>
-        
-            <li><a href="gallery/audio.js.html"'>
-              example/audio.js
-            </a></li>
+    <body><h1>Example Gallery</h1><ul><li><a href="gallery/audio.js.html"><img src="gallery/img/audio.png" width="332" height="208" alt="example/audio.js" ></a><a href="gallery/audio.js.html"><h3>audio.js</h3></a>
+  <p>No description</p>
+<p><a href="gallery/audio.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/audio.js">Source Code</a></p></li>
+<li><a href="gallery/basic.js.html"><img src="gallery/img/basic.png" width="332" height="208" alt="example/basic.js" ></a><a href="gallery/basic.js.html"><h3>basic.js</h3></a>
+  <p> This example is a simple demonstration of how to use regl to draw a triangle. </p>
+<p><a href="gallery/basic.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/basic.js">Source Code</a></p></li>
+<li><a href="gallery/batch.js.html"><img src="gallery/img/batch.png" width="332" height="208" alt="example/batch.js" ></a><a href="gallery/batch.js.html"><h3>batch.js</h3></a>  <p>This example demonstrates how to use batch mode commands</p>
 
-            <li><a href="gallery/basic.js.html"'>
-              example/basic.js
-            </a></li>
+<p> To use a command in batch mode, we pass in an array of objects.  Then
+ the command is executed once for each object in the array. </p><p><a href="gallery/batch.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/batch.js">Source Code</a></p></li>
+<li><a href="gallery/blur.js.html"><iframe width="332" height="187" src="https://www.youtube.com/embed/OJkT24MxydA
+?rel=0" frameborder="0" allowfullscreen" frameborder="0" allowfullscreen></iframe></a><a href="gallery/blur.js.html"><h3>blur.js</h3></a>
+  <p>This examples demonstrates how we can render a height map, how to place out several models(using the batching feature), and how to
+  implement a simple fullscreen post-process effect(using the framebuffer feature) in regl. </p>
 
-            <li><a href="gallery/batch.js.html"'>
-              example/batch.js
-            </a></li>
+  <p> The post-process effect is a simple box filter blur. </p><p><a href="gallery/blur.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/blur.js">Source Code</a></p></li>
+<li><a href="gallery/bunny.js.html"><img src="gallery/img/bunny.png" width="332" height="208" alt="example/bunny.js" ></a><a href="gallery/bunny.js.html"><h3>bunny.js</h3></a>
+  <p> This example shows how to draw a mesh with regl </p><p><a href="gallery/bunny.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/bunny.js">Source Code</a></p></li>
+<li><a href="gallery/camera.js.html"><img src="gallery/img/camera.png" width="332" height="208" alt="example/camera.js" ></a><a href="gallery/camera.js.html"><h3>camera.js</h3></a>
+  <p>This example shows how to implement a movable camera with regl.</p>
+<p><a href="gallery/camera.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/camera.js">Source Code</a></p></li>
+<li><a href="gallery/cloth.js.html"><iframe width="332" height="187" src="https://www.youtube.com/embed/scg33DHDnHc
+?rel=0" frameborder="0" allowfullscreen" frameborder="0" allowfullscreen></iframe></a><a href="gallery/cloth.js.html"><h3>cloth.js</h3></a>
+<p>In this example, we use the mass-spring model described by Thomas Jakobsen to implement
+a simple cloth simulation. It is also demonstrated how we can manage a dynamic mesh in regl. <p>
 
-            <li><a href="gallery/blur.js.html"'>
-              example/blur.js
-            </a></li>
+<p> You can read more about cloth simulation <a href="http://graphics.cs.cmu.edu/nsp/course/15-869/2006/papers/jakobsen.htm">here</a> and
+<a href="http://gamedevelopment.tutsplus.com/tutorials/simulate-fabric-and-ragdolls-with-simple-verlet-integration--gamedev-519">here</a>
 
-            <li><a href="gallery/bunny.js.html"'>
-              example/bunny.js
-            </a></li>
+</p>
+<p><a href="gallery/cloth.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/cloth.js">Source Code</a></p></li>
+<li><a href="gallery/cube-fbo.js.html"><img src="gallery/img/cube-fbo.png" width="332" height="208" alt="example/cube-fbo.js" ></a><a href="gallery/cube-fbo.js.html"><h3>cube-fbo.js</h3></a>
+  <p>This example shows how you can render reflections using cubic framebuffers.</p>
 
-            <li><a href="gallery/camera.js.html"'>
-              example/camera.js
-            </a></li>
+<p><a href="gallery/cube-fbo.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/cube-fbo.js">Source Code</a></p></li>
+<li><a href="gallery/cube.js.html"><img src="gallery/img/cube.png" width="332" height="208" alt="example/cube.js" ></a><a href="gallery/cube.js.html"><h3>cube.js</h3></a>
+  <p>This examples renders a spinning textured cube.</p>
 
-            <li><a href="gallery/cloth.js.html"'>
-              example/cloth.js
-            </a></li>
+<p><a href="gallery/cube.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/cube.js">Source Code</a></p></li>
+<li><a href="gallery/dds.js.html"><img src="gallery/img/dds.png" width="332" height="208" alt="example/dds.js" ></a><a href="gallery/dds.js.html"><h3>dds.js</h3></a>
+  <p>This example shows how you can parse dds files with resl.</p>
+<p><a href="gallery/dds.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/dds.js">Source Code</a></p></li>
+<li><a href="gallery/deferred_shading.js.html"><img src="gallery/img/deferred_shading.png" width="332" height="208" alt="example/deferred_shading.js" ></a><a href="gallery/deferred_shading.js.html"><h3>deferred_shading.js</h3></a>
+  <p> This example is a simple implementation of deferred shading. </p>
 
-            <li><a href="gallery/cube-fbo.js.html"'>
-              example/cube-fbo.js
-            </a></li>
+  <p> The focus of this implementation was readability, so it is not an
+  optimized implementation, and can certainly be made more efficient.
+  (by for instance getting rid of the "position" render target.
+  It can be computed from the depth buffer. ) </p>
 
-            <li><a href="gallery/cube.js.html"'>
-              example/cube.js
-            </a></li>
+  <p> This example demonstrates the usage of Multiple-render targets in regl. </p>
+<p><a href="gallery/deferred_shading.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/deferred_shading.js">Source Code</a></p></li>
+<li><a href="gallery/dynamic.js.html"><img src="gallery/img/dynamic.png" width="332" height="208" alt="example/dynamic.js" ></a><a href="gallery/dynamic.js.html"><h3>dynamic.js</h3></a>
+  <p> This example shows how to pass props to draw commands </p><p><a href="gallery/dynamic.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/dynamic.js">Source Code</a></p></li>
+<li><a href="gallery/elements.js.html"><img src="gallery/img/elements.png" width="332" height="208" alt="example/elements.js" ></a><a href="gallery/elements.js.html"><h3>elements.js</h3></a>
+<p> This example demonstrates how you can use `elements` to draw lines. </p>
+<p><a href="gallery/elements.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/elements.js">Source Code</a></p></li>
+<li><a href="gallery/envmap.js.html"><img src="gallery/img/envmap.png" width="332" height="208" alt="example/envmap.js" ></a><a href="gallery/envmap.js.html"><h3>envmap.js</h3></a>
+  <p>This example shows how you can render reflections with an environment map.</p>
 
-            <li><a href="gallery/dds.js.html"'>
-              example/dds.js
-            </a></li>
+<p><a href="gallery/envmap.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/envmap.js">Source Code</a></p></li>
+<li><a href="gallery/feedback.js.html"><img src="gallery/img/feedback.png" width="332" height="208" alt="example/feedback.js" ></a><a href="gallery/feedback.js.html"><h3>feedback.js</h3></a>
+ <p> This example shows how to use copyTexImage2D to implement feedback effects </p>
+<p><a href="gallery/feedback.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/feedback.js">Source Code</a></p></li>
+<li><a href="gallery/geomorph.js.html"><img src="gallery/img/geomorph.png" width="332" height="208" alt="example/geomorph.js" ></a><a href="gallery/geomorph.js.html"><h3>geomorph.js</h3></a>
+  <p>No description</p>
+<p><a href="gallery/geomorph.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/geomorph.js">Source Code</a></p></li>
+<li><a href="gallery/graph.js.html"><img src="gallery/img/graph.png" width="332" height="208" alt="example/graph.js" ></a><a href="gallery/graph.js.html"><h3>graph.js</h3></a>
+  <p>No description.</p>
 
-            <li><a href="gallery/deferred_shading.js.html"'>
-              example/deferred_shading.js
-            </a></li>
+<p><a href="gallery/graph.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/graph.js">Source Code</a></p></li>
+<li><a href="gallery/instance-mesh.js.html"><img src="gallery/img/instance-mesh.png" width="332" height="208" alt="example/instance-mesh.js" ></a><a href="gallery/instance-mesh.js.html"><h3>instance-mesh.js</h3></a>
+  <p> In this example, it is shown how you can draw a bunch of bunny meshes using the
+  instancing feature of regl. </p><p><a href="gallery/instance-mesh.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/instance-mesh.js">Source Code</a></p></li>
+<li><a href="gallery/instance-triangle.js.html"><img src="gallery/img/instance-triangle.png" width="332" height="208" alt="example/instance-triangle.js" ></a><a href="gallery/instance-triangle.js.html"><h3>instance-triangle.js</h3></a>
+  <p> In this example, it is shown how you can draw a bunch of triangles using the
+  instancing feature of regl. </p>
+<p><a href="gallery/instance-triangle.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/instance-triangle.js">Source Code</a></p></li>
+<li><a href="gallery/life.js.html"><img src="gallery/img/life.png" width="332" height="208" alt="example/life.js" ></a><a href="gallery/life.js.html"><h3>life.js</h3></a>
+  <p>This example implements the game of life in regl.</p>
 
-            <li><a href="gallery/dynamic.js.html"'>
-              example/dynamic.js
-            </a></li>
+<p><a href="gallery/life.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/life.js">Source Code</a></p></li>
+<li><a href="gallery/lighting.js.html"><img src="gallery/img/lighting.png" width="332" height="208" alt="example/lighting.js" ></a><a href="gallery/lighting.js.html"><h3>lighting.js</h3></a>
+  <p>This example shows how you can apply multiple light sources to a model</p>
 
-            <li><a href="gallery/elements.js.html"'>
-              example/elements.js
-            </a></li>
+<p><a href="gallery/lighting.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/lighting.js">Source Code</a></p></li>
+<li><a href="gallery/microphone.js.html"><img src="gallery/img/microphone.png" width="332" height="208" alt="example/microphone.js" ></a><a href="gallery/microphone.js.html"><h3>microphone.js</h3></a>
+  <p>No description</p>
 
-            <li><a href="gallery/envmap.js.html"'>
-              example/envmap.js
-            </a></li>
+<p><a href="gallery/microphone.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/microphone.js">Source Code</a></p></li>
+<li><a href="gallery/minecraft.js.html"><img src="gallery/img/minecraft.png" width="332" height="208" alt="example/minecraft.js" ></a><a href="gallery/minecraft.js.html"><h3>minecraft.js</h3></a>
+  <p>This example shows how you can implement a simple Minecraft renderer in regl.</p>
+<p><a href="gallery/minecraft.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/minecraft.js">Source Code</a></p></li>
+<li><a href="gallery/mipmap.js.html"><img src="gallery/img/mipmap.png" width="332" height="208" alt="example/mipmap.js" ></a><a href="gallery/mipmap.js.html"><h3>mipmap.js</h3></a>
+  <p>This example shows how you can use mipmaps in regl.</p>
 
-            <li><a href="gallery/feedback.js.html"'>
-              example/feedback.js
-            </a></li>
+<p><a href="gallery/mipmap.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/mipmap.js">Source Code</a></p></li>
+<li><a href="gallery/particles.js.html"><img src="gallery/img/particles.png" width="332" height="208" alt="example/particles.js" ></a><a href="gallery/particles.js.html"><h3>particles.js</h3></a>
+  <p>This example show how you can render point particles in regl</p>
+<p><a href="gallery/particles.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/particles.js">Source Code</a></p></li>
+<li><a href="gallery/point-light-shadow.js.html"><img src="gallery/img/point-light-shadow.png" width="332" height="208" alt="example/point-light-shadow.js" ></a><a href="gallery/point-light-shadow.js.html"><h3>point-light-shadow.js</h3></a>
+  <p>This example shows how you can render shadows for point-lights using `regl.framebufferCube` </p>
 
-            <li><a href="gallery/geomorph.js.html"'>
-              example/geomorph.js
-            </a></li>
+  <p>
+  You can read more about shadows for point-lights <a href="http://http.developer.nvidia.com/GPUGems/gpugems_ch12.html">here</a> and
+<a href="http://learnopengl.com/#!Advanced-Lighting/Shadows/Point-Shadows">here</a>
+  </p><p><a href="gallery/point-light-shadow.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/point-light-shadow.js">Source Code</a></p></li>
+<li><a href="gallery/pong.js.html"><img src="gallery/img/pong.png" width="332" height="208" alt="example/pong.js" ></a><a href="gallery/pong.js.html"><h3>pong.js</h3></a>
+  <p> In this example, we implement a simple pong game. </p>
 
-            <li><a href="gallery/graph.js.html"'>
-              example/graph.js
-            </a></li>
+  <p> The demonstratred features are: batching, and how you can
+ implement a game loop with regl. </p>
 
-            <li><a href="gallery/instance-mesh.js.html"'>
-              example/instance-mesh.js
-            </a></li>
+ <p> Note that the ball will probably go through the paddles
+ once it goes really fast. So the game could be a lot more stable.
+ But in order to keep the example short and readable,
+ we have refrained from fixing this.
+ </p><p><a href="gallery/pong.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/pong.js">Source Code</a></p></li>
+<li><a href="gallery/scope.js.html"><img src="gallery/img/scope.png" width="332" height="208" alt="example/scope.js" ></a><a href="gallery/scope.js.html"><h3>scope.js</h3></a>
+  <p>This examples demonstrates scopes</p>
 
-            <li><a href="gallery/instance-triangle.js.html"'>
-              example/instance-triangle.js
-            </a></li>
+<p><a href="gallery/scope.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/scope.js">Source Code</a></p></li>
+<li><a href="gallery/shadow_map.js.html"><img src="gallery/img/shadow_map.png" width="332" height="208" alt="example/shadow_map.js" ></a><a href="gallery/shadow_map.js.html"><h3>shadow_map.js</h3></a>
+  <p>This example shows how you can render a shadow map for a directional light source in regl.</p>
+<p><a href="gallery/shadow_map.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/shadow_map.js">Source Code</a></p></li>
+<li><a href="gallery/sprites.js.html"><img src="gallery/img/sprites.png" width="332" height="208" alt="example/sprites.js" ></a><a href="gallery/sprites.js.html"><h3>sprites.js</h3></a>
+  <p>No description</p>
 
-            <li><a href="gallery/life.js.html"'>
-              example/life.js
-            </a></li>
+<p><a href="gallery/sprites.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/sprites.js">Source Code</a></p></li>
+<li><a href="gallery/stats.js.html"><img src="gallery/img/stats.png" width="332" height="208" alt="example/stats.js" ></a><a href="gallery/stats.js.html"><h3>stats.js</h3></a>
+  <p>This example demonstrates the regl-stats-widget, which provides a visual representation of the total GPU-time of draw-calls</p>
 
-            <li><a href="gallery/lighting.js.html"'>
-              example/lighting.js
-            </a></li>
+<p><a href="gallery/stats.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/stats.js">Source Code</a></p></li>
+<li><a href="gallery/text.js.html"><img src="gallery/img/text.png" width="332" height="208" alt="example/text.js" ></a><a href="gallery/text.js.html"><h3>text.js</h3></a>
+  <p>This example shows how you can draw vectorized text in regl.</p>
 
-            <li><a href="gallery/microphone.js.html"'>
-              example/microphone.js
-            </a></li>
+<p><a href="gallery/text.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/text.js">Source Code</a></p></li>
+<li><a href="gallery/texture.js.html"><img src="gallery/img/texture.png" width="332" height="208" alt="example/texture.js" ></a><a href="gallery/texture.js.html"><h3>texture.js</h3></a>
+  <p>This example shows how you can load and draw a texture in regl</p>
 
-            <li><a href="gallery/minecraft.js.html"'>
-              example/minecraft.js
-            </a></li>
+<p><a href="gallery/texture.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/texture.js">Source Code</a></p></li>
+<li><a href="gallery/theta360.js.html"><img src="gallery/img/theta360.png" width="332" height="208" alt="example/theta360.js" ></a><a href="gallery/theta360.js.html"><h3>theta360.js</h3></a>
+  <p>No description</p>
 
-            <li><a href="gallery/mipmap.js.html"'>
-              example/mipmap.js
-            </a></li>
+<p><a href="gallery/theta360.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/theta360.js">Source Code</a></p></li>
+<li><a href="gallery/tile.js.html"><img src="gallery/img/tile.png" width="332" height="208" alt="example/tile.js" ></a><a href="gallery/tile.js.html"><h3>tile.js</h3></a>
+  <p>This example implements a simple 2D tiled sprite renderer.</p>
 
-            <li><a href="gallery/particles.js.html"'>
-              example/particles.js
-            </a></li>
+<p><a href="gallery/tile.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/tile.js">Source Code</a></p></li>
+<li><a href="gallery/video.js.html"><img src="gallery/img/video.png" width="332" height="208" alt="example/video.js" ></a><a href="gallery/video.js.html"><h3>video.js</h3></a>
+  <p>No description</p>
 
-            <li><a href="gallery/point-light-shadow.js.html"'>
-              example/point-light-shadow.js
-            </a></li>
-
-            <li><a href="gallery/pong.js.html"'>
-              example/pong.js
-            </a></li>
-
-            <li><a href="gallery/scope.js.html"'>
-              example/scope.js
-            </a></li>
-
-            <li><a href="gallery/shadow_map.js.html"'>
-              example/shadow_map.js
-            </a></li>
-
-            <li><a href="gallery/stats.js.html"'>
-              example/stats.js
-            </a></li>
-
-            <li><a href="gallery/text.js.html"'>
-              example/text.js
-            </a></li>
-
-            <li><a href="gallery/texture.js.html"'>
-              example/texture.js
-            </a></li>
-
-            <li><a href="gallery/theta360.js.html"'>
-              example/theta360.js
-            </a></li>
-
-            <li><a href="gallery/tile.js.html"'>
-              example/tile.js
-            </a></li>
-
-            <li><a href="gallery/video.js.html"'>
-              example/video.js
-            </a></li>
-        </ul>
+<p><a href="gallery/video.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/video.js">Source Code</a></p></li></ul>
       </body>
     </html>

@@ -1,3 +1,7 @@
+/*
+  <p>No description</p>
+
+ */
 /* global AudioContext */
 const regl = require('../regl')()
 

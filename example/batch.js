@@ -1,7 +1,8 @@
-// This example demonstrates how to use batch mode commands
-//
-// To use a command in batch mode, we pass in an array of objects.  Then
-// the command is executed once for each object in the array.
+/*  <p>This example demonstrates how to use batch mode commands</p>
+
+<p> To use a command in batch mode, we pass in an array of objects.  Then
+ the command is executed once for each object in the array. </p>
+*/
 
 // As usual, we start by creating a full screen regl object
 const regl = require('../regl')()
