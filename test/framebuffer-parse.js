@@ -434,7 +434,7 @@ tape('framebuffer parsing', function (t) {
 
   var rb = regl.renderbuffer({
     radius: 1,
-    format: 'depth stencil',
+    format: 'depth stencil'
   })
 
   var fbo = regl.framebuffer({color: tex, depthStencil: rb})
