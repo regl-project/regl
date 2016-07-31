@@ -1,3 +1,8 @@
+/*
+  <p>This example shows how you can use mipmaps in regl.</p>
+
+ */
+
 const regl = require('../regl')()
 
 const drawCheckerboard = regl({

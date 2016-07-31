@@ -1,12 +1,16 @@
-/* global AudioContext */
-// In this example, we implement a simple pong game.
-// The demonstratred features are: batching, and how you can
-// implement a game loop with regl.
+/*
+  <p> In this example, we implement a simple pong game. </p>
 
-// Note that the ball will probably go through the paddles
-// once it goes really fast. So the game could be a lot more stable.
-// In order to keep the example short and readable,
-// we have refrained from fixing this.
+  <p> The demonstratred features are: batching, and how you can
+ implement a game loop with regl. </p>
+
+ <p> Note that the ball will probably go through the paddles
+ once it goes really fast. So the game could be a lot more stable.
+ But in order to keep the example short and readable,
+ we have refrained from fixing this.
+ </p>
+*/
+/* global AudioContext */
 
 const regl = require('../regl')()
 const vec2 = require('gl-vec2')
