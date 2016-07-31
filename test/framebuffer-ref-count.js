@@ -57,6 +57,8 @@ tape('framebuffer - ref counting', function (t) {
   t.equals(regl.stats.renderbufferCount, 1, 'renderbuffer count ok')
   t.equals(regl.stats.framebufferCount, 0, 'framebuffer count ok')
 
+  // TODO: test for cubic FBOs.
+
   regl.destroy()
   createContext.destroy(gl)
   t.end()
