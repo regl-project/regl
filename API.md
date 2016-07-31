@@ -1606,8 +1606,8 @@ regl.texture({
 | `'uint8'` | `gl.UNSIGNED_BYTE` |
 | `'uint16'` | `gl.UNSIGNED_SHORT` |
 | `'uint32'` | `gl.UNSIGNED_INT` |
-| `'float'` | `gl.FLOAT` |
-| `'half float'` | `ext.HALF_FLOAT_OES` |
+| `'float', 'float32'` | `gl.FLOAT` |
+| `'half float', 'float16'` | `ext.HALF_FLOAT_OES` |
 
 * `colorSpace` sets the WebGL color space flag for pixel unpacking
 
