@@ -2034,6 +2034,11 @@ var cubeAlt = regl.framebufferCube({
 | `'half float'` | 16 bit float, requires [OES_texture_half_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_half_float/)  |
 | `'float'` | 32 bit float, requires [OES_texture_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_float/) |
 
+**Notes**
+
+* The specified depth/stencil/depth-stencil attachment will be reused
+for all 6 cube faces.
+
 #### Update
 
 ```javascript
