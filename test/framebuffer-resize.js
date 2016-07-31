@@ -76,6 +76,7 @@ tape('framebuffer resizing', function (t) {
   checkCubeFBO(cubeFbo, {width: 10, height: 10})
 
   // this testcase should pass, but right now it does not.
+  // We'll uncomment once issue #152 is resolved.
   // t.equals(cubeFbo.resize(3), cubeFbo, 'cube, reizing returns the right thing')
   // checkCubeFBO(cubeFbo, {width: 3, height: 3})
 
@@ -100,6 +101,7 @@ tape('framebuffer resizing', function (t) {
   }
 
   // TODO: test cubic .resize for MRT.
+  // we'll add that once issue #152 is resolved.
 
   regl.destroy()
   createContext.destroy(gl)
