@@ -60,7 +60,7 @@ const setupQuad = regl({
   },
 
   uniforms: {
-    prevState: ({tick}) => state[tick % 2].color[0]
+    prevState: ({tick}) => state[tick % 2]
   },
 
   depth: { enable: false },
