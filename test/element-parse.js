@@ -91,6 +91,7 @@ tape('element arg parsing', function (t) {
     'manual properties')
 
   regl.destroy()
+  t.equals(gl.getError(), 0, 'error ok')
   createContext.destroy(gl)
   t.end()
 })

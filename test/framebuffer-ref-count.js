@@ -60,6 +60,7 @@ tape('framebuffer - ref counting', function (t) {
   // TODO: test for cubic FBOs.
 
   regl.destroy()
+  t.equals(gl.getError(), 0, 'error ok')
   createContext.destroy(gl)
   t.end()
 })

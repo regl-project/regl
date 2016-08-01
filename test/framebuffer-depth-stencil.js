@@ -320,6 +320,7 @@ tape('framebuffer - depth stencil attachment', function (t) {
   }
 
   regl.destroy()
+  t.equals(gl.getError(), 0, 'error ok')
   createContext.destroy(gl)
   t.end()
 })
