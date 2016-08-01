@@ -16,7 +16,7 @@ var gl = c.getContext('webgl', {
   antialias: true,
   stencil: true
 })
-332x 208
+
 const fit = require('canvas-fit')
 const regl = require('../regl')({gl: gl})
 const mat4 = require('gl-mat4')
