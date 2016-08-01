@@ -303,8 +303,8 @@ tape('framebuffer-codegen', function (t) {
       })
     })
 
-    setTimeout(drain, 40)
+    setTimeout(drain, 1)
   }
 
-  setTimeout(drain, 40)
+  setTimeout(drain, 1)
 })
