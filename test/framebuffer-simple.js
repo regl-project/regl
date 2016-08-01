@@ -398,6 +398,7 @@ tape('framebuffer', function (t) {
   checkContents(testFBO2, [0, 0, 255, 255], 'batch fbo 2')
 
   regl.destroy()
+  t.equals(gl.getError(), 0, 'error ok')
   createContext.destroy(gl)
   t.end()
 })

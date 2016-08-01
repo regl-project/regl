@@ -77,8 +77,8 @@ tape('framebuffer resizing', function (t) {
 
   // this testcase should pass, but right now it does not.
   // We'll uncomment once issue #152 is resolved.
-  // t.equals(cubeFbo.resize(3), cubeFbo, 'cube, reizing returns the right thing')
-  // checkCubeFBO(cubeFbo, {width: 3, height: 3})
+  t.equals(cubeFbo.resize(3), cubeFbo, 'cube, resizing returns the right thing')
+  checkCubeFBO(cubeFbo, {width: 3, height: 3})
 
   cubeFbo({radius: 8})
   checkCubeFBO(cubeFbo, {width: 8, height: 8})
@@ -104,6 +104,7 @@ tape('framebuffer resizing', function (t) {
   // we'll add that once issue #152 is resolved.
 
   regl.destroy()
+  t.equals(gl.getError(), 0, 'error ok')
   createContext.destroy(gl)
   t.end()
 })
