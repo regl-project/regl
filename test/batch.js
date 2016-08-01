@@ -125,6 +125,7 @@ tape('batch', function (t) {
     runTest()
 
     regl.destroy()
+    t.equals(gl.getError(), 0, 'error ok')
     createContext.destroy(gl)
     t.end()
   }, 120)

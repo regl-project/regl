@@ -15,6 +15,7 @@ tape('cube fbo resize test', function (t) {
   t.equals(gl.getError(), 0, 'error code ok')
 
   regl.destroy()
+  t.equals(gl.getError(), 0, 'error ok')
   createContext.destroy(gl)
   t.end()
 })
