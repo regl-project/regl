@@ -85,10 +85,24 @@ tape('framebuffer - multiple draw buffers', function (t) {
       Math.ceil(c[3] * 255)]
   }
 
+  function compareArrays (actual, expected, remark) {
+    if (actual.length !== expected.length) {
+      t.fail(remark)
+      return
+    }
+    for (var i = 0; i < actual.length; ++i) {
+      if (Math.abs(actual[i] - expected[i]) >= 2) {
+        t.fail(remark)
+        return
+      }
+    }
+    t.pass(remark)
+  }
+
   function checkTexture (tex, color, remark) {
     renderTexture({ texture: tex })
     var actual = regl.read({ width: 1, height: 1 })
-    t.same(Array.prototype.slice.call(actual), color, remark)
+    compareArrays(actual, color, remark)
   }
 
   function checkCubeFace (tex, color, remark, i) {
@@ -118,7 +132,7 @@ tape('framebuffer - multiple draw buffers', function (t) {
 
     //    renderTexture({ texture: tex })
     var actual = regl.read({ width: 1, height: 1 })
-    t.same(Array.prototype.slice.call(actual), color, remark)
+    compareArrays(actual, color, remark)
   }
 
   if (!regl.hasExtension('WEBGL_draw_buffers')) {
@@ -275,6 +289,7 @@ tape('framebuffer - multiple draw buffers', function (t) {
   }
 
   regl.destroy()
+  t.equals(gl.getError(), 0, 'error ok')
   createContext.destroy(gl)
   t.end()
 })

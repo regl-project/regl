@@ -116,6 +116,7 @@ tape('scope', function (t) {
   // test setting uniforms with scope
 
   regl.destroy()
+  t.equals(gl.getError(), 0, 'error ok')
   createContext.destroy(gl)
   t.end()
 })

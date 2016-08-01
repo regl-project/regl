@@ -274,6 +274,7 @@ tape('depth', function (t) {
     if (cases.length === 0) {
       clearInterval(poll)
       regl.destroy()
+      t.equals(gl.getError(), 0, 'error ok')
       createContext.destroy(gl)
       t.end()
     } else {

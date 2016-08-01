@@ -148,6 +148,7 @@ tape('regl constructor', function (t) {
     t.equals(
       regl._gl.canvas, container.firstChild,
       'appended node successfully')
+    t.equals(gl.getError(), 0, 'error ok')
     regl.destroy()
   }
 

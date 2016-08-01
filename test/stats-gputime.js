@@ -172,6 +172,7 @@ tape('test gpuTime', function (t) {
       } else {
         t.equals(gl.getError(), 0, 'error code ok')
         regl.destroy()
+        t.equals(gl.getError(), 0, 'error ok')
         createContext.destroy(gl)
         t.end()
       }
@@ -179,6 +180,7 @@ tape('test gpuTime', function (t) {
     processCase()
   } else {
     regl.destroy()
+    t.equals(gl.getError(), 0, 'error ok')
     createContext.destroy(gl)
     t.end()
   }
