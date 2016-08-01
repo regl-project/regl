@@ -179,6 +179,17 @@ a simple cloth simulation. It is also demonstrated how we can manage a dynamic m
 <li><a href="gallery/particles.js.html"><img src="gallery/img/particles.png" width="332" height="208" alt="example/particles.js" ></a><a href="gallery/particles.js.html"><h3>particles.js</h3></a>
   <p>This example show how you can render point particles in regl</p>
 <p><a href="gallery/particles.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/particles.js">Source Code</a></p></li>
+<li><a href="gallery/planar-reflection.js.html"><iframe width="332" height="187" src="https://www.youtube.com/embed/FUNAcjJHo8U
+?rel=0" frameborder="0" allowfullscreen" frameborder="0" allowfullscreen></iframe></a><a href="gallery/planar-reflection.js.html"><h3>planar-reflection.js</h3></a>
+  <p>This example shows how you can render planar reflections using the stencil buffer</p>
+
+  <p>We are using the algorithm described <a href="http://www.cse.chalmers.se/edu/year/2015/course/TDA361/shadrefl.pdf#page=60">here</a> </p>
+
+  <p>To render the reflections, we mirror all the meshes on the y-axis, and then render them, and then we render the floor with alpha blending over them.
+  However, we use the stencil buffer to make sure that the mirrored objects are only visible
+  in the reflecting white tiles. If we did not use the stencil buffer, we would be able to
+  see the mirrored meshes under the floor, which is weird.
+  </p><p><a href="gallery/planar-reflection.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/planar-reflection.js">Source Code</a></p></li>
 <li><a href="gallery/point-light-shadow.js.html"><img src="gallery/img/point-light-shadow.png" width="332" height="208" alt="example/point-light-shadow.js" ></a><a href="gallery/point-light-shadow.js.html"><h3>point-light-shadow.js</h3></a>
   <p>This example shows how you can render shadows for point-lights using `regl.framebufferCube` </p>
 
