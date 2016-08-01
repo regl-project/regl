@@ -32,7 +32,7 @@ camera.zoom(50.0)
 var N = 12 // number of floor tiles.
 var TILE_WHITE = [1.0, 1.0, 1.0]
 var TILE_BLACK = [0.4, 0.4, 0.4]
-var TILE_ALPHA = 0.7
+var TILE_ALPHA = 0.5
 var FLOOR_SCALE = 70.0
 
 var row
