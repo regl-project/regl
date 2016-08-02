@@ -84,7 +84,11 @@ const pass1 = regl({
   },
 
   // turn on color write
-  colorMask: [true, true, true, true]
+  colorMask: [true, true, true, true],
+  cull: {
+    enable: true,
+    face: 'back'
+  },
 })
 
 // ---Second pass: Draw to stencil buffer
@@ -114,6 +118,10 @@ const pass2 = regl({
       zfail: 'decrement wrap',
       pass: 'keep'
     }
+  },
+  // for the algorithm to work, we must render both the front AND back faces.
+  cull: {
+    enable: false,
   },
 
   // don't write to color buffer.
@@ -150,7 +158,12 @@ const pass3 = regl({
   },
 
   // don't write to color buffer.
-  colorMask: [true, true, true, true]
+  colorMask: [true, true, true, true],
+
+  cull: {
+    enable: true,
+    face: 'back'
+  },
 })
 
 var VERT = `
@@ -225,7 +238,7 @@ var drawPlane = regl({
   },
   elements: planeElements,
   cull: {
-    enable: false
+    enable: true
   }
 })
 
