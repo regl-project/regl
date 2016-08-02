@@ -237,7 +237,7 @@ const draw = regl({
   uniforms,
   elements,
   vert,
-  frag,
+  frag
 })
 
 regl.frame(({tick}) => {
