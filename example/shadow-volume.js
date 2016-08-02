@@ -10,14 +10,16 @@ var gl = c.getContext('webgl', {
 })
 
 const fit = require('canvas-fit')
+const mat4 = require('gl-mat4')
+
 const regl = require('../regl')({gl: gl})
 
 window.addEventListener('resize', fit(webglCanvas), false)
 
 var DATA = require('./data.json')
 
-var DIFFUSE_COLOR = [0.8, 0.6, 0.9]
-var AMBIENT_COLOR = [0.3, 0.2, 0.3]
+var DIFFUSE_COLOR_RABBIT = [0.8, 0.6, 0.9]
+var AMBIENT_COLOR_RABBIT = [0.3, 0.2, 0.3]
 
 var meshBuffer = regl.buffer(DATA.MESH)
 var shadowBuffer = regl.buffer(DATA.SHADOW)
@@ -28,18 +30,60 @@ const globalScope = regl({
       var t = tick * 50.0
       var w = 1.0 / Math.sqrt(2)
       var theta = 0.001 * t
-      return [w * Math.cos(theta), -w, w * Math.sin(theta)]
+      //return [w * Math.cos(theta), -w, w * Math.sin(theta)]
+      return [w * 1.0, -w, w * 0.0]
     },
 
-    camera: ({tick}) => {
-      var t = tick * 50.0
-      var theta = Math.PI * Math.cos(0.000357 * t)
-      var c = Math.cos(theta)
-      var s = Math.sin(theta)
-      return [c, 0, -s, 0,
-              0, 1, 0, 0,
-              s, 0, c, 0,
-              0, 0, 0.5, 1]
+    camera: ({tick, viewportWidth, viewportHeight}) => {
+      /*    var t = tick * 50.0
+            var theta = Math.PI * Math.cos(0.000357 * t)
+            var c = Math.cos(theta)
+            var s = Math.sin(theta)
+            return [c, 0, -s, 0,
+            0, 1, 0, 0,
+            s, 0, c, 0,
+            0, 0, 0.5, 1]
+      */
+
+
+      //var proj = mat4.perspective([],
+      //  Math.PI / 2,
+      //  viewportWidth / viewportHeight,
+      //  0.01,
+      //                            1000)
+
+
+      var fovy = Math.PI / 2
+      var aspect = viewportWidth / viewportHeight
+      var near = 0.1
+      var far = 1000.0
+
+      var f = 1.0 / Math.tan(fovy / 2),
+          nf = 1 / (near - far);
+      var out = []
+      out[0] = f / aspect;
+      out[1] = 0;
+      out[2] = 0;
+      out[3] = 0;
+      out[4] = 0;
+      out[5] = f;
+      out[6] = 0;
+      out[7] = 0;
+      out[8] = 0;
+      out[9] = 0;
+      out[10] = -1 //(far + near) * nf;
+      out[11] = -1
+      out[12] = 0;
+      out[13] = 0;
+      out[14] = -2 * near  //(2 * far * near) * nf;
+      out[15] = 0;
+
+      var proj = out
+
+      var view = mat4.lookAt([], [0,2,2], [0,0,0], [0,1,0])
+      return mat4.multiply([], proj, view)
+
+
     }
   }
 })
@@ -128,36 +172,85 @@ const pass3 = regl({
   colorMask: [true, true, true, true]
 })
 
-const drawMesh = regl({
-  vert: `
-  precision mediump float;
-  attribute vec3 position;
-  attribute vec3 normal;
+const VERT= `
+precision mediump float;
+attribute vec3 position;
+attribute vec3 normal;
 
-  uniform vec3 lightDir;
-  uniform mat4 camera;
+uniform vec3 lightDir;
+uniform mat4 camera;
 
-  varying float intensity;
+varying float intensity;
 
-  void main() {
-    intensity = max(-dot(lightDir, normal), 0.0);
-    gl_Position = camera * vec4(position, 1);
-  }
+void main() {
+  intensity = max(-dot(lightDir, normal), 0.0);
+  gl_Position = camera * vec4(position, 1);
+}
+`
 
-  `,
+const FRAG = `
+precision mediump float;
 
-  frag: `
-  precision mediump float;
+uniform vec3 diffuse;
+uniform vec3 ambient;
 
-  uniform vec3 diffuse;
-  uniform vec3 ambient;
+varying float intensity;
 
-  varying float intensity;
+void main() {
+  gl_FragColor = vec4(diffuse * intensity + ambient, 1);
+}
+`
 
-  void main() {
-    gl_FragColor = vec4(diffuse * intensity + ambient, 1);
-  }
-  `,
+
+const planeElements = []
+var planePosition = []
+var planeNormal = []
+
+var s = 100.0
+var y = -4.0
+planePosition.push([-s, y, -s])
+planePosition.push([+s, y, -s])
+planePosition.push([-s, y, +s])
+planePosition.push([+s, y, +s])
+
+planeNormal.push([0.0, 1.0, 0.0])
+planeNormal.push([0.0, 1.0, 0.0])
+planeNormal.push([0.0, 1.0, 0.0])
+planeNormal.push([0.0, 1.0, 0.0])
+
+planeElements.push([3, 1, 0])
+planeElements.push([0, 2, 3])
+
+var drawPlane = regl({
+  vert: VERT,
+
+  frag: FRAG,
+
+  uniforms: {
+    ambient: () => AMBIENT_COLOR_RABBIT,
+
+    diffuse: (_, props) => {
+      var intensity = props.intensity
+      return [
+        intensity * DIFFUSE_COLOR_RABBIT[0],
+        intensity * DIFFUSE_COLOR_RABBIT[1],
+        intensity * DIFFUSE_COLOR_RABBIT[2]]
+    }
+  },
+  attributes: {
+    position: planePosition,
+    normal: planeNormal
+  },
+  elements: planeElements,
+  cull: {
+    enable: false,
+  },
+})
+
+const drawRabbit = regl({
+  vert: VERT,
+
+  frag: FRAG,
 
   // this converts the vertices of the mesh into the position attribute
   attributes: {
@@ -178,14 +271,14 @@ const drawMesh = regl({
   },
 
   uniforms: {
-    ambient: () => AMBIENT_COLOR,
+    ambient: () => AMBIENT_COLOR_RABBIT,
 
     diffuse: (_, props) => {
       var intensity = props.intensity
       return [
-        intensity * DIFFUSE_COLOR[0],
-        intensity * DIFFUSE_COLOR[1],
-        intensity * DIFFUSE_COLOR[2]]
+        intensity * DIFFUSE_COLOR_RABBIT[0],
+        intensity * DIFFUSE_COLOR_RABBIT[1],
+        intensity * DIFFUSE_COLOR_RABBIT[2]]
     }
   },
 
@@ -301,11 +394,12 @@ const drawShadowCaps = regl({
 
 regl.frame(() => {
   globalScope(() => {
-    regl.clear({depth: 1, color: [1, 1, 1, 1]})
+    regl.clear({depth: 1, color: [0, 0, 0, 1]})
     // ----First pass: Draw mesh, no stencil buffer
     pass1(() => {
-      drawMesh({intensity: 1.0})
+      drawRabbit({intensity: 1.0})
     })
+    drawPlane({intensity: 1.0})
 
     pass2(() => {
       regl.clear({stencil: 0})
@@ -316,7 +410,9 @@ regl.frame(() => {
     })
 
     pass3(() => {
-      drawMesh({intensity: 0.1})
+      drawRabbit({intensity: 0.1})
+      drawPlane({intensity: 0.1})
+
     })
   })
 })
