@@ -3,6 +3,7 @@
 */
 
 const c = document.createElement('canvas')
+
 const webglCanvas = document.body.appendChild(c)
 var gl = c.getContext('webgl', {
   antialias: true,
@@ -14,9 +15,14 @@ const mat4 = require('gl-mat4')
 
 const regl = require('../regl')({gl: gl})
 
+const camera = require('canvas-orbit-camera')(webglCanvas)
 window.addEventListener('resize', fit(webglCanvas), false)
 
 var DATA = require('./data.json')
+
+camera.rotate([0.0, 0.0], [0.0, -0.4])
+camera.zoom(-30.0)
+
 
 var DIFFUSE_COLOR_RABBIT = [0.8, 0.6, 0.9]
 var AMBIENT_COLOR_RABBIT = [0.3, 0.2, 0.3]
@@ -30,8 +36,10 @@ const globalScope = regl({
       var t = tick * 50.0
       var w = 1.0 / Math.sqrt(2)
       var theta = 0.001 * t
-      //return [w * Math.cos(theta), -w, w * Math.sin(theta)]
-      return [w * 1.0, -w, w * 0.0]
+  //    return [w * Math.cos(theta), -w, w * Math.sin(theta)]
+      //      return [w * 1.0, -w, w * 0.0]
+      //return [w * 1.0, -w, w * 0.0]
+      return [-0.39, -0.87, -0.29]
     },
 
     camera: ({tick, viewportWidth, viewportHeight}) => {
@@ -55,12 +63,13 @@ const globalScope = regl({
 
       var fovy = Math.PI / 2
       var aspect = viewportWidth / viewportHeight
-      var near = 0.1
+      var near = 0.01
       var far = 1000.0
 
       var f = 1.0 / Math.tan(fovy / 2),
           nf = 1 / (near - far);
       var out = []
+      var B = 1.0
       out[0] = f / aspect;
       out[1] = 0;
       out[2] = 0;
@@ -71,20 +80,21 @@ const globalScope = regl({
       out[7] = 0;
       out[8] = 0;
       out[9] = 0;
-      out[10] = -1 //(far + near) * nf;
+      out[10] = -1 + B //(far + near) * nf;
       out[11] = -1
       out[12] = 0;
       out[13] = 0;
-      out[14] = -2 * near  //(2 * far * near) * nf;
+      out[14] = (B -2) * near  //(2 * far * near) * nf;
       out[15] = 0;
 
       var proj = out
 
-      var view = mat4.lookAt([], [0,2,2], [0,0,0], [0,1,0])
+      var view = mat4.lookAt([], [0,1,1], [0,0,0], [0,1,0])
+      view = camera.view()
       return mat4.multiply([], proj, view)
 
 
-    }
+    },
   }
 })
 
@@ -179,12 +189,13 @@ attribute vec3 normal;
 
 uniform vec3 lightDir;
 uniform mat4 camera;
+uniform mat4 model;
 
 varying float intensity;
 
 void main() {
   intensity = max(-dot(lightDir, normal), 0.0);
-  gl_Position = camera * vec4(position, 1);
+  gl_Position = camera * model * vec4(position, 1);
 }
 `
 
@@ -201,13 +212,12 @@ void main() {
 }
 `
 
-
 const planeElements = []
 var planePosition = []
 var planeNormal = []
 
-var s = 100.0
-var y = -4.0
+var s = 10.0
+var y = 0.0
 planePosition.push([-s, y, -s])
 planePosition.push([+s, y, -s])
 planePosition.push([-s, y, +s])
@@ -235,7 +245,8 @@ var drawPlane = regl({
         intensity * DIFFUSE_COLOR_RABBIT[0],
         intensity * DIFFUSE_COLOR_RABBIT[1],
         intensity * DIFFUSE_COLOR_RABBIT[2]]
-    }
+    },
+    model: regl.prop('model')
   },
   attributes: {
     position: planePosition,
@@ -279,7 +290,8 @@ const drawRabbit = regl({
         intensity * DIFFUSE_COLOR_RABBIT[0],
         intensity * DIFFUSE_COLOR_RABBIT[1],
         intensity * DIFFUSE_COLOR_RABBIT[2]]
-    }
+    },
+    model: regl.prop('model')
   },
 
   count: () => DATA.MESH.length / 6
@@ -296,7 +308,7 @@ const shadowScope = regl({
       gl_FragColor = vec4(1,0,0,1);
     }
   }
-  `
+  `,
 })
 
 const drawShadowSilhoutte = regl({
@@ -307,11 +319,12 @@ const drawShadowSilhoutte = regl({
 
   uniform vec3 lightDir;
   uniform mat4 camera;
+  uniform mat4 model;
 
   void main() {
     if(dot(normal0, lightDir) <= 0.0 &&
        dot(normal1, lightDir) >= 0.0) {
-      gl_Position = camera*(position + vec4((1.0-position.w) * lightDir, 0.0));
+      gl_Position = camera*model*(position + vec4((1.0-position.w) * lightDir, 0.0));
     } else {
       gl_Position = vec4(0,0,0,0);
     }
@@ -342,7 +355,12 @@ const drawShadowSilhoutte = regl({
     }
   },
 
-  count: () => DATA.SHADOW.length / 10
+  count: () => DATA.SHADOW.length / 10,
+
+  uniforms: {
+    model: regl.prop('model')
+  }
+
 })
 
 const drawShadowCaps = regl({
@@ -352,6 +370,8 @@ const drawShadowCaps = regl({
 
   uniform vec3 lightDir;
   uniform mat4 camera;
+
+  uniform mat4 model;
 
   vec4 extend(vec3 p) {
     vec4 tlightDir = camera * vec4(lightDir,0);
@@ -363,7 +383,7 @@ const drawShadowCaps = regl({
   }
 
   void main() {
-    vec4 projected = camera * vec4(position,1);
+    vec4 projected = camera * model * vec4(position,1);
     if(dot(normal,lightDir) <= 0.0) {
       gl_Position = projected;
     } else {
@@ -389,30 +409,47 @@ const drawShadowCaps = regl({
     }
   },
 
-  count: () => DATA.MESH.length / 6
+  count: () => DATA.MESH.length / 6,
+
+  uniforms: {
+    model: regl.prop('model')
+  }
 })
 
-regl.frame(() => {
+regl.frame(({tick}) => {
+
+  tick = 0
+
+  var mRabbit = mat4.identity([])
+  mat4.translate(mRabbit, mRabbit, [0 - tick * 0.01,0.5,0])
+ //  mat4.rotateY(mRabbit, mRabbit, tick * 0.01)
+
+  var mPlane = mat4.identity([])
+  mat4.translate(mPlane, mPlane, [0,0,0])
+
   globalScope(() => {
     regl.clear({depth: 1, color: [0, 0, 0, 1]})
     // ----First pass: Draw mesh, no stencil buffer
+
     pass1(() => {
-      drawRabbit({intensity: 1.0})
+      drawRabbit({intensity: 1.0, model: mRabbit})
     })
-    drawPlane({intensity: 1.0})
+    drawPlane({intensity: 1.0, model: mPlane})
 
     pass2(() => {
       regl.clear({stencil: 0})
       shadowScope(() => {
-        drawShadowSilhoutte()
-        drawShadowCaps()
+        drawShadowSilhoutte({model: mRabbit})
+        drawShadowCaps({model: mRabbit})
       })
     })
 
     pass3(() => {
-      drawRabbit({intensity: 0.1})
-      drawPlane({intensity: 0.1})
+      drawRabbit({intensity: 0.1, model: mRabbit})
+      drawPlane({intensity: 0.1, model: mPlane})
 
     })
   })
+  camera.tick()
+
 })
