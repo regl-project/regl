@@ -1,6 +1,6 @@
 /*
   <p>This example demonstrates rendering screen space projected lines
-  from a technique described in https://mattdesl.svbtle.com/drawing-lines-is-hard.</p>
+  from a technique described <a href="https://mattdesl.svbtle.com/drawing-lines-is-hard">here</a>.</p>
 
   <p>This technique requires each vertex to reference the previous and next vertex in the line;
   this example utilizes attribute byte offsets to share a single position buffer for all three
