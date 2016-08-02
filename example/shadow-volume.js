@@ -23,8 +23,11 @@ var DATA = require('./data.json')
 camera.rotate([0.0, 0.0], [0.0, -0.4])
 camera.zoom(-30.0)
 
-var DIFFUSE_COLOR_RABBIT = [0.8, 0.6, 0.9]
+var DIFFUSE_COLOR_RABBIT = [0.7, 0.3, 0.3]
 var AMBIENT_COLOR_RABBIT = [0.3, 0.2, 0.3]
+
+var DIFFUSE_COLOR_PLANE = [0.7, 0.7, 0.7]
+var AMBIENT_COLOR_PLANE = [0.3, 0.3, 0.3]
 
 var meshBuffer = regl.buffer(DATA.MESH)
 var shadowBuffer = regl.buffer(DATA.SHADOW)
@@ -205,14 +208,14 @@ var drawPlane = regl({
   frag: FRAG,
 
   uniforms: {
-    ambient: () => AMBIENT_COLOR_RABBIT,
+    ambient: () => AMBIENT_COLOR_PLANE,
 
     diffuse: (_, props) => {
       var intensity = props.intensity
       return [
-        intensity * DIFFUSE_COLOR_RABBIT[0],
-        intensity * DIFFUSE_COLOR_RABBIT[1],
-        intensity * DIFFUSE_COLOR_RABBIT[2]]
+        intensity * DIFFUSE_COLOR_PLANE[0],
+        intensity * DIFFUSE_COLOR_PLANE[1],
+        intensity * DIFFUSE_COLOR_PLANE[2]]
     },
     model: regl.prop('model')
   },
