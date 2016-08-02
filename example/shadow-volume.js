@@ -1,5 +1,14 @@
 /*
   <p> This example shows how to implement shadow volumes. </p>
+
+  <p>This implementation was based on Mikola Lysneko's implementation
+  <a href="https://github.com/stackgl/webgl-workshop/tree/master/exercises/stencil-shadows">here</a>.
+  But note it has been cleaned up a lot, and many comments have been added.
+  </p>
+
+<p> You can read more about shadow volumes <a href="http://www.gamasutra.com/view/feature/131351/the_mechanics_of_robust_stencil_.php?print=1">here</a> and
+<a href="http://http.developer.nvidia.com/GPUGems/gpugems_ch09.html">here</a>
+
 */
 
 const c = document.createElement('canvas')
@@ -18,6 +27,11 @@ const regl = require('../regl')({gl: gl})
 const camera = require('canvas-orbit-camera')(webglCanvas)
 window.addEventListener('resize', fit(webglCanvas), false)
 
+// The mesh data of the shadow-casting rabbit
+/*
+  the mesh-data of the bunny was created by this script:
+  https://github.com/stackgl/webgl-workshop/blob/master/exercises/stencil-shadows/data/prepare.js
+1 */
 var DATA = require('./data.json')
 
 camera.rotate([0.0, 0.0], [0.0, -0.4])
@@ -36,14 +50,26 @@ const globalScope = regl({
   uniforms: {
     lightDir: () => [-0.39, -0.87, -0.29],
 
+    // create the combined projection and view matrices.
     camera: ({tick, viewportWidth, viewportHeight}) => {
       var fovy = Math.PI / 2
       var aspect = viewportWidth / viewportHeight
       var near = 0.01
-
       var f = 1.0 / Math.tan(fovy / 2)
       var out = []
-      var B = 1.0
+      var eps = 1.0
+
+      /*
+        Note that we do not use a normal perspective matrix.
+
+        This projection matrix below is basically this matrix
+        https://github.com/stackgl/gl-mat4/blob/master/perspective.js
+        Except that we've let 'far' go to infinity,
+        and that we add an epsilon factor at some places
+
+        It is basically the matrix given in equation (8) of this article:
+        http://www.gamasutra.com/view/feature/131351/the_mechanics_of_robust_stencil_.php?print=1
+       */
       out[0] = f / aspect
       out[1] = 0
       out[2] = 0
@@ -54,13 +80,12 @@ const globalScope = regl({
       out[7] = 0
       out[8] = 0
       out[9] = 0
-      out[10] = -1 + B // (far + near) * nf
+      out[10] = -1 + eps
       out[11] = -1
       out[12] = 0
       out[13] = 0
-      out[14] = (B - 2) * near  // (2 * far * near) * nf
+      out[14] = (eps - 2) * near
       out[15] = 0
-
       var proj = out
 
       var view = camera.view()
@@ -69,7 +94,7 @@ const globalScope = regl({
   }
 })
 
-// ----First pass: Draw mesh, no stencil buffer
+// ----First pass: Normally draw mesh, no stencil buffer
 const pass1 = regl({
   // use depth-buffer as usual.
   depth: {
@@ -78,17 +103,19 @@ const pass1 = regl({
     func: '<='
   },
 
-  // no stencil buffer
+  // no stencil test
   stencil: {
     enable: false
   },
 
   // turn on color write
   colorMask: [true, true, true, true],
+
+  // cull back-faces as usual.
   cull: {
     enable: true,
     face: 'back'
-  },
+  }
 })
 
 // ---Second pass: Draw to stencil buffer
@@ -96,7 +123,7 @@ const pass2 = regl({
   depth: {
     mask: false, // don't write to depth buffer
     enable: true, // but DO use the depth test!
-    func: 'less'
+    func: '<'
   },
 
   // setup stencil buffer.
@@ -104,10 +131,13 @@ const pass2 = regl({
     enable: true,
     mask: 0xff,
     func: {
+      // stencil test always passes.
+      // we are only writing to the stencil buffer in this pass.
       cmp: 'always',
       ref: 0,
       mask: 0xff
     },
+    // as can be seen, basically we are doing carmacks reverse.
     opBack: {
       fail: 'keep',
       zfail: 'increment wrap',
@@ -119,9 +149,11 @@ const pass2 = regl({
       pass: 'keep'
     }
   },
-  // for the algorithm to work, we must render both the front AND back faces.
+  // do no culling. This means that we can write to the stencil
+  // buffer in a single pass! So we handle both the backfaces and the frontfaces
+  // in this pass.
   cull: {
-    enable: false,
+    enable: false
   },
 
   // don't write to color buffer.
@@ -133,18 +165,22 @@ const pass3 = regl({
   depth: {
     mask: false,
     enable: true,
-    func: 'lequal'
+    func: '<='
   },
 
   // setup stencil buffer.
   stencil: {
     enable: true,
     mask: 0xff,
+    // IF the stencil value at the fragment is not zero,
+    // then by Carmack's reverse, the fragment is in shadow!
     func: {
-      cmp: 'notequal',
+      cmp: '!=',
       ref: 0,
       mask: 0xff
     },
+    // do no writing to stencil buffer in this pass.
+    // we already did that in the previous pass.
     opBack: {
       fail: 'keep',
       zfail: 'keep',
@@ -157,13 +193,13 @@ const pass3 = regl({
     }
   },
 
-  // don't write to color buffer.
+  // DO write to color buffer.
   colorMask: [true, true, true, true],
 
   cull: {
     enable: true,
     face: 'back'
-  },
+  }
 })
 
 var VERT = `
@@ -215,9 +251,10 @@ planeNormal.push([0.0, 1.0, 0.0])
 planeElements.push([3, 1, 0])
 planeElements.push([0, 2, 3])
 
+// draw shadow-receiving plane.
+// the plane doesn't cast any shadows.
 var drawPlane = regl({
   vert: VERT,
-
   frag: FRAG,
 
   uniforms: {
@@ -242,12 +279,13 @@ var drawPlane = regl({
   }
 })
 
+// draw shadow-casting bunny
+// the mesh-data of the bunny was created by this script:
+// https://github.com/stackgl/webgl-workshop/blob/master/exercises/stencil-shadows/data/prepare.js
 const drawRabbit = regl({
   vert: VERT,
-
   frag: FRAG,
 
-  // this converts the vertices of the mesh into the position attribute
   attributes: {
     position: {
       buffer: meshBuffer,
@@ -281,6 +319,7 @@ const drawRabbit = regl({
   count: () => DATA.MESH.length / 6
 })
 
+// contains common states for rendering shadow volumes.
 const shadowScope = regl({
   frag: `
   precision mediump float;
@@ -295,6 +334,7 @@ const shadowScope = regl({
   `
 })
 
+// draws a shadow silhouette
 const drawShadowSilhoutte = regl({
   vert: `
   precision mediump float;
@@ -304,8 +344,28 @@ const drawShadowSilhoutte = regl({
   uniform vec3 lightDir;
   uniform mat4 camera;
   uniform mat4 model;
-
   void main() {
+    /*
+     Every edge of the rabbit is assigned a triangle. To all the vertices of that assigned
+     triangle, we assign the normals of the two triangles incident to that edge.
+
+     For that assigned triangle we have that:
+     The first vertex is the first edge-vertex, and w=1
+     The second vertex is the first edge-vertex, and w=1
+     The third vertex is simply (0,0,0,0)
+
+     Now clearly, only if the first normal is facing the light, and the second normal
+     is facing away from the light, we have that the edge is part of the shadow silhouette.
+
+     If it is part of the silhouette, we project the first and second vertices
+     to infinity, and the light direction.
+     For the third vertex, w=0, so it is kept in place.
+     Because the three vertices are placed in this way, the shadow silhouette is created for that edge.
+     So that's how this vertex shader works.
+
+     (if the above doesn't make sense, try drawing it out on paper.
+     It will make sense.)
+     */
     if(dot(normal0, lightDir) <= 0.0 &&
        dot(normal1, lightDir) >= 0.0) {
       gl_Position = camera*model*(position + vec4((1.0-position.w) * lightDir, 0.0));
@@ -346,6 +406,7 @@ const drawShadowSilhoutte = regl({
   }
 })
 
+// this craps the shadow caps
 const drawShadowCaps = regl({
   vert: `
   precision mediump float;
@@ -355,6 +416,23 @@ const drawShadowCaps = regl({
   uniform mat4 camera;
 
   uniform mat4 model;
+
+  /*
+    The below vertex shader needs some explaining:
+
+    First, we define dark cap and light cap as in figure 9-6 of this article:
+    http://http.developer.nvidia.com/GPUGems/gpugems_ch09.html
+
+    Firstly, drawing the light cap is easy, because we can just draw the rabbit mesh as usual. See figure 9-6, and you should understand.
+
+    Secondly. however, we have the shadow cap. Basically, to create the shadow cap, we need to project the mesh onto infinity. And infinity in the case of OpenGL, is the faces of the clip-volume.
+    The clip-volume is just a cube, and everything outside of this cube, is simply not drawn by OpenGL.
+
+    So to project something to infinity, we need to project it onto one the faces of this cube.
+    The we project onto depends on the light direciton, and we are doing in the function
+    'extend', is that we are finding which face to project upon, and then we project the vertex
+    of the mesh onto that face, thus creating the dark cap.
+   */
 
   vec4 extend(vec3 p) {
     vec4 tlightDir = camera * vec4(lightDir,0);
@@ -368,8 +446,10 @@ const drawShadowCaps = regl({
   void main() {
     vec4 projected = camera * model * vec4(position,1);
     if(dot(normal,lightDir) <= 0.0) {
+      // light cap
       gl_Position = projected;
     } else {
+      // dark cap
       gl_Position = extend(projected.xyz/projected.w);
     }
   }
@@ -407,7 +487,7 @@ regl.frame(({tick}) => {
   var theta
   var mRabbit
 
-  // lower rabbit ring
+  // create model matrices of lower rabbit ring
   for (i = 0; i <= 0.9; i += 0.1) {
     theta = Math.PI * 2 * i
     mRabbit = mat4.identity([])
@@ -415,7 +495,7 @@ regl.frame(({tick}) => {
     rabbits.push(mRabbit)
   }
 
-  // upper rabbit ring.
+  // create model matrices of upper rabbit ring.
   for (i = 0; i <= 0.9; i += 0.2) {
     theta = Math.PI * 2 * i + 1.3
     mRabbit = mat4.identity([])
@@ -431,6 +511,7 @@ regl.frame(({tick}) => {
 
     // ----First pass: Draw mesh, no stencil buffer
     pass1(() => {
+      // draw all the shadow-casting rabbits.
       for (var i = 0; i < rabbits.length; i++) {
         drawRabbit({intensity: 1.0, model: rabbits[i]})
       }
@@ -450,6 +531,10 @@ regl.frame(({tick}) => {
 
     // ----Final pass: Draw mesh with shadows
     pass3(() => {
+      /*
+        to render the shadows, we render the meshes at the places that passes that stencil-test,
+        but with a slightly darker color
+       */
       for (var i = 0; i < rabbits.length; i++) {
         drawRabbit({intensity: 0.1, model: rabbits[i]})
       }
