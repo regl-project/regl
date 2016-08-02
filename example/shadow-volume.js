@@ -32,69 +32,39 @@ var shadowBuffer = regl.buffer(DATA.SHADOW)
 
 const globalScope = regl({
   uniforms: {
-    lightDir: ({tick}) => {
-      var t = tick * 50.0
-      var w = 1.0 / Math.sqrt(2)
-      var theta = 0.001 * t
-  //    return [w * Math.cos(theta), -w, w * Math.sin(theta)]
-      //      return [w * 1.0, -w, w * 0.0]
-      //return [w * 1.0, -w, w * 0.0]
-      return [-0.39, -0.87, -0.29]
-    },
+    lightDir: () => [-0.39, -0.87, -0.29],
 
     camera: ({tick, viewportWidth, viewportHeight}) => {
-      /*    var t = tick * 50.0
-            var theta = Math.PI * Math.cos(0.000357 * t)
-            var c = Math.cos(theta)
-            var s = Math.sin(theta)
-            return [c, 0, -s, 0,
-            0, 1, 0, 0,
-            s, 0, c, 0,
-            0, 0, 0.5, 1]
-      */
-
-
-      //var proj = mat4.perspective([],
-      //  Math.PI / 2,
-      //  viewportWidth / viewportHeight,
-      //  0.01,
-      //                            1000)
-
-
       var fovy = Math.PI / 2
       var aspect = viewportWidth / viewportHeight
       var near = 0.01
-      var far = 1000.0
 
-      var f = 1.0 / Math.tan(fovy / 2),
-          nf = 1 / (near - far);
+      var f = 1.0 / Math.tan(fovy / 2)
       var out = []
       var B = 1.0
-      out[0] = f / aspect;
-      out[1] = 0;
-      out[2] = 0;
-      out[3] = 0;
-      out[4] = 0;
-      out[5] = f;
-      out[6] = 0;
-      out[7] = 0;
-      out[8] = 0;
-      out[9] = 0;
-      out[10] = -1 + B //(far + near) * nf;
+      out[0] = f / aspect
+      out[1] = 0
+      out[2] = 0
+      out[3] = 0
+      out[4] = 0
+      out[5] = f
+      out[6] = 0
+      out[7] = 0
+      out[8] = 0
+      out[9] = 0
+      out[10] = -1 + B // (far + near) * nf
       out[11] = -1
-      out[12] = 0;
-      out[13] = 0;
-      out[14] = (B -2) * near  //(2 * far * near) * nf;
-      out[15] = 0;
+      out[12] = 0
+      out[13] = 0
+      out[14] = (B - 2) * near  // (2 * far * near) * nf
+      out[15] = 0
 
       var proj = out
 
-      var view = mat4.lookAt([], [0,1,1], [0,0,0], [0,1,0])
+      var view = mat4.lookAt([], [0, 1, 1], [0, 0, 0], [0, 1, 0])
       view = camera.view()
       return mat4.multiply([], proj, view)
-
-
-    },
+    }
   }
 })
 
@@ -182,7 +152,7 @@ const pass3 = regl({
   colorMask: [true, true, true, true]
 })
 
-const VERT= `
+var VERT = `
 precision mediump float;
 attribute vec3 position;
 attribute vec3 normal;
@@ -254,8 +224,8 @@ var drawPlane = regl({
   },
   elements: planeElements,
   cull: {
-    enable: false,
-  },
+    enable: false
+  }
 })
 
 const drawRabbit = regl({
@@ -308,7 +278,7 @@ const shadowScope = regl({
       gl_FragColor = vec4(1,0,0,1);
     }
   }
-  `,
+  `
 })
 
 const drawShadowSilhoutte = regl({
@@ -417,39 +387,58 @@ const drawShadowCaps = regl({
 })
 
 regl.frame(({tick}) => {
+//  tick = 0
 
-  tick = 0
+  var rabbits = []
 
-  var mRabbit = mat4.identity([])
-  mat4.translate(mRabbit, mRabbit, [0 - tick * 0.01,0.5,0])
- //  mat4.rotateY(mRabbit, mRabbit, tick * 0.01)
+  var phi0 = tick * 0.003
+  var i = 0
+
+  for (i = 0; i <= 0.9; i += 0.1) {
+    var theta = Math.PI * 2 * i
+    var R = 2.0
+
+    var mRabbit = mat4.identity([])
+
+    mat4.translate(mRabbit, mRabbit, [R * Math.cos(theta + phi0), 0.6, R * Math.sin(theta + phi0)])
+
+    mat4.rotateY(mRabbit, mRabbit, tick * 0.0001 + i * 1.4)
+
+    rabbits.push(mRabbit)
+  }
 
   var mPlane = mat4.identity([])
-  mat4.translate(mPlane, mPlane, [0,0,0])
+  mat4.translate(mPlane, mPlane, [0, 0, 0])
 
   globalScope(() => {
     regl.clear({depth: 1, color: [0, 0, 0, 1]})
-    // ----First pass: Draw mesh, no stencil buffer
 
+    // ----First pass: Draw mesh, no stencil buffer
     pass1(() => {
-      drawRabbit({intensity: 1.0, model: mRabbit})
+      for (var i = 0; i < rabbits.length; i++) {
+        drawRabbit({intensity: 1.0, model: rabbits[i]})
+      }
     })
     drawPlane({intensity: 1.0, model: mPlane})
 
+    // ---Second pass: Draw to stencil buffer
     pass2(() => {
       regl.clear({stencil: 0})
       shadowScope(() => {
-        drawShadowSilhoutte({model: mRabbit})
-        drawShadowCaps({model: mRabbit})
+        for (var i = 0; i < rabbits.length; i++) {
+          drawShadowSilhoutte({model: rabbits[i]})
+          drawShadowCaps({model: rabbits[i]})
+        }
       })
     })
 
+    // ----Final pass: Draw mesh with shadows
     pass3(() => {
-      drawRabbit({intensity: 0.1, model: mRabbit})
+      for (var i = 0; i < rabbits.length; i++) {
+        drawRabbit({intensity: 0.1, model: rabbits[i]})
+      }
       drawPlane({intensity: 0.1, model: mPlane})
-
     })
   })
   camera.tick()
-
 })
