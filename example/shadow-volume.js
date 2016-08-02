@@ -440,7 +440,7 @@ const drawShadowCaps = regl({
     vec3 dpos = (1.0 - p) / light;
     vec3 dneg = (vec3(-1.0,-1.0,0.0) - p) / light;
     vec3 dt   = mix(dneg, dpos, step(0.0, light));
-    return vec4(0.999 * min(min(dt.x, dt.y), dt.z) * light + p, 1);
+    return vec4(0.999 * min(min(dt.x, dt.y), dt.z) * light + p, 0);
   }
 
   void main() {
