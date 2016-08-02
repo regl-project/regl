@@ -3,7 +3,7 @@
 
   <p>This implementation was based on Mikola Lysneko's implementation
   <a href="https://github.com/stackgl/webgl-workshop/tree/master/exercises/stencil-shadows">here</a>.
-  But note it has been cleaned up a lot, and many comments have been added.
+  But note that it has been cleaned up a lot, many comments have been added, and some bugs have been fixed.
   </p>
 
 <p> You can read more about shadow volumes <a href="http://www.gamasutra.com/view/feature/131351/the_mechanics_of_robust_stencil_.php?print=1">here</a> and
@@ -46,6 +46,7 @@ var AMBIENT_COLOR_PLANE = [0.3, 0.3, 0.3]
 var meshBuffer = regl.buffer(DATA.MESH)
 var shadowBuffer = regl.buffer(DATA.SHADOW)
 
+// common state, used throughout the entire program.
 const globalScope = regl({
   uniforms: {
     lightDir: () => [-0.39, -0.87, -0.29],
@@ -132,12 +133,12 @@ const pass2 = regl({
     mask: 0xff,
     func: {
       // stencil test always passes.
-      // we are only writing to the stencil buffer in this pass.
+      // since we are only writing to the stencil buffer in this pass.
       cmp: 'always',
       ref: 0,
       mask: 0xff
     },
-    // as can be seen, basically we are doing carmacks reverse.
+    // as can be seen, basically we are doing Carmack's reverse.
     opBack: {
       fail: 'keep',
       zfail: 'increment wrap',
@@ -326,9 +327,9 @@ const shadowScope = regl({
 
   void main() {
     if(gl_FrontFacing) {
-      gl_FragColor = vec4(0,1,0,1);
+      gl_FragColor = vec4(0,1,0,1);  // useful color for debugging.
     } else {
-      gl_FragColor = vec4(1,0,0,1);
+      gl_FragColor = vec4(1,0,0,1); // useful color for debugging.
     }
   }
   `
@@ -347,18 +348,18 @@ const drawShadowSilhoutte = regl({
   void main() {
     /*
      Every edge of the rabbit is assigned a triangle. To all the vertices of that assigned
-     triangle, we assign the normals of the two triangles incident to that edge.
+     triangle, we assign the face-normals of the two triangles incident to that edge.
 
      For that assigned triangle we have that:
      The first vertex is the first edge-vertex, and w=1
-     The second vertex is the first edge-vertex, and w=1
+     The second vertex is the second edge-vertex, and w=1
      The third vertex is simply (0,0,0,0)
 
      Now clearly, only if the first normal is facing the light, and the second normal
      is facing away from the light, we have that the edge is part of the shadow silhouette.
 
      If it is part of the silhouette, we project the first and second vertices
-     to infinity, and the light direction.
+     to infinity, in the direction of the light.
      For the third vertex, w=0, so it is kept in place.
      Because the three vertices are placed in this way, the shadow silhouette is created for that edge.
      So that's how this vertex shader works.
@@ -406,7 +407,7 @@ const drawShadowSilhoutte = regl({
   }
 })
 
-// this craps the shadow caps
+// this draws the shadow caps
 const drawShadowCaps = regl({
   vert: `
   precision mediump float;
@@ -420,16 +421,18 @@ const drawShadowCaps = regl({
   /*
     The below vertex shader needs some explaining:
 
-    First, we define dark cap and light cap as in figure 9-6 of this article:
+    We define dark cap and light cap as in figure 9-6 of this article:
     http://http.developer.nvidia.com/GPUGems/gpugems_ch09.html
 
     Firstly, drawing the light cap is easy, because we can just draw the rabbit mesh as usual. See figure 9-6, and you should understand.
 
-    Secondly. however, we have the shadow cap. Basically, to create the shadow cap, we need to project the mesh onto infinity. And infinity in the case of OpenGL, is the faces of the clip-volume.
+    Secondly. however, we have the dark cap. Basically, to create the dark cap,
+    we need to project the mesh onto infinity, in the direction of the light.
+    And infinity, in the case of OpenGL, is just the faces of the clip-volume.
     The clip-volume is just a cube, and everything outside of this cube, is simply not drawn by OpenGL.
 
-    So to project something to infinity, we need to project it onto one the faces of this cube.
-    The we project onto depends on the light direciton, and we are doing in the function
+    So to project something to infinity, we need to project it onto one of the faces of this cube.
+    The face we project onto depends on the light direction, and what we are doing in the function
     'extend', is that we are finding which face to project upon, and then we project the vertex
     of the mesh onto that face, thus creating the dark cap.
    */
@@ -532,7 +535,7 @@ regl.frame(({tick}) => {
     // ----Final pass: Draw mesh with shadows
     pass3(() => {
       /*
-        to render the shadows, we render the meshes at the places that passes that stencil-test,
+        to render the shadows, we render the meshes at the fragments that passes the stencil-test,
         but with a slightly darker color
        */
       for (var i = 0; i < rabbits.length; i++) {
