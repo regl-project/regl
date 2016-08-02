@@ -23,7 +23,6 @@ var DATA = require('./data.json')
 camera.rotate([0.0, 0.0], [0.0, -0.4])
 camera.zoom(-30.0)
 
-
 var DIFFUSE_COLOR_RABBIT = [0.8, 0.6, 0.9]
 var AMBIENT_COLOR_RABBIT = [0.3, 0.2, 0.3]
 
@@ -61,8 +60,7 @@ const globalScope = regl({
 
       var proj = out
 
-      var view = mat4.lookAt([], [0, 1, 1], [0, 0, 0], [0, 1, 0])
-      view = camera.view()
+      var view = camera.view()
       return mat4.multiply([], proj, view)
     }
   }
@@ -330,7 +328,6 @@ const drawShadowSilhoutte = regl({
   uniforms: {
     model: regl.prop('model')
   }
-
 })
 
 const drawShadowCaps = regl({
@@ -401,8 +398,6 @@ regl.frame(({tick}) => {
     var mRabbit = mat4.identity([])
 
     mat4.translate(mRabbit, mRabbit, [R * Math.cos(theta + phi0), 0.6, R * Math.sin(theta + phi0)])
-
-    mat4.rotateY(mRabbit, mRabbit, tick * 0.0001 + i * 1.4)
 
     rabbits.push(mRabbit)
   }
