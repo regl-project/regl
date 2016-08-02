@@ -387,21 +387,26 @@ const drawShadowCaps = regl({
 })
 
 regl.frame(({tick}) => {
-//  tick = 0
-
   var rabbits = []
 
   var phi0 = tick * 0.003
   var i = 0
+  var theta
+  var mRabbit
 
+  // lower rabbit ring
   for (i = 0; i <= 0.9; i += 0.1) {
-    var theta = Math.PI * 2 * i
-    var R = 2.0
+    theta = Math.PI * 2 * i
+    mRabbit = mat4.identity([])
+    mat4.translate(mRabbit, mRabbit, [2.0 * Math.cos(theta + phi0), 0.6, 2.0 * Math.sin(theta + phi0)])
+    rabbits.push(mRabbit)
+  }
 
-    var mRabbit = mat4.identity([])
-
-    mat4.translate(mRabbit, mRabbit, [R * Math.cos(theta + phi0), 0.6, R * Math.sin(theta + phi0)])
-
+  // upper rabbit ring.
+  for (i = 0; i <= 0.9; i += 0.2) {
+    theta = Math.PI * 2 * i + 1.3
+    mRabbit = mat4.identity([])
+    mat4.translate(mRabbit, mRabbit, [2.0 * Math.cos(theta + phi0 * 0.3), 1.3, 2.0 * Math.sin(theta + phi0 * 0.3)])
     rabbits.push(mRabbit)
   }
 
