@@ -54,21 +54,22 @@
     "vectorize-text": "^3.0.2"
   },
   "scripts": {
-    "mytest": "standard | snazzy && tape test/stats.js",
-    "test": "standard | snazzy && tape test/util/index.js | faucet",
+    "test": "standard | snazzy && npm run lint-docs && tape test/util/index.js | faucet",
     "test-browser": "budo test/util/browser.js --open",
     "cover": "istanbul cover test/util/index.js",
     "bench-browser": "budo bench/bench.js --open",
     "bench-node": "node bench/bench.js",
     "bench-graph": "node bench/bench-graph.js",
     "bench-history": "node bench/bench-history",
-    "build": "npm run build-script && npm run build-min && npm run build-bench && npm run build-gallery && npm run size && npm run build-compare",
-    "size": "browserify --full-paths --transform ./bin/remove-check.js regl.js | discify > www/size.html",
+    "build": "npm run build-script && npm run build-min && npm run build-bench && npm run build-gallery && npm run build-size && npm run build-compare && npm run build-docs",
+    "build-size": "browserify --full-paths --transform ./bin/remove-check.js regl.js | discify > www/size.html",
     "build-script": "browserify regl.js --standalone reglInit > dist/regl.js",
     "build-min": "node bin/build-min.js",
     "build-bench": "browserify bench/bench.js | indexhtmlify > www/bench.html",
     "build-gallery": "node bin/build-gallery.js",
-    "build-compare": "node bin/build-compare.js"
+    "build-compare": "node bin/build-compare.js",
+    "build-docs": "remark API.md > API.md",
+    "lint-docs": "remark README.md && remark API.md && remark CHANGES.md && remark DEVELOPING.md"
   },
   "repository": {
     "type": "git",

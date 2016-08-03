@@ -1,0 +1,15 @@
+{
+  "plugins": {
+    "remark-lint": {
+      "no-multiple-toplevel-headings": false,
+      "list-item-indent": false,
+      "maximum-line-length": 10000,
+      "table-pipe-alignment": false,
+      "table-cell-padding": false
+    },
+    "remark-validate-links": {
+    },
+    "remark-toc": {
+    }
+  }
+}
