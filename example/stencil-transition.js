@@ -14,17 +14,12 @@ var gl = c.getContext('webgl', {
 const fit = require('canvas-fit')
 const regl = require('../regl')({gl: gl})
 const mat4 = require('gl-mat4')
-const camera = require('canvas-orbit-camera')(webglCanvas)
 window.addEventListener('resize', fit(webglCanvas), false)
 const bunny = require('bunny')
 const normals = require('angle-normals')
 var boundingBox = require('vertices-bounding-box')
 var tform = require('geo-3d-transform-mat4')
 var seedrandom = require('seedrandom')
-
-// configure intial camera view.
-camera.rotate([0.0, 0.0], [0.0, -0.4])
-camera.zoom(-10.0)
 
 // center the rabbit mesh on the origin.
 function centerMesh (mesh) {
@@ -367,6 +362,4 @@ regl.frame(({tick}) => {
     f0(scene0)
     f1(scene1)
   })
-
-  camera.tick()
 })
