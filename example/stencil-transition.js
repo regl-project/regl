@@ -21,7 +21,7 @@ var boundingBox = require('vertices-bounding-box')
 var tform = require('geo-3d-transform-mat4')
 var seedrandom = require('seedrandom')
 
-// center the rabbit mesh on the origin.
+// center the rabbit mesh to the origin.
 function centerMesh (mesh) {
   var bb = boundingBox(mesh.positions)
 
@@ -79,8 +79,8 @@ var N_TEX = 20 // how many transition textures we use.
   To implement the transition effect, we have a bunch of textures that we cycle through, and
   render to the stencul buffer.
 
-  The texture makeTexture(0) is all white, and makeTexture(1.0) is all black.
-  But makeTexture(0.5) will be random noise, where about, in average, half the pixels are white, and
+  The texture returned by makeTexture(0) is all white, and makeTexture(1.0) is all black.
+  But makeTexture(0.5) will be random noise, where about in average, half the pixels are white, and
   the other half are black.
  */
 function makeTexture (f) {
@@ -125,8 +125,6 @@ Mesh.prototype.draw = regl({
   uniforms: {
     model: (_, props, batchId) => {
       var m = mat4.identity([])
-
-      mat4.translate(m, m, props.translate)
 
       var s = props.scale
       mat4.scale(m, m, [s, s, s])
@@ -207,13 +205,13 @@ var drawFullscreenTexture = regl({
     /*
       We basically tile the transition texture over the entire screen.
 
-      The factor 0.05, makes the blocks in the effect very big.
+      The factor 0.05 makes the blocks in the effect very big.
       You can make them smaller by increasing this factor.
      */
     float x = texture2D(tex, uv * scale * 0.05).x;
 
     /*
-      If white, do not draw to stencil buffer, but discard the fragment
+      If white, do not draw to stencil buffer, but discard the fragment.
       But if black, draw to stencil buffer.
      */
     if(x > 0.5)
@@ -329,16 +327,16 @@ regl.frame(({tick}) => {
 
   // These are the scenes we will be transitioning between.
   var scene0 = () => {
-    boxMesh.draw({scale: 10.2, translate: [0.0, 0.0, 0.0], color: [0.0, 0.5, 0.0]})
+    boxMesh.draw({scale: 10.2, color: [0.0, 0.5, 0.0]})
   }
   var scene1 = () => {
-    bunnyMesh.draw({scale: 1.0, translate: [0.0, 0.0, 0.0], color: [0.6, 0.0, 0.0]})
+    bunnyMesh.draw({scale: 1.0, color: [0.6, 0.0, 0.0]})
   }
 
-  // Takes this many frames to transition from one model to the other.
+  // Takes this many frames to transition from one scene to the other.
   var CYCLE_LENGTH = 60
 
-  var normTick = tick % CYCLE_LENGTH  // normalize tick to be in range [0,59]
+  var normTick = tick % CYCLE_LENGTH  // normalize tick to be in range [0,CYCLE_LENGTH-1]
   var t = normTick * normTick * 0.001
   if (t > 1.0) {
     t = 1.0
