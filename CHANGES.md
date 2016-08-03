@@ -2,20 +2,15 @@
 
 ## Planned
 
-* More performance monitoring hooks
-    + Track currently used resource requirements
-    + Output should be serializable -> works as input to constructor checks
-
 * Context loss
 
 * Write comparison suite
 
-* Make error messages more helpful
-    + When possible, try to suggest a fix for any errors which are raised
+* Comments for all core modules
+
+* Update contributing guidelines, make it easier for people to help out
 
 * Add a mechanism for users to specify minimum resource requirements (texture size, varying units, etc.)
-* More validation
-    + Should not be possible to write regl code that crashes on some systems
 
 * Benchmark suite
     + Dashboard for test cases and benchmarks
@@ -27,20 +22,10 @@
     + All interface methods must be documented
     + Examples for all major features
     + Set up/quick start guides
-    + Examples on codepen/requirebin/regl.party
     + Live coding videos on youtube
     + Talks?  (what conferences can we present these results at?)
     + Core library modules need better comments
     + Work flow for development and testing needs documentation
-
-* Testing
-    + Instancing
-    + Float textures / framebuffers and their filtering modes
-    + Constant attributes
-    + General code coverage
-    + Cube framebuffer objects
-
-* Build a website (preview at [regl.party](http://regl.party))
 
 * Helper modules
     + A camera helper module to make getting started with 3D code easier
@@ -55,12 +40,15 @@
     + Asset loading (obj, ply, etc.)
     + Water Reflection(though cubic-framebuffers)
 
-## Next
+## 0.11.0
 
-* Can now use framebuffers as texture.  By default color attachment 0 is used
+* Cubic frame buffer objects!
+* Can now use framebuffers as textures in uniforms.  By default color attachment 0 is used.
 * Support for dynamic properties with nested objects like attributes
-* Cubic frame buffer objects
 * Alias `float16` for `half float` and `float32` for `float`
+* Many bug fixes and stability improvements
+* Website mostly works (preview at [regl.party](http://regl.party))
+* Gallery of examples with movies
 
 ## 0.10.0
 
