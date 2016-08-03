@@ -1,7 +1,7 @@
 {
   "name": "regl",
   "version": "0.11.0",
-  "description": "Regl is a fast functional reactive abstraction for WebGL.",
+  "description": "regl is a fast functional WebGL framework.",
   "main": "regl.js",
   "directories": {
     "example": "example"
@@ -62,12 +62,13 @@
     "bench-node": "node bench/bench.js",
     "bench-graph": "node bench/bench-graph.js",
     "bench-history": "node bench/bench-history",
-    "build": "npm run build-script && npm run build-min && npm run build-bench && npm run build-gallery && npm run size",
+    "build": "npm run build-script && npm run build-min && npm run build-bench && npm run build-gallery && npm run size && npm run build-compare",
     "size": "browserify --full-paths --transform ./bin/remove-check.js regl.js | discify > www/size.html",
     "build-script": "browserify regl.js --standalone reglInit > dist/regl.js",
     "build-min": "node bin/build-min.js",
     "build-bench": "browserify bench/bench.js | indexhtmlify > www/bench.html",
-    "build-gallery": "node bin/build-gallery.js"
+    "build-gallery": "node bin/build-gallery.js",
+    "build-compare": "node bin/build-compare.js"
   },
   "repository": {
     "type": "git",

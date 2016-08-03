@@ -1,0 +1,22 @@
+{
+  "cube": {
+    "description": "The goal of this task is to render a spinning textured cube.  The texture asset is stored in an image that must be loaded over the network.\n",
+    "implementations": {
+      "threejs": {
+        "source": "compare/cube/threejs_cube.html",
+        "html": "www/compare/cube/threejs_cube.html",
+        "suffix": "html"
+      },
+      "webgl": {
+        "source": "compare/cube/webgl_cube.html",
+        "html": "www/compare/cube/webgl_cube.html",
+        "suffix": "html"
+      },
+      "regl": {
+        "source": "compare/cube/regl_cube.js",
+        "html": "www/compare/cube/regl_cube.html",
+        "suffix": "js"
+      }
+    }
+  }
+}
