@@ -44,6 +44,7 @@
     "regl-stats-widget": "0.0.1",
     "resl": "^1.0.0",
     "runscript": "^1.1.0",
+    "seedrandom": "^2.4.2",
     "snazzy": "^3.0.0",
     "standard": "^6.0.7",
     "tape": "^4.4.0",
