@@ -207,6 +207,40 @@ tape('stencil', function (t) {
     testFlags('static - #' + i + ' - x', params)
   })
 
+  // now test nested dynamic properties:
+
+  var nestedDynamicDraw = regl(extend({
+    stencil: {
+      enable: regl.prop('enable'),
+      func: {
+        cmp: regl.prop('func.cmp'),
+        ref: regl.prop('func.ref'),
+        mask: regl.prop('func.mask')
+      },
+      mask: regl.prop('mask'),
+      opFront: {
+        fail: regl.prop('opFront.fail'),
+        zfail: regl.prop('opFront.zfail'),
+        pass: regl.prop('opFront.pass')
+      },
+      opBack: {
+        fail: regl.prop('opBack.fail'),
+        zfail: regl.prop('opBack.zfail'),
+        pass: regl.prop('opBack.pass')
+      }
+    }
+  }, staticOptions))
+
+  permutations.forEach(function (params, i) {
+    nestedDynamicDraw(params)
+    testFlags('nested dynamic 1-shot - #' + i + ' - x', params)
+  })
+
+  permutations.forEach(function (params, i) {
+    nestedDynamicDraw([params])
+    testFlags('nested batch - #' + i + ' - x', params)
+  })
+
   regl.destroy()
   t.equals(gl.getError(), 0, 'error ok')
   createContext.destroy(gl)
