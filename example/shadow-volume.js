@@ -35,7 +35,7 @@ window.addEventListener('resize', fit(webglCanvas), false)
 var DATA = require('./data.json')
 
 camera.rotate([0.0, 0.0], [0.0, -0.4])
-camera.zoom(-30.0)
+camera.zoom(-28.0)
 
 var DIFFUSE_COLOR_RABBIT = [0.7, 0.3, 0.3]
 var AMBIENT_COLOR_RABBIT = [0.3, 0.2, 0.3]
@@ -360,7 +360,7 @@ const drawShadowSilhoutte = regl({
 
      If it is part of the silhouette, we project the first and second vertices
      to infinity, in the direction of the light.
-     For the third vertex, w=0, so it is kept in place.
+     For the third vertex, we have that w=0, so it is kept in place.
      Because the three vertices are placed in this way, the shadow silhouette is created for that edge.
      So that's how this vertex shader works.
 
