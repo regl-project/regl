@@ -94,7 +94,7 @@ tape('stencil', function (t) {
       mask: 0xff,
       opFront: {
         fail: 'keep',
-        zfail: 'keep',
+        zfail: 'replace',
         pass: 'keep'
       },
       opBack: {
@@ -123,6 +123,30 @@ tape('stencil', function (t) {
       }
     }
   ]
+
+  // we need to make sure that we test for all possible values of cmp.
+  Object.keys(compareFuncs).forEach(function (cmp) {
+    permutations.push({
+      enable: true,
+      func: {
+        cmp: cmp,
+        ref: 0,
+        mask: 0xff
+      },
+      mask: 0xff,
+      opFront: {
+        fail: 'keep',
+        zfail: 'keep',
+        pass: 'keep'
+      },
+      opBack: {
+        fail: 'keep',
+        zfail: 'keep',
+        pass: 'keep'
+      }
+    }
+    )
+  })
 
   var staticOptions = {
     frag: [
@@ -165,22 +189,22 @@ tape('stencil', function (t) {
     }
   }, staticOptions))
 
-  permutations.forEach(function (params) {
+  permutations.forEach(function (params, i) {
     dynamicDraw(params)
-    testFlags('dynamic 1-shot - ', params)
+    testFlags('dynamic 1-shot - #' + i + ' - x', params)
   })
 
-  permutations.forEach(function (params) {
+  permutations.forEach(function (params, i) {
     dynamicDraw([params])
-    testFlags('batch - ', params)
+    testFlags('batch - #' + i + ' - x', params)
   })
 
-  permutations.forEach(function (params) {
+  permutations.forEach(function (params, i) {
     var staticDraw = regl(extend({
       stencil: params
     }, staticOptions))
     staticDraw()
-    testFlags('static - ', params)
+    testFlags('static - #' + i + ' - x', params)
   })
 
   regl.destroy()
