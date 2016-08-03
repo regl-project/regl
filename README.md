@@ -121,7 +121,7 @@ You can also use `regl` as a standalone script if you are really stubborn.  The 
 * **Correctness** `regl` has more than 30,000 unit tests and above 95% code coverage. In development mode, `regl` performs strong validation and sanity checks on all input data to help you catch errors faster.
 * **Performance**  `regl` uses dynamic code generation and partial evaluation to remove almost all overhead. Draw commands execute roughly as fast as hand optimized WebGL.
 * **Minimalism** `regl` just wraps WebGL.  It is not a game engine and doesn't have opinions about scene graphs or vector math libraries.
-* **Stability** `regl` takes interface compatibility and semantic versioning seriously, making it well suited for long lived applications that must be supported for months or years down the road.
+* **Stability** `regl` takes interface compatibility and semantic versioning seriously, making it well suited for long lived applications that must be supported for months or years down the road.  It also has no dependencies limiting exposure to risky or unplanned updates.
 * **Power** Any feature in WebGL is accessible, including advanced extensions like [multiple render targets](https://github.com/mikolalysenko/regl/blob/gh-pages/example/deferred_shading.js) or [instancing](https://github.com/mikolalysenko/regl/blob/gh-pages/example/instance-triangle.js).
 
 ### Comparisons

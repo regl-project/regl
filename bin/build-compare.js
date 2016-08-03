@@ -35,7 +35,10 @@ mkdirp(WWW_DIR, function (err) {
     })
 
     function handleFinish (name, data) {
-      comparisons[name] = data
+      comparisons[name] = {
+        description: fs.readFileSync(path.join(ROOT_DIR, name, 'description.txt')).toString(),
+        implementations: data
+      }
       if (--counter > 0) {
         return
       }
@@ -153,11 +156,17 @@ function writePage (name, htmlPath, data, cb) {
 </html>`, cb)
 }
 
+// Move webgl and regl to the top always
+var IMPLEMENTATION_RANK = ['webgl', 'regl']
+function implementationRank (b, a) {
+  return IMPLEMENTATION_RANK.indexOf(a) - IMPLEMENTATION_RANK.indexOf(b)
+}
+
 function writeComparisonPage (comparisons) {
   // save sources
   fs.writeFile(
     path.join(WWW_DIR, 'manifest.json'),
-    JSON.stringify(comparisons))
+    JSON.stringify(comparisons, null, '  '))
 
   var html = [
     `<!DOCTYPE html>
@@ -171,12 +180,16 @@ function writeComparisonPage (comparisons) {
       <h1 class="header">Comparisons</h1>`
   ]
   Object.keys(comparisons).forEach(function (task) {
-    var impl = comparisons[task]
+    var taskInfo = comparisons[task]
     html.push(
       `<div class="task">
         <h1 class="taskname">${task}</h1>
-        <img src="compare/${task}/expected.png" />`)
-    Object.keys(impl).forEach(function (name) {
+        <img src="compare/${task}/expected.png" />
+        <div class="taskdescription">
+        ${taskInfo.description}
+        </div>`)
+    var impl = taskInfo.implementations
+    Object.keys(impl).sort(implementationRank).forEach(function (name) {
       var info = impl[name]
       html.push(
         `<div class="implementation">
