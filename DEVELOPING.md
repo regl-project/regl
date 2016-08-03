@@ -1,37 +1,79 @@
-# Build environment
+# A developer's guide to regl
+This document is to help make it easier to contribute to `regl`.  It describes how some common workflows associated and how to get started with helping out.
 
-## Style
-
-* `regl` ahderes to the [standard](https://github.com/feross/standard) style.
-* Write all test cases, benchmarks and library code using strict ES5 style.
-* Write examples using ES6
-
-## Development set up
-
-* To set up the development environment for regl, you first need to install [nodejs](https://nodejs.org/en/).  Any version >0.10 is supported.
-* Once this is done, you can install regl's development dependencies using the following npm command:
+## Basic set up
+To set up the development environment for regl, you first need to install [nodejs](https://nodejs.org/en/).  Any version >0.10 is supported.  Once this is done, you can install regl's development dependencies using the following npm command:
 
 ```
 npm install
 ```
 
-## Testing and benchmarks
+## Examples
+`regl` has tons of examples.  To run them locally, you can use [budo](https://github.com/mattdesl/budo), which is a minimal HTTP server integrated with browserify.  To install budo, run the following command:
 
-* regl uses [tape](https://www.npmjs.com/package/tape) for unit testing
-* To run the test cases in node, use the following command:
 ```
-npm run test
+npm install -g budo
 ```
-* To run the test cases in your web browser, use:
+
+Then go into the example folder and run any example with the following command:
+
+```
+budo basic.js --open
+```
+
+Where you can replace `basic.js` with the name of whatever example you want to run.
+
+### Adding an example
+To add an example, just create a javascript file in the `example` folder.  Each example should have a header comment at the top of the page that describes how it works.  This comment may contain HTML tags.
+
+If your example needs any static data, please put them in the `example/assets` directory.
+
+To add an image for your example, take a screen shot, name it `myexample.png` and place it in the `example/img` folder.
+
+## Style guidelines
+`regl` adheres to the [standard](https://github.com/feross/standard) style.  The reason for this is to prevent "bikeshed" type discussions about code style and configuration that distract from actual issues.
+
+In addition to the standard style guidelines, we also enforce two extra constraints for technical reasons:
+
+* All test cases, benchmarks and library code must be written using strict ES5 style.
+* All examples use ES6
+
+The reason we do not use ES5 in the library or test code is that regl supports node 0.10, which does not implement ES6.  Because the examples are meant to be illustrative we do not enforce the same strict compatibility requirements.
+
+## Tests
+`regl` uses [tape](https://www.npmjs.com/package/tape) for unit testing.  As a result, you can run any specific unit test directly in node like you would any other script without using any special unit test harness.  For example, to just run the texture2D tests, you could execute the following command from the root directory:
+
+```
+node test/texture2d.js
+```
+
+To run all of the test cases in a batch, use the `npm` test script, which is the following command:
+
+```
+npm test
+```
+
+**IMPORTANT** Before submitting a pull request, be sure to run the test cases first.  If you don't do it, the CI system will flag your PR and you won't be able to merge.
+
+Some test cases make use of browser specific extensions and may need to run in a browser environment.  To run the test suite in a browser, use the following command:
+
 ```
 npm run test-browser
 ```
-* To add a test case, create a new file in the `test/` folder and then add a reference to it in `test/util/index.js`
-* To generate a code coverage report, you can run the following command.  A report webpage will the be generated in `coverage/lcov-report/index.html`
+
+regl also uses istanbul to measure code coverage for the test suite.  To generate a coverage report, use the following command:
+
 ```
-npm run coverage
+npm run cover
 ```
-* To run the benchmarks, use this command:
+
+Then you can view the results in `coverage/lcov-report/index.html`
+
+### Adding a test case
+To add a test case, create a new file in the `test/` folder and then add a reference to it in `test/util/index.js`.  Take a look at the examples in the test folder for help.
+
+## Benchmarks
+To run the benchmarks, use this command:
 
 ```
 npm run bench-node
@@ -65,8 +107,8 @@ Note that the script will run `git stash` before switching to the old
 commits, and then in the end it will switch to the original HEAD and run `git stash pop`,
 in order to ensure that no uncommited changes are lost.
 
-Also note that there is a so-called ancestor commit, and the script will NOT run any benchmarks beyond the ancestor commit. This is because that beyond this ancestor commit, the benchmarking environment had not yet been properly 
-set up, so the benchmarking results produced by these commits should not be used. 
+Also note that there is a so-called ancestor commit, and the script will NOT run any benchmarks beyond the ancestor commit. This is because that beyond this ancestor commit, the benchmarking environment had not yet been properly
+set up, so the benchmarking results produced by these commits should not be used.
 
 Then you can create pretty graphs from the benchmark data outputted
 from `bench-history`. Just do
@@ -80,19 +122,35 @@ outputted by `bench-history`. The script will create an HTML-file with
 graphs made with `d3` from the data, and automatically open the HTML-file
 in your default browser.
 
-* The easiest way to add a new benchmark is to copy an existing benchmark (see for example `bench/clear.js`), modify it, and add an entry to `bench/list.js`
+### Adding a benchmark
+The easiest way to add a new benchmark is to copy an existing benchmark (see for example `bench/clear.js`), modify it, and add an entry to `bench/list.js`
 
-## Building
+### Size measurements
+You can also get a report of the current bundle size of regl using [disc](https://github.com/hughsk/disc).  [An up to date set of stats can be found in `www/size.html`.](https://mikolalysenko.github.io/regl/www/size.html)
 
-* To rebuild all redistributable assets and the static website, use the command:
+To regenerate these results, run the command
+
+```
+npm run build-size
+```
+
+## Comparisons
+The [comparisons pages](https://mikolalysenko.github.io/regl/www/compare.html) is autogenerated from the contents of the `compare/` directory.  Each sub directory in the compare directory contains a task, and each task directory contains several implementations of this task.
+
+An implementation may be either a raw JavaScript file (which is compiled with browserify) or an HTML web page.  Each task must contain an image of the expected results (called `expected.png`) and a description called `description.txt`.
+
+## Rebuilding the web assets
+To rebuild all redistributable assets and the static website, use the command:
+
 ```
 npm run build
 ```
-* If you just want to modify the examples, you can do
-```
-npm run build-gallery
-```
 
-## How to help out
+## Find something to do
+Check out the [change log](CHANGES.md) for planned features and tasks.
 
-Check out the [change log](CHANGES.md) for planned features and tasks.  Alternatively, if you want to propose a new feature or report a bug, you should open an issue on GitHub.
+There is also a list of [open issues on GitHub that need work](https://github.com/mikolalysenko/regl/issues).  Anything with the "help wanted" tag may be good for a beginner starting out.
+
+Alternatively, if you want to propose a new feature or report a bug, you should open an issue on GitHub.
+
+There is also active discussion in the [gitter chat](https://gitter.im/mikolalysenko/regl).  If you join there, you can usually find someone to talk to.
