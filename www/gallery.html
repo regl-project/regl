@@ -165,6 +165,13 @@ a simple cloth simulation. It is also demonstrated how we can manage a dynamic m
   <p>This example shows how you can apply multiple light sources to a model</p>
 
 <p><a href="gallery/lighting.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/lighting.js">Source Code</a></p></li>
+<li><a href="gallery/line.js.html"><img src="gallery/img/line.png" width="332" height="208" alt="example/line.js" ></a><a href="gallery/line.js.html"><h3>line.js</h3></a>
+  <p>This example demonstrates rendering screen space projected lines
+  from a technique described <a href="https://mattdesl.svbtle.com/drawing-lines-is-hard">here</a>.</p>
+
+  <p>This technique requires each vertex to reference the previous and next vertex in the line;
+  this example utilizes attribute byte offsets to share a single position buffer for all three
+  of these attributes.</p><p><a href="gallery/line.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/line.js">Source Code</a></p></li>
 <li><a href="gallery/microphone.js.html"><img src="gallery/img/microphone.png" width="332" height="208" alt="example/microphone.js" ></a><a href="gallery/microphone.js.html"><h3>microphone.js</h3></a>
   <p>No description</p>
 
@@ -179,10 +186,11 @@ a simple cloth simulation. It is also demonstrated how we can manage a dynamic m
 <li><a href="gallery/particles.js.html"><img src="gallery/img/particles.png" width="332" height="208" alt="example/particles.js" ></a><a href="gallery/particles.js.html"><h3>particles.js</h3></a>
   <p>This example show how you can render point particles in regl</p>
 <p><a href="gallery/particles.js.html">Run Example</a></p><p><a href="https://github.com/mikolalysenko/regl/blob/gh-pages/example/particles.js">Source Code</a></p></li>
-<li><a href="gallery/planar-reflection.js.html"><img src="gallery/img/planar-reflection.png" width="332" height="208" alt="example/planar-reflection.js" ></a><a href="gallery/planar-reflection.js.html"><h3>planar-reflection.js</h3></a>
+<li><a href="gallery/planar-reflection.js.html"><iframe width="332" height="187" src="https://www.youtube.com/embed/FUNAcjJHo8U
+?rel=0" frameborder="0" allowfullscreen" frameborder="0" allowfullscreen></iframe></a><a href="gallery/planar-reflection.js.html"><h3>planar-reflection.js</h3></a>
   <p>This example shows how you can render planar reflections using the stencil buffer</p>
 
-  <p>We using the algorithm described <a href="http://www.cse.chalmers.se/edu/year/2015/course/TDA361/shadrefl.pdf#page=60">here</a> </p>
+  <p>We are using the algorithm described <a href="http://www.cse.chalmers.se/edu/year/2015/course/TDA361/shadrefl.pdf#page=60">here</a> </p>
 
   <p>To render the reflections, we mirror all the meshes on the y-axis, and then render them, and then we render the floor with alpha blending over them.
   However, we use the stencil buffer to make sure that the mirrored objects are only visible

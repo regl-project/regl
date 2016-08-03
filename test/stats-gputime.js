@@ -16,7 +16,13 @@ tape('test gpuTime', function (t) {
     var obj = {
       frag: [
         'precision mediump float;',
-        'void main () { gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); } '
+        'void main () {',
+        ' if (fract(gl_FragCoord.x * 0.5) > 0.1) {',
+        '  gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);',
+        ' } else {',
+        '  gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);',
+        ' }',
+        '} '
       ].join('\n'),
       vert: [
         'precision mediump float;',
@@ -140,17 +146,17 @@ tape('test gpuTime', function (t) {
           var d3 = draw3.stats.gpuTime
           var d4 = draw4.stats.gpuTime
 
-          t.equals(
-            ((d1 + d2 + d3 + d4) * 1e3) | 0,
-            (scope1.stats.gpuTime * 1e3) | 0,
+          t.ok(
+            Math.abs(((d1 + d2 + d3 + d4) * 1e3) -
+            (scope1.stats.gpuTime * 1e3)) < 3.0,
             'scope s1 === d1+d2+d3+d4')
-          t.equals(
-            ((d1 + d2 + d3) * 1e3) | 0,
-            (scope2.stats.gpuTime * 1e3) | 0,
+          t.ok(
+            Math.abs(((d1 + d2 + d3) * 1e3) -
+            (scope2.stats.gpuTime * 1e3)) < 3.0,
             'scope s2 === d1+d2+d3')
-          t.equals(
-            ((d1 + d3) * 1e3) | 0,
-            (scope3.stats.gpuTime * 1e3) | 0,
+          t.ok(
+            Math.abs(((d1 + d3) * 1e3) -
+            (scope3.stats.gpuTime * 1e3)) < 3.0,
             'scope s3 === d1+d3')
         }
       }

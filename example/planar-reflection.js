@@ -1,7 +1,7 @@
 /*
   <p>This example shows how you can render planar reflections using the stencil buffer</p>
 
-  <p>We using the algorithm described <a href="http://www.cse.chalmers.se/edu/year/2015/course/TDA361/shadrefl.pdf#page=60">here</a> </p>
+  <p>We are using the algorithm described <a href="http://www.cse.chalmers.se/edu/year/2015/course/TDA361/shadrefl.pdf#page=60">here</a> </p>
 
   <p>To render the reflections, we mirror all the meshes on the y-axis, and then render them, and then we render the floor with alpha blending over them.
   However, we use the stencil buffer to make sure that the mirrored objects are only visible
@@ -32,7 +32,7 @@ camera.zoom(50.0)
 var N = 12 // number of floor tiles.
 var TILE_WHITE = [1.0, 1.0, 1.0]
 var TILE_BLACK = [0.4, 0.4, 0.4]
-var TILE_ALPHA = 0.7
+var TILE_ALPHA = 0.5
 var FLOOR_SCALE = 70.0
 
 var row
