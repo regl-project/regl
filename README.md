@@ -2,7 +2,7 @@
  [![Join the chat at https://gitter.im/ark-lang/ark](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/mikolalysenko/regl) [![Circle CI](https://circleci.com/gh/mikolalysenko/regl.svg?style=shield)](https://circleci.com/gh/mikolalysenko/regl) [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com/)
  [![npm version](https://badge.fury.io/js/regl.svg)](https://badge.fury.io/js/regl) ![file size](https://badge-size.herokuapp.com/mikolalysenko/regl/gh-pages/dist/regl.min.js.svg?compression=gzip)
 
-`regl` is a fast functional reactive abstraction for WebGL.
+`regl` is a fast functional framework for WebGL.
 
 ## Example
 
@@ -115,24 +115,20 @@ You can also use `regl` as a standalone script if you are really stubborn.  The 
 ```
 
 ## Why use `regl`?
-`regl` is basically all of WebGL without all of the shared state.  You can do anything you could in regular WebGL with little overhead and way less debugging. Selling points of `regl` are:
+`regl` is basically all of WebGL without all of the shared state.  You can do anything you could in regular WebGL with little overhead and way less debugging. `regl` emphasizes the following values:
 
-* `regl` makes it easy to load extensions and to adapt the program after the limits of the target device, and exposes many WebGL extensions for easy usage. See [API.md](API.md) for more info.
-* `regl`, in difference to many other WebGL frameworks, has support for easy usage of instanced rendering. See [this example](https://github.com/mikolalysenko/regl/blob/gh-pages/example/instance-triangle.js) for more details.
-* `regl` integrates easily with modules from `stack.gl`, such `gl-mat4` and `gl-vec3`.
-* `regl` is small and bloat-free; A minimized version of [`three.js`](http://threejs.org/) is ~500Kb, while a minimized version of `regl` is only `71Kb`.
-* `regl` has little overhead, and is near as fast as hand-optimized WebGL. You can compare the performance at the [interactive benchmarks](https://mikolalysenko.github.io/regl/www/bench.html). The benchmark `cube` measures the performance of rendering a textured cube in `regl`, and `cube-webgl` does the same thing, but in raw WebGL. And `cube-threejs` does the same thing, but in `three.js`. In particular, notice how much faster `regl` is than `three.js`
-* `regl` performs strong error validation and sanity checking in debug builds. But for production builds of `regl`, all validation will be stripped away.
+* **Simplicity** The interface is concise and emphasizes separation of concerns.  Removing shared state helps localize the effects and interactions of code, making it easier to reason about.
+* **Correctness** `regl` has more than 30,000 unit tests and above 95% code coverage. In development mode, `regl` performs strong validation and sanity checks on all input data to help you catch errors faster.
+* **Performance**  `regl` uses dynamic code generation and partial evaluation to remove almost all overhead. Draw commands execute roughly as fast as hand optimized WebGL.
+* **Minimalism** `regl` just wraps WebGL.  It is not a game engine and doesn't have opinions about scene graphs or vector math libraries.
+* **Stability** `regl` takes interface compatibility and semantic versioning seriously, making it well suited for long lived applications that must be supported for months or years down the road.
+* **Power** Any feature in WebGL is accessible, including advanced extensions like [multiple render targets](https://github.com/mikolalysenko/regl/blob/gh-pages/example/deferred_shading.js) or [instancing](https://github.com/mikolalysenko/regl/blob/gh-pages/example/instance-triangle.js).
 
 ### Comparisons
-
+While `regl` is lower level than many 3D engines, code written in it tends to be highly compact and flexible.  A comparison of `regl` to various other WebGL [libraries across several tasks can be found here](https://mikolalysenko.github.io/regl/www/).
 
 ### Benchmarks
-You can run benchmarks locally using `npm run bench` or check them out here:
-
-* [Interactive benchmarks](https://mikolalysenko.github.io/regl/www/bench.html)
-
-You can also check out our benchmarking results for the last couple of days:
+In order to prevent performance regressions, `regl` is continuously benchmarked.  You can run benchmarks locally using `npm run bench` or [check them out online](https://mikolalysenko.github.io/regl/www/bench.html). The results for the last few days can be found here:
 
 * [Benchmarking Results](https://mikolalysenko.github.io/regl/www/bench-results/bench-result-8ea4a7e806beed0b9732)
 
