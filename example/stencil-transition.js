@@ -1,13 +1,7 @@
 /*
-  <p>This example shows how you can render planar reflections using the stencil buffer</p>
+  <p>This example implements a blocky, dissolve transition effect, that transitions between two 3D models. It
+  uses the stencil buffer to achieve this.</p>
 
-  <p>We using the algorithm described <a href="http://www.cse.chalmers.se/edu/year/2015/course/TDA361/shadrefl.pdf#page=60">here</a> </p>
-
-  <p>To render the reflections, we mirror all the meshes on the y-axis, and then render them, and then we render the floor with alpha blending over them.
-  However, we use the stencil buffer to make sure that the mirrored objects are only visible
-  in the reflecting white tiles. If we did not use the stencil buffer, we would be able to
-  see the mirrored meshes under the floor, which is weird.
-  </p>
 */
 
 const c = document.createElement('canvas')
@@ -28,10 +22,14 @@ var boundingBox = require('vertices-bounding-box')
 var tform = require('geo-3d-transform-mat4')
 var seedrandom = require('seedrandom')
 
+// configure intial camera view.
+camera.rotate([0.0, 0.0], [0.0, -0.4])
+camera.zoom(-10.0)
+
+// center the rabbit mesh on the origin.
 function centerMesh (mesh) {
   var bb = boundingBox(mesh.positions)
 
-  // Translate the geometry center to the origin.
   var _translate = [
     -0.5 * (bb[0][0] + bb[1][0]),
     -0.5 * (bb[0][1] + bb[1][1]),
@@ -41,12 +39,7 @@ function centerMesh (mesh) {
   mat4.translate(translate, translate, _translate)
   mesh.positions = tform(mesh.positions, translate)
 }
-
 centerMesh(bunny)
-
-// configure intial camera view.
-camera.rotate([0.0, 0.0], [0.0, -0.4])
-camera.zoom(-10.0)
 
 var boxPosition = [
   // side faces
@@ -80,13 +73,21 @@ var boxNormal = [
   [0.0, -1.0, 0.0], [0.0, -1.0, 0.0], [0.0, -1.0, 0.0], [0.0, -1.0, 0.0]
 ]
 
-var TEX_W = 64
-var TEX_H = 64
-
-var textures = []
-
 var rng = seedrandom('seed.')
 
+var textures = [] // transition textures.
+var TEX_W = 64 // width of a transition texture
+var TEX_H = 64 // height of a transition texture
+var N_TEX = 20 // how many transition textures we use.
+
+/*
+  To implement the transition effect, we have a bunch of textures that we cycle through, and
+  render to the stencul buffer.
+
+  The texture makeTexture(0) is all white, and makeTexture(1.0) is all black.
+  But makeTexture(0.5) will be random noise, where about, in average, half the pixels are white, and
+  the other half are black.
+ */
 function makeTexture (f) {
   var texData = []
 
@@ -108,8 +109,7 @@ function makeTexture (f) {
   })
 }
 
-var N_TEX = 20
-
+// create all transition textures.
 for (var i = 0; i <= N_TEX; i++) {
   textures[i] = makeTexture(i / N_TEX)
 }
@@ -194,7 +194,10 @@ Mesh.prototype.draw = regl({
   }`
 })
 
-var box = regl({
+/*
+  Draw a texture onto the entire screen.
+ */
+var drawFullscreenTexture = regl({
   frag: `
   precision mediump float;
 
@@ -206,8 +209,18 @@ var box = regl({
   uniform vec2 scale;
 
   void main () {
+    /*
+      We basically tile the transition texture over the entire screen.
 
+      The factor 0.05, makes the blocks in the effect very big.
+      You can make them smaller by increasing this factor.
+     */
     float x = texture2D(tex, uv * scale * 0.05).x;
+
+    /*
+      If white, do not draw to stencil buffer, but discard the fragment
+      But if black, draw to stencil buffer.
+     */
     if(x > 0.5)
       discard;
 
@@ -237,7 +250,10 @@ var box = regl({
   uniforms: {
     viewportWidth: ({viewportWidth}) => viewportWidth,
     viewportHeight: ({viewportHeight}) => viewportHeight,
+
+    // cycle through the transition textures, as t goes from 0.0 to 1.0
     tex: (_, props) => { return textures[Math.floor(props.t * N_TEX)] },
+
     scale: ({viewportWidth, viewportHeight}) => {
       return [Math.ceil(viewportWidth / TEX_W), Math.ceil(viewportHeight / TEX_H)]
     }
@@ -249,10 +265,14 @@ var box = regl({
   }
 })
 
+/*
+  Setup rendering to stencil buffer.
+ */
 const createMask = regl({
   stencil: {
     enable: true,
     mask: 0xff,
+    // if a fragment is covered, set that fragment to 1 in the stencil buffer.
     func: {
       cmp: 'always',
       ref: 1,
@@ -273,6 +293,7 @@ const createMask = regl({
   }
 })
 
+// pass stencil test only if value in stencil buffer is 0.
 const filterMask0 = regl({
   stencil: {
     enable: true,
@@ -285,6 +306,7 @@ const filterMask0 = regl({
   }
 })
 
+// pass stencil test only if value in stencil buffer is 1.
 const filterMask1 = regl({
   stencil: {
     enable: true,
@@ -310,32 +332,38 @@ regl.frame(({tick}) => {
     stencil: 0
   })
 
-  var normTick = tick % 60
-
+  // These are the scenes we will be transitioning between.
   var scene0 = () => {
     boxMesh.draw({scale: 10.2, translate: [0.0, 0.0, 0.0], color: [0.0, 0.5, 0.0]})
   }
-
   var scene1 = () => {
     bunnyMesh.draw({scale: 1.0, translate: [0.0, 0.0, 0.0], color: [0.6, 0.0, 0.0]})
   }
 
+  // Takes this many frames to transition from one model to the other.
+  var CYCLE_LENGTH = 60
+
+  var normTick = tick % CYCLE_LENGTH  // normalize tick to be in range [0,59]
   var t = normTick * normTick * 0.001
   if (t > 1.0) {
     t = 1.0
   }
 
-  if ((tick % 60) === 0) {
+  if ((tick % CYCLE_LENGTH) === 0) {
+    // One cycle is over. So swap filters.
     var temp = f0
     f0 = f1
     f1 = temp
   }
 
   globalScope(() => {
+    // first, render to stencil buffer.
     createMask(() => {
-      box({t: t})
+      drawFullscreenTexture({t: t})
     })
 
+    // then actually render the scenes.
+    // and we are using the stencil buffer to mask the scenes.
     f0(scene0)
     f1(scene1)
   })
