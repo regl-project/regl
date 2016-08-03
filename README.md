@@ -1,8 +1,9 @@
 # regl
+
  [![Join the chat at https://gitter.im/ark-lang/ark](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/mikolalysenko/regl) [![Circle CI](https://circleci.com/gh/mikolalysenko/regl.svg?style=shield)](https://circleci.com/gh/mikolalysenko/regl) [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com/)
  [![npm version](https://badge.fury.io/js/regl.svg)](https://badge.fury.io/js/regl) ![file size](https://badge-size.herokuapp.com/mikolalysenko/regl/gh-pages/dist/regl.min.js.svg?compression=gzip)
 
-`regl` is a fast functional framework for WebGL.
+`regl` is a fast functional framework for WebGL. [For detailed info, check out the API docs.](API.md)
 
 ## Example
 
@@ -11,7 +12,7 @@ In `regl`, there are two fundamental abstractions, **resources** and **commands*
 * A **resource** is a handle to a GPU resident object, like a texture, FBO or buffer.
 * A **command** is a complete representation of the WebGL state required to perform some draw call.
 
-To define a command you specify a mixture of static and dynamic data for the object. Once this is done, `regl` takes this description and then compiles it into optimized JavaScript code.  For example, here is a simple `regl` program to draw a colored triangle:
+To define a command you specify a mixture of static and dynamic data for the object. Once this is done, `regl` takes this description and then compiles it into optimized JavaScript code.  For example, here is a simple `regl` program to draw a triangle:
 
 ```JavaScript
 // Calling the regl module with no arguments creates a full screen canvas and
@@ -79,18 +80,20 @@ regl.frame(({time}) => {
 
 See this example [live](http://regl.party/examples/?basic)
 
-#### More examples
+### More examples
 
 Check out the [gallery](https://mikolalysenko.github.io/regl/www/gallery.html). The source code of all the gallery examples can be found [here](https://github.com/mikolalysenko/regl/tree/gh-pages/example).
 
 ## Setup
 
-regl has no dependencies, so setting it up is pretty easy
+`regl` has no dependencies, so setting it up is pretty easy.  There are 3 basic ways to do this:
 
-#### Live editing
+### Live editing
+
 To try out regl right away, you can use the live editor in the [gallery](http://regl.party/examples).
 
-#### npm
+### npm
+
 The easiest way to use `regl` in a project is via [npm](http://npmjs.com).  Once you have node set up, you can install and use `regl` in your project using the following command:
 
 ```sh
@@ -99,147 +102,61 @@ npm i -S regl
 
 For more info on how to use npm, [check out the official docs](https://docs.npmjs.com/).
 
-#### Standalone script tag
-You can also use `regl` as a standalone script if you are really stubborn.  The most recent versions can be found in the `dist/` folder.  Alternatively, you can directly import regl using npm cdn.
+### Standalone script tag
 
-* Unminified:
+You can also use `regl` as a standalone script if you are really stubborn.  The most recent versions can be found in the `dist/` folder.  Alternatively, you can directly import `regl` using [npm cdn](https://npmcdn.com).
+
+#### Unminified
 
 ```html
 <script src="https://npmcdn.com/regl/dist/regl.js"></script>
 ```
 
-* Minified:
+#### Minified
 
 ```html
 <script src="https://npmcdn.com/regl/dist/regl.min.js"></script>
 ```
 
-## Why use `regl`?
-`regl` is basically all of WebGL without all of the shared state.  You can do anything you could in regular WebGL with little overhead and way less debugging. `regl` emphasizes the following values:
+## Why `regl`
+
+`regl` just removes shared state from WebGL.  You can do anything you could in regular WebGL with little overhead and way less debugging. `regl` emphasizes the following values:
 
 * **Simplicity** The interface is concise and emphasizes separation of concerns.  Removing shared state helps localize the effects and interactions of code, making it easier to reason about.
 * **Correctness** `regl` has more than 30,000 unit tests and above 95% code coverage. In development mode, `regl` performs strong validation and sanity checks on all input data to help you catch errors faster.
 * **Performance**  `regl` uses dynamic code generation and partial evaluation to remove almost all overhead. Draw commands execute roughly as fast as hand optimized WebGL.
-* **Minimalism** `regl` just wraps WebGL.  It is not a game engine and doesn't have opinions about scene graphs or vector math libraries.
+* **Minimalism** `regl` just wraps WebGL.  It is not a game engine and doesn't have opinions about scene graphs or vector math libraries.   Any feature in WebGL is accessible, including advanced extensions like [multiple render targets](https://github.com/mikolalysenko/regl/blob/gh-pages/example/deferred_shading.js) or [instancing](https://github.com/mikolalysenko/regl/blob/gh-pages/example/instance-triangle.js).
 * **Stability** `regl` takes interface compatibility and semantic versioning seriously, making it well suited for long lived applications that must be supported for months or years down the road.  It also has no dependencies limiting exposure to risky or unplanned updates.
-* **Power** Any feature in WebGL is accessible, including advanced extensions like [multiple render targets](https://github.com/mikolalysenko/regl/blob/gh-pages/example/deferred_shading.js) or [instancing](https://github.com/mikolalysenko/regl/blob/gh-pages/example/instance-triangle.js).
 
-### Comparisons
-While `regl` is lower level than many 3D engines, code written in it tends to be highly compact and flexible.  A comparison of `regl` to various other WebGL [libraries across several tasks can be found here](https://mikolalysenko.github.io/regl/www/).
+### [Comparisons](https://mikolalysenko.github.io/regl/www/compare.html)
 
-### Benchmarks
-In order to prevent performance regressions, `regl` is continuously benchmarked.  You can run benchmarks locally using `npm run bench` or [check them out online](https://mikolalysenko.github.io/regl/www/bench.html). The results for the last few days can be found here:
+While `regl` is lower level than many 3D engines, code written in it tends to be highly compact and flexible.  A comparison of `regl` to various other WebGL [libraries across several tasks can be found here](https://mikolalysenko.github.io/regl/www/compare.html).
 
-* [Benchmarking Results](https://mikolalysenko.github.io/regl/www/bench-results/bench-result-8ea4a7e806beed0b9732)
+### [Benchmarks](https://mikolalysenko.github.io/regl/www/bench-results/bench-result-8ea4a7e806beed0b9732)
 
-The benchmarking results were created by using our custom scripts `bench-history` and
-`bench-graph`. You can read more about them in [DEVELOPING.md](DEVELOPING.md).
+In order to prevent performance regressions, `regl` is continuously benchmarked.  You can run benchmarks locally using `npm run bench` or [check them out online](https://mikolalysenko.github.io/regl/www/bench.html). The [results for the last few days can be found here.](https://mikolalysenko.github.io/regl/www/bench-results/bench-result-8ea4a7e806beed0b9732)
+
+These measurements were taken using our custom scripts `bench-history` and
+`bench-graph`. You can read more about them in [the development guide](DEVELOPING.md).
 
 ## [API](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md)
 
-* [Initialization](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#initialization)
-    - [As a fullscreen canvas](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#as-a-fullscreen-canvas)
-    - [From a container div](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#from-a-container-div)
-    - [From a canvas](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#from-a-canvas)
-    - [From a WebGL context](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#from-a-webgl-context)
-  + [All initialization options](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#all-initialization-options)
-* [Commands](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#commands)
-  + [Executing commands](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#executing-commands)
-    - [One-shot rendering](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#one-shot-rendering)
-    - [Batch rendering](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#batch-rendering)
-    - [Scoped commands](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#scoped-commands)
-  + [Inputs](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#inputs)
-    - [Example](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#example)
-    - [Context](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#context)
-    - [Props](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#props)
-    - [`this`](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#-this-)
-  + [Parameters](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#parameters)
-    - [Shaders](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#shaders)
-    - [Uniforms](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#uniforms)
-    - [Attributes](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#attributes)
-    - [Drawing](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#drawing)
-    - [Render target](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#render-target)
-    - [Profiling](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#profiling)
-    - [Depth buffer](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#depth-buffer)
-    - [Blending](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#blending)
-    - [Stencil](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#stencil)
-    - [Polygon offset](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#polygon-offset)
-    - [Culling](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#culling)
-    - [Front face](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#front-face)
-    - [Dithering](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#dithering)
-    - [Line width](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#line-width)
-    - [Color mask](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#color-mask)
-    - [Sample coverage](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#sample-coverage)
-    - [Scissor](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#scissor)
-    - [Viewport](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#viewport)
-* [Resources](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#resources)
-  + [Buffers](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#buffers)
-    - [Constructor](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#constructor)
-    - [Update](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#update)
-      * [In place update](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#in-place-update)
-    - [Destroy](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#destroy)
-    - [Profiling](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#profiling-1)
-  + [Elements](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#elements)
-    - [Constructor](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#constructor-1)
-    - [Update](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#update-1)
-      * [In-place update](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#in-place-update)
-    - [Destroy](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#destroy-1)
-  + [Textures](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#textures)
-    - [Constructor](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#constructor-2)
-    - [Update](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#update-2)
-      * [Partial update](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#partial-update)
-      * [Resize](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#resize)
-    - [Destroy](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#destroy-2)
-    - [Profiling](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#profiling-2)
-  + [Cube maps](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#cube-maps)
-    - [Constructor](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#constructor-3)
-    - [Update](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#update-3)
-      * [In-place update](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#in-place-update-1)
-    - [Profiling](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#profiling-3)
-    - [Destroy](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#destroy-3)
-  + [Render buffers](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#render-buffers)
-    - [Constructor](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#constructor-4)
-    - [Update](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#update-4)
-      * [Resizing](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#resizing)
-    - [Destroy](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#destroy-4)
-    - [Profiling](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#profiling-4)
-  + [Framebuffers](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#framebuffers)
-    - [Constructor](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#constructor-5)
-    - [Update](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#update-5)
-      * [Resizing](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#resizing-1)
-    - [Destroy](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#destroy-5)
-  + [Cubic frame buffers](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#cubic-frame-buffers)
-    - [Constructor](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#constructor-6)
-    - [Update](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#update-6)
-    - [Destroy](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#destroy-6)
-* [Other features](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#other-features)
-  + [Clear the draw buffer](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#clear-the-draw-buffer)
-  + [Reading pixels](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#reading-pixels)
-  + [Per-frame callbacks](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#per-frame-callbacks)
-  + [Extensions](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#extensions)
-  + [Device capabilities and limits](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#device-capabilities-and-limits)
-  + [Performance metrics](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#performance-metrics)
-  + [Clean up](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#clean-up)
-  + [Context loss](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#context-loss)
-  + [Unsafe escape hatch](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#unsafe-escape-hatch)
-* [Tips](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#tips)
-  + [Reuse resources (buffers, elements, textures, etc.)](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#reuse-resources--buffers--elements--textures--etc-)
-  + [Preallocate memory](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#preallocate-memory)
-  + [Debug vs release](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#debug-vs-release)
-  + [Profiling](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#profiling-5)
-  + [Context loss mitigation](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#context-loss-mitigation)
+`regl` has extensive API documentation.  A copy
 
 ## Development
+
 The latest changes in `regl` can be found in the [CHANGELOG](CHANGES.md).
 
 [For info on how to build and test headless, see the contributing guide here](DEVELOPING.md)
 
 ### License
+
 All code (c) 2016 MIT License
 
 Development supported by the [Freeman Lab](https://www.janelia.org/lab/freeman-lab) and the Howard Hughes Medical Institute ([@freeman-lab](https://github.com/freeman-lab) on GitHub)
 
 #### Asset licenses
+
 Many examples use creative commons or public domain artwork for illustrative purposes.  These assets are not included in any of the redistributable packages of regl.
 
 * Test video (doggie-chromakey.ogv) by [L0ckergn0me](https://archive.org/details/L0ckergn0me-PixieGreenScreen446), used under creative commons license
