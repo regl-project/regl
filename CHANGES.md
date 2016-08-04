@@ -13,32 +13,33 @@
 * Add a mechanism for users to specify minimum resource requirements (texture size, varying units, etc.)
 
 * Benchmark suite
-    + Dashboard for test cases and benchmarks
-    + Create some more typical drawing examples
+
+  * Dashboard for test cases and benchmarks
+  * Create some more typical drawing examples
 
 * A pretty printer for the generated code
 
 * Documentation
-    + All interface methods must be documented
-    + Examples for all major features
-    + Set up/quick start guides
-    + Live coding videos on youtube
-    + Talks?  (what conferences can we present these results at?)
-    + Core library modules need better comments
-    + Work flow for development and testing needs documentation
+
+  * All interface methods must be documented
+  * Examples for all major features
+  * Set up/quick start guides
+  * Live coding videos on youtube
+  * Talks?  (what conferences can we present these results at?)
+  * Core library modules need better comments
+  * Work flow for development and testing needs documentation
 
 * Helper modules
-    + A camera helper module to make getting started with 3D code easier
-    + Debugging tools for inspecting the state of framebuffers, textures, buffers
+
+  * A camera helper module to make getting started with 3D code easier
+  * Debugging tools for inspecting the state of framebuffers, textures, buffers
 
 * Recipe book/example set
-    + Globe
-    + Compound scene
-    + Stencil shadows
-    + Point-light shadows(through cubic framebuffers)
-    + Turing patterns
-    + Asset loading (obj, ply, etc.)
-    + Water Reflection(though cubic-framebuffers)
+
+  * Globe
+  * Turing patterns
+  * Asset loading (obj, ply, etc.)
+  * Water Reflection(though cubic-framebuffers)
 
 ## 0.11.0
 
@@ -53,11 +54,16 @@
 ## 0.10.0
 
 * Add a mechanism for managing webgl extensions
-    + Should be able to report errors when extensions are missing
-    + Allow users to disable extensions for testing/mocking
+
+  * Should be able to report errors when extensions are missing
+  * Allow users to disable extensions for testing/mocking
+
 * Doc clean up
+
 * Add more test cases for `regl.read()` and improve validation
+
 * Implement a standard method for handling context creation errors
+
 * Fix several bugs related to `regl.frame` cancellation
 
 ## 0.9.0
@@ -95,37 +101,57 @@
 ## 0.6.0
 
 * Allow for dynamic properties in viewport, scissor box and attributes
+
 * Switch order of arguments to dynamic functions, from (props, context) to (context, props)
-    + functions without a props argument become batch static
+
+  * functions without a props argument become batch static
+
 * Implement non-batch constant context, framebuffer and viewport
+
 * Batched scope rendering
+
 * Switch order of props and context variables for dynamic function args
+
 * function invocation now takes batch id as separate parameter
+
 * Support directly constructing elements and attributes from arrays
+
 * Allow individual attribute properties to be dynamic (eg buffers, offsets, etc.)
+
 * Code generation rewrite
-    + State flag polling is now inlined
-    + draw and batch inlined for static shaders
-    + constants are inlined
-    + fewer arguments passed to generated code
-    + Stop using separate arrays for stacks to manage state, instead state is saved onto the call stack
+
+  * State flag polling is now inlined
+  * draw and batch inlined for static shaders
+  * constants are inlined
+  * fewer arguments passed to generated code
+  * Stop using separate arrays for stacks to manage state, instead state is saved onto the call stack
+
 * Error reporting
-    + All error messages should link to command/resource declaration
-    + Improve validation of vertex attributes
-    + Improve validation of dynamic properties
+
+  * All error messages should link to command/resource declaration
+  * Improve validation of vertex attributes
+  * Improve validation of dynamic properties
+
 * Code quality and contributing
-    + Combined lib/state.js and lib/compile.js into lib/core.js
-    + Delete most of lib/attribute.js
-    + Update development documentation
+
+  * Combined lib/state.js and lib/compile.js into lib/core.js
+  * Delete most of lib/attribute.js
+  * Update development documentation
+
 * Expose limits for shader precision
 
 ## 0.5.0
 
 * Context variables
+
 * Use `this` argument effectively
-    * Should pass this to dynamic attributes and scope
+
+  * Should pass this to dynamic attributes and scope
+
 * Make scopes and dynamic attributes take same argument
+
 * Combine batchId with stats argument
+
 * Pass `this` to draw commands so that they can be stored as members
 
 ## 0.4.0
