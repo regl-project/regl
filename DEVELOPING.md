@@ -45,11 +45,11 @@ In addition to the standard style guidelines, we also enforce two extra constrai
 
 The reason we do not use ES5 in the library or test code is that regl supports node 0.10, which does not implement ES6.  Because the examples are meant to be illustrative we do not enforce the same strict compatibility requirements.
 
-For markdown, we're using [`remark`](https://github.com/wooorm/remark) and [`remark-lint`](https://github.com/wooorm/remark-lint) with a few checks disabled.  More info can be found in the `.remarkrc` file.
+For markdown, we're using [`remark`](https://github.com/wooorm/remark) and [`remark-lint`](https://github.com/wooorm/remark-lint).
 
 ## Tests
 
-`regl` uses [tape](https://www.npmjs.com/package/tape) for unit testing.  As a result, you can run any specific unit test directly in node like you would any other script without using any special unit test harness.  For example, to just run the texture2D tests, you could execute the following command from the root directory:
+`regl` uses [tape](https://www.npmjs.com/package/tape) for unit testing.  As a result, you can run any specific unit test directly in node like you would any other script without using any special unit test harness.  For example, to just run the texture2D tests, you could run the following command from the root directory:
 
 ```sh
 node test/texture2d.js

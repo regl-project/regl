@@ -116,7 +116,7 @@ const drawTriangle = regl({
 })
 ```
 
-To execute a command you call it just like you would any function,
+To run a command you call it just like you would any function,
 
 ```javascript
 drawTriangle()
@@ -126,43 +126,43 @@ drawTriangle()
 
 ### Executing commands
 
-There are 3 ways to execute a command,
+There are 3 ways to run a command,
 
 #### One-shot rendering
 
-In one shot rendering the command is executed once and immediately,
+In one shot rendering the command runs once immediately,
 
 ```javascript
-// Executes command immediately with no arguments
+// Runs command immediately with no arguments
 command()
 
-// Executes a command using the specified arguments
+// Runs a command using the specified arguments
 command(props)
 ```
 
 #### Batch rendering
 
-A command can also be executed multiple times by passing a non-negative integer or an array as the first argument.  The `batchId` is initially `0` and incremented for each executed,
+A command can also run multiple times by passing a non-negative integer or an array as the first argument.  The `batchId` is initially `0` and incremented for each iteration,
 
 ```javascript
-// Executes the command `count`-times
+// Runs the command `count`-times
 command(count)
 
-// Executes the command once for each args
+// Runs the command once for each args
 command([props0, props1, props2, ..., propsn])
 ```
 
 #### Scoped commands
 
-Commands can be nested using scoping.  If the argument to the command is a function then the command is evaluated and the state variables are saved as the defaults for all commands executed within its scope,
+Commands can be nested using scoping.  If the argument to the command is a function then the command is evaluated and the state variables are saved as the defaults for all commands within its scope,
 
 ```javascript
 command(function (context) {
-  // ... execute sub commands
+  // ... run sub commands
 })
 
 command(props, function (context) {
-  // ... execute sub commands
+  // ... run sub commands
 })
 ```
 
@@ -243,7 +243,7 @@ var drawSpinningStretchyTriangle = regl({
 })
 ```
 
-To execute a draw command with dynamic arguments we pass it a configuration object as the first argument,
+To run a draw command with dynamic arguments we pass it a configuration object as the first argument,
 
 ```javascript
 // Draws one spinning triangle
@@ -336,7 +336,7 @@ The most common way to pass data into regl is via props.  The props for a render
 
 #### `this`
 
-While `regl` strives to provide a stateless API, there are a few cases where it can be useful to cache state locally to a specific command.  One way to achieve this is to use objects.  When a regl command is executed as a member function of an object, the `this` parameter is set to the object on which it was called and is passed to all computed parameters. For example, this shows how to use regl to create a simple reusable mesh object,
+While `regl` strives to provide a stateless API, there are a few cases where it can be useful to cache state locally to a specific command.  One way to achieve this is to use objects.  When a regl command is run as a member function of an object, the `this` parameter is set to the object on which it was called and is passed to all computed parameters. For example, this shows how to use regl to create a simple reusable mesh object,
 
 ```javascript
 // First we create a constructor
@@ -634,7 +634,7 @@ var command = regl({
 
 #### Profiling
 
-`regl` can optionally instrument commands to track profiling data.  This is enabled/disabled by setting the `profile` flag on each command.
+`regl` can optionally instrument commands to track profiling data.  This is toggled by setting the `profile` flag on each command.
 
 ```javascript
 var myScope = regl({
@@ -1422,7 +1422,7 @@ myElements.destroy()
 
 #### Texture constructor
 
-There are many ways to upload data to a texture in WebGL.  As with drawing commands, regl consolidates all of these crazy configuration parameters into one function.  Here are some examples of how to create a texture,
+There are many ways to upload data to a texture in WebGL.  As with drawing commands, regl consolidates all of these configuration parameters into one function.  Here are some examples of how to create a texture,
 
 ```javascript
 // From size parameters
@@ -1679,7 +1679,7 @@ Where,
 
 * `data` is an image data object, similar to the arguments for the texture constructor
 * `x, y` is the offset of the subimage within the texture (default `0,0`)
-* `level` is the miplevel to execute the subimage within (default `0`)
+* `level` is the miplevel to run the subimage within (default `0`)
 
 **Relevant WebGL APIs**
 
@@ -2182,7 +2182,7 @@ regl({framebuffer: fbo})(() => {
 `regl` also provides a common wrapper over `requestAnimationFrame` and `cancelAnimationFrame` that integrates gracefully with context loss events.  `regl.frame()` also calls `gl.flush` and drains several internal buffers, so you should try to do all your rendering to the drawing buffer within the frame callback.
 
 ```javascript
-// Hook a callback to execute each frame
+// Hook a callback to run each frame
 var tick = regl.frame(function (context) {
 
   // context is the default state of the regl context variables
