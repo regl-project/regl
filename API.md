@@ -1,94 +1,178 @@
 # REGL API
 
-* [Initialization](#initialization)
-    - [As a fullscreen canvas](#as-a-fullscreen-canvas)
-    - [From a container div](#from-a-container-div)
-    - [From a canvas](#from-a-canvas)
-    - [From a WebGL context](#from-a-webgl-context)
-  + [Initialization options](#initialization-options)
-* [Commands](#commands)
-  + [Executing commands](#executing-commands)
-    - [One-shot rendering](#one-shot-rendering)
-    - [Batch rendering](#batch-rendering)
-    - [Scoped commands](#scoped-commands)
-  + [Inputs](#inputs)
-    - [Context](#context)
-    - [Props](#props)
-    - [`this`](#this)
-  + [Parameters](#parameters)
-    - [Shaders](#shaders)
-    - [Uniforms](#uniforms)
-    - [Attributes](#attributes)
-    - [Drawing](#drawing)
-    - [Render target](#render-target)
-    - [Profiling](#profiling)
-    - [Depth buffer](#depth-buffer)
-    - [Blending](#blending)
-    - [Stencil](#stencil)
-    - [Polygon offset](#polygon-offset)
-    - [Culling](#culling)
-    - [Front face](#front-face)
-    - [Dithering](#dithering)
-    - [Line width](#line-width)
-    - [Color mask](#color-mask)
-    - [Sample coverage](#sample-coverage)
-    - [Scissor](#scissor)
-    - [Viewport](#viewport)
-* [Resources](#resources)
-  + [Buffers](#buffers)
-    - [Constructor](#constructor)
-    - [Update](#update)
-    - [Destroy](#destroy)
-  + [Elements](#elements)
-    - [Constructor](#constructor-1)
-    - [Update](#update-1)
-    - [Destroy](#destroy-1)
-  + [Textures](#textures)
-    - [Constructor](#constructor-2)
-    - [Update](#update-2)
-    - [Destroy](#destroy-2)
-  + [Cube maps](#cube-maps)
-    - [Constructor](#constructor-3)
-    - [Update](#update-3)
-    - [Destroy](#destroy-3)
-  + [Render buffers](#render-buffers)
-    - [Constructor](#constructor-4)
-    - [Update](#update-4)
-    - [Destroy](#destroy-4)
-  + [Framebuffers](#framebuffers)
-    - [Constructor](#constructor-5)
-    - [Update](#update-5)
-    - [Destroy](#destroy-5)
-  + [Cubic frame buffers](#cubic-frame-buffers)
-    - [Constructor](#constructor-6)
-    - [Update](#update-6)
-    - [Destroy](#destroy-6)
-* [Other features](#other-features)
-  + [Clear the draw buffer](#clear-the-draw-buffer)
-  + [Reading pixels](#reading-pixels)
-  + [Per-frame callbacks](#per-frame-callbacks)
-  + [Device capabilities and limits](#device-capabilities-and-limits)
-  + [Performance metrics](#performance-metrics)
-  + [Clean up](#clean-up)
-  + [Context loss](#context-loss)
-  + [Unsafe escape hatch](#unsafe-escape-hatch)
-* [Tips](#tips)
-  + [Reuse resources (buffers, elements, textures, etc.)](#reuse-resources--buffers--elements--textures--etc-)
-  + [Preallocate memory](#preallocate-memory)
-  + [Debug vs release](#debug-vs-release)
-  + [Context loss mitigation](#context-loss-mitigation)
+## Table of contents
 
----------------------------------------
+-   [Initialization](#initialization)
+
+    -   [Quick start](#quick-start)
+
+        -   [As a fullscreen canvas](#as-a-fullscreen-canvas)
+        -   [From a container div](#from-a-container-div)
+        -   [From a canvas](#from-a-canvas)
+        -   [From a WebGL context](#from-a-webgl-context)
+        -   [From a headless context](#from-a-headless-context)
+
+    -   [All initialization options](#all-initialization-options)
+
+-   [Commands](#commands)
+
+    -   [Executing commands](#executing-commands)
+
+        -   [One-shot rendering](#one-shot-rendering)
+        -   [Batch rendering](#batch-rendering)
+        -   [Scoped commands](#scoped-commands)
+
+    -   [Inputs](#inputs)
+
+        -   [Example](#example)
+        -   [Context](#context)
+        -   [Props](#props)
+        -   [this](#this)
+
+    -   [Parameters](#parameters)
+
+        -   [Shaders](#shaders)
+        -   [Uniforms](#uniforms)
+        -   [Attributes](#attributes)
+        -   [Drawing](#drawing)
+        -   [Render target](#render-target)
+        -   [Profiling](#profiling)
+        -   [Depth buffer](#depth-buffer)
+        -   [Blending](#blending)
+        -   [Stencil](#stencil)
+        -   [Polygon offset](#polygon-offset)
+        -   [Culling](#culling)
+        -   [Front face](#front-face)
+        -   [Dithering](#dithering)
+        -   [Line width](#line-width)
+        -   [Color mask](#color-mask)
+        -   [Sample coverage](#sample-coverage)
+        -   [Scissor](#scissor)
+        -   [Viewport](#viewport)
+
+-   [Resources](#resources)
+
+    -   [Buffers](#buffers)
+
+        -   [Buffer constructor](#buffer-constructor)
+
+        -   [Buffer update](#buffer-update)
+
+            -   [Buffer subdata](#buffer-subdata)
+
+        -   [Buffer destructor](#buffer-destructor)
+
+        -   [Profiling info](#profiling-info)
+
+    -   [Elements](#elements)
+
+        -   [Element constructor](#element-constructor)
+
+        -   [Element update](#element-update)
+
+            -   [Element subdata](#element-subdata)
+
+        -   [Element destructor](#element-destructor)
+
+    -   [Textures](#textures)
+
+        -   [Texture constructor](#texture-constructor)
+
+        -   [Texture update](#texture-update)
+
+            -   [Texture subimage](#texture-subimage)
+            -   [Texture resize](#texture-resize)
+
+        -   [Texture destructor](#texture-destructor)
+
+        -   [Texture profiling](#texture-profiling)
+
+    -   [Cube maps](#cube-maps)
+
+        -   [Cube map constructor](#cube-map-constructor)
+
+        -   [Cube map update](#cube-map-update)
+
+            -   [Cube map subimage](#cube-map-subimage)
+
+        -   [Cube map resize](#cube-map-resize)
+
+        -   [Cube map profiling](#cube-map-profiling)
+
+        -   [Cube map destructor](#cube-map-destructor)
+
+    -   [Renderbuffers](#renderbuffers)
+
+        -   [Renderbuffer constructor](#renderbuffer-constructor)
+
+        -   [Renderbuffer update](#renderbuffer-update)
+
+            -   [Renderbuffer resize](#renderbuffer-resize)
+
+        -   [Renderbuffers destructor](#renderbuffers-destructor)
+
+        -   [Renderbuffer profiling](#renderbuffer-profiling)
+
+    -   [Framebuffers](#framebuffers)
+
+        -   [Framebuffer constructor](#framebuffer-constructor)
+
+        -   [Framebuffer update](#framebuffer-update)
+
+            -   [Framebuffer resize](#framebuffer-resize)
+
+        -   [Framebuffer destructor](#framebuffer-destructor)
+
+    -   [Cubic frame buffers](#cubic-frame-buffers)
+
+        -   [Cube framebuffer constructor](#cube-framebuffer-constructor)
+
+        -   [Cube framebuffer update](#cube-framebuffer-update)
+
+            -   [Cube framebuffer resize](#cube-framebuffer-resize)
+
+        -   [Cube framebuffer destructor](#cube-framebuffer-destructor)
+
+-   [Other tasks](#other-tasks)
+
+    -   [Clear the draw buffer](#clear-the-draw-buffer)
+    -   [Reading pixels](#reading-pixels)
+    -   [Per-frame callbacks](#per-frame-callbacks)
+    -   [Extensions](#extensions)
+    -   [Device capabilities and limits](#device-capabilities-and-limits)
+    -   [Performance metrics](#performance-metrics)
+    -   [Clean up](#clean-up)
+    -   [Context loss](#context-loss)
+    -   [Unsafe escape hatch](#unsafe-escape-hatch)
+
+-   [Tips](#tips)
+
+    -   [Reuse commands](#reuse-commands)
+    -   [Reuse resources (buffers, elements, textures, etc.)](#reuse-resources-buffers-elements-textures-etc)
+    -   [Preallocate memory](#preallocate-memory)
+    -   [Debug vs release](#debug-vs-release)
+    -   [Profiling tips](#profiling-tips)
+    -   [Context loss mitigation](#context-loss-mitigation)
+    -   [Cameras](#cameras)
+    -   [Use batch mode](#use-batch-mode)
+    -   [Use glslify](#use-glslify)
+
 ## Initialization
 
+### Quick start
+
 #### As a fullscreen canvas
+
 By default calling `module.exports` on the `regl` package creates a full screen canvas element and WebGLRenderingContext.
 
 ```javascript
 var regl = require('regl')()
 ```
 
+This canvas will dynamically resize whenever the window changes shape.  For most quick demos this is an easy way to get started using `regl`.
+
 #### From a container div
+
 Alternatively passing a container element as the first argument appends the generated canvas to its children.
 
 ```javascript
@@ -102,6 +186,7 @@ var regl = require('regl')({
 ```
 
 #### From a canvas
+
 If the first argument is an HTMLCanvasElement, then `regl` will use this canvas to create a new WebGLRenderingContext that it renders into.
 
 ```javascript
@@ -115,6 +200,7 @@ var regl = require('regl')({
 ```
 
 #### From a WebGL context
+
 Finally, if the first argument is a WebGLRenderingContext, then `regl` will just use this context without touching the DOM at all.
 
 ```javascript
@@ -127,7 +213,9 @@ var regl = require('regl')({
 })
 ```
 
-Note that this form is compatible with [`headless-gl`](https://github.com/stackgl/headless-gl) and can be used to do offscreen rendering in node.js. For example,
+#### From a headless context
+
+The above form can also be used to run `regl` headlessly by combining it with the [`headless-gl`](https://github.com/stackgl/headless-gl) package.  This works in node.js, electron and the browser.
 
 ```javascript
 //Creates a headless 256x256 regl instance
@@ -136,29 +224,29 @@ var regl = require('regl')(require('gl')(256, 256))
 
 ### All initialization options
 
-
-| Options | Meaning |
-|---------|---------|
-| `gl` | A reference to a WebGL rendering context. (Default created from canvas) |
-| `canvas` | A reference to an HTML canvas element. (Default created and appending to container) |
-| `container` | A container element which regl inserts a canvas into. (Default `document.body`) |
-| `attributes` | The [context creation attributes](https://www.khronos.org/registry/webgl/specs/1.0/#WEBGLCONTEXTATTRIBUTES) passed to the WebGL context constructor.  See below for defaults. |
-| `pixelRatio` | A multiplier which is used to scale the canvas size relative to the container.  (Default `window.devicePixelRatio`)|
-| `extensions` | A list of extensions that must be supported by WebGL context. Default `[]` |
-| `optionalExtensions` | A list of extensions which are loaded opportunistically. Default `[]` |
-| `profile` | If set, turns on profiling for all commands by default. (Default `false`) |
-| `onDone` | An optional callback which accepts a pair of arguments, `(err, regl)` that is called after the application loads.  If not specified, context creation errors throw. |
+| Options              | Meaning                                                                                                                                                                       |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `gl`                 | A reference to a WebGL rendering context. (Default created from canvas)                                                                                                       |
+| `canvas`             | A reference to an HTML canvas element. (Default created and appending to container)                                                                                           |
+| `container`          | A container element which regl inserts a canvas into. (Default `document.body`)                                                                                               |
+| `attributes`         | The [context creation attributes](https://www.khronos.org/registry/webgl/specs/1.0/#WEBGLCONTEXTATTRIBUTES) passed to the WebGL context constructor.  See below for defaults. |
+| `pixelRatio`         | A multiplier which is used to scale the canvas size relative to the container.  (Default `window.devicePixelRatio`)                                                           |
+| `extensions`         | A list of extensions that must be supported by WebGL context. Default `[]`                                                                                                    |
+| `optionalExtensions` | A list of extensions which are loaded opportunistically. Default `[]`                                                                                                         |
+| `profile`            | If set, turns on profiling for all commands by default. (Default `false`)                                                                                                     |
+| `onDone`             | An optional callback which accepts a pair of arguments, `(err, regl)` that is called after the application loads.  If not specified, context creation errors throw.           |
 
 **Notes**
 
-* `canvas` or `container` may be a CSS selector string or a DOM element
-* `extensions` and `optionalExtensions` can be either arrays or comma separated strings representing all extensions.  For more information see the [WebGL extension registry](https://www.khronos.org/registry/webgl/extensions/)
-* `onDone` is called
+-   `canvas` or `container` may be a CSS selector string or a DOM element
+-   `extensions` and `optionalExtensions` can be either arrays or comma separated strings representing all extensions.  For more information see the [WebGL extension registry](https://www.khronos.org/registry/webgl/extensions/)
+-   `onDone` is called
 
----------------------------------------
+* * *
+
 ## Commands
 
-*Draw commands* are the fundamental abstraction in `regl`.  A draw command wraps up all of the WebGL state associated with a draw call (either `drawArrays` or `drawElements`) and packages it into a single reusable function. For example, here is a command that draws a triangle,
+_Draw commands_ are the fundamental abstraction in `regl`.  A draw command wraps up all of the WebGL state associated with a draw call (either `drawArrays` or `drawElements`) and packages it into a single reusable function. For example, here is a command that draws a triangle,
 
 ```javascript
 const drawTriangle = regl({
@@ -181,58 +269,65 @@ const drawTriangle = regl({
 })
 ```
 
-To execute a command you call it just like you would any function,
+To run a command you call it just like you would any function,
 
 ```javascript
 drawTriangle()
 ```
 
----------------------------------------
+* * *
+
 ### Executing commands
-There are 3 ways to execute a command,
+
+There are 3 ways to run a command,
 
 #### One-shot rendering
-In one shot rendering the command is executed once and immediately,
+
+In one shot rendering the command runs once immediately,
 
 ```javascript
-// Executes command immediately with no arguments
+// Runs command immediately with no arguments
 command()
 
-// Executes a command using the specified arguments
+// Runs a command using the specified arguments
 command(props)
 ```
 
 #### Batch rendering
-A command can also be executed multiple times by passing a non-negative integer or an array as the first argument.  The `batchId` is initially `0` and incremented for each executed,
+
+A command can also run multiple times by passing a non-negative integer or an array as the first argument.  The `batchId` is initially `0` and incremented for each iteration,
 
 ```javascript
-// Executes the command `count`-times
+// Runs the command `count`-times
 command(count)
 
-// Executes the command once for each args
+// Runs the command once for each args
 command([props0, props1, props2, ..., propsn])
 ```
 
 #### Scoped commands
-Commands can be nested using scoping.  If the argument to the command is a function then the command is evaluated and the state variables are saved as the defaults for all commands executed within its scope,
+
+Commands can be nested using scoping.  If the argument to the command is a function then the command is evaluated and the state variables are saved as the defaults for all commands within its scope,
 
 ```javascript
 command(function (context) {
-  // ... execute sub commands
+  // ... run sub commands
 })
 
 command(props, function (context) {
-  // ... execute sub commands
+  // ... run sub commands
 })
 ```
 
----------------------------------------
+* * *
+
 ### Inputs
+
 Inputs to `regl` commands can come from one of three sources,
 
-* Context: Context variables are not used directly in commands, but can be passed into
-* Props: props are arguments which are passed into commands
-* `this`: `this` variables are indexed from the `this` variable that the command was called with
+-   Context: Context variables are not used directly in commands, but can be passed into
+-   Props: props are arguments which are passed into commands
+-   `this`: `this` variables are indexed from the `this` variable that the command was called with
 
 If you are familiar with Facebook's [react](https://github.com/facebook/react), these are roughly analogous to a component's [context](https://facebook.github.io/react/docs/context.html), [props](https://facebook.github.io/react/docs/transferring-props.html) and [state](https://facebook.github.io/react/docs/component-api.html#setstate) variables respectively.
 
@@ -301,7 +396,7 @@ var drawSpinningStretchyTriangle = regl({
 })
 ```
 
-To execute a draw command with dynamic arguments we pass it a configuration object as the first argument,
+To run a draw command with dynamic arguments we pass it a configuration object as the first argument,
 
 ```javascript
 // Draws one spinning triangle
@@ -328,19 +423,20 @@ drawSpinningStretchyTriangle([
 ```
 
 #### Context
+
 Context variables in `regl` are computed before any other parameters and can also be passed from a scoped command to any sub-commands.  `regl` defines the following default context variables:
 
-| Name | Description |
-|------|-------------|
-| `tick` | The number of frames rendered |
-| `time` | Total time elapsed since the regl was initialized in seconds |
-| `viewportWidth` | Width of the current viewport in pixels |
-| `viewportHeight` | Height of the current viewport in pixels |
-| `framebufferWidth` | Width of the current framebuffer in pixels |
-| `framebufferHeight` | Height of the current framebuffer in pixels |
-| `drawingBufferWidth` | Width of the WebGL context drawing buffer |
-| `drawingBufferHeight` | Height of the WebGL context drawing buffer |
-| `pixelRatio` | The pixel ratio of the drawing buffer |
+| Name                  | Description                                                  |
+| --------------------- | ------------------------------------------------------------ |
+| `tick`                | The number of frames rendered                                |
+| `time`                | Total time elapsed since the regl was initialized in seconds |
+| `viewportWidth`       | Width of the current viewport in pixels                      |
+| `viewportHeight`      | Height of the current viewport in pixels                     |
+| `framebufferWidth`    | Width of the current framebuffer in pixels                   |
+| `framebufferHeight`   | Height of the current framebuffer in pixels                  |
+| `drawingBufferWidth`  | Width of the WebGL context drawing buffer                    |
+| `drawingBufferHeight` | Height of the WebGL context drawing buffer                   |
+| `pixelRatio`          | The pixel ratio of the drawing buffer                        |
 
 You can define context variables in the `context` block of a command.  For example, here is how you can use context variables to set up a camera:
 
@@ -388,10 +484,12 @@ setupCamera({
 ```
 
 #### Props
+
 The most common way to pass data into regl is via props.  The props for a render command are declared
 
 #### `this`
-While `regl` strives to provide a stateless API, there are a few cases where it can be useful to cache state locally to a specific command.  One way to achieve this is to use objects.  When a regl command is executed as a member function of an object, the `this` parameter is set to the object on which it was called and is passed to all computed parameters. For example, this shows how to use regl to create a simple reusable mesh object,
+
+While `regl` strives to provide a stateless API, there are a few cases where it can be useful to cache state locally to a specific command.  One way to achieve this is to use objects.  When a regl command is run as a member function of an object, the `this` parameter is set to the object on which it was called and is passed to all computed parameters. For example, this shows how to use regl to create a simple reusable mesh object,
 
 ```javascript
 // First we create a constructor
@@ -463,11 +561,14 @@ teapotMesh.draw({
 })
 ```
 
----------------------------------------
+* * *
+
 ### Parameters
+
 The input to a command declaration is a complete description of the WebGL state machine in the form of an object.  The properties of this object are parameters which specify how values in the WebGL state machine are to be computed.
 
----------------------------------------
+* * *
+
 #### Shaders
 
 Each draw command can specify the source code for a vertex and/or fragment shader,
@@ -490,23 +591,25 @@ var command = regl({
 })
 ```
 
-| Property | Description |
-|----------|-------------|
-| `vert` | Source code of vertex shader |
-| `frag` | Source code of fragment shader |
+| Property | Description                    |
+| -------- | ------------------------------ |
+| `vert`   | Source code of vertex shader   |
+| `frag`   | Source code of fragment shader |
 
 **Related WebGL APIs**
 
-* [`gl.createShader`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateShader.xml)
-* [`gl.shaderSource`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glShaderSource.xml)
-* [`gl.compileShader`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompileShader.xml)
-* [`gl.createProgram`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateProgram.xml)
-* [`gl.attachShader`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glAttachShader.xml)
-* [`gl.linkProgram`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glLinkProgram.xml)
-* [`gl.useProgram`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glUseProgram.xml)
+-   [`gl.createShader`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateShader.xml)
+-   [`gl.shaderSource`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glShaderSource.xml)
+-   [`gl.compileShader`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompileShader.xml)
+-   [`gl.createProgram`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateProgram.xml)
+-   [`gl.attachShader`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glAttachShader.xml)
+-   [`gl.linkProgram`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glLinkProgram.xml)
+-   [`gl.useProgram`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glUseProgram.xml)
 
----------------------------------------
+* * *
+
 #### Uniforms
+
 Uniform variables are specified in the `uniforms` block of the command.  For example,
 
 ```javascript
@@ -537,16 +640,19 @@ var command = regl({
 ```
 
 **Notes**
-* To specify uniforms in nested structs use the fully qualified path with dot notation
-* Matrix uniforms are specified as flat length n^2 arrays without transposing
+
+-   To specify uniforms in nested structs use the fully qualified path with dot notation
+-   Matrix uniforms are specified as flat length n^2 arrays without transposing
 
 **Related WebGL APIs**
 
-* [`gl.getUniformLocation`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGetUniformLocation.xml)
-* [`gl.uniform`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glUniform.xml)
+-   [`gl.getUniformLocation`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGetUniformLocation.xml)
+-   [`gl.uniform`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glUniform.xml)
 
----------------------------------------
+* * *
+
 #### Attributes
+
 ```javascript
 var command = regl({
   // ...
@@ -584,31 +690,33 @@ var command = regl({
 
 Each attribute can have any of the following optional properties,
 
-| Property | Description | Default |
-|----------|-------------|---------|
-| `buffer` | A `REGLBuffer` wrapping the buffer object | `null` |
-| `offset` | The offset of the `vertexAttribPointer` in bytes | `0` |
-| `stride` | The stride of the `vertexAttribPointer` in bytes | `0` |
-| `normalized` | Whether the pointer is normalized | `false` |
-| `size` | The size of the vertex attribute | Inferred from shader |
-| `divisor` | Sets `gl.vertexAttribDivisorANGLE` | `0` * |
+| Property     | Description                                      | Default              |
+| ------------ | ------------------------------------------------ | -------------------- |
+| `buffer`     | A `REGLBuffer` wrapping the buffer object        | `null`               |
+| `offset`     | The offset of the `vertexAttribPointer` in bytes | `0`                  |
+| `stride`     | The stride of the `vertexAttribPointer` in bytes | `0`                  |
+| `normalized` | Whether the pointer is normalized                | `false`              |
+| `size`       | The size of the vertex attribute                 | Inferred from shader |
+| `divisor`    | Sets `gl.vertexAttribDivisorANGLE`               | `0` \*               |
 
 **Notes**
-* Attribute size is inferred from the shader vertex attribute if not specified
-* If a buffer is passed for an attribute then all pointer info is inferred
-* If the arguments to `regl.buffer` are passed, then a buffer is constructed
-* If an array is passed to an attribute, then the vertex attribute is set to a constant
-* `divisor` is only supported if the `ANGLE_instanced_arrays` extension is available
+
+-   Attribute size is inferred from the shader vertex attribute if not specified
+-   If a buffer is passed for an attribute then all pointer info is inferred
+-   If the arguments to `regl.buffer` are passed, then a buffer is constructed
+-   If an array is passed to an attribute, then the vertex attribute is set to a constant
+-   `divisor` is only supported if the `ANGLE_instanced_arrays` extension is available
 
 **Related WebGL APIs**
 
-* [`gl.vertexAttribPointer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glVertexAttribPointer.xml)
-* [`gl.vertexAttrib`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glVertexAttrib.xml)
-* [`gl.getAttribLocation`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGetAttribLocation.xml)
-* [`gl.vertexAttibDivisor`](https://www.opengl.org/sdk/docs/man4/html/glVertexAttribDivisor.xhtml)
-* [`gl.enableVertexAttribArray`, `gl.disableVertexAttribArray`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDisableVertexAttribArray.xml)
+-   [`gl.vertexAttribPointer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glVertexAttribPointer.xml)
+-   [`gl.vertexAttrib`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glVertexAttrib.xml)
+-   [`gl.getAttribLocation`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGetAttribLocation.xml)
+-   [`gl.vertexAttibDivisor`](https://www.opengl.org/sdk/docs/man4/html/glVertexAttribDivisor.xhtml)
+-   [`gl.enableVertexAttribArray`, `gl.disableVertexAttribArray`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDisableVertexAttribArray.xml)
 
----------------------------------------
+* * *
+
 #### Drawing
 
 ```javascript
@@ -621,40 +729,42 @@ var command = regl({
 })
 ```
 
-| Property | Description | Default |
-|----------|-------------|---------|
-| `primitive` | Sets the primitive type | `'triangles'` * |
-| `count` | Number of vertices to draw | `0` * |
-| `offset` | Offset of primitives to draw | `0` |
-| `instances` | Number of instances to render | `0` ** |
-| `elements` | Element array buffer | `null` |
+| Property    | Description                   | Default          |
+| ----------- | ----------------------------- | ---------------- |
+| `primitive` | Sets the primitive type       | `'triangles'` \* |
+| `count`     | Number of vertices to draw    | `0` \*           |
+| `offset`    | Offset of primitives to draw  | `0`              |
+| `instances` | Number of instances to render | `0` \*\*         |
+| `elements`  | Element array buffer          | `null`           |
 
 **Notes**
 
-* If `elements` is specified while `primitive`, `count` and `offset` are not, then these values may be inferred from the state of the element array buffer.
-* `elements` must be either an instance of `regl.elements` or else the arguments to `regl.elements`
-* `instances` is only applicable if the `ANGLE_instanced_arrays` extension is present.
-* `primitive` can take on the following values
+-   If `elements` is specified while `primitive`, `count` and `offset` are not, then these values may be inferred from the state of the element array buffer.
+-   `elements` must be either an instance of `regl.elements` or else the arguments to `regl.elements`
+-   `instances` is only applicable if the `ANGLE_instanced_arrays` extension is present.
+-   `primitive` can take on the following values
 
-| Primitive type | Description |
-|-------|-------------|
-| `'points'` | `gl.POINTS` |
-| `'lines'` | `gl.LINES` |
-| `'line strip'` | `gl.LINE_STRIP` |
-| `'line loop` | `gl.LINE_LOOP` |
-| `'triangles` | `gl.TRIANGLES` |
+| Primitive type     | Description         |
+| ------------------ | ------------------- |
+| `'points'`         | `gl.POINTS`         |
+| `'lines'`          | `gl.LINES`          |
+| `'line strip'`     | `gl.LINE_STRIP`     |
+| `'line loop`       | `gl.LINE_LOOP`      |
+| `'triangles`       | `gl.TRIANGLES`      |
 | `'triangle strip'` | `gl.TRIANGLE_STRIP` |
-| `'triangle fan'` | `gl.TRIANGLE_FAN` |
+| `'triangle fan'`   | `gl.TRIANGLE_FAN`   |
 
 **Related WebGL APIs**
 
-* [`gl.drawArrays`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDrawArrays.xml)
-* [`gl.drawElements`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDrawElements.xml)
-* [`gl.drawArraysInstancedANGLE`](https://www.opengl.org/sdk/docs/man4/html/glDrawArraysInstanced.xhtml)
-* [`gl.drawElementsInstancedANGLE`](https://www.opengl.org/sdk/docs/man4/html/glDrawElementsInstanced.xhtml)
+-   [`gl.drawArrays`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDrawArrays.xml)
+-   [`gl.drawElements`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDrawElements.xml)
+-   [`gl.drawArraysInstancedANGLE`](https://www.opengl.org/sdk/docs/man4/html/glDrawArraysInstanced.xhtml)
+-   [`gl.drawElementsInstancedANGLE`](https://www.opengl.org/sdk/docs/man4/html/glDrawElementsInstanced.xhtml)
 
----------------------------------------
+* * *
+
 #### Render target
+
 A `regl.framebuffer` object may also be specified to allow for rendering to offscreen locations.
 
 ```javascript
@@ -665,17 +775,19 @@ var command = regl({
 
 **Notes**
 
-* `framebuffer` must be a `regl.framebuffer` object
-* Passing `null` sets the framebuffer to the drawing buffer
-* Updating the render target will modify the viewport
+-   `framebuffer` must be a `regl.framebuffer` object
+-   Passing `null` sets the framebuffer to the drawing buffer
+-   Updating the render target will modify the viewport
 
 **Related WebGL APIs**
 
-* [`gl.bindFramebuffer`](https://www.opengl.org/sdk/docs/man4/html/glBindFramebuffer.xhtml)
+-   [`gl.bindFramebuffer`](https://www.opengl.org/sdk/docs/man4/html/glBindFramebuffer.xhtml)
 
----------------------------------------
+* * *
+
 #### Profiling
-`regl` can optionally instrument commands to track profiling data.  This is enabled/disabled by setting the `profile` flag on each command.
+
+`regl` can optionally instrument commands to track profiling data.  This is toggled by setting the `profile` flag on each command.
 
 ```javascript
 var myScope = regl({
@@ -698,23 +810,25 @@ regl.frame(function () {
 
 The following stats are tracked for each command in the `.stats` property:
 
-| Statistic | Meaning |
-|-----------|---------|
-| `count` | The number of times the command has been called |
-| `cpuTime` | The cumulative CPU time spent executing the command in milliseconds |
+| Statistic | Meaning                                                                                                                                                                                              |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `count`   | The number of times the command has been called                                                                                                                                                      |
+| `cpuTime` | The cumulative CPU time spent executing the command in milliseconds                                                                                                                                  |
 | `gpuTime` | The cumulative GPU time spent executing the command in milliseconds (requires the [EXT_disjoint_timer_query](https://www.khronos.org/registry/webgl/extensions/EXT_disjoint_timer_query/) extension) |
 
 **Notes**
 
-* GPU timer queries update asynchronously.  If you are not using `regl.frame()` to tick your application, then you should periodically call `regl.poll()` each frame to update the timer statistics.
-* CPU time uses `performance.now` if available, otherwise it falls back to `Date.now`
+-   GPU timer queries update asynchronously.  If you are not using `regl.frame()` to tick your application, then you should periodically call `regl.poll()` each frame to update the timer statistics.
+-   CPU time uses `performance.now` if available, otherwise it falls back to `Date.now`
 
 **Related WebGL APIs**
 
-* [EXT_disjoint_timer_query](https://www.khronos.org/registry/webgl/extensions/EXT_disjoint_timer_query/)
+-   [EXT_disjoint_timer_query](https://www.khronos.org/registry/webgl/extensions/EXT_disjoint_timer_query/)
 
----------------------------------------
+* * *
+
 #### Depth buffer
+
 All state relating to the depth buffer is stored in the `depth` field of the command.  For example,
 
 ```javascript
@@ -732,35 +846,38 @@ var command = regl({
 })
 ```
 
-| Property | Description | Default |
-|----------|-------------|---------|
-| `enable` | Toggles `gl.enable(gl.DEPTH_TEST)` | `true` |
-| `mask` | Sets `gl.depthMask` | `true` |
-| `range` | Sets `gl.depthRange` | `[0, 1]` |
-| `func` | Sets `gl.depthFunc`. See table below for possible values | `'less'` |
+| Property | Description                                              | Default  |
+| -------- | -------------------------------------------------------- | -------- |
+| `enable` | Toggles `gl.enable(gl.DEPTH_TEST)`                       | `true`   |
+| `mask`   | Sets `gl.depthMask`                                      | `true`   |
+| `range`  | Sets `gl.depthRange`                                     | `[0, 1]` |
+| `func`   | Sets `gl.depthFunc`. See table below for possible values | `'less'` |
 
 **Notes**
-* `depth.func` can take on the possible values
 
-| Value | Description |
-|-------|-------------|
-| `'never'` | `gl.NEVER` |
-| `'always'` | `gl.ALWAYS` |
-| `'<', 'less'` | `gl.LESS` |
-| `'<=', 'lequal'` | `gl.LEQUAL` |
-| `'>', 'greater'` | `gl.GREATER` |
-| `'>=', 'gequal'` | `gl.GEQUAL` |
-| `'=', 'equal'` | `gl.EQUAL` |
+-   `depth.func` can take on the possible values
+
+| Value              | Description   |
+| ------------------ | ------------- |
+| `'never'`          | `gl.NEVER`    |
+| `'always'`         | `gl.ALWAYS`   |
+| `'<', 'less'`      | `gl.LESS`     |
+| `'<=', 'lequal'`   | `gl.LEQUAL`   |
+| `'>', 'greater'`   | `gl.GREATER`  |
+| `'>=', 'gequal'`   | `gl.GEQUAL`   |
+| `'=', 'equal'`     | `gl.EQUAL`    |
 | `'!=', 'notequal'` | `gl.NOTEQUAL` |
 
 **Related WebGL APIs**
 
-* [`gl.depthFunc`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDepthFunc.xml)
-* [`gl.depthMask`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDepthMask.xml)
-* [`gl.depthRange`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDepthRangef.xml)
+-   [`gl.depthFunc`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDepthFunc.xml)
+-   [`gl.depthMask`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDepthMask.xml)
+-   [`gl.depthRange`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDepthRangef.xml)
 
----------------------------------------
+* * *
+
 #### Blending
+
 Blending information is stored in the `blend` field,
 
 ```javascript
@@ -786,54 +903,56 @@ var command = regl({
 })
 ```
 
-| Property | Description | Default |
-|----------|-------------|---------|
-| `enable` | Toggles `gl.enable(gl.BLEND)` | `false` |
-| `equation` | Sets `gl.blendEquation` (see table) | `'add'` |
-| `func` | Sets `gl.blendFunc` (see table) | `{src:'src alpha',dst:'one minus src alpha'}` |
-| `color` | Sets `gl.blendColor` | `[0, 0, 0, 0]` |
+| Property   | Description                         | Default                                       |
+| ---------- | ----------------------------------- | --------------------------------------------- |
+| `enable`   | Toggles `gl.enable(gl.BLEND)`       | `false`                                       |
+| `equation` | Sets `gl.blendEquation` (see table) | `'add'`                                       |
+| `func`     | Sets `gl.blendFunc` (see table)     | `{src:'src alpha',dst:'one minus src alpha'}` |
+| `color`    | Sets `gl.blendColor`                | `[0, 0, 0, 0]`                                |
 
 **Notes**
-* `equation` can be either a string or an object with the fields `{rgb, alpha}`.  The former corresponds to `gl.blendEquation` and the latter to `gl.blendEquationSeparate`
-* The fields of `equation` can take on the following values
 
-| Equation | Description |
-|----------|---------------|
-| `'add'` | `gl.FUNC_ADD` |
-| `'subtract'` | `gl.FUNC_SUBTRACT` |
+-   `equation` can be either a string or an object with the fields `{rgb, alpha}`.  The former corresponds to `gl.blendEquation` and the latter to `gl.blendEquationSeparate`
+-   The fields of `equation` can take on the following values
+
+| Equation             | Description                |
+| -------------------- | -------------------------- |
+| `'add'`              | `gl.FUNC_ADD`              |
+| `'subtract'`         | `gl.FUNC_SUBTRACT`         |
 | `'reverse subtract'` | `gl.FUNC_REVERSE_SUBTRACT` |
-| `'min'` | `gl.MIN_EXT` |
-| `'max'` | `gl.MAX_EXT` |
+| `'min'`              | `gl.MIN_EXT`               |
+| `'max'`              | `gl.MAX_EXT`               |
 
-* `'min'` and `'max'` are only available if the `EXT_blend_minmax` extension is supported
-* `func` can be an object with the fields `{src, dst}` or `{srcRGB, srcAlpha, dstRGB, dstAlpha}`, with the former corresponding to `gl.blendFunc` and the latter to `gl.blendFuncSeparate`
-* The fields of `func` can take on the following values
+-   `'min'` and `'max'` are only available if the `EXT_blend_minmax` extension is supported
+-   `func` can be an object with the fields `{src, dst}` or `{srcRGB, srcAlpha, dstRGB, dstAlpha}`, with the former corresponding to `gl.blendFunc` and the latter to `gl.blendFuncSeparate`
+-   The fields of `func` can take on the following values
 
-| Func | Description |
-|------|-------------|
-| `0, 'zero'` | `gl.ZERO` |
-| `1, 'one'` | `gl.ONE` |
-| `'src color'` | `gl.SRC_COLOR` |
-| `'one minus src color'` | `gl.ONE_MINUS_SRC_COLOR` |
-| `'src alpha'` | `gl.SRC_ALPHA` |
-| `'one minus src alpha'` | `gl.ONE_MINUS_SRC_ALPHA` |
-| `'dst color'` | `gl.DST_COLOR` |
-| `'one minus dst color'` | `gl.ONE_MINUS_DST_COLOR` |
-| `'dst alpha'` | `gl.DST_ALPHA` |
-| `'one minus dst alpha'` | `gl.ONE_MINUS_DST_ALPHA` |
-| `'constant color'` | `gl.CONSTANT_COLOR` |
+| Func                         | Description                   |
+| ---------------------------- | ----------------------------- |
+| `0, 'zero'`                  | `gl.ZERO`                     |
+| `1, 'one'`                   | `gl.ONE`                      |
+| `'src color'`                | `gl.SRC_COLOR`                |
+| `'one minus src color'`      | `gl.ONE_MINUS_SRC_COLOR`      |
+| `'src alpha'`                | `gl.SRC_ALPHA`                |
+| `'one minus src alpha'`      | `gl.ONE_MINUS_SRC_ALPHA`      |
+| `'dst color'`                | `gl.DST_COLOR`                |
+| `'one minus dst color'`      | `gl.ONE_MINUS_DST_COLOR`      |
+| `'dst alpha'`                | `gl.DST_ALPHA`                |
+| `'one minus dst alpha'`      | `gl.ONE_MINUS_DST_ALPHA`      |
+| `'constant color'`           | `gl.CONSTANT_COLOR`           |
 | `'one minus constant color'` | `gl.ONE_MINUS_CONSTANT_COLOR` |
-| `'constant alpha'` | `gl.CONSTANT_ALPHA` |
+| `'constant alpha'`           | `gl.CONSTANT_ALPHA`           |
 | `'one minus constant alpha'` | `gl.ONE_MINUS_CONSTANT_ALPHA` |
-| `'src alpha saturate'` | `gl.SRC_ALPHA_SATURATE` |
+| `'src alpha saturate'`       | `gl.SRC_ALPHA_SATURATE`       |
 
 **Related WebGL APIs**
 
-* [`gl.blendEquationSeparate`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendEquationSeparate.xml)
-* [`gl.blendFuncSeparate`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendFuncSeparate.xml)
-* [`gl.blendColor`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendColor.xml)
+-   [`gl.blendEquationSeparate`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendEquationSeparate.xml)
+-   [`gl.blendFuncSeparate`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendFuncSeparate.xml)
+-   [`gl.blendColor`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendColor.xml)
 
----------------------------------------
+* * *
+
 #### Stencil
 
 Example:
@@ -866,57 +985,62 @@ var command = regl({
 })
 ```
 
-| Property | Description | Default |
-|----------|-------------|---------|
-| `enable` | Toggles `gl.enable(gl.STENCIL_TEST)` | `false` |
-| `mask` | Sets `gl.stencilMask` | `-1` |
-| `func` | Sets `gl.stencilFunc` | `{cmp:'always',ref:0,mask:-1}` |
+| Property  | Description                                | Default                                  |
+| --------- | ------------------------------------------ | ---------------------------------------- |
+| `enable`  | Toggles `gl.enable(gl.STENCIL_TEST)`       | `false`                                  |
+| `mask`    | Sets `gl.stencilMask`                      | `-1`                                     |
+| `func`    | Sets `gl.stencilFunc`                      | `{cmp:'always',ref:0,mask:-1}`           |
 | `opFront` | Sets `gl.stencilOpSeparate` for front face | `{fail:'keep',zfail:'keep',pass:'keep'}` |
-| `opBack` | Sets `gl.stencilOpSeparate` for back face | `{fail:'keep',zfail:'keep',pass:'keep'}` |
+| `opBack`  | Sets `gl.stencilOpSeparate` for back face  | `{fail:'keep',zfail:'keep',pass:'keep'}` |
 
 **Notes**
 
-* `func` is an object which configures the stencil test function. It has 3 properties,
-    + `cmp` which is the comparison function
-    + `ref` which is the reference value
-    + `mask` which is the comparison mask
-* `func.cmp` is a comparison operator which takes one of the following values,
+-   `func` is an object which configures the stencil test function. It has 3 properties,
 
-| Value | Description |
-|-------|-------------|
-| `'never'` | `gl.NEVER` |
-| `'always'` | `gl.ALWAYS` |
-| `'<', 'less'` | `gl.LESS` |
-| `'<=', 'lequal'` | `gl.LEQUAL` |
-| `'>', 'greater'` | `gl.GREATER` |
-| `'>=', 'gequal'` | `gl.GEQUAL` |
-| `'=', 'equal'` | `gl.EQUAL` |
+    -   `cmp` which is the comparison function
+    -   `ref` which is the reference value
+    -   `mask` which is the comparison mask
+
+-   `func.cmp` is a comparison operator which takes one of the following values,
+
+| Value              | Description   |
+| ------------------ | ------------- |
+| `'never'`          | `gl.NEVER`    |
+| `'always'`         | `gl.ALWAYS`   |
+| `'<', 'less'`      | `gl.LESS`     |
+| `'<=', 'lequal'`   | `gl.LEQUAL`   |
+| `'>', 'greater'`   | `gl.GREATER`  |
+| `'>=', 'gequal'`   | `gl.GEQUAL`   |
+| `'=', 'equal'`     | `gl.EQUAL`    |
 | `'!=', 'notequal'` | `gl.NOTEQUAL` |
 
-* `opFront` and `opBack` specify the stencil op.  Each is an object which takes the following parameters:
-    + `fail`, the stencil op which is applied when the stencil test fails
-    + `zfail`, the stencil op which is applied when the stencil test passes and the depth test fails
-    + `pass`, the stencil op which is applied when both stencil and depth tests pass
-* Values for `opFront.fail`, `opFront.zfail`, etc. can come from the following table
+-   `opFront` and `opBack` specify the stencil op.  Each is an object which takes the following parameters:
 
-| Stencil Op | Description |
-|------------|-------------|
-| `'zero'` | `gl.ZERO` |
-| `'keep'` | `gl.KEEP` |
-| `'replace'` | `gl.REPLACE` |
-| `'invert'` | `gl.INVERT` |
-| `'increment'` | `gl.INCR` |
-| `'decrement'` | `gl.DECR` |
+    -   `fail`, the stencil op which is applied when the stencil test fails
+    -   `zfail`, the stencil op which is applied when the stencil test passes and the depth test fails
+    -   `pass`, the stencil op which is applied when both stencil and depth tests pass
+
+-   Values for `opFront.fail`, `opFront.zfail`, etc. can come from the following table
+
+| Stencil Op         | Description    |
+| ------------------ | -------------- |
+| `'zero'`           | `gl.ZERO`      |
+| `'keep'`           | `gl.KEEP`      |
+| `'replace'`        | `gl.REPLACE`   |
+| `'invert'`         | `gl.INVERT`    |
+| `'increment'`      | `gl.INCR`      |
+| `'decrement'`      | `gl.DECR`      |
 | `'increment wrap'` | `gl.INCR_WRAP` |
 | `'decrement wrap'` | `gl.DECR_WRAP` |
 
 **Related WebGL APIs**
 
-* [`gl.stencilFunc`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glStencilFunc.xml)
-* [`gl.stencilMask`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glStencilMask.xml)
-* [`gl.stencilOpSeparate`](http://www.khronos.org/opengles/sdk/2.0/docs/man/xhtml/glStencilOpSeparate.xml)
+-   [`gl.stencilFunc`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glStencilFunc.xml)
+-   [`gl.stencilMask`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glStencilMask.xml)
+-   [`gl.stencilOpSeparate`](http://www.khronos.org/opengles/sdk/2.0/docs/man/xhtml/glStencilOpSeparate.xml)
 
----------------------------------------
+* * *
+
 #### Polygon offset
 
 Polygon offsetting behavior can be controlled using the `polygonOffset` field,
@@ -937,17 +1061,19 @@ var command = regl({
 })
 ```
 
-| Property | Description | Default |
-|----------|-------------|---------|
-| `enable` | Toggles `gl.enable(gl.POLYGON_OFFSET_FILL)` | `false` |
-| `offset` | Sets `gl.polygonOffset` | `{factor:0, units:0}` |
+| Property | Description                                 | Default               |
+| -------- | ------------------------------------------- | --------------------- |
+| `enable` | Toggles `gl.enable(gl.POLYGON_OFFSET_FILL)` | `false`               |
+| `offset` | Sets `gl.polygonOffset`                     | `{factor:0, units:0}` |
 
 **Related WebGL APIs**
 
-* [`gl.polygonOffset`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glPolygonOffset.xml)
+-   [`gl.polygonOffset`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glPolygonOffset.xml)
 
----------------------------------------
+* * *
+
 #### Culling
+
 Example,
 
 ```javascript
@@ -963,26 +1089,28 @@ var command = regl({
 })
 ```
 
-| Property | Description | Default |
-|----------|-------------|---------|
-| `enable` | Toggles `gl.enable(gl.CULL_FACE)` | `false` |
-| `face` | Sets `gl.cullFace` | `'back'` |
+| Property | Description                       | Default  |
+| -------- | --------------------------------- | -------- |
+| `enable` | Toggles `gl.enable(gl.CULL_FACE)` | `false`  |
+| `face`   | Sets `gl.cullFace`                | `'back'` |
 
 **Notes**
 
-* `face` must be one of the following values,
+-   `face` must be one of the following values,
 
-| Face | Description |
-|------|-------------|
-| `'front'` | `gl.FRONT` |
-| `'back'` | `gl.BACK` |
+| Face      | Description |
+| --------- | ----------- |
+| `'front'` | `gl.FRONT`  |
+| `'back'`  | `gl.BACK`   |
 
 **Relevant WebGL APIs**
 
-* [`gl.cullFace`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCullFace.xml)
+-   [`gl.cullFace`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCullFace.xml)
 
----------------------------------------
+* * *
+
 #### Front face
+
 Example,
 
 ```javascript
@@ -995,25 +1123,27 @@ var command = regl({
 })
 ```
 
-| Property | Description | Default |
-|----------|-------------|---------|
+| Property    | Description         | Default |
+| ----------- | ------------------- | ------- |
 | `frontFace` | Sets `gl.frontFace` | `'ccw'` |
 
 **Notes**
 
-* The value for front face must be one of the following,
+-   The value for front face must be one of the following,
 
 | Orientation | Description |
-|------|-------------|
-| `'cw'` | `gl.CW` |
-| `'ccw'` | `gl.CCW` |
+| ----------- | ----------- |
+| `'cw'`      | `gl.CW`     |
+| `'ccw'`     | `gl.CCW`    |
 
 **Relevant WebGL APIs**
 
-* [`gl.frontFace`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glFrontFace.xml)
+-   [`gl.frontFace`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glFrontFace.xml)
 
----------------------------------------
+* * *
+
 #### Dithering
+
 Example,
 
 ```javascript
@@ -1026,12 +1156,14 @@ var command = regl({
 })
 ```
 
-| Property | Description | Default |
-|----------|-------------|---------|
+| Property | Description         | Default |
+| -------- | ------------------- | ------- |
 | `dither` | Toggles `gl.DITHER` | `false` |
 
----------------------------------------
+* * *
+
 #### Line width
+
 Example,
 
 ```javascript
@@ -1044,16 +1176,18 @@ var command = regl({
 })
 ```
 
-| Property | Description | Default |
-|----------|-------------|---------|
-| `lineWidth` | Sets `gl.lineWidth` | `1` |
+| Property    | Description         | Default |
+| ----------- | ------------------- | ------- |
+| `lineWidth` | Sets `gl.lineWidth` | `1`     |
 
 **Relevant WebGL APIs**
 
-* [`gl.lineWidth`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glLineWidth.xml)
+-   [`gl.lineWidth`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glLineWidth.xml)
 
----------------------------------------
+* * *
+
 #### Color mask
+
 Example,
 
 ```javascript
@@ -1066,16 +1200,18 @@ var command = regl({
 })
 ```
 
-| Property | Description | Default |
-|----------|-------------|---------|
+| Property    | Description         | Default                    |
+| ----------- | ------------------- | -------------------------- |
 | `colorMask` | Sets `gl.colorMask` | `[true, true, true, true]` |
 
 **Relevant WebGL APIs**
 
-* [`gl.colorMask`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glColorMask.xml)
+-   [`gl.colorMask`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glColorMask.xml)
 
----------------------------------------
+* * *
+
 #### Sample coverage
+
 Example,
 
 ```javascript
@@ -1095,18 +1231,20 @@ var command = regl({
 })
 ```
 
-| Property | Description | Default |
-|----------|-------------|---------|
-| `enable` | Toggles `gl.enable(gl.SAMPLE_COVERAGE)` | `false` |
-| `alpha` | Toggles `gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE)` | `false` |
-| `coverage` | Sets `gl.sampleCoverage` | `{value:1,invert:false}` |
+| Property   | Description                                      | Default                  |
+| ---------- | ------------------------------------------------ | ------------------------ |
+| `enable`   | Toggles `gl.enable(gl.SAMPLE_COVERAGE)`          | `false`                  |
+| `alpha`    | Toggles `gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE)` | `false`                  |
+| `coverage` | Sets `gl.sampleCoverage`                         | `{value:1,invert:false}` |
 
 **Relevant WebGL APIs**
 
-* [`gl.sampleCoverage`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glColorMask.xml)
+-   [`gl.sampleCoverage`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glColorMask.xml)
 
----------------------------------------
+* * *
+
 #### Scissor
+
 Example,
 
 ```javascript
@@ -1127,24 +1265,28 @@ var command = regl({
 })
 ```
 
-| Property | Description | Default |
-|----------|-------------|---------|
+| Property | Description                     | Default |
+| -------- | ------------------------------- | ------- |
 | `enable` | Toggles `gl.enable(gl.SCISSOR)` | `false` |
-| `box` | Sets `gl.scissor` | `{}` |
+| `box`    | Sets `gl.scissor`               | `{}`    |
 
 **Notes**
-* `box` is the shape of the scissor region, it takes the following parameters
-    + `x` is the left coordinate of the box, default `0`
-    + `y` is the top coordiante of the box, default `0`
-    + `w` is the width of the box, default fbo width - `x`
-    + `h` is the height of the box, default fbo height - `y`
+
+-   `box` is the shape of the scissor region, it takes the following parameters
+
+    -   `x` is the left coordinate of the box, default `0`
+    -   `y` is the top coordiante of the box, default `0`
+    -   `width` is the width of the box, default fbo width - `x`
+    -   `height` is the height of the box, default fbo height - `y`
 
 **Relevant WebGL APIs**
 
-* [`gl.scissor`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glScissor.xml)
+-   [`gl.scissor`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glScissor.xml)
 
----------------------------------------
+* * *
+
 #### Viewport
+
 Example,
 
 ```javascript
@@ -1162,28 +1304,32 @@ var command = regl({
 })
 ```
 
-| Property | Description | Default |
-|----------|-------------|---------|
-| `viewport` | The shape of viewport | `{}` |
+| Property   | Description           | Default |
+| ---------- | --------------------- | ------- |
+| `viewport` | The shape of viewport | `{}`    |
 
 **Notes**
 
-* Like `scissor.box`, `viewport` is a bounding box with properties `x,y,w,h`
-* Updating `viewport` will modify the context variables `viewportWidth` and `viewportHeight`
+-   Like `scissor.box`, `viewport` is a bounding box with properties `x,y,w,h`
+-   Updating `viewport` will modify the context variables `viewportWidth` and `viewportHeight`
 
 **Relevant WebGL APIs**
 
-* [`gl.viewport`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glViewport.xml)
+-   [`gl.viewport`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glViewport.xml)
 
----------------------------------------
+* * *
+
 ## Resources
+
 Besides commands, the other major component of regl are resources.  Resources are GPU resident objects which are managed explicitly by the programmer.  Each resource follows a the same life cycle of create/read/update/delete.
 
----------------------------------------
+* * *
+
 ### Buffers
+
 `regl.buffer` wraps WebGL array buffer objects.
 
-#### Constructor
+#### Buffer constructor
 
 ```javascript
 // Creates an empty length 100 buffer
@@ -1206,25 +1352,25 @@ var positionBuffer = regl.buffer([
 ])
 ```
 
-| Property | Description | Default |
-|----------|-------------|---------|
-| `data` | The data for the vertex buffer (see below) | `null` |
-| `length` | If `data` is `null` or not present reserves space for the buffer | `0` |
-| `usage` | Sets array buffer usage hint | `'static'` |
+| Property | Description                                                      | Default    |
+| -------- | ---------------------------------------------------------------- | ---------- |
+| `data`   | The data for the vertex buffer (see below)                       | `null`     |
+| `length` | If `data` is `null` or not present reserves space for the buffer | `0`        |
+| `usage`  | Sets array buffer usage hint                                     | `'static'` |
 
-| Usage Hint | Description |
-|------------|-------------|
-| `'static'` | `gl.DRAW_STATIC` |
+| Usage Hint  | Description       |
+| ----------- | ----------------- |
+| `'static'`  | `gl.DRAW_STATIC`  |
 | `'dynamic'` | `gl.DYNAMIC_DRAW` |
-| `'stream'` | `gl.STREAM_DRAW` |
+| `'stream'`  | `gl.STREAM_DRAW`  |
 
 **Relevant WebGL APIs**
 
-* [`gl.createBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateBuffer.xml)
-* [`gl.bufferData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferData.xml)
+-   [`gl.createBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateBuffer.xml)
+-   [`gl.bufferData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferData.xml)
 
+#### Buffer update
 
-#### Update
 To reinitialize a buffer in place, we can call the buffer as a function:
 
 ```javascript
@@ -1245,9 +1391,10 @@ The arguments to the update pathway are the same as the constructor and the retu
 
 **Relevant WebGL APIs**
 
-* [`gl.bufferData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferData.xml)
+-   [`gl.bufferData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferData.xml)
 
-##### In place update
+##### Buffer subdata
+
 For performance reasons we may sometimes want to update just a portion of
 We can also update a portion of the buffer using the `subdata` method.  This can be useful if you are dealing with frequently changing or streaming vertex data.  Here is an example:
 
@@ -1279,10 +1426,10 @@ myBuffer.subdata([[7, 8], [9, 10]], 8)
 
 **Relevant WebGL APIs**
 
-* [`gl.bufferSubData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferSubData.xml)
+-   [`gl.bufferSubData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferSubData.xml)
 
+#### Buffer destructor
 
-#### Destroy
 Calling `.destroy()` on a buffer releases all resources associated to the buffer:
 
 ```javascript
@@ -1293,21 +1440,23 @@ var myBuffer = regl.buffer(10)
 myBuffer.destroy()
 ```
 
-* [`gl.deleteBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteBuffer.xml)
+-   [`gl.deleteBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteBuffer.xml)
 
-#### Profiling
+#### Profiling info
 
 The following stats are tracked for each buffer in the `.stats` property:
 
-| Statistic | Meaning |
-|-----------|---------|
-| `size` | The size of the buffer in bytes |
+| Statistic | Meaning                         |
+| --------- | ------------------------------- |
+| `size`    | The size of the buffer in bytes |
 
----------------------------------------
+* * *
+
 ### Elements
+
 `regl.elements` wraps WebGL element array buffer objects.  Each `regl.elements` object stores a buffer object as well as the primitive type and vertex count.
 
-#### Constructor
+#### Element constructor
 
 ```javascript
 var triElements = regl.elements([
@@ -1322,46 +1471,46 @@ var starElements = regl.elements({
 })
 ```
 
-| Property | Description | Default |
-|----------|-------------|---------|
-| `data` | The data of the element buffer | `null` |
-| `usage` | Usage hint (see `gl.bufferData`) | `'static'` |
-| `length` | Length of the element buffer in bytes | `0` * |
-| `primitive` | Default primitive type for element buffer | `'triangles'` * |
-| `count` | Vertex count for element buffer | `0` * |
+| Property    | Description                               | Default          |
+| ----------- | ----------------------------------------- | ---------------- |
+| `data`      | The data of the element buffer            | `null`           |
+| `usage`     | Usage hint (see `gl.bufferData`)          | `'static'`       |
+| `length`    | Length of the element buffer in bytes     | `0` \*           |
+| `primitive` | Default primitive type for element buffer | `'triangles'` \* |
+| `count`     | Vertex count for element buffer           | `0` \*           |
 
-* `usage` must take on one of the following values
+-   `usage` must take on one of the following values
 
-| Usage Hint | Description |
-|------------|-------------|
-| `'static'` | `gl.DRAW_STATIC` |
+| Usage Hint  | Description       |
+| ----------- | ----------------- |
+| `'static'`  | `gl.DRAW_STATIC`  |
 | `'dynamic'` | `gl.DYNAMIC_DRAW` |
-| `'stream'` | `gl.STREAM_DRAW` |
+| `'stream'`  | `gl.STREAM_DRAW`  |
 
-* `primitive` can be one of the following primitive types
+-   `primitive` can be one of the following primitive types
 
-| Primitive type | Description |
-|-------|-------------|
-| `'points'` | `gl.POINTS` |
-| `'lines'` | `gl.LINES` |
-| `'line strip'` | `gl.LINE_STRIP` |
-| `'line loop` | `gl.LINE_LOOP` |
-| `'triangles` | `gl.TRIANGLES` |
+| Primitive type     | Description         |
+| ------------------ | ------------------- |
+| `'points'`         | `gl.POINTS`         |
+| `'lines'`          | `gl.LINES`          |
+| `'line strip'`     | `gl.LINE_STRIP`     |
+| `'line loop`       | `gl.LINE_LOOP`      |
+| `'triangles`       | `gl.TRIANGLES`      |
 | `'triangle strip'` | `gl.TRIANGLE_STRIP` |
-| `'triangle fan'` | `gl.TRIANGLE_FAN` |
+| `'triangle fan'`   | `gl.TRIANGLE_FAN`   |
 
 **Notes**
 
-* `primitive`, `count` and `length` are inferred from from the vertex data
+-   `primitive`, `count` and `length` are inferred from from the vertex data
 
 **Relevant WebGL APIs**
 
-* [`gl.createBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateBuffer.xml)
-* [`gl.bufferData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferData.xml)
-* [`gl.drawElements`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDrawElements.xml)
+-   [`gl.createBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateBuffer.xml)
+-   [`gl.bufferData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferData.xml)
+-   [`gl.drawElements`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDrawElements.xml)
 
+#### Element update
 
-#### Update
 As in the case of buffers, calling an element buffer as a function reinitializes an element buffer in place.  The arguments are the same as for the constructor.  For example:
 
 ```javascript
@@ -1379,9 +1528,10 @@ myElements({
 
 **Relevant WebGL APIs**
 
-* [`gl.bufferData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferData.xml)
+-   [`gl.bufferData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferData.xml)
 
-##### In-place update
+##### Element subdata
+
 Again like buffers it is possible to preallocate an element buffer and update regions of the elements using the `subdata` command.
 
 ```javascript
@@ -1402,9 +1552,9 @@ myElements.subdata(
 
 **Relevant WebGL APIs**
 
-* [`gl.bufferSubData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferSubData.xml)
+-   [`gl.bufferSubData`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBufferSubData.xml)
 
-#### Destroy
+#### Element destructor
 
 ```javascript
 // First we create an element buffer
@@ -1417,14 +1567,15 @@ myElements.destroy()
 
 **Relevant WebGL APIs**
 
-* [`gl.deleteBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteBuffer.xml)
+-   [`gl.deleteBuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteBuffer.xml)
 
----------------------------------------
+* * *
+
 ### Textures
 
-#### Constructor
+#### Texture constructor
 
-There are many ways to upload data to a texture in WebGL.  As with drawing commands, regl consolidates all of these crazy configuration parameters into one function.  Here are some examples of how to create a texture,
+There are many ways to upload data to a texture in WebGL.  As with drawing commands, regl consolidates all of these configuration parameters into one function.  Here are some examples of how to create a texture,
 
 ```javascript
 // From size parameters
@@ -1483,44 +1634,43 @@ var copyPixels = regl.texture({
 
 A data source from an image can be one of the following types:
 
-| Data type | Description |
-|-----------|-------------|
-| Rectangular array of arrays | Interpreted as 2D array of arrays |
-| Typed array | A binary array of pixel values |
-| Array | Interpreted as array of pixel values with type based on the input type |
-| `ndarray` | Any object with a `shape, stride, offset, data` (see [SciJS ndarray](https://github.com/scijs/ndarray))|
-| Image | An HTML image element |
-| Video | An HTML video element |
-| Canvas | A canvas element |
-| Context 2D | A canvas 2D context |
+| Data type                   | Description                                                                                             |
+| --------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Rectangular array of arrays | Interpreted as 2D array of arrays                                                                       |
+| Typed array                 | A binary array of pixel values                                                                          |
+| Array                       | Interpreted as array of pixel values with type based on the input type                                  |
+| `ndarray`                   | Any object with a `shape, stride, offset, data` (see [SciJS ndarray](https://github.com/scijs/ndarray)) |
+| Image                       | An HTML image element                                                                                   |
+| Video                       | An HTML video element                                                                                   |
+| Canvas                      | A canvas element                                                                                        |
+| Context 2D                  | A canvas 2D context                                                                                     |
 
+| Property           | Description                                                                                                                                                      | Default     |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| `width`            | Width of texture                                                                                                                                                 | `0`         |
+| `height`           | Height of texture                                                                                                                                                | `0`         |
+| `mag`              | Sets magnification filter (see table)                                                                                                                            | `'nearest'` |
+| `min`              | Sets minification filter (see table)                                                                                                                             | `'nearest'` |
+| `wrapS`            | Sets wrap mode on S axis (see table)                                                                                                                             | `'repeat'`  |
+| `wrapT`            | Sets wrap mode on T axis (see table)                                                                                                                             | `'repeat'`  |
+| `aniso`            | Sets number of anisotropic samples, requires [EXT_texture_filter_anisotropic](https://www.khronos.org/registry/webgl/extensions/EXT_texture_filter_anisotropic/) | `0`         |
+| `format`           | Texture format (see table)                                                                                                                                       | `'rgba'`    |
+| `type`             | Texture type (see table)                                                                                                                                         | `'uint8'`   |
+| `data`             | Input data (see below)                                                                                                                                           |             |
+| `mipmap`           | See below for a description                                                                                                                                      | `false`     |
+| `flipY`            | Flips textures vertically when uploading                                                                                                                         | `false`     |
+| `alignment`        | Sets unpack alignment per pixel                                                                                                                                  | `1`         |
+| `premultiplyAlpha` | Premultiply alpha when unpacking                                                                                                                                 | `false`     |
+| `colorSpace`       | Sets colorspace conversion                                                                                                                                       | `'none'`    |
+| `data`             | Image data for the texture                                                                                                                                       | `null`      |
 
-| Property | Description | Default |
-|----------|-------------|---------|
-| `width` | Width of texture | `0` |
-| `height` | Height of texture | `0`
-| `mag` | Sets magnification filter (see table) | `'nearest'` |
-| `min` | Sets minification filter (see table) | `'nearest'` |
-| `wrapS` | Sets wrap mode on S axis (see table) | `'repeat'` |
-| `wrapT` | Sets wrap mode on T axis (see table) | `'repeat'` |
-| `aniso` | Sets number of anisotropic samples, requires [EXT_texture_filter_anisotropic](https://www.khronos.org/registry/webgl/extensions/EXT_texture_filter_anisotropic/) | `0` |
-| `format` | Texture format (see table) | `'rgba'` |
-| `type` | Texture type (see table) | `'uint8'` |
-| `data` | Input data (see below) | |
-| `mipmap` | See below for a description | `false` |
-| `flipY` | Flips textures vertically when uploading | `false` |
-| `alignment` | Sets unpack alignment per pixel | `1` |
-| `premultiplyAlpha` | Premultiply alpha when unpacking | `false` |
-| `colorSpace` | Sets colorspace conversion | `'none'` |
-| `data` | Image data for the texture | `null` |
+-   `mipmap`. If `boolean`, then it sets whether or not we should regenerate the mipmaps. If a `string`, it allows you to specify a hint to the mipmap generator. It can be one of the hints below
 
-* `mipmap`. If `boolean`, then it sets whether or not we should regenerate the mipmaps. If a `string`, it allows you to specify a hint to the mipmap generator. It can be one of the hints below
-
-| Mipmap Hint | Description |
-|-------|-------------|
-| `'don't care'`, `'dont care'`  | `gl.DONT_CARE` |
-| `'nice'` | `gl.NICEST` |
-| `'fast'` | `gl.FASTEST` |
+| Mipmap Hint                   | Description    |
+| ----------------------------- | -------------- |
+| `'don't care'`, `'dont care'` | `gl.DONT_CARE` |
+| `'nice'`                      | `gl.NICEST`    |
+| `'fast'`                      | `gl.FASTEST`   |
 
 and if a hint is specified, then also the mipmaps will be regenerated. Finally, `mipmap` can also be an array of arrays. In this case, every subarray will be one of the mipmaps, and you can thus use this option to manually specify the mipmaps of the image. Like this:
 
@@ -1539,99 +1689,99 @@ regl.texture({
 })
 ```
 
-* `shape` can be used as an array shortcut for `[width, height, channels]` of image
-* `radius` can be specified for square images and sets both `width` and `height`
-* `data` can take one of the following values,
-* If an image element is specified and not yet loaded, then regl will upload a temporary image and hook a callback on the image
-* `mag` sets `gl.MAG_FILTER` for the texture and can have one of the following values
+-   `shape` can be used as an array shortcut for `[width, height, channels]` of image
+-   `radius` can be specified for square images and sets both `width` and `height`
+-   `data` can take one of the following values,
+-   If an image element is specified and not yet loaded, then regl will upload a temporary image and hook a callback on the image
+-   `mag` sets `gl.MAG_FILTER` for the texture and can have one of the following values
 
-| Mag filter | Description |
-|------------|-------------|
+| Mag filter  | Description  |
+| ----------- | ------------ |
 | `'nearest'` | `gl.NEAREST` |
-| `'linear'` | `gl.LINEAR` |
+| `'linear'`  | `gl.LINEAR`  |
 
-* `min` sets `gl.MIN_FILTER` for the texture, and can take on one of the following values,
+-   `min` sets `gl.MIN_FILTER` for the texture, and can take on one of the following values,
 
-| Min filter | Description |
-|------------|-------------|
-| `'nearest'` | `gl.NEAREST` |
-| `'linear'` | `gl.LINEAR` |
-| `'mipmap', 'linear mipmap linear'` | `gl.LINEAR_MIPMAP_LINEAR` |
-| `'nearest mipmap linear'` | `gl.NEAREST_MIPMAP_LINEAR` |
-| `'linear mipmap nearest'` | `gl.LINEAR_MIPMAP_NEAREST` |
-| `'nearest mipmap nearest'` | `gl.NEAREST_MIPMAP_NEAREST` |
+| Min filter                         | Description                 |
+| ---------------------------------- | --------------------------- |
+| `'nearest'`                        | `gl.NEAREST`                |
+| `'linear'`                         | `gl.LINEAR`                 |
+| `'mipmap', 'linear mipmap linear'` | `gl.LINEAR_MIPMAP_LINEAR`   |
+| `'nearest mipmap linear'`          | `gl.NEAREST_MIPMAP_LINEAR`  |
+| `'linear mipmap nearest'`          | `gl.LINEAR_MIPMAP_NEAREST`  |
+| `'nearest mipmap nearest'`         | `gl.NEAREST_MIPMAP_NEAREST` |
 
-* `wrap` can be used as an array shortcut for `[wrapS, wrapT]`
-* `wrapS` and `wrapT` can have any of the following values,
+-   `wrap` can be used as an array shortcut for `[wrapS, wrapT]`
+-   `wrapS` and `wrapT` can have any of the following values,
 
-| Wrap mode | Description |
-|-----------|-------------|
-| `'repeat'` | `gl.REPEAT` |
-| `'clamp'` | `gl.CLAMP_TO_EDGE` |
+| Wrap mode  | Description          |
+| ---------- | -------------------- |
+| `'repeat'` | `gl.REPEAT`          |
+| `'clamp'`  | `gl.CLAMP_TO_EDGE`   |
 | `'mirror'` | `gl.MIRRORED_REPEAT` |
 
-* `format` determines the format of the texture and possibly the type.  Possible values for `format` include,
+-   `format` determines the format of the texture and possibly the type.  Possible values for `format` include,
 
-| Format | Description | Channels | Types | Compressed? | Extension? |
-|--------|-------------|----------|-------|------|------------|
-| `'alpha'` | `gl.ALPHA` | 1 | `'uint8','half float','float'` | ✖ | |
-| `'luminance'` | `gl.LUMINANCE` | 1 | `'uint8','half float','float'` | ✖ | |
-| `'luminance alpha'` | `gl.LUMINANCE_ALPHA` | 2 | `'uint8','half float','float'` | ✖ | |
-| `'rgb'` | `gl.RGB` | 3 | `'uint8','half float','float'` | ✖ | |
-| `'rgba'` | `gl.RGBA` | 4  | `'uint8','half float','float'`| ✖ | |
-| `'rgba4'` | `gl.RGBA4` | 4 | `'rgba4'` | ✖ | |
-| `'rgb5 a1'` | `gl.RGB5_A1` | 4 | `'rgb5 a1'` | ✖ | |
-| `'rgb565'` | `gl.RGB565` | 3 | `'rgb565'` | ✖ | |
-| `'srgb'` | `ext.SRGB` | 3 | `'uint8','half float','float'` | ✖ | [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) |
-| `'srgba'` | `ext.RGBA` | 4  | `'uint8','half float','float'`| ✖ | [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) |
-| `'depth'` | `gl.DEPTH_COMPONENT` | 1 | `'uint16','uint32'`  | ✖ | [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) |
-| `'depth stencil'` | `gl.DEPTH_STENCIL` | 2 | `'depth stencil'` | ✖ | [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) |
-| `'rgb s3tc dxt1'` | `ext.COMPRESSED_RGB_S3TC_DXT1_EXT` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
-| `'rgba s3tc dxt1'` | `ext.COMPRESSED_RGBA_S3TC_DXT1_EXT` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
-| `'rgba s3tc dxt3'` | `ext.COMPRESSED_RGBA_S3TC_DXT3_EXT` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
-| `'rgba s3tc dxt5'` | `ext.COMPRESSED_RGBA_S3TC_DXT5_EXT` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/) |
-| `'rgb atc'` | `ext.COMPRESSED_RGB_ATC_WEBGL` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
-| `'rgba atc explicit alpha'` | `ext.COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
-| `'rgba atc interpolated alpha'` | `ext.COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/) |
-| `'rgb pvrtc 4bppv1'` | `ext.COMPRESSED_RGB_PVRTC_4BPPV1_IMG` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
-| `'rgb pvrtc 2bppv1'` | `ext.COMPRESSED_RGB_PVRTC_2BPPV1_IMG` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
-| `'rgba pvrtc 4bppv1'` | `ext.COMPRESSED_RGBA_PVRTC_4BPPV1_IMG` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
-| `'rgba pvrtc 2bppv1'` | `ext.COMPRESSED_RGBA_PVRTC_2BPPV1_IMG` | 4 | `'uint8'` | ✓ | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
-| `'rgb etc1'` | `ext.COMPRESSED_RGB_ETC1_WEBGL` | 3 | `'uint8'` | ✓ | [WEBGL_compressed_texture_etc1](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_etc1/) |
+| Format                          | Description                                        | Channels | Types                          | Compressed? | Extension?                                                                                                          |
+| ------------------------------- | -------------------------------------------------- | -------- | ------------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------- |
+| `'alpha'`                       | `gl.ALPHA`                                         | 1        | `'uint8','half float','float'` | ✖           |                                                                                                                     |
+| `'luminance'`                   | `gl.LUMINANCE`                                     | 1        | `'uint8','half float','float'` | ✖           |                                                                                                                     |
+| `'luminance alpha'`             | `gl.LUMINANCE_ALPHA`                               | 2        | `'uint8','half float','float'` | ✖           |                                                                                                                     |
+| `'rgb'`                         | `gl.RGB`                                           | 3        | `'uint8','half float','float'` | ✖           |                                                                                                                     |
+| `'rgba'`                        | `gl.RGBA`                                          | 4        | `'uint8','half float','float'` | ✖           |                                                                                                                     |
+| `'rgba4'`                       | `gl.RGBA4`                                         | 4        | `'rgba4'`                      | ✖           |                                                                                                                     |
+| `'rgb5 a1'`                     | `gl.RGB5_A1`                                       | 4        | `'rgb5 a1'`                    | ✖           |                                                                                                                     |
+| `'rgb565'`                      | `gl.RGB565`                                        | 3        | `'rgb565'`                     | ✖           |                                                                                                                     |
+| `'srgb'`                        | `ext.SRGB`                                         | 3        | `'uint8','half float','float'` | ✖           | [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/)                                             |
+| `'srgba'`                       | `ext.RGBA`                                         | 4        | `'uint8','half float','float'` | ✖           | [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/)                                             |
+| `'depth'`                       | `gl.DEPTH_COMPONENT`                               | 1        | `'uint16','uint32'`            | ✖           | [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/)                       |
+| `'depth stencil'`               | `gl.DEPTH_STENCIL`                                 | 2        | `'depth stencil'`              | ✖           | [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/)                       |
+| `'rgb s3tc dxt1'`               | `ext.COMPRESSED_RGB_S3TC_DXT1_EXT`                 | 3        | `'uint8'`                      | ✓           | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/)   |
+| `'rgba s3tc dxt1'`              | `ext.COMPRESSED_RGBA_S3TC_DXT1_EXT`                | 4        | `'uint8'`                      | ✓           | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/)   |
+| `'rgba s3tc dxt3'`              | `ext.COMPRESSED_RGBA_S3TC_DXT3_EXT`                | 4        | `'uint8'`                      | ✓           | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/)   |
+| `'rgba s3tc dxt5'`              | `ext.COMPRESSED_RGBA_S3TC_DXT5_EXT`                | 4        | `'uint8'`                      | ✓           | [WEBGL_compressed_texture_s3tc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_s3tc/)   |
+| `'rgb atc'`                     | `ext.COMPRESSED_RGB_ATC_WEBGL`                     | 3        | `'uint8'`                      | ✓           | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/)     |
+| `'rgba atc explicit alpha'`     | `ext.COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL`     | 4        | `'uint8'`                      | ✓           | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/)     |
+| `'rgba atc interpolated alpha'` | `ext.COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL` | 4        | `'uint8'`                      | ✓           | [WEBGL_compressed_texture_atc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_atc/)     |
+| `'rgb pvrtc 4bppv1'`            | `ext.COMPRESSED_RGB_PVRTC_4BPPV1_IMG`              | 3        | `'uint8'`                      | ✓           | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
+| `'rgb pvrtc 2bppv1'`            | `ext.COMPRESSED_RGB_PVRTC_2BPPV1_IMG`              | 3        | `'uint8'`                      | ✓           | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
+| `'rgba pvrtc 4bppv1'`           | `ext.COMPRESSED_RGBA_PVRTC_4BPPV1_IMG`             | 4        | `'uint8'`                      | ✓           | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
+| `'rgba pvrtc 2bppv1'`           | `ext.COMPRESSED_RGBA_PVRTC_2BPPV1_IMG`             | 4        | `'uint8'`                      | ✓           | [WEBGL_compressed_texture_pvrtc](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_pvrtc/) |
+| `'rgb etc1'`                    | `ext.COMPRESSED_RGB_ETC1_WEBGL`                    | 3        | `'uint8'`                      | ✓           | [WEBGL_compressed_texture_etc1](https://www.khronos.org/registry/webgl/extensions/WEBGL_compressed_texture_etc1/)   |
 
-* In many cases `type` can be inferred from the format and other information in the texture.  However, in some situations it may still be necessary to set it manually.  In such an event, the following values are possible,
+-   In many cases `type` can be inferred from the format and other information in the texture.  However, in some situations it may still be necessary to set it manually.  In such an event, the following values are possible,
 
-| Type | Description |
-|------|-------------|
-| `'uint8'` | `gl.UNSIGNED_BYTE` |
-| `'uint16'` | `gl.UNSIGNED_SHORT` |
-| `'uint32'` | `gl.UNSIGNED_INT` |
-| `'float', 'float32'` | `gl.FLOAT` |
+| Type                      | Description          |
+| ------------------------- | -------------------- |
+| `'uint8'`                 | `gl.UNSIGNED_BYTE`   |
+| `'uint16'`                | `gl.UNSIGNED_SHORT`  |
+| `'uint32'`                | `gl.UNSIGNED_INT`    |
+| `'float', 'float32'`      | `gl.FLOAT`           |
 | `'half float', 'float16'` | `ext.HALF_FLOAT_OES` |
 
-* `colorSpace` sets the WebGL color space flag for pixel unpacking
+-   `colorSpace` sets the WebGL color space flag for pixel unpacking
 
-| Color space | Description |
-|------------|-------------|
-| `'none'` | `gl.NONE` |
+| Color space | Description                |
+| ----------- | -------------------------- |
+| `'none'`    | `gl.NONE`                  |
 | `'browser'` | `gl.BROWSER_DEFAULT_WEBGL` |
 
-* `unpackAlignment` sets the pixel unpack alignment and must be one of `[1, 2, 4, 8]`
+-   `unpackAlignment` sets the pixel unpack alignment and must be one of `[1, 2, 4, 8]`
 
 **Relevant WebGL APIs**
 
-* [`gl.createTexture`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateTexture.xml)
-* [`gl.texParameter`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexParameter.xml)
-*  [`gl.pixelStorei`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glPixelStorei.xml)
-* [`gl.texImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexImage2D.xml)
-* [`gl.texImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexImage2D.xml)
-* [`gl.compressedTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexImage2D.xml)
-* [`gl.copyTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexImage2D.xml)
-* [`gl.generateMipmap`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGenerateMipmap.xml)
-* [`gl.hint`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glHint.xml)
+-   [`gl.createTexture`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateTexture.xml)
+-   [`gl.texParameter`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexParameter.xml)
+-   [`gl.pixelStorei`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glPixelStorei.xml)
+-   [`gl.texImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexImage2D.xml)
+-   [`gl.texImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexImage2D.xml)
+-   [`gl.compressedTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexImage2D.xml)
+-   [`gl.copyTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexImage2D.xml)
+-   [`gl.generateMipmap`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGenerateMipmap.xml)
+-   [`gl.hint`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glHint.xml)
 
-https://www.khronos.org/opengles/sdk/docs/man/xhtml/glHint.xml
-#### Update
+#### Texture update
+
 Like buffers, textures can be reinitialized in place.  Calling the texture as a function re-evaluates the constructor and initializes the texture to a new value:
 
 ```javascript
@@ -1649,16 +1799,17 @@ Doing this lets you defer texture construction or reuse texture objects.
 
 **Relevant WebGL APIs**
 
-* [`gl.createTexture`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateTexture.xml)
-* [`gl.texParameter`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexParameter.xml)
-*  [`gl.pixelStorei`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glPixelStorei.xml)
-* [`gl.texImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexImage2D.xml)
-* [`gl.texImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexImage2D.xml)
-* [`gl.compressedTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexImage2D.xml)
-* [`gl.copyTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexImage2D.xml)
-* [`gl.generateMipmap`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGenerateMipmap.xml)
+-   [`gl.createTexture`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateTexture.xml)
+-   [`gl.texParameter`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexParameter.xml)
+-   [`gl.pixelStorei`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glPixelStorei.xml)
+-   [`gl.texImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexImage2D.xml)
+-   [`gl.texImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexImage2D.xml)
+-   [`gl.compressedTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexImage2D.xml)
+-   [`gl.copyTexImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexImage2D.xml)
+-   [`gl.generateMipmap`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGenerateMipmap.xml)
 
-##### Partial update
+##### Texture subimage
+
 It is also possible to update a subset of a texture contained in a rectangle.  This can be done using the `subimage()` method of the texture:
 
 ```javascript
@@ -1672,21 +1823,25 @@ myTexture.subimage({
 ```
 
 For textures, `subimage` takes 4 arguments:
+
 ```javascript
 texture.subimage(data[, x, y, level])
 ```
+
 Where,
-* `data` is an image data object, similar to the arguments for the texture constructor
-* `x, y` is the offset of the subimage within the texture (default `0,0`)
-* `level` is the miplevel to execute the subimage within (default `0`)
+
+-   `data` is an image data object, similar to the arguments for the texture constructor
+-   `x, y` is the offset of the subimage within the texture (default `0,0`)
+-   `level` is the miplevel to run the subimage within (default `0`)
 
 **Relevant WebGL APIs**
 
-* [`gl.texSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexSubImage2D.xml)
-* [`gl.copyTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexSubImage2D.xml)
-* [`gl.compressedTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexSubImage2D.xml)
+-   [`gl.texSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexSubImage2D.xml)
+-   [`gl.copyTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexSubImage2D.xml)
+-   [`gl.compressedTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexSubImage2D.xml)
 
-##### Resize
+##### Texture resize
+
 Finally, textures can be resized with the `.resize()` method.  Note that this clears the contents of the texture and is not supported by compressed textures.
 
 ```javascript
@@ -1695,7 +1850,8 @@ var texture = regl.texture(5)
 texture.resize(3, 7)
 ```
 
-#### Destroy
+#### Texture destructor
+
 Finally, when a texture is no longer needed it can be released by calling the `destroy()` method:
 
 ```javascript
@@ -1706,21 +1862,22 @@ myTexture.destroy()
 
 **Relevant WebGL APIs**
 
-*  [`gl.deleteTexture`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteTexture.xml)
+-   [`gl.deleteTexture`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteTexture.xml)
 
-
-#### Profiling
+#### Texture profiling
 
 The following stats are tracked for each texture in the `.stats` property:
 
-| Statistic | Meaning |
-|-----------|---------|
-| `size` | The size of the texture in bytes |
+| Statistic | Meaning                          |
+| --------- | -------------------------------- |
+| `size`    | The size of the texture in bytes |
 
----------------------------------------
+* * *
+
 ### Cube maps
 
-#### Constructor
+#### Cube map constructor
+
 Cube maps follow similar syntax to textures.  They are created using `regl.cube()`
 
 ```javascript
@@ -1752,7 +1909,8 @@ const anotherCubeMap = regl.cube({
 })
 ```
 
-#### Update
+#### Cube map update
+
 Cube maps can be reinitialized like textures or buffers:
 
 ```javascript
@@ -1765,7 +1923,8 @@ cube(4)
 cube.resize(16)
 ```
 
-##### In-place update
+##### Cube map subimage
+
 Sub-rectangles of faces of cube maps can be updated again using `.subimage`.
 
 ```javascript
@@ -1785,19 +1944,29 @@ cube.subimage(face, data[, x, y, miplevel])
 
 **Relevant WebGL APIs**
 
-* [`gl.texSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexSubImage2D.xml)
-* [`gl.copyTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexSubImage2D.xml)
-* [`gl.compressedTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexSubImage2D.xml)
+-   [`gl.texSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexSubImage2D.xml)
+-   [`gl.copyTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCopyTexSubImage2D.xml)
+-   [`gl.compressedTexSubImage2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCompressedTexSubImage2D.xml)
 
-#### Profiling
+#### Cube map resize
+
+Cube maps can be resized in place using the `.resize()` method.  This takes one argument which is the size of the cube map.
+
+```javascript
+var cubemap = regl.cube({ ... })
+
+cubemap.resize(16)
+```
+
+#### Cube map profiling
 
 The following stats are tracked for each cube map in the `.stats` property:
 
-| Statistic | Meaning |
-|-----------|---------|
-| `size` | The size of the cube map in bytes |
+| Statistic | Meaning                           |
+| --------- | --------------------------------- |
+| `size`    | The size of the cube map in bytes |
 
-#### Destroy
+#### Cube map destructor
 
 ```javascript
 cubeMap.destroy()
@@ -1805,12 +1974,14 @@ cubeMap.destroy()
 
 **Relevant WebGL APIs**
 
-*  [`gl.deleteTexture`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteTexture.xml)
+-   [`gl.deleteTexture`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteTexture.xml)
 
----------------------------------------
-### Render buffers
+* * *
 
-#### Constructor
+### Renderbuffers
+
+#### Renderbuffer constructor
+
 ```javascript
 // Allocate a new renderbuffer with the prescribed format
 var rb = regl.renderbuffer({
@@ -1823,35 +1994,36 @@ var rb = regl.renderbuffer({
 var rgba_16x24 = regl.renderbuffer(16, 24)
 ```
 
-| Property | Interpretation | Default |
-|----------|----------------|---------|
+| Property   | Interpretation                                            | Default   |
+| ---------- | --------------------------------------------------------- | --------- |
 | `'format'` | Sets the internal format of the render buffer (see below) | `'rgba4'` |
-| `'width'` | Sets the width of the render buffer in pixels | `1` |
-| `'height'` | Sets the height of the render buffer in pixels | `1` |
-| `'shape'` | Alias for width and height | `[1,1]` |
-| `'radius'` | Simultaneously sets width and height | `1` |
+| `'width'`  | Sets the width of the render buffer in pixels             | `1`       |
+| `'height'` | Sets the height of the render buffer in pixels            | `1`       |
+| `'shape'`  | Alias for width and height                                | `[1,1]`   |
+| `'radius'` | Simultaneously sets width and height                      | `1`       |
 
-| Format | Description |
-|--------|-------------|
-| `'rgba4'` | `gl.RGBA4` |
-| `'rgb565'` | `gl.RGB565` |
-| `'rgb5 a1'` | `gl.RGB5_A1` |
-| `'depth'` | `gl.DEPTH_COMPONENT16` |
-| `'stencil'` | `gl.STENCIL_INDEX8` |
-| `'depth stencil'` | `gl.DEPTH_STENCIL` |
-| `'srgba'` | `ext.SRGB8_ALPHA8_EXT`, only if [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) supported |
-| `'rgba16f'` | 16 bit floating point RGBA buffer, only if [EXT_color_buffer_half_float](https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_half_float/) |
-| `'rgb16f'` | 16 bit floating point RGB buffer, only if [EXT_color_buffer_half_float](https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_half_float/) |
-| `'rgba32f'` | 32 bit floating point RGBA buffer, only if [WEBGL_color_buffer_float](https://www.khronos.org/registry/webgl/extensions/WEBGL_color_buffer_float/) supported |
+| Format            | Description                                                                                                                                                  |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `'rgba4'`         | `gl.RGBA4`                                                                                                                                                   |
+| `'rgb565'`        | `gl.RGB565`                                                                                                                                                  |
+| `'rgb5 a1'`       | `gl.RGB5_A1`                                                                                                                                                 |
+| `'depth'`         | `gl.DEPTH_COMPONENT16`                                                                                                                                       |
+| `'stencil'`       | `gl.STENCIL_INDEX8`                                                                                                                                          |
+| `'depth stencil'` | `gl.DEPTH_STENCIL`                                                                                                                                           |
+| `'srgba'`         | `ext.SRGB8_ALPHA8_EXT`, only if [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) supported                                            |
+| `'rgba16f'`       | 16 bit floating point RGBA buffer, only if [EXT_color_buffer_half_float](https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_half_float/)     |
+| `'rgb16f'`        | 16 bit floating point RGB buffer, only if [EXT_color_buffer_half_float](https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_half_float/)      |
+| `'rgba32f'`       | 32 bit floating point RGBA buffer, only if [WEBGL_color_buffer_float](https://www.khronos.org/registry/webgl/extensions/WEBGL_color_buffer_float/) supported |
 
 **Relevant WebGL APIs**
 
-* [`gl.createRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateRenderbuffer.xml)
-* [`gl.deleteRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteRenderbuffer.xml)
-* [`gl.renderbufferStorage`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glRenderbufferStorage.xml)
-* [`gl.bindRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBindRenderbuffer.xml)
+-   [`gl.createRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateRenderbuffer.xml)
+-   [`gl.deleteRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteRenderbuffer.xml)
+-   [`gl.renderbufferStorage`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glRenderbufferStorage.xml)
+-   [`gl.bindRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBindRenderbuffer.xml)
 
-#### Update
+#### Renderbuffer update
+
 Like all other resources, renderbuffers can be updated in place:
 
 ```javascript
@@ -1863,7 +2035,8 @@ renderbuffer({
 })
 ```
 
-##### Resizing
+##### Renderbuffer resize
+
 A renderbuffer can also be resized in place by calling `.resize()`:
 
 ```javascript
@@ -1875,7 +2048,7 @@ var renderbuffer = regl.renderbuffer({
 renderbuffer.resize(32, 32)
 ```
 
-#### Destroy
+#### Renderbuffers destructor
 
 ```javascript
 rb.destroy()
@@ -1883,22 +2056,21 @@ rb.destroy()
 
 **Relevant WebGL APIs**
 
-* [`gl.deleteRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteRenderbuffer.xml)
+-   [`gl.deleteRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteRenderbuffer.xml)
 
-
-#### Profiling
+#### Renderbuffer profiling
 
 The following stats are tracked for each renderbuffer in the `.stats` property:
 
-| Statistic | Meaning |
-|-----------|---------|
-| `size` | The size of the renderbuffer in bytes |
+| Statistic | Meaning                               |
+| --------- | ------------------------------------- |
+| `size`    | The size of the renderbuffer in bytes |
 
----------------------------------------
+* * *
+
 ### Framebuffers
 
-#### Constructor
-Example,
+#### Framebuffer constructor
 
 ```javascript
 // Creating a simple 2x2 framebuffer:
@@ -1918,51 +2090,51 @@ var texFBO = regl.framebuffer({
 })
 ```
 
-| Property | Description | Default |
-|----------|-------------|---------|
-| `width` | Sets the width of the framebuffer | `gl.drawingBufferWidth` |
-| `height` | Sets the height of the framebuffer | `gl.drawingBufferHeight` |
-| `color` | An optional array of either textures renderbuffers for the color attachment. | |
-| `depth` | If boolean, then toggles the depth attachment.  Otherwise if a renderbuffer/texture sets the depth attachment. | `true` |
-| `stencil` | If boolean, then toggles the stencil attachment.  Otherwise if a renderbuffer sets the stencil attachment. | `true` |
-| `depthStencil` | If boolean, then toggles both the depth and stencil attachment.  Otherwise if a renderbuffer/texture sets the combined depth/stencil attachment. | `true` |
-| `colorFormat` | Sets the format of the color buffer.  Ignored if color | `'rgba'` |
-| `colorType` | Sets the type of the color buffer if it is a texture | `'uint8'` |
-| `colorCount` | Sets the number of color buffers. Values > 1 require [WEBGL_draw_buffers](https://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/) | `1` |
-| `depthTexture` | Toggles whether depth/stencil attachments should be in texture. Requires [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) | `false` |
+| Property       | Description                                                                                                                                                            | Default                  |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `width`        | Sets the width of the framebuffer                                                                                                                                      | `gl.drawingBufferWidth`  |
+| `height`       | Sets the height of the framebuffer                                                                                                                                     | `gl.drawingBufferHeight` |
+| `color`        | An optional array of either textures renderbuffers for the color attachment.                                                                                           |                          |
+| `depth`        | If boolean, then toggles the depth attachment.  Otherwise if a renderbuffer/texture sets the depth attachment.                                                         | `true`                   |
+| `stencil`      | If boolean, then toggles the stencil attachment.  Otherwise if a renderbuffer sets the stencil attachment.                                                             | `true`                   |
+| `depthStencil` | If boolean, then toggles both the depth and stencil attachment.  Otherwise if a renderbuffer/texture sets the combined depth/stencil attachment.                       | `true`                   |
+| `colorFormat`  | Sets the format of the color buffer.  Ignored if color                                                                                                                 | `'rgba'`                 |
+| `colorType`    | Sets the type of the color buffer if it is a texture                                                                                                                   | `'uint8'`                |
+| `colorCount`   | Sets the number of color buffers. Values > 1 require [WEBGL_draw_buffers](https://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/)                       | `1`                      |
+| `depthTexture` | Toggles whether depth/stencil attachments should be in texture. Requires [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) | `false`                  |
 
-| Color format | Description | Attachment | Notes
-|--------------|-------------|------------|-----|
-| `'rgba'` | `gl.RGBA` | Texture |              |
-| `'rgba4'` | `gl.RGBA4` | Renderbuffer |    |
-| `'rgb565'` | `gl.RGB565` | Renderbuffer |    |
-| `'rgb5 a1'` | `gl.RGB5_A1` | Renderbuffer |    |
-| `'rgb16f'` | `gl.RGB16F` | Renderbuffer |   only if [EXT_color_buffer_half_float](https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_half_float/)  |
-| `'rgba16f'` | `gl.RGBA16F` | Renderbuffer | only if [EXT_color_buffer_half_float](https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_half_float/)   |
-| `'rgba32f'` | `gl.RGBA32F` | Renderbuffer |  only if [WEBGL_color_buffer_float](https://www.khronos.org/registry/webgl/extensions/WEBGL_color_buffer_float/) supported  |
-| `'srgba'` | `gl.SRGB8_ALPHA8` | Renderbuffer | only if [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) supported  |
+| Color format | Description       | Attachment   | Notes                                                                                                                     |
+| ------------ | ----------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `'rgba'`     | `gl.RGBA`         | Texture      |                                                                                                                           |
+| `'rgba4'`    | `gl.RGBA4`        | Renderbuffer |                                                                                                                           |
+| `'rgb565'`   | `gl.RGB565`       | Renderbuffer |                                                                                                                           |
+| `'rgb5 a1'`  | `gl.RGB5_A1`      | Renderbuffer |                                                                                                                           |
+| `'rgb16f'`   | `gl.RGB16F`       | Renderbuffer | only if [EXT_color_buffer_half_float](https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_half_float/)     |
+| `'rgba16f'`  | `gl.RGBA16F`      | Renderbuffer | only if [EXT_color_buffer_half_float](https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_half_float/)     |
+| `'rgba32f'`  | `gl.RGBA32F`      | Renderbuffer | only if [WEBGL_color_buffer_float](https://www.khronos.org/registry/webgl/extensions/WEBGL_color_buffer_float/) supported |
+| `'srgba'`    | `gl.SRGB8_ALPHA8` | Renderbuffer | only if [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) supported                                 |
 
-| Color type | Description |
-|------------|-------------|
-| `'uint8'` | `gl.UNSIGNED_BYTE` |
-| `'half float'` | 16 bit float, requires [OES_texture_half_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_half_float/)  |
-| `'float'` | 32 bit float, requires [OES_texture_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_float/) |
+| Color type     | Description                                                                                                                |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `'uint8'`      | `gl.UNSIGNED_BYTE`                                                                                                         |
+| `'half float'` | 16 bit float, requires [OES_texture_half_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_half_float/) |
+| `'float'`      | 32 bit float, requires [OES_texture_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_float/)           |
 
 **Notes**
 
-* If `color` is not specified, then color attachments are created automatically
-* Instead of passing width/height, it is also possible to pass in `shape` to the framebuffer constructor.
+-   If `color` is not specified, then color attachments are created automatically
+-   Instead of passing width/height, it is also possible to pass in `shape` to the framebuffer constructor.
 
 **Relevant WebGL APIs**
 
-* [`gl.createFramebuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateFramebuffer.xml)
-* [`gl.deleteFramebuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteFramebuffer.xml)
-* [`gl.framebufferRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glFramebufferRenderbuffer.xml)
-* [`gl.framebufferTexture2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glFramebufferTexture2D.xml)
-* [`gl.bindFramebuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBindFramebuffer.xml)
+-   [`gl.createFramebuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glCreateFramebuffer.xml)
+-   [`gl.deleteFramebuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteFramebuffer.xml)
+-   [`gl.framebufferRenderbuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glFramebufferRenderbuffer.xml)
+-   [`gl.framebufferTexture2D`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glFramebufferTexture2D.xml)
+-   [`gl.bindFramebuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBindFramebuffer.xml)
 
+#### Framebuffer update
 
-#### Update
 Like all other objects, a framebuffer can be updated in place:
 
 ```javascript
@@ -1974,7 +2146,8 @@ framebuffer({
 })
 ```
 
-##### Resizing
+##### Framebuffer resize
+
 Framebuffers can be resized using the `.resize()` method.  This method will also modify all of the framebuffer's attachments.
 
 ```javascript
@@ -1986,7 +2159,8 @@ framebuffer.resize(3, 3)
 framebuffer.resize(3)
 ```
 
-#### Destroy
+#### Framebuffer destructor
+
 Calling `.destroy()` on a framebuffer removes it and recursively destroys any non-shared attachments.
 
 ```javascript
@@ -1995,12 +2169,13 @@ fbo.destroy()
 
 **Relevant WebGL APIs**
 
-* [`gl.deleteFramebuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteFramebuffer.xml)
+-   [`gl.deleteFramebuffer`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDeleteFramebuffer.xml)
 
----------------------------------------
+* * *
+
 ### Cubic frame buffers
 
-#### Constructor
+#### Cube framebuffer constructor
 
 ```javascript
 var cubeFbo = regl.framebufferCube(512)
@@ -2013,55 +2188,63 @@ var cubeAlt = regl.framebufferCube({
 })
 ```
 
-| Parameter | Description |
-|-----------|-------------|
-| `radius` | The size of the cube buffer |
-| `color` | The color buffer attachment |
-| `colorFormat` | Format of color buffer to create |
-| `colorType` | Type of color buffer |
-| `colorCount` | Number of color attachments |
-| `depth` | Depth buffer attachment |
-| `stencil` | Stencil buffer attachment |
-| `depthStencil` | Depth-stencil attachment |
+| Parameter      | Description                      |
+| -------------- | -------------------------------- |
+| `radius`       | The size of the cube buffer      |
+| `color`        | The color buffer attachment      |
+| `colorFormat`  | Format of color buffer to create |
+| `colorType`    | Type of color buffer             |
+| `colorCount`   | Number of color attachments      |
+| `depth`        | Depth buffer attachment          |
+| `stencil`      | Stencil buffer attachment        |
+| `depthStencil` | Depth-stencil attachment         |
 
 | Color format | Description | Attachment |
-|--------------|-------------|------------|
-| `'rgba'` | `gl.RGBA` | Texture |
+| ------------ | ----------- | ---------- |
+| `'rgba'`     | `gl.RGBA`   | Texture    |
 
-| Color type | Description |
-|------------|-------------|
-| `'uint8'` | `gl.UNSIGNED_BYTE` |
-| `'half float'` | 16 bit float, requires [OES_texture_half_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_half_float/)  |
-| `'float'` | 32 bit float, requires [OES_texture_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_float/) |
+| Color type     | Description                                                                                                                |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `'uint8'`      | `gl.UNSIGNED_BYTE`                                                                                                         |
+| `'half float'` | 16 bit float, requires [OES_texture_half_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_half_float/) |
+| `'float'`      | 32 bit float, requires [OES_texture_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_float/)           |
 
 **Notes**
 
-* The specified depth/stencil/depth-stencil attachment will be reused
-for all 6 cube faces.
+-   The specified depth/stencil/depth-stencil attachment will be reused
+    for all 6 cube faces.
 
-#### Update
+#### Cube framebuffer update
 
 ```javascript
 // reinitialize
 fboCube({
   radius: 10
 })
-
-fboCube.resize(128)
 ```
 
-#### Destroy
+##### Cube framebuffer resize
+
+```javascript
+fboCube.resize(16)
+```
+
+#### Cube framebuffer destructor
 
 ```javascript
 fboCube.destroy()
 ```
 
----------------------------------------
-## Other features
+* * *
+
+## Other tasks
+
 Other than draw commands and resources, there are a few miscellaneous parts of the WebGL API which REGL wraps for completeness.
 
----------------------------------------
+* * *
+
 ### Clear the draw buffer
+
 `regl.clear` combines `gl.clearColor, gl.clearDepth, gl.clearStencil` and `gl.clear` into a single procedure, which has the following usage:
 
 ```javascript
@@ -2072,22 +2255,23 @@ regl.clear({
 })
 ```
 
-| Property | Description |
-|----------|-------------|
-| `color` | Sets the clear color |
-| `depth` | Sets the clear depth value |
+| Property  | Description                  |
+| --------- | ---------------------------- |
+| `color`   | Sets the clear color         |
+| `depth`   | Sets the clear depth value   |
 | `stencil` | Sets the clear stencil value |
 
 If an option is not present, then the corresponding buffer is not cleared
 
 **Relevant WebGL APIs**
 
-* [`gl.clearColor`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glClearColor.xml)
-* [`gl.clearDepth`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glClearDepth.xml)
-* [`gl.clearStencil`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glClearStencil.xml)
-* [`gl.clear`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glClear.xml)
+-   [`gl.clearColor`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glClearColor.xml)
+-   [`gl.clearDepth`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glClearDepth.xml)
+-   [`gl.clearStencil`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glClearStencil.xml)
+-   [`gl.clear`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glClear.xml)
 
----------------------------------------
+* * *
+
 ### Reading pixels
 
 ```javascript
@@ -2122,34 +2306,36 @@ regl({framebuffer: fbo})(() => {
 })
 ```
 
-| Property | Description | Default |
-|----------|-------------|---------|
-| `data` | An optional `ArrayBufferView` which gets the result of reading the pixels | `null` |
-| `x` | The x-offset of the upper-left corner of the rectangle in pixels | `0` |
-| `y` | The y-offset of the upper-left corner of the rectangle in pixels | `0` |
-| `width` | The width of the rectangle in pixels | Current framebuffer width |
-| `height` | The height of the rectangle in pixels | Current framebuffer height |
+| Property | Description                                                               | Default                    |
+| -------- | ------------------------------------------------------------------------- | -------------------------- |
+| `data`   | An optional `ArrayBufferView` which gets the result of reading the pixels | `null`                     |
+| `x`      | The x-offset of the upper-left corner of the rectangle in pixels          | `0`                        |
+| `y`      | The y-offset of the upper-left corner of the rectangle in pixels          | `0`                        |
+| `width`  | The width of the rectangle in pixels                                      | Current framebuffer width  |
+| `height` | The height of the rectangle in pixels                                     | Current framebuffer height |
 
 **Notes**
 
-* In order to read pixels from the drawing buffer, you must create
-  your webgl context with `preserveDrawingBuffer` set to `true`.  If
-  this is not set, then `regl.read` will throw an exception.
+-   In order to read pixels from the drawing buffer, you must create
+    your webgl context with `preserveDrawingBuffer` set to `true`.  If
+    this is not set, then `regl.read` will throw an exception.
 
-* You can only read pixels from a framebuffer of type `'uint8'` or
-  `'float'`. Furthermore, it is not possible to read from a renderbuffer.
+-   You can only read pixels from a framebuffer of type `'uint8'` or
+    `'float'`. Furthermore, it is not possible to read from a renderbuffer.
 
 **Relevant WebGL APIs**
 
-* [`gl.pixelStorei`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glPixelStorei.xml)
-* [`gl.readPixels`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glReadPixels.xml)
+-   [`gl.pixelStorei`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glPixelStorei.xml)
+-   [`gl.readPixels`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glReadPixels.xml)
 
----------------------------------------
+* * *
+
 ### Per-frame callbacks
+
 `regl` also provides a common wrapper over `requestAnimationFrame` and `cancelAnimationFrame` that integrates gracefully with context loss events.  `regl.frame()` also calls `gl.flush` and drains several internal buffers, so you should try to do all your rendering to the drawing buffer within the frame callback.
 
 ```javascript
-// Hook a callback to execute each frame
+// Hook a callback to run each frame
 var tick = regl.frame(function (context) {
 
   // context is the default state of the regl context variables
@@ -2163,8 +2349,10 @@ tick.cancel()
 
 It is possible to manage framecallbacks manually, however before any loop it is essential to call `regl.poll()` which updates all timers and viewports.
 
----------------------------------------
+* * *
+
 ### Extensions
+
 In `regl`, extensions must be declared before they can be used.  An extension may be specified as a 'hard' requirement, meaning that if it is not present then context creation fails or as a 'soft' requirement.  This can be done by passing a list of extensions to the `extensions` and `optionalExtensions` fields in the regl constructor respectively.
 
 ```javascript
@@ -2192,82 +2380,92 @@ For more information on WebGL extensions, see the [WebGL extension registry](htt
 
 **Relevant WebGL APIs**
 
-* [WebGL Extension Registry](https://www.khronos.org/registry/webgl/extensions/)
-* `gl.getExtension`
-* `gl.getSupportedExtensions`
+-   [WebGL Extension Registry](https://www.khronos.org/registry/webgl/extensions/)
+-   `gl.getExtension`
+-   `gl.getSupportedExtensions`
 
----------------------------------------
+* * *
+
 ### Device capabilities and limits
+
 regl exposes info about the WebGL context limits and capabilities via the `regl.limits` object.  The following properties are supported,
 
-| Property | Description |
-|----------|-------------|
-| `colorBits` | An array of bits depths for the red, green, blue and alpha channels |
-| `depthBits` | Bit depth of drawing buffer |
-| `stencilBits` | Bit depth of stencil buffer |
-| `subpixelBits` | `gl.SUBPIXEL_BITS` |
-| `extensions` | A list of all supported extensions |
-| `maxAnisotropic` | Maximum number of anisotropic filtering samples |
-| `maxDrawbuffers` | Maximum number of draw buffers |
-| `maxColorAttachments` | Maximum number of color attachments |
-| `pointSizeDims` | `gl.ALIASED_POINT_SIZE_RANGE` |
-| `lineWidthDims` | `gl.ALIASED_LINE_WIDTH_RANGE` |
-| `maxViewportDims` | `gl.MAX_VIEWPORT_DIMS` |
-| `maxCombinedTextureUnits` | `gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS` |
-| `maxCubeMapSize` | `gl.MAX_CUBE_MAP_TEXTURE_SIZE` |
-| `maxRenderbufferSize` | `gl.MAX_RENDERBUFFER_SIZE` |
-| `maxTextureUnits` | `gl.MAX_TEXTURE_IMAGE_UNITS` |
-| `maxTextureSize` | `gl.MAX_TEXTURE_SIZE` |
-| `maxAttributes` | `gl.MAX_VERTEX_ATTRIBS` |
-| `maxVertexUniforms` | `gl.MAX_VERTEX_UNIFORM_VECTORS` |
-| `maxVertexTextureUnits` | `gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS` |
-| `maxVaryingVectors` | `gl.MAX_VARYING_VECTORS` |
-| `maxFragmentUniforms` | `gl.MAX_FRAGMENT_UNIFORM_VECTORS` |
-| `glsl` | `gl.SHADING_LANGUAGE_VERSION` |
-| `renderer` | `gl.RENDERER` |
-| `vendor` | `gl.VENDOR` |
-| `version` | `gl.VERSION` |
+| Property                  | Description                                                         |
+| ------------------------- | ------------------------------------------------------------------- |
+| `colorBits`               | An array of bits depths for the red, green, blue and alpha channels |
+| `depthBits`               | Bit depth of drawing buffer                                         |
+| `stencilBits`             | Bit depth of stencil buffer                                         |
+| `subpixelBits`            | `gl.SUBPIXEL_BITS`                                                  |
+| `extensions`              | A list of all supported extensions                                  |
+| `maxAnisotropic`          | Maximum number of anisotropic filtering samples                     |
+| `maxDrawbuffers`          | Maximum number of draw buffers                                      |
+| `maxColorAttachments`     | Maximum number of color attachments                                 |
+| `pointSizeDims`           | `gl.ALIASED_POINT_SIZE_RANGE`                                       |
+| `lineWidthDims`           | `gl.ALIASED_LINE_WIDTH_RANGE`                                       |
+| `maxViewportDims`         | `gl.MAX_VIEWPORT_DIMS`                                              |
+| `maxCombinedTextureUnits` | `gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS`                               |
+| `maxCubeMapSize`          | `gl.MAX_CUBE_MAP_TEXTURE_SIZE`                                      |
+| `maxRenderbufferSize`     | `gl.MAX_RENDERBUFFER_SIZE`                                          |
+| `maxTextureUnits`         | `gl.MAX_TEXTURE_IMAGE_UNITS`                                        |
+| `maxTextureSize`          | `gl.MAX_TEXTURE_SIZE`                                               |
+| `maxAttributes`           | `gl.MAX_VERTEX_ATTRIBS`                                             |
+| `maxVertexUniforms`       | `gl.MAX_VERTEX_UNIFORM_VECTORS`                                     |
+| `maxVertexTextureUnits`   | `gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS`                                 |
+| `maxVaryingVectors`       | `gl.MAX_VARYING_VECTORS`                                            |
+| `maxFragmentUniforms`     | `gl.MAX_FRAGMENT_UNIFORM_VECTORS`                                   |
+| `glsl`                    | `gl.SHADING_LANGUAGE_VERSION`                                       |
+| `renderer`                | `gl.RENDERER`                                                       |
+| `vendor`                  | `gl.VENDOR`                                                         |
+| `version`                 | `gl.VERSION`                                                        |
 
 **Relevant WebGL APIs**
 
-* [`gl.getParameter`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGetParameter.xml)
+-   [`gl.getParameter`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGetParameter.xml)
 
----------------------------------------
+* * *
+
 ### Performance metrics
+
 `regl` tracks several metrics for performance monitoring.  These can be read using the `regl.stats` object:
 
-| Metric | Meaning |
-|--------|---------|
-| `bufferCount` | The number of array buffers currently allocated |
-| `elementsCount` | The number of element buffers currently allocated |
-| `framebufferCount` | The number of framebuffers currently allocated |
-| `shaderCount` | The number of shaders currently allocated |
-| `textureCount` | The number of textures currently allocated |
-| `cubeCount` | The number of cube maps currently allocated |
-| `renderbufferCount` | The number of renderbuffers currently allocated |
-| `getTotalTextureSize()` | The total amount of memory allocated for textures and cube maps |
-| `getTotalBufferSize()` | The total amount of memory allocated for array buffers and element buffers |
-| `getTotalRenderbufferSize()` | The total amount of memory allocated for renderbuffers |
-| `getMaxUniformsCount()` | The maximum number of uniforms in any shader |
-| `getMaxAttributesCount()` | The maximum number of attributes in any shader |
-| `maxTextureUnits()` | The maximum number of texture units used |
+| Metric                       | Meaning                                                                    |
+| ---------------------------- | -------------------------------------------------------------------------- |
+| `bufferCount`                | The number of array buffers currently allocated                            |
+| `elementsCount`              | The number of element buffers currently allocated                          |
+| `framebufferCount`           | The number of framebuffers currently allocated                             |
+| `shaderCount`                | The number of shaders currently allocated                                  |
+| `textureCount`               | The number of textures currently allocated                                 |
+| `cubeCount`                  | The number of cube maps currently allocated                                |
+| `renderbufferCount`          | The number of renderbuffers currently allocated                            |
+| `getTotalTextureSize()`      | The total amount of memory allocated for textures and cube maps            |
+| `getTotalBufferSize()`       | The total amount of memory allocated for array buffers and element buffers |
+| `getTotalRenderbufferSize()` | The total amount of memory allocated for renderbuffers                     |
+| `getMaxUniformsCount()`      | The maximum number of uniforms in any shader                               |
+| `getMaxAttributesCount()`    | The maximum number of attributes in any shader                             |
+| `maxTextureUnits()`          | The maximum number of texture units used                                   |
 
----------------------------------------
+* * *
+
 ### Clean up
+
 When a `regl` context is no longer needed, it can be destroyed releasing all associated resources with the following command:
 
 ```javascript
 regl.destroy()
 ```
 
----------------------------------------
+* * *
+
 ### Context loss
+
 `regl` makes a best faith effort to handle context loss by default.  This means that buffers and textures are reinitialized on a context restore with their contents.
 
 **TODO**
 
----------------------------------------
+* * *
+
 ### Unsafe escape hatch
+
 **WARNING**: `regl` is designed in such a way that you should never have to directly access the underlying WebGL context. However, if you really absolutely need to do this for some reason (for example to interface with an external library), you can still get a reference to the WebGL context.  Note though that if you do this you will need to restore the `regl` state in order to prevent rendering errors.  This can be done with the following unsafe methods:
 
 ```javascript
@@ -2284,20 +2482,31 @@ regl._refresh()
 
 Note that you must call `regl._refresh()` if you have changed the WebGL state.
 
----------------------------------------
+* * *
+
 ## Tips
+
+The following are some random tips for writing WebGL programs.  Some are regl specific and some are more generic.
+
+### Reuse commands
 
 ### Reuse resources (buffers, elements, textures, etc.)
 
 ### Preallocate memory
 
-* Reuse property objects passed to commands to avoid garbage collection
+-   Reuse property objects passed to commands to avoid garbage collection
 
 ### Debug vs release
 
-* Debug mode inserts many checks
-* Compiling in release mode removes these assertions, improves performance and reduces bundle size
+-   Debug mode inserts many checks
+-   Compiling in release mode removes these assertions, improves performance and reduces bundle size
 
-### Profiling
+### Profiling tips
 
 ### Context loss mitigation
+
+### Cameras
+
+### Use batch mode
+
+### Use glslify
