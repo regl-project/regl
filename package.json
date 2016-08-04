@@ -59,7 +59,7 @@
     "remark-validate-links": "^4.1.0"
   },
   "scripts": {
-    "test": "standard | snazzy && npm run lint-docs && npm run language-check && tape test/util/index.js | faucet",
+    "test": "standard | snazzy && npm run language-check && tape test/util/index.js | faucet",
     "test-browser": "budo test/util/browser.js --open",
     "cover": "istanbul cover test/util/index.js",
     "bench-browser": "budo bench/bench.js --open",
