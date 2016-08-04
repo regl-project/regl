@@ -204,7 +204,7 @@ tape('stencil', function (t) {
       stencil: params
     }, staticOptions))
     staticDraw()
-    testFlags('static - #' + i + ' - x', params)
+    testFlags('static - #' + i + ' - x ', params)
   })
 
   // now test nested dynamic properties:
@@ -233,12 +233,12 @@ tape('stencil', function (t) {
 
   permutations.forEach(function (params, i) {
     nestedDynamicDraw(params)
-    testFlags('nested dynamic 1-shot - #' + i + ' - x', params)
+    testFlags('nested dynamic 1-shot - #' + i + ' - ', params)
   })
 
   permutations.forEach(function (params, i) {
     nestedDynamicDraw([params])
-    testFlags('nested batch - #' + i + ' - x', params)
+    testFlags('nested batch - #' + i + ' - ', params)
   })
 
   regl.destroy()
