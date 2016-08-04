@@ -154,7 +154,21 @@ tape('blend', function (t) {
       func: {
         srcRGB: '0',
         srcAlpha: '1',
-        dstRGB: 'src color',
+        dstRGB: 'zero',
+        dstAlpha: 'one'
+      }
+    },
+    {
+      enable: false,
+      color: [1, 0, 1, 0],
+      equation: {
+        rgb: 'reverse subtract',
+        alpha: 'add'
+      },
+      func: {
+        srcRGB: 'src color',
+        srcAlpha: 'one minus src color',
+        dstRGB: 'src alpha',
         dstAlpha: 'one minus src alpha'
       }
     },
@@ -166,32 +180,59 @@ tape('blend', function (t) {
         alpha: 'add'
       },
       func: {
-        srcRGB: 'one minus src alpha',
-        srcAlpha: 'zero',
-        dstRGB: 'dst color',
+        srcRGB: 'dst color',
+        srcAlpha: 'one minus dst color',
+        dstRGB: 'dst alpha',
         dstAlpha: 'one minus dst alpha'
+      }
+      },
+    // this combination can't be used.
+   /* {
+      enable: false,
+      color: [1, 0, 1, 0],
+      equation: {
+        rgb: 'reverse subtract',
+        alpha: 'add'
+      },
+      func: {
+        srcRGB: 'constant color',
+        srcAlpha: 'one minus constant color',
+        dstRGB: 'constant alpha',
+        dstAlpha: 'one minus constant alpha'
+      }
+    },*/
+    {
+      enable: false,
+      color: [1, 0, 1, 0],
+      equation: {
+        rgb: 'reverse subtract',
+        alpha: 'add'
+      },
+      func: {
+        srcRGB: 'src alpha saturate',
+        srcAlpha: '0',
+        dstRGB: '0',
+        dstAlpha: '0'
       }
     }
   ]
 
   // TODO: Add permutation for
   if (regl.hasExtension('ext_blend_minmax')) {
-    permutations.push(
-      {
-        enable: true,
-        color: [0, 1, 0, 1],
-        equation: {
-          rgb: 'max',
-          alpha: 'min'
-        },
-        func: {
-          srcRGB: '0',
-          srcAlpha: '1',
-          dstRGB: 'src color',
-          dstAlpha: 'one minus src alpha'
-        }
+    permutations.push({
+      enable: true,
+      color: [0, 1, 0, 1],
+      equation: {
+        rgb: 'max',
+        alpha: 'min'
+      },
+      func: {
+        srcRGB: '0',
+        srcAlpha: '1',
+        dstRGB: 'src color',
+        dstAlpha: 'one minus src alpha'
       }
-    )
+    })
   }
 
   permutations.forEach(function (params, i) {
