@@ -3,7 +3,7 @@
  [![Join the chat at https://gitter.im/ark-lang/ark](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/mikolalysenko/regl) [![Circle CI](https://circleci.com/gh/mikolalysenko/regl.svg?style=shield)](https://circleci.com/gh/mikolalysenko/regl) [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com/)
  [![npm version](https://badge.fury.io/js/regl.svg)](https://badge.fury.io/js/regl) ![file size](https://badge-size.herokuapp.com/mikolalysenko/regl/gh-pages/dist/regl.min.js.svg?compression=gzip)
 
-`regl` is a fast functional framework for WebGL. [For detailed info, check out the API docs.](API.md)
+`regl` is a fast functional framework for WebGL. [For detailed info, check out the API docs.](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md)
 
 ## Example
 
@@ -137,17 +137,29 @@ While `regl` is lower level than many 3D engines, code written in it tends to be
 In order to prevent performance regressions, `regl` is continuously benchmarked.  You can run benchmarks locally using `npm run bench` or [check them out online](https://mikolalysenko.github.io/regl/www/bench.html). The [results for the last few days can be found here.](https://mikolalysenko.github.io/regl/www/bench-results/bench-result-8ea4a7e806beed0b9732)
 
 These measurements were taken using our custom scripts `bench-history` and
-`bench-graph`. You can read more about them in [the development guide](DEVELOPING.md).
+`bench-graph`. You can read more about them in [the development guide](https://github.com/mikolalysenko/regl/blob/gh-pages/DEVELOPING.md).
 
-## [API](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md)
+### Projects using regl
 
-`regl` has extensive API documentation.  A copy
+The following is an incomplete list of projects using regl:
+
+* [538 Gun Deaths](http://fivethirtyeight.com/features/gun-deaths/)
+* [Infinite Terrain Demo](https://github.com/Erkaman/wireframe-world)
+* [GPGPU Smooth Life](https://github.com/rreusser/regl-smooth-life)
+* [Summed Area Tables](https://github.com/realazthat/glsl-sat)
+* [GPGPU Fourier Analysis](https://github.com/dfcreative/gl-fourier)
+
+If you have a project using regl that isn't on this list that you would like to see added, [please send us a pull request!](https://github.com/mikolalysenko/regl/edit/gh-pages/README.md)
+
+## [API docs](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md)
+
+`regl` has extensive API documentation.  You can browse the [docs online here](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md).
 
 ## Development
 
-The latest changes in `regl` can be found in the [CHANGELOG](CHANGES.md).
+The latest changes in `regl` can be found in the [CHANGELOG](https://github.com/mikolalysenko/regl/blob/gh-pages/CHANGES.md).
 
-[For info on how to build and test headless, see the contributing guide here](DEVELOPING.md)
+[For info on how to build and test headless, see the contributing guide here](https://github.com/mikolalysenko/regl/blob/gh-pages/DEVELOPING.md)
 
 ### License
 
