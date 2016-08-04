@@ -73,7 +73,7 @@
     "build-bench": "browserify bench/bench.js | indexhtmlify > www/bench.html",
     "build-gallery": "node bin/build-gallery.js",
     "build-compare": "node bin/build-compare.js",
-    "build-docs": "remark API.md ",
+    "build-docs": "remark API.md -o API.md",
     "lint-docs": "remark --frail --quiet README.md API.md DEVELOPING.md CHANGES.md"
   },
   "repository": {
