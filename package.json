@@ -51,10 +51,14 @@
     "teapot": "^1.0.0",
     "three": "^0.79.0",
     "through2": "^2.0.1",
-    "vectorize-text": "^3.0.2"
+    "vectorize-text": "^3.0.2",
+    "remark": "^5.0.1",
+    "remark-cli": "^1.0.0",
+    "remark-lint": "^4.1.0",
+    "remark-toc": "^3.1.0",
+    "remark-validate-links": "^4.1.0"
   },
   "scripts": {
-    "mytest": "standard | snazzy && tape test/stats.js",
     "test": "standard | snazzy && tape test/util/index.js | faucet",
     "test-browser": "budo test/util/browser.js --open",
     "cover": "istanbul cover test/util/index.js",
@@ -62,13 +66,15 @@
     "bench-node": "node bench/bench.js",
     "bench-graph": "node bench/bench-graph.js",
     "bench-history": "node bench/bench-history",
-    "build": "npm run build-script && npm run build-min && npm run build-bench && npm run build-gallery && npm run size && npm run build-compare",
-    "size": "browserify --full-paths --transform ./bin/remove-check.js regl.js | discify > www/size.html",
+    "build": "npm run build-script && npm run build-min && npm run build-bench && npm run build-gallery && npm run build-size && npm run build-compare",
+    "build-size": "browserify --full-paths --transform ./bin/remove-check.js regl.js | discify > www/size.html",
     "build-script": "browserify regl.js --standalone reglInit > dist/regl.js",
     "build-min": "node bin/build-min.js",
     "build-bench": "browserify bench/bench.js | indexhtmlify > www/bench.html",
     "build-gallery": "node bin/build-gallery.js",
-    "build-compare": "node bin/build-compare.js"
+    "build-compare": "node bin/build-compare.js",
+    "build-docs": "remark API.md -o API.md",
+    "lint-docs": "remark --frail --quiet README.md API.md DEVELOPING.md CHANGES.md"
   },
   "repository": {
     "type": "git",
