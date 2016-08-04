@@ -3,6 +3,9 @@ var extend = require('../lib/util/extend')
 var createContext = require('./util/create-context')
 var createREGL = require('../regl')
 
+var GL_MIN_EXT = 0x8007
+var GL_MAX_EXT = 0x8008
+
 var blendFuncs = {
   '0': 0,
   '1': 1,
@@ -31,7 +34,12 @@ var blendEquations = {
 
 tape('blend', function (t) {
   var gl = createContext(16, 16)
-  var regl = createREGL(gl)
+  var regl = createREGL({gl: gl, optionalExtensions: ['ext_blend_minmax']})
+
+  if (regl.hasExtension('ext_blend_minmax')) {
+    blendEquations.min = GL_MIN_EXT
+    blendEquations.max = GL_MAX_EXT
+  }
 
   // Test blend equations
   t.equals(blendEquations.add, gl.FUNC_ADD, 'func add')
@@ -166,22 +174,42 @@ tape('blend', function (t) {
     }
   ]
 
-  permutations.forEach(function (params) {
+  // TODO: Add permutation for
+  if (regl.hasExtension('ext_blend_minmax')) {
+    permutations.push(
+      {
+        enable: true,
+        color: [0, 1, 0, 1],
+        equation: {
+          rgb: 'max',
+          alpha: 'min'
+        },
+        func: {
+          srcRGB: '0',
+          srcAlpha: '1',
+          dstRGB: 'src color',
+          dstAlpha: 'one minus src alpha'
+        }
+      }
+    )
+  }
+
+  permutations.forEach(function (params, i) {
     dynamicDraw(params)
-    testFlags('dynamic 1-shot - ', params)
+    testFlags('dynamic 1-shot - #' + i + ' - ', params)
   })
 
-  permutations.forEach(function (params) {
+  permutations.forEach(function (params, i) {
     dynamicDraw([params])
-    testFlags('batch - ', params)
+    testFlags('batch - #' + i + ' - ', params)
   })
 
-  permutations.forEach(function (params) {
+  permutations.forEach(function (params, i) {
     var staticDraw = regl(extend({
       blend: params
     }, staticOptions))
     staticDraw()
-    testFlags('static - ', params)
+    testFlags('static - #' + i + ' - ', params)
   })
 
   regl.destroy()
