@@ -77,22 +77,45 @@ tape('sample', function (t) {
     }
   }, staticOptions))
 
-  permutations.forEach(function (params) {
+  permutations.forEach(function (params, i) {
     dynamicDraw(params)
-    testFlags('dynamic 1-shot - ', params)
+    testFlags('dynamic 1-shot #' + i + ' - ', params)
   })
 
-  permutations.forEach(function (params) {
+  permutations.forEach(function (params, i) {
     dynamicDraw([params])
-    testFlags('batch - ', params)
+    testFlags('batch #' + i + ' - ', params)
   })
 
-  permutations.forEach(function (params) {
+  permutations.forEach(function (params, i) {
     var staticDraw = regl(extend({
       sample: params
     }, staticOptions))
     staticDraw()
-    testFlags('static - ', params)
+    testFlags('static #' + i + ' - ', params)
+  })
+
+  // test nested dynamic properties.
+
+  var nestedDynamicDraw = regl(extend({
+    sample: {
+      enable: regl.prop('enable'),
+      alpha: regl.prop('alpha'),
+      coverage: {
+        value: regl.prop('coverage.value'),
+        invert: regl.prop('coverage.invert')
+      }
+    }
+  }, staticOptions))
+
+  permutations.forEach(function (params, i) {
+    nestedDynamicDraw(params)
+    testFlags('dynamic 1-shot #' + i + ' - ', params)
+  })
+
+  permutations.forEach(function (params, i) {
+    nestedDynamicDraw([params])
+    testFlags('batch #' + i + ' - ', params)
   })
 
   regl.destroy()
