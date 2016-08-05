@@ -55,7 +55,7 @@ function cpuReduce (data, op) {
   And to simplify things, we will be making the assumption that data.length will be one the numbers
   1x1, 2x2, 4x4, 8x8, 16x16,...
 */
-function gpuReduce (data, op) {
+function gpuReduceCreate (data, op) {
   // a single reduce pass
   var reducePass = regl({
     frag: `
@@ -135,23 +135,29 @@ function gpuReduce (data, op) {
     }))
   } while (dim > 1)
 
-  // first pass.
-  reducePass({inTex: firstTexture, outFbo: fbos[0], rcpDim: 1.0 / (fbos[0].width * 2)})
+  // We'll be calling this function when profiling.  Otherwise, the
+  // comparison with the CPU will be unfair, because creating all
+  // those FBOs takes quite a bit of time, so the GPU would always be
+  // slower than the CPU.
+  return function () {
+    // first pass.
+    reducePass({inTex: firstTexture, outFbo: fbos[0], rcpDim: 1.0 / (fbos[0].width * 2)})
 
-  // the rest of the passes.
-  for (i = 0; i < fbos.length - 1; i++) {
-    var inFbo = fbos[i + 0]
-    var outFbo = fbos[i + 1]
+    // the rest of the passes.
+    for (i = 0; i < fbos.length - 1; i++) {
+      var inFbo = fbos[i + 0]
+      var outFbo = fbos[i + 1]
 
-    reducePass({inTex: inFbo.color[0], outFbo: outFbo, rcpDim: 1.0 / (outFbo.width * 2)})
+      reducePass({inTex: inFbo.color[0], outFbo: outFbo, rcpDim: 1.0 / (outFbo.width * 2)})
+    }
+
+    // now retrieve the result from the GPU
+    var result
+    regl({framebuffer: fbos[fbos.length - 1]})(() => {
+      result = regl.read()[0]
+    })
+    return result
   }
-
-  // now retrieve the result from the GPU
-  var result
-  regl({framebuffer: fbos[fbos.length - 1]})(() => {
-    result = regl.read()[0]
-  })
-  return result
 }
 
 // we will run the reduction on some random data.
@@ -181,19 +187,22 @@ function profile (gpu) {
   var par = createParagraph('p', 'Running reduction on ' + (gpu ? 'GPU' : 'CPU'))
 
   var i = 0
-  var SAMPLES = 100
+  var SAMPLES = 1000
   var total = 0
+  var gpuReduce = gpuReduceCreate(data, 'max(a,b)')
 
   function loop () {
     // update loading string.
-    if (par.innerHTML.slice(-5) === '.....') {
-      par.innerHTML = par.innerHTML.substring(0, par.innerHTML.length - 5)
-    } else {
-      par.innerHTML += '.'
+    if (i % 50 === 0) {
+      if (par.innerHTML.slice(-5) === '.....') {
+        par.innerHTML = par.innerHTML.substring(0, par.innerHTML.length - 5)
+      } else {
+        par.innerHTML += '.'
+      }
     }
 
     var cmd = gpu
-        ? () => gpuReduce(data, 'max(a,b)')
+        ? () => gpuReduce()
         : () => cpuReduce(data, (a, b) => Math.max(a, b))
 
     // profile.
