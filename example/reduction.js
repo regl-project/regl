@@ -4,9 +4,16 @@
   <p>Given some elements x0, x1, x2,..., and a binary operator 'op', the parallell reduction
   becomes 'op(x0, op(x1, op(x2,...) ))'. For example, given the elements 4, 2, 4, 1, and the operator '+',
   the parallell reduction will be 11, which is just the sum of the elements. </p>
- */
+*/
+/* globals performance*/
 
-const regl = require('../regl')()
+// we're not gonna render anything in this demo, so make smallest possible canvas.
+const canvas = document.body.appendChild(document.createElement('canvas'))
+canvas.width = 1
+canvas.height = 1
+
+const regl = require('../regl')(canvas)
+
 var seedrandom = require('seedrandom')
 
 /*
@@ -147,30 +154,71 @@ function gpuReduce (data, op) {
   return result
 }
 
+// we will run the reduction on some random data.
 var seed = 'seed'
-
-for (var j = 0; j < 100; j++) {
-  seed += j
-
-  var rng = seedrandom(seed)
-
-  var data = []
-  for (var i = 0; i < 512 * 512; i++) {
-    data.push(Math.floor(rng() * 255))
-  }
-
-  var gpu = gpuReduce(data, 'max(a,b)')
-  var cpu = cpuReduce(data, (a, b) => Math.max(a, b))
-
-  if (cpu !== gpu) {
-    console.log('FAILED')
-    console.log('cpu: ', cpu)
-    console.log('gpu: ', gpu)
-    console.log('data: ', data)
-    break
-  }
-  if (j % 10 === 0) {
-    console.log('j: ', j)
-  }
+var rng = seedrandom(seed)
+var data = []
+for (var i = 0; i < 1024 * 1024; i++) {
+  data.push(Math.floor(rng() * 255))
 }
-console.log('done')
+
+function createParagraph (elem, text) {
+  var par = document.createElement(elem)
+  par.innerHTML = text
+
+  var div = document.createElement('div')
+  div.style.cssText = 'margin: 0 auto; max-width: 760px;'
+  div.style.fontSize = '30px'
+  div.style.fontFamily = 'verdana'
+  div.style.color = '#444444'
+  div.appendChild(par)
+  document.body.appendChild(div)
+
+  return par
+}
+
+function profile (gpu) {
+  var par = createParagraph('p', 'Running reduction on ' + (gpu ? 'GPU' : 'CPU'))
+
+  var i = 0
+  var SAMPLES = 100
+  var total = 0
+
+  function loop () {
+    // update loading string.
+    if (par.innerHTML.slice(-5) === '.....') {
+      par.innerHTML = par.innerHTML.substring(0, par.innerHTML.length - 5)
+    } else {
+      par.innerHTML += '.'
+    }
+
+    var cmd = gpu
+        ? () => gpuReduce(data, 'max(a,b)')
+        : () => cpuReduce(data, (a, b) => Math.max(a, b))
+
+    // profile.
+    var t0 = performance.now()
+    cmd()
+    var t1 = performance.now()
+    total += (t1 - t0)
+
+    // continue, or stop loop if we have enough samples.
+    i++
+    if (i < SAMPLES) {
+      setTimeout(loop, 0)
+    } else {
+      var avg = (total / SAMPLES)
+      var avgStr = Math.round(avg * 100) / 100
+      par.innerHTML = 'Average time of reduction on the ' + (gpu ? 'GPU' : 'CPU') + ': ' + avgStr + 'ms'
+
+      if (gpu) {
+        profile(false)
+      }
+    }
+  }
+
+  setTimeout(loop, 0)
+}
+
+createParagraph('h3', 'Doing reduction on 1,000,000 items:')
+profile(true)
