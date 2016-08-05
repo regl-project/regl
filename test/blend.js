@@ -284,13 +284,13 @@ tape('blend', function (t) {
       color: regl.prop('color'),
       equation: {
         rgb: regl.prop('equation.rgb'),
-        alpha: regl.prop('equation.alpha'),
+        alpha: regl.prop('equation.alpha')
       },
       func: {
         srcRGB: regl.prop('func.srcRGB'),
         srcAlpha: regl.prop('func.srcAlpha'),
         dstRGB: regl.prop('func.dstRGB'),
-        dstAlpha: regl.prop('func.dstAlpha'),
+        dstAlpha: regl.prop('func.dstAlpha')
       }
     }
   }, staticOptions))
