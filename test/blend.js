@@ -32,6 +32,17 @@ var blendEquations = {
   'reverse subtract': 32779
 }
 
+var invalidBlendCombinations = [
+  ['constant color', 'constant alpha'],
+  ['one minus constant color', 'constant alpha'],
+  ['constant color', 'one minus constant alpha'],
+  ['one minus constant color', 'one minus constant alpha'],
+  ['constant alpha', 'constant color'],
+  ['constant alpha', 'one minus constant color'],
+  ['one minus constant alpha', 'constant color'],
+  ['one minus constant alpha', 'one minus constant color']
+]
+
 tape('blend', function (t) {
   var gl = createContext(16, 16)
   var regl = createREGL({gl: gl, optionalExtensions: ['ext_blend_minmax']})
@@ -166,7 +177,7 @@ tape('blend', function (t) {
         alpha: 'add'
       },
       func: {
-        srcRGB: 'src color',
+        srcRGB: 'constant alpha',
         srcAlpha: 'one minus src color',
         dstRGB: 'src alpha',
         dstAlpha: 'one minus src alpha'
@@ -185,9 +196,8 @@ tape('blend', function (t) {
         dstRGB: 'dst alpha',
         dstAlpha: 'one minus dst alpha'
       }
-      },
-    // this combination can't be used.
-   /* {
+    },
+    {
       enable: false,
       color: [1, 0, 1, 0],
       equation: {
@@ -195,12 +205,12 @@ tape('blend', function (t) {
         alpha: 'add'
       },
       func: {
-        srcRGB: 'constant color',
+        srcRGB: '0',
         srcAlpha: 'one minus constant color',
-        dstRGB: 'constant alpha',
+        dstRGB: '1',
         dstAlpha: 'one minus constant alpha'
       }
-    },*/
+    },
     {
       enable: false,
       color: [1, 0, 1, 0],
@@ -210,14 +220,13 @@ tape('blend', function (t) {
       },
       func: {
         srcRGB: 'src alpha saturate',
-        srcAlpha: '0',
-        dstRGB: '0',
+        srcAlpha: 'constant color',
+        dstRGB: 'src color',
         dstAlpha: '0'
       }
     }
   ]
 
-  // TODO: Add permutation for
   if (regl.hasExtension('ext_blend_minmax')) {
     permutations.push({
       enable: true,
@@ -251,6 +260,48 @@ tape('blend', function (t) {
     }, staticOptions))
     staticDraw()
     testFlags('static - #' + i + ' - ', params)
+  })
+
+  // make sure that it throws for invalid blend factor combinations.
+
+  var badTestcases = []
+
+  invalidBlendCombinations.forEach(function (combination, i) {
+    var params = {
+      enable: false,
+      color: [1, 0, 1, 0],
+      equation: {
+        rgb: 'reverse subtract',
+        alpha: 'add'
+      },
+      func: {
+        srcRGB: combination[0],
+        srcAlpha: 'one minus src color',
+        dstRGB: combination[1],
+        dstAlpha: 'one minus src alpha'
+      }
+    }
+    badTestcases.push(params)
+  })
+
+  badTestcases.forEach(function (params, i) {
+    t.throws(function () {
+      dynamicDraw(params)
+    }, /\(regl\)/, 'throws on invalid combination, dynamic 1-shot - #' + i)
+  })
+
+  badTestcases.forEach(function (params, i) {
+    t.throws(function () {
+      dynamicDraw([params])
+    }, /\(regl\)/, 'throws on invalid combination, batch - #' + i)
+  })
+
+  badTestcases.forEach(function (params, i) {
+    t.throws(function () {
+      regl(extend({
+        blend: params
+      }, staticOptions))
+    }, /\(regl\)/, 'throws on invalid combination, static - #' + i)
   })
 
   regl.destroy()
