@@ -66,7 +66,7 @@ tape('attributes nested', function (t) {
 
     attributes: {
       position: {
-       buffer: regl.prop('position.buffer'),
+        buffer: regl.prop('position.buffer'),
         offset: regl.prop('position.offset'),
         stride: regl.prop('position.stride')
       }
