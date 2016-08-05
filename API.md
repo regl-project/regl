@@ -2446,6 +2446,17 @@ regl exposes info about the WebGL context limits and capabilities via the `regl.
 
 * * *
 
+### Clocks and timers
+
+It may be desirable to synchronize external events (like button presses or mouse movements) with the internal timer in regl.  To sample the current time stamp outside of the frame callback you can use the following command:
+
+```javascript
+// Samples current timestamp of regl's local clock
+regl.now()
+```
+
+* * *
+
 ### Clean up
 
 When a `regl` context is no longer needed, it can be destroyed releasing all associated resources with the following command:
