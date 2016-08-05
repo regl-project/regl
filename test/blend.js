@@ -284,6 +284,22 @@ tape('blend', function (t) {
     badTestcases.push(params)
   })
 
+  invalidBlendCombinations.forEach(function (combination, i) {
+    var params = {
+      enable: false,
+      color: [1, 0, 1, 0],
+      equation: {
+        rgb: 'reverse subtract',
+        alpha: 'add'
+      },
+      func: {
+        src: combination[0],
+        dst: combination[1],
+      }
+    }
+    badTestcases.push(params)
+  })
+
   badTestcases.forEach(function (params, i) {
     t.throws(function () {
       dynamicDraw(params)
