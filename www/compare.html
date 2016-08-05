@@ -90,7 +90,7 @@ require('resl')({
   manifest: {
     texture: {
       type: 'image',
-      src: 'assets/lena.png',
+      src: 'assets/peppers.png',
       parser: (data) =&gt; regl.texture({
         data: data,
         mag: 'linear',
@@ -293,7 +293,7 @@ function initTextures () {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
   }
-  cubeImage.src = '../example/assets/lena.png'
+  cubeImage.src = 'assets/peppers.png'
 }
 
 function drawScene () {
@@ -520,7 +520,7 @@ function perspective (fovy, aspect, near, far) {
     function drawShape() {
       var geo = new THREE.CubeGeometry(1.0, 1.0, 1.0);
 
-      var texture = THREE.ImageUtils.loadTexture('../example/assets/lena.png');
+      var texture = THREE.ImageUtils.loadTexture('assets/peppers.png');
       var mats = [];
       for (var i = 0; i &lt; 6; i++) {
         mats.push(new THREE.MeshBasicMaterial({map: texture}));
