@@ -208,6 +208,20 @@ tape('blend', function (t) {
         srcRGB: '0',
         srcAlpha: 'one minus constant color',
         dstRGB: '1',
+        dstAlpha: '1'
+      }
+    },
+    {
+      enable: false,
+      color: [1, 0, 1, 0],
+      equation: {
+        rgb: 'reverse subtract',
+        alpha: 'add'
+      },
+      func: {
+        srcRGB: '0',
+        srcAlpha: '1',
+        dstRGB: '1',
         dstAlpha: 'one minus constant alpha'
       }
     },
@@ -294,7 +308,7 @@ tape('blend', function (t) {
       },
       func: {
         src: combination[0],
-        dst: combination[1],
+        dst: combination[1]
       }
     }
     badTestcases.push(params)
