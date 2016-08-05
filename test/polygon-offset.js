@@ -74,22 +74,42 @@ tape('polygon offset', function (t) {
     }
   }, staticOptions))
 
-  permutations.forEach(function (params) {
+  permutations.forEach(function (params, i) {
     dynamicDraw(params)
-    testFlags('dynamic 1-shot - ', params)
+    testFlags('dynamic 1-shot #' + i + ' - ', params)
   })
 
-  permutations.forEach(function (params) {
+  permutations.forEach(function (params, i) {
     dynamicDraw([params])
-    testFlags('batch - ', params)
+    testFlags('batch #' + i + ' - ', params)
   })
 
-  permutations.forEach(function (params) {
+  permutations.forEach(function (params, i) {
     var staticDraw = regl(extend({
       polygonOffset: params
     }, staticOptions))
     staticDraw()
-    testFlags('static - ', params)
+    testFlags('static #' + i + ' - ', params)
+  })
+
+  var nestedDynamicDraw = regl(extend({
+    polygonOffset: {
+      enable: regl.prop('enable'),
+      offset: {
+        factor: regl.prop('offset.factor'),
+        units: regl.prop('offset.units')
+      }
+    }
+  }, staticOptions))
+
+  permutations.forEach(function (params, i) {
+    nestedDynamicDraw(params)
+    testFlags('nested dynamic 1-shot #' + i + ' - ', params)
+  })
+
+  permutations.forEach(function (params, i) {
+    nestedDynamicDraw([params])
+    testFlags('nested batch #' + i + ' - ', params)
   })
 
   regl.destroy()
