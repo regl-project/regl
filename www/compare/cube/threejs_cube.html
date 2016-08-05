@@ -21,7 +21,7 @@
     function drawShape() {
       var geo = new THREE.CubeGeometry(1.0, 1.0, 1.0);
 
-      var texture = THREE.ImageUtils.loadTexture('../example/assets/lena.png');
+      var texture = THREE.ImageUtils.loadTexture('assets/peppers.png');
       var mats = [];
       for (var i = 0; i < 6; i++) {
         mats.push(new THREE.MeshBasicMaterial({map: texture}));
