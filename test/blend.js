@@ -276,6 +276,35 @@ tape('blend', function (t) {
     testFlags('static - #' + i + ' - ', params)
   })
 
+  // make sure nested dynamic properties work:
+
+  var nestedDynamicDraw = regl(extend({
+    blend: {
+      enable: regl.prop('enable'),
+      color: regl.prop('color'),
+      equation: {
+        rgb: regl.prop('equation.rgb'),
+        alpha: regl.prop('equation.alpha'),
+      },
+      func: {
+        srcRGB: regl.prop('func.srcRGB'),
+        srcAlpha: regl.prop('func.srcAlpha'),
+        dstRGB: regl.prop('func.dstRGB'),
+        dstAlpha: regl.prop('func.dstAlpha'),
+      }
+    }
+  }, staticOptions))
+
+  permutations.forEach(function (params, i) {
+    nestedDynamicDraw(params)
+    testFlags('nested, dynamic 1-shot - #' + i + ' - ', params)
+  })
+
+  permutations.forEach(function (params, i) {
+    nestedDynamicDraw([params])
+    testFlags('nested, batch - #' + i + ' - ', params)
+  })
+
   // make sure that it throws for invalid blend factor combinations.
 
   var badTestcases = []
