@@ -21,7 +21,7 @@ var seedrandom = require('seedrandom')
  */
 function cpuReduce (data, op) {
   var result = op(data[0], data[1])
-  for (var i = 3; i < data.length; i++) {
+  for (var i = 2; i < data.length; i++) {
     result = op(result, data[i])
   }
   return result
