@@ -3,6 +3,9 @@ var extend = require('../lib/util/extend')
 var createContext = require('./util/create-context')
 var createREGL = require('../regl')
 
+var GL_MIN_EXT = 0x8007
+var GL_MAX_EXT = 0x8008
+
 var blendFuncs = {
   '0': 0,
   '1': 1,
@@ -29,9 +32,25 @@ var blendEquations = {
   'reverse subtract': 32779
 }
 
+var invalidBlendCombinations = [
+  ['constant color', 'constant alpha'],
+  ['one minus constant color', 'constant alpha'],
+  ['constant color', 'one minus constant alpha'],
+  ['one minus constant color', 'one minus constant alpha'],
+  ['constant alpha', 'constant color'],
+  ['constant alpha', 'one minus constant color'],
+  ['one minus constant alpha', 'constant color'],
+  ['one minus constant alpha', 'one minus constant color']
+]
+
 tape('blend', function (t) {
   var gl = createContext(16, 16)
-  var regl = createREGL(gl)
+  var regl = createREGL({gl: gl, optionalExtensions: ['ext_blend_minmax']})
+
+  if (regl.hasExtension('ext_blend_minmax')) {
+    blendEquations.min = GL_MIN_EXT
+    blendEquations.max = GL_MAX_EXT
+  }
 
   // Test blend equations
   t.equals(blendEquations.add, gl.FUNC_ADD, 'func add')
@@ -146,7 +165,21 @@ tape('blend', function (t) {
       func: {
         srcRGB: '0',
         srcAlpha: '1',
-        dstRGB: 'src color',
+        dstRGB: 'zero',
+        dstAlpha: 'one'
+      }
+    },
+    {
+      enable: false,
+      color: [1, 0, 1, 0],
+      equation: {
+        rgb: 'reverse subtract',
+        alpha: 'add'
+      },
+      func: {
+        srcRGB: 'constant alpha',
+        srcAlpha: 'one minus src color',
+        dstRGB: 'src alpha',
         dstAlpha: 'one minus src alpha'
       }
     },
@@ -158,30 +191,176 @@ tape('blend', function (t) {
         alpha: 'add'
       },
       func: {
-        srcRGB: 'one minus src alpha',
-        srcAlpha: 'zero',
-        dstRGB: 'dst color',
+        srcRGB: 'dst color',
+        srcAlpha: 'one minus dst color',
+        dstRGB: 'dst alpha',
         dstAlpha: 'one minus dst alpha'
+      }
+    },
+    {
+      enable: false,
+      color: [1, 0, 1, 0],
+      equation: {
+        rgb: 'reverse subtract',
+        alpha: 'add'
+      },
+      func: {
+        srcRGB: '0',
+        srcAlpha: 'one minus constant color',
+        dstRGB: '1',
+        dstAlpha: '1'
+      }
+    },
+    {
+      enable: false,
+      color: [1, 0, 1, 0],
+      equation: {
+        rgb: 'reverse subtract',
+        alpha: 'add'
+      },
+      func: {
+        srcRGB: '0',
+        srcAlpha: '1',
+        dstRGB: '1',
+        dstAlpha: 'one minus constant alpha'
+      }
+    },
+    {
+      enable: false,
+      color: [1, 0, 1, 0],
+      equation: {
+        rgb: 'reverse subtract',
+        alpha: 'add'
+      },
+      func: {
+        srcRGB: 'src alpha saturate',
+        srcAlpha: 'constant color',
+        dstRGB: 'src color',
+        dstAlpha: '0'
       }
     }
   ]
 
-  permutations.forEach(function (params) {
+  if (regl.hasExtension('ext_blend_minmax')) {
+    permutations.push({
+      enable: true,
+      color: [0, 1, 0, 1],
+      equation: {
+        rgb: 'max',
+        alpha: 'min'
+      },
+      func: {
+        srcRGB: '0',
+        srcAlpha: '1',
+        dstRGB: 'src color',
+        dstAlpha: 'one minus src alpha'
+      }
+    })
+  }
+
+  permutations.forEach(function (params, i) {
     dynamicDraw(params)
-    testFlags('dynamic 1-shot - ', params)
+    testFlags('dynamic 1-shot - #' + i + ' - ', params)
   })
 
-  permutations.forEach(function (params) {
+  permutations.forEach(function (params, i) {
     dynamicDraw([params])
-    testFlags('batch - ', params)
+    testFlags('batch - #' + i + ' - ', params)
   })
 
-  permutations.forEach(function (params) {
+  permutations.forEach(function (params, i) {
     var staticDraw = regl(extend({
       blend: params
     }, staticOptions))
     staticDraw()
-    testFlags('static - ', params)
+    testFlags('static - #' + i + ' - ', params)
+  })
+
+  // make sure nested dynamic properties work:
+
+  var nestedDynamicDraw = regl(extend({
+    blend: {
+      enable: regl.prop('enable'),
+      color: regl.prop('color'),
+      equation: {
+        rgb: regl.prop('equation.rgb'),
+        alpha: regl.prop('equation.alpha')
+      },
+      func: {
+        srcRGB: regl.prop('func.srcRGB'),
+        srcAlpha: regl.prop('func.srcAlpha'),
+        dstRGB: regl.prop('func.dstRGB'),
+        dstAlpha: regl.prop('func.dstAlpha')
+      }
+    }
+  }, staticOptions))
+
+  permutations.forEach(function (params, i) {
+    nestedDynamicDraw(params)
+    testFlags('nested, dynamic 1-shot - #' + i + ' - ', params)
+  })
+
+  permutations.forEach(function (params, i) {
+    nestedDynamicDraw([params])
+    testFlags('nested, batch - #' + i + ' - ', params)
+  })
+
+  // make sure that it throws for invalid blend factor combinations.
+
+  var badTestcases = []
+
+  invalidBlendCombinations.forEach(function (combination, i) {
+    var params = {
+      enable: false,
+      color: [1, 0, 1, 0],
+      equation: {
+        rgb: 'reverse subtract',
+        alpha: 'add'
+      },
+      func: {
+        srcRGB: combination[0],
+        srcAlpha: 'one minus src color',
+        dstRGB: combination[1],
+        dstAlpha: 'one minus src alpha'
+      }
+    }
+    badTestcases.push(params)
+  })
+
+  invalidBlendCombinations.forEach(function (combination, i) {
+    var params = {
+      enable: false,
+      color: [1, 0, 1, 0],
+      equation: {
+        rgb: 'reverse subtract',
+        alpha: 'add'
+      },
+      func: {
+        src: combination[0],
+        dst: combination[1]
+      }
+    }
+    badTestcases.push(params)
+  })
+
+  badTestcases.forEach(function (params, i) {
+    t.throws(function () {
+      dynamicDraw(params)
+    }, /\(regl\)/, 'throws on invalid combination, dynamic 1-shot - #' + i)
+  })
+
+  badTestcases.forEach(function (params, i) {
+    t.throws(function () {
+      dynamicDraw([params])
+    }, /\(regl\)/, 'throws on invalid combination, batch - #' + i)
+  })
+
+  badTestcases.forEach(function (params, i) {
+    t.throws(function () {
+      regl(extend({
+        blend: params
+      }, staticOptions))
+    }, /\(regl\)/, 'throws on invalid combination, static - #' + i)
   })
 
   regl.destroy()
