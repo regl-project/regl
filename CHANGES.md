@@ -41,6 +41,10 @@
   * Asset loading (obj, ply, etc.)
   * Water Reflection(though cubic-framebuffers)
 
+## Next
+
+* Add `regl.now()`, allows sampling timer at high resolution outside of `regl.frame` in order to better synchronize DOM events
+
 ## 0.11.0
 
 * Cubic frame buffer objects!

@@ -403,7 +403,7 @@ module.exports = function wrapREGL (args) {
 
   function poll () {
     contextState.tick += 1
-    contextState.time = (clock() - START_TIME) / 1000.0
+    contextState.time = now()
     pollViewport()
     core.procs.poll()
   }
@@ -414,6 +414,10 @@ module.exports = function wrapREGL (args) {
     if (timer) {
       timer.update()
     }
+  }
+
+  function now () {
+    return (clock() - START_TIME) / 1000.0
   }
 
   refresh()
@@ -469,6 +473,9 @@ module.exports = function wrapREGL (args) {
         timer.update()
       }
     },
+
+    // Current time
+    now: now,
 
     // regl Statistics Information
     stats: stats
