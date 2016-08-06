@@ -1239,7 +1239,7 @@ var command = regl({
 
 **Relevant WebGL APIs**
 
--   [`gl.sampleCoverage`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glColorMask.xml)
+-   [`gl.sampleCoverage`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glSampleCoverage.xml)
 
 * * *
 
