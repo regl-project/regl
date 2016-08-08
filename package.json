@@ -68,7 +68,7 @@
     "bench-history": "node bench/bench-history",
     "build": "npm run build-script && npm run build-min && npm run build-bench && npm run build-gallery && npm run build-size && npm run build-compare",
     "build-size": "browserify --full-paths --transform ./bin/remove-check.js regl.js | discify > www/size.html",
-    "build-script": "browserify regl.js --standalone reglInit > dist/regl.js",
+    "build-script": "browserify regl.js --standalone createREGL > dist/regl.js",
     "build-min": "node bin/build-min.js",
     "build-bench": "browserify bench/bench.js | indexhtmlify > www/bench.html",
     "build-gallery": "node bin/build-gallery.js",
