@@ -10,7 +10,7 @@ var OUTPUT_FILE = path.join(__dirname, '../dist/regl.min.js')
 console.log('removing checks from ', INPUT_FILE)
 console.log('writing to ', UNCHECKED_FILE)
 
-browserify(INPUT_FILE, { standalone: 'initREGL' })
+browserify(INPUT_FILE, { standalone: 'createREGL' })
   .transform(require('./remove-check'))
   .bundle()
   .pipe(fs.createWriteStream(UNCHECKED_FILE))
