@@ -1,4 +1,4 @@
-(function(f) {if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.reglInit = f()}}) (function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.createREGL = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var GL_FLOAT = 5126
 
 function AttributeRecord () {
@@ -624,6 +624,20 @@ var blendFuncs = {
   'src alpha saturate': 776
 }
 
+// There are invalid values for srcRGB and dstRGB. See:
+// https://www.khronos.org/registry/webgl/specs/1.0/#6.13
+// https://github.com/KhronosGroup/WebGL/blob/0d3201f5f7ec3c0060bc1f04077461541f1987b9/conformance-suites/1.0.3/conformance/misc/webgl-specific.html#L56
+var invalidBlendCombinations = [
+  'constant color, constant alpha',
+  'one minus constant color, constant alpha',
+  'constant color, one minus constant alpha',
+  'one minus constant color, one minus constant alpha',
+  'constant alpha, constant color',
+  'constant alpha, one minus constant color',
+  'one minus constant alpha, constant color',
+  'one minus constant alpha, one minus constant color'
+]
+
 var compareFuncs = {
   'never': 512,
   'less': 513,
@@ -929,6 +943,8 @@ module.exports = function reglCore (
           'if(!(', pred, '))',
           this.CHECK, '.commandRaise(', link(message), ',', this.command, ');')
       }
+
+      sharedConstants.invalidBlendCombinations = invalidBlendCombinations
     })
 
     // Copy GL state variables over
@@ -1241,7 +1257,7 @@ module.exports = function reglCore (
       if (name in staticOptions) {
         var id = stringStore.id(staticOptions[name])
         check.optional(function () {
-          shaderState.shader(shaderType[name], id)
+          shaderState.shader(shaderType[name], id, check.guessCommand())
         })
         var result = createStaticDecl(function () {
           return id
@@ -1642,6 +1658,11 @@ module.exports = function reglCore (
               check.commandParameter(srcAlpha, blendFuncs, param + '.srcAlpha')
               check.commandParameter(dstRGB, blendFuncs, param + '.dstRGB')
               check.commandParameter(dstAlpha, blendFuncs, param + '.dstAlpha')
+
+              check.command(
+                (invalidBlendCombinations.indexOf(srcRGB + ', ' + dstRGB) === -1),
+                'unallowed blending combination (srcRGB, dstRGB) = (' + srcRGB + ', ' + dstRGB + ')')
+
               return [
                 blendFuncs[srcRGB],
                 blendFuncs[dstRGB],
@@ -1670,13 +1691,26 @@ module.exports = function reglCore (
                     'invalid ' + prop + '.' + prefix + suffix + ', must be one of ' + Object.keys(blendFuncs))
                 })
 
-                return scope.def(BLEND_FUNCS, '[', func, ']')
+                return func
               }
 
-              var SRC_RGB = read('src', 'RGB')
-              var SRC_ALPHA = read('src', 'Alpha')
-              var DST_RGB = read('dst', 'RGB')
-              var DST_ALPHA = read('dst', 'Alpha')
+              var srcRGB = read('src', 'RGB')
+              var dstRGB = read('dst', 'RGB')
+
+              check.optional(function () {
+                var INVALID_BLEND_COMBINATIONS = env.constants.invalidBlendCombinations
+
+                env.assert(scope,
+                           INVALID_BLEND_COMBINATIONS +
+                           '.indexOf(' + srcRGB + '+", "+' + dstRGB + ') === -1 ',
+                           'unallowed blending combination for (srcRGB, dstRGB)'
+                          )
+              })
+
+              var SRC_RGB = scope.def(BLEND_FUNCS, '[', srcRGB, ']')
+              var SRC_ALPHA = scope.def(BLEND_FUNCS, '[', read('src', 'Alpha'), ']')
+              var DST_RGB = scope.def(BLEND_FUNCS, '[', dstRGB, ']')
+              var DST_ALPHA = scope.def(BLEND_FUNCS, '[', read('dst', 'Alpha'), ']')
 
               return [SRC_RGB, DST_RGB, SRC_ALPHA, DST_ALPHA]
             })
@@ -2068,13 +2102,23 @@ module.exports = function reglCore (
         result = createStaticDecl(function () {
           return value
         })
-      } else if (
-        typeof value === 'function' &&
-        (value._reglType === 'texture2d' ||
-         value._reglType === 'textureCube')) {
-        result = createStaticDecl(function (env) {
-          return env.link(value)
-        })
+      } else if (typeof value === 'function') {
+        var reglType = value._reglType
+        if (reglType === 'texture2d' ||
+            reglType === 'textureCube') {
+          result = createStaticDecl(function (env) {
+            return env.link(value)
+          })
+        } else if (reglType === 'framebuffer' ||
+                   reglType === 'framebufferCube') {
+          check(value.color.length > 0,
+            'missing color attachment for framebuffer sent to uniform "' + name + '"')
+          result = createStaticDecl(function (env) {
+            return env.link(value.color[0])
+          })
+        } else {
+          check.raise('invalid data for uniform "' + name + '"')
+        }
       } else if (isArrayLike(value)) {
         result = createStaticDecl(function (env) {
           var ITEM = env.global.def('[',
@@ -2088,7 +2132,7 @@ module.exports = function reglCore (
           return ITEM
         })
       } else {
-        check.commandRaise('invalid uniform ' + name)
+        check.commandRaise('invalid or missing data for uniform "' + name + '"')
       }
       result.value = value
       UNIFORMS[name] = result
@@ -2383,7 +2427,7 @@ module.exports = function reglCore (
   // COMMON DRAWING FUNCTIONS
   // ===================================================
   // ===================================================
-  function emitPollFramebuffer (env, scope, framebuffer) {
+  function emitPollFramebuffer (env, scope, framebuffer, skipCheck) {
     var shared = env.shared
 
     var GL = shared.gl
@@ -2405,8 +2449,10 @@ module.exports = function reglCore (
       NEXT = scope.def(FRAMEBUFFER_STATE, '.next')
     }
 
+    if (!skipCheck) {
+      scope('if(', NEXT, '!==', FRAMEBUFFER_STATE, '.cur){')
+    }
     scope(
-      'if(', FRAMEBUFFER_STATE, '.dirty||', NEXT, '!==', FRAMEBUFFER_STATE, '.cur){',
       'if(', NEXT, '){',
       GL, '.bindFramebuffer(', GL_FRAMEBUFFER, ',', NEXT, '.framebuffer);')
     if (extDrawBuffers) {
@@ -2420,9 +2466,10 @@ module.exports = function reglCore (
     }
     scope(
       '}',
-      FRAMEBUFFER_STATE, '.cur=', NEXT, ';',
-      FRAMEBUFFER_STATE, '.dirty=false;',
-      '}')
+      FRAMEBUFFER_STATE, '.cur=', NEXT, ';')
+    if (!skipCheck) {
+      scope('}')
+    }
   }
 
   function emitPollState (env, scope, args) {
@@ -2773,13 +2820,20 @@ module.exports = function reglCore (
         }
         if (isStatic(arg)) {
           var value = arg.value
+          check.command(
+            value !== null && typeof value !== 'undefined',
+            'missing uniform "' + name + '"')
           if (type === GL_SAMPLER_2D || type === GL_SAMPLER_CUBE) {
             check.command(
               typeof value === 'function' &&
-              ((value._reglType === 'texture2d' && type === GL_SAMPLER_2D) ||
-              (value._reglType === 'textureCube' && type === GL_SAMPLER_CUBE)),
+              ((type === GL_SAMPLER_2D &&
+                (value._reglType === 'texture2d' ||
+                value._reglType === 'framebuffer')) ||
+              (type === GL_SAMPLER_CUBE &&
+                (value._reglType === 'textureCube' ||
+                value._reglType === 'framebufferCube'))),
               'invalid texture for uniform ' + name)
-            var TEX_VALUE = env.link(value._texture)
+            var TEX_VALUE = env.link(value._texture || value.color[0]._texture)
             scope(GL, '.uniform1i(', LOCATION, ',', TEX_VALUE + '.bind());')
             scope.exit(TEX_VALUE, '.unbind();')
           } else if (
@@ -2890,25 +2944,43 @@ module.exports = function reglCore (
         VALUE = scope.def(shared.uniforms, '[', stringStore.id(name), ']')
       }
 
+      if (type === GL_SAMPLER_2D) {
+        scope(
+          'if(', VALUE, '&&', VALUE, '._reglType==="framebuffer"){',
+          VALUE, '=', VALUE, '.color[0];',
+          '}')
+      } else if (type === GL_SAMPLER_CUBE) {
+        scope(
+          'if(', VALUE, '&&', VALUE, '._reglType==="framebufferCube"){',
+          VALUE, '=', VALUE, '.color[0];',
+          '}')
+      }
+
       // perform type validation
       check.optional(function () {
-        function check (pred) {
-          env.assert(scope, pred, 'invalid or missing uniform "' + name + '"')
+        function check (pred, message) {
+          env.assert(scope, pred,
+            'bad data for uniform "' + name + '".  ' + message)
         }
 
         function checkType (type) {
-          check('typeof ' + VALUE + '==="' + type + '"')
+          check(
+            'typeof ' + VALUE + '==="' + type + '"',
+            'invalid type, expected ' + type)
         }
 
         function checkVector (n, type) {
-          check(shared.isArrayLike + '(' + VALUE + ')&&' + VALUE + '.length===' + n)
+          check(
+            shared.isArrayLike + '(' + VALUE + ')&&' + VALUE + '.length===' + n,
+            'invalid vector, should have length ' + n)
         }
 
         function checkTexture (target) {
           check(
             'typeof ' + VALUE + '==="function"&&' +
             VALUE + '._reglType==="texture' +
-            (target === GL_TEXTURE_2D ? '2d' : 'Cube') + '"')
+            (target === GL_TEXTURE_2D ? '2d' : 'Cube') + '"',
+            'invalid texture type')
         }
 
         switch (type) {
@@ -3539,7 +3611,7 @@ module.exports = function reglCore (
   }
 
   function isDynamicObject (object) {
-    if (typeof object !== 'object') {
+    if (typeof object !== 'object' || isArrayLike(object)) {
       return
     }
     var props = Object.keys(object)
@@ -3566,6 +3638,9 @@ module.exports = function reglCore (
     keys.forEach(function (key) {
       var value = object[key]
       if (dynamic.isDynamic(value)) {
+        if (typeof value === 'function') {
+          value = object[key] = dynamic.unbox(value)
+        }
         var deps = createDynamicDecl(value, null)
         thisDep = thisDep || deps.thisDep
         propDep = propDep || deps.propDep
@@ -3665,11 +3740,46 @@ module.exports = function reglCore (
       common(CURRENT_STATE, '.dirty=false;')
 
       emitPollFramebuffer(env, poll)
+      emitPollFramebuffer(env, refresh, null, true)
 
-      refresh(shared.framebuffer, '.dirty=true;')
-      emitPollFramebuffer(env, refresh)
-
-      // FIXME: refresh should update vertex attribute pointers
+      // Refresh updates all attribute state changes
+      var extInstancing = gl.getExtension('angle_instanced_arrays')
+      var INSTANCING
+      if (extInstancing) {
+        INSTANCING = env.link(extInstancing)
+      }
+      for (var i = 0; i < limits.maxAttributes; ++i) {
+        var BINDING = refresh.def(shared.attributes, '[', i, ']')
+        var ifte = env.cond(BINDING, '.buffer')
+        ifte.then(
+          GL, '.enableVertexAttribArray(', i, ');',
+          GL, '.bindBuffer(',
+            GL_ARRAY_BUFFER, ',',
+            BINDING, '.buffer.buffer);',
+          GL, '.vertexAttribPointer(',
+            i, ',',
+            BINDING, '.size,',
+            BINDING, '.type,',
+            BINDING, '.normalized,',
+            BINDING, '.stride,',
+            BINDING, '.offset);'
+        ).else(
+          GL, '.disableVertexAttribArray(', i, ');',
+          GL, '.vertexAttrib4f(',
+            i, ',',
+            BINDING, '.x,',
+            BINDING, '.y,',
+            BINDING, '.z,',
+            BINDING, '.w);',
+          BINDING, '.buffer=null;')
+        refresh(ifte)
+        if (extInstancing) {
+          refresh(
+            INSTANCING, '.vertexAttribDivisorANGLE(',
+            i, ',',
+            BINDING, '.divisor);')
+        }
+      }
 
       Object.keys(GL_FLAGS).forEach(function (flag) {
         var cap = GL_FLAGS[flag]
@@ -4099,9 +4209,6 @@ module.exports = function createExtensionCache (gl, config) {
   function tryLoadExtension (name_) {
     check.type(name_, 'string', 'extension name must be string')
     var name = name_.toLowerCase()
-    if (name in extensions) {
-      return true
-    }
     var ext
     try {
       ext = extensions[name] = gl.getExtension(name)
@@ -4121,11 +4228,7 @@ module.exports = function createExtensionCache (gl, config) {
   config.optionalExtensions.forEach(tryLoadExtension)
 
   return {
-    extensions: extensions,
-    refresh: function () {
-      config.extensions.forEach(tryLoadExtension)
-      config.optionalExtensions.forEach(tryLoadExtension)
-    }
+    extensions: extensions
   }
 }
 
@@ -4215,7 +4318,7 @@ module.exports = function wrapFBOState (
   renderbufferState,
   stats) {
   var framebufferState = {
-    current: null,
+    cur: null,
     next: null,
     dirty: false
   }
@@ -4237,10 +4340,10 @@ module.exports = function wrapFBOState (
 
   var colorTypes = ['uint8']
   if (extensions.oes_texture_half_float) {
-    colorTypes.push('half float')
+    colorTypes.push('half float', 'float16')
   }
   if (extensions.oes_texture_float) {
-    colorTypes.push('float')
+    colorTypes.push('float', 'float32')
   }
 
   function FramebufferAttachment (target, texture, renderbuffer) {
@@ -4428,6 +4531,7 @@ module.exports = function wrapFBOState (
 
   function updateFramebuffer (framebuffer) {
     var i
+
     gl.bindFramebuffer(GL_FRAMEBUFFER, framebuffer.framebuffer)
     var colorAttachments = framebuffer.colorAttachments
     for (i = 0; i < colorAttachments.length; ++i) {
@@ -4448,7 +4552,11 @@ module.exports = function wrapFBOState (
     }
 
     gl.bindFramebuffer(GL_FRAMEBUFFER, framebufferState.next)
-    framebufferState.current = framebufferState.next
+    framebufferState.cur = framebufferState.next
+
+    // FIXME: Clear error code here.  This is a work around for a bug in
+    // headless-gl
+    gl.getError()
   }
 
   function createFBO (a0, a1) {
@@ -4531,21 +4639,26 @@ module.exports = function wrapFBOState (
           }
 
           if ('colorType' in options) {
-            check.oneOf(
-              options.colorType, colorTypes,
-              'invalid color type')
             colorType = options.colorType
             if (!colorTexture) {
-              if (colorType === 'half float') {
-                if (extensions.ext_color_buffer_half_float) {
-                  colorFormat = 'rgba16f'
-                }
-              } else if (colorType === 'float') {
-                if (extensions.webgl_color_buffer_float) {
-                  colorFormat = 'rgba32f'
-                }
+              if (colorType === 'half float' || colorType === 'float16') {
+                check(extensions.ext_color_buffer_half_float,
+                  'you must enable EXT_color_buffer_half_float to use 16-bit render buffers')
+                colorFormat = 'rgba16f'
+              } else if (colorType === 'float' || colorType === 'float32') {
+                check(extensions.webgl_color_buffer_float,
+                  'you must enable WEBGL_color_buffer_float in order to use 32-bit floating point renderbuffers')
+                colorFormat = 'rgba32f'
               }
+            } else {
+              check(extensions.oes_texture_float ||
+                !(colorType === 'float' || colorType === 'float32'),
+                'you must enable OES_texture_float in order to use floating point framebuffer objects')
+              check(extensions.oes_texture_half_float ||
+                !(colorType === 'half float' || colorType === 'float16'),
+                'you must enable OES_texture_half_float in order to use 16-bit floating point framebuffer objects')
             }
+            check.oneOf(colorType, colorTypes, 'invalid color type')
           }
 
           if ('colorFormat' in options) {
@@ -4627,6 +4740,8 @@ module.exports = function wrapFBOState (
         }
       }
 
+      check(extensions.webgl_draw_buffers || colorAttachments.length <= 1,
+        'you must enable the WEBGL_draw_buffers extension in order to use multiple color buffers.')
       check(colorAttachments.length <= limits.maxColorAttachments,
         'too many color attachments, not supported')
 
@@ -4883,8 +4998,9 @@ module.exports = function wrapFBOState (
       var colorCubes
       if (colorBuffer) {
         if (Array.isArray(colorBuffer)) {
+          colorCubes = []
           for (i = 0; i < colorBuffer.length; ++i) {
-            // FIXME: transer colorBuffer to colorCubes
+            colorCubes[i] = colorBuffer[i]
           }
         } else {
           colorCubes = [ colorBuffer ]
@@ -4913,7 +5029,6 @@ module.exports = function wrapFBOState (
           cube.width === radius && cube.height === radius,
           'invalid cube map shape')
         params.color[i] = {
-          // FIXME: are we not missing a '+1' here?
           target: GL_TEXTURE_CUBE_MAP_POSITIVE_X,
           data: colorCubes[i]
         }
@@ -4943,10 +5058,27 @@ module.exports = function wrapFBOState (
       })
     }
 
-    function resize (radius) {
-      for (var i = 0; i < 6; ++i) {
+    function resize (radius_) {
+      var i
+      var radius = radius_ | 0
+      check(radius > 0 && radius <= limits.maxCubeMapSize,
+        'invalid radius for cube fbo')
+
+      if (radius === reglFramebufferCube.width) {
+        return reglFramebufferCube
+      }
+
+      var colors = reglFramebufferCube.color
+      for (i = 0; i < colors.length; ++i) {
+        colors[i].resize(radius)
+      }
+
+      for (i = 0; i < 6; ++i) {
         faces[i].resize(radius)
       }
+
+      reglFramebufferCube.width = reglFramebufferCube.height = radius
+
       return reglFramebufferCube
     }
 
@@ -5607,8 +5739,8 @@ module.exports = function wrapShaderState (gl, stringStore, stats, config) {
     },
 
     program: function (vertId, fragId, command) {
-      check(vertId >= 0, 'missing vertex shader')
-      check(fragId >= 0, 'missing fragment shader')
+      check.command(vertId >= 0, 'missing vertex shader', command)
+      check.command(fragId >= 0, 'missing fragment shader', command)
 
       stats.shaderCount++
 
@@ -5628,8 +5760,8 @@ module.exports = function wrapShaderState (gl, stringStore, stats, config) {
 
     shader: getShader,
 
-    frag: null,
-    vert: null
+    frag: -1,
+    vert: -1
   }
 }
 
@@ -5905,7 +6037,7 @@ function typedArrayCode (data) {
 
 function convertData (result, data) {
   var n = result.width * result.height * result.channels
-  check(data.length === n, 'inconsistent array length for texture')
+  check(data.length === n, 'inconsistent array length for texture. Expected: ' + n + '. Was: ' + data.length)
 
   switch (result.type) {
     case GL_UNSIGNED_BYTE:
@@ -6086,7 +6218,7 @@ module.exports = function createTextureSet (
   }
 
   if (extensions.oes_texture_float) {
-    textureTypes.float = GL_FLOAT
+    textureTypes.float32 = textureTypes.float = GL_FLOAT
   }
 
   if (extensions.oes_texture_half_float) {
@@ -6234,6 +6366,15 @@ module.exports = function createTextureSet (
 
     if ('type' in options) {
       var type = options.type
+      check(extensions.oes_texture_float ||
+        !(type === 'float' || type === 'float32'),
+        'you must enable the OES_texture_float extension in order to use floating point textures.')
+      check(extensions.oes_texture_half_float ||
+        !(type === 'half float' || type === 'float16'),
+        'you must enable the OES_texture_half_float extension in order to use 16-bit floating point textures.')
+      check(extensions.webgl_depth_texture ||
+        !(type === 'depth' || type === 'depth stencil'),
+        'you must enable the WEBGL_depth_texture extension in order to use depth/stencil textures.')
       check.parameter(type, textureTypes,
         'invalid texture type')
       flags.type = textureTypes[type]
@@ -6281,6 +6422,9 @@ module.exports = function createTextureSet (
     var hasFormat = false
     if ('format' in options) {
       var formatStr = options.format
+      check(extensions.webgl_depth_texture ||
+        !(formatStr === 'depth' || formatStr === 'depth stencil'),
+        'you must enable the WEBGL_depth_texture extension in order to use depth/stencil textures.')
       check.parameter(formatStr, textureFormats,
         'invalid texture format')
       var internalformat = flags.internalformat = textureFormats[formatStr]
@@ -7153,10 +7297,10 @@ module.exports = function createTextureSet (
         for (var j = 0; texture.mipmask >> j; ++j) {
           gl.texImage2D(
             GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-            i,
+            j,
             texture.format,
-            radius >> i,
-            radius >> i,
+            radius >> j,
+            radius >> j,
             0,
             texture.format,
             texture.type,
@@ -7564,6 +7708,9 @@ function parseSource (source, command) {
 function parseErrorLog (errLog) {
   var result = []
   errLog.split('\n').forEach(function (errMsg) {
+    if (errMsg.length < 5) {
+      return
+    }
     var parts = /^ERROR\:\s+(\d+)\:(\d+)\:\s*(.*)$/.exec(errMsg)
     if (parts) {
       result.push(new ShaderError(
@@ -9009,7 +9156,7 @@ module.exports = function wrapREGL (args) {
 
   function poll () {
     contextState.tick += 1
-    contextState.time = (clock() - START_TIME) / 1000.0
+    contextState.time = now()
     pollViewport()
     core.procs.poll()
   }
@@ -9020,6 +9167,10 @@ module.exports = function wrapREGL (args) {
     if (timer) {
       timer.update()
     }
+  }
+
+  function now () {
+    return (clock() - START_TIME) / 1000.0
   }
 
   refresh()
@@ -9075,6 +9226,9 @@ module.exports = function wrapREGL (args) {
         timer.update()
       }
     },
+
+    // Current time
+    now: now,
 
     // regl Statistics Information
     stats: stats
