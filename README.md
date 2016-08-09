@@ -80,7 +80,7 @@ regl.frame(({time}) => {
 
 See this example [live](http://regl.party/examples/?basic)
 
-### More examples
+### [More examples](https://mikolalysenko.github.io/regl/www/gallery.html)
 
 Check out the [gallery](https://mikolalysenko.github.io/regl/www/gallery.html). The source code of all the gallery examples can be found [here](https://github.com/mikolalysenko/regl/tree/gh-pages/example).
 
@@ -104,18 +104,33 @@ For more info on how to use npm, [check out the official docs](https://docs.npmj
 
 ### Standalone script tag
 
-You can also use `regl` as a standalone script if you are really stubborn.  The most recent versions can be found in the `dist/` folder.  Alternatively, you can directly import `regl` using [npm cdn](https://npmcdn.com).
+You can also use `regl` as a standalone script if you are really stubborn.  The most recent versions can be found in the `dist/` folder and is also available from [npm cdn](https://npmcdn.com) in both minified and unminified versions.
 
-#### Unminified
+* *Unminified*: [https://npmcdn.com/regl/dist/regl.js](https://npmcdn.com/regl/dist/regl.js)
+* *Minified*: [https://npmcdn.com/regl/dist/regl.min.js](https://npmcdn.com/regl/dist/regl.min.js)
 
-```html
-<script src="https://npmcdn.com/regl/dist/regl.js"></script>
-```
-
-#### Minified
+There are some difference when using `regl` in standalone.  Because script tags don't assume any sort of module system, the standalone scripts inject a global constructor function which is equivalent to the `module.exports` of `regl`:
 
 ```html
-<script src="https://npmcdn.com/regl/dist/regl.min.js"></script>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
+    <meta charset=utf-8>
+  </head>
+  <body>
+  </body>
+  <script language="javascript" src="https://npmcdn.com/regl/dist/regl.js"></script>
+  <script language="javascript">
+    var regl = createREGL()
+
+    regl.frame(function () {
+      regl.clear({
+        color: [0, 0, 0, 1]
+      })
+    })
+  </script>
+</html>
 ```
 
 ## Why `regl`
@@ -151,7 +166,7 @@ The following is an incomplete list of projects using regl:
 
 If you have a project using regl that isn't on this list that you would like to see added, [please send us a pull request!](https://github.com/mikolalysenko/regl/edit/gh-pages/README.md)
 
-## Help Wanted!
+## Help Wanted
 
 regl is still under active developement, and anyone willing to contribute is very much welcome to do so. Right now, what we need the most is for people to write examples and demos with the framework. This will allow us to find bugs and deficiencies in the API. We have a list of examples we would like to be implemented [here](https://github.com/mikolalysenko/regl/issues?q=is%3Aopen+is%3Aissue+label%3Aexample), but you are of course welcome to come up with your own examples. To add an example to our gallery of examples, [please send us a pull request!](https://github.com/mikolalysenko/regl/pulls)
 
