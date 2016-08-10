@@ -18,6 +18,8 @@
     "canvas-orbit-camera": "^1.0.2",
     "control-panel": "^1.2.0",
     "conway-hart": "^0.1.0",
+    "deglob": "^1.1.1",
+    "dependency-check": "^2.6.0",
     "disc": "^1.3.2",
     "falafel": "^1.2.0",
     "faucet": "0.0.1",
@@ -74,7 +76,7 @@
     "build-script": "browserify regl.js --standalone createREGL > dist/regl.js",
     "build-min": "node bin/build-min.js",
     "build-bench": "browserify bench/bench.js | indexhtmlify > www/bench.html",
-    "build-gallery": "node bin/build-gallery.js",
+    "build-gallery": "node bin/check-dependecies.js && node bin/build-gallery.js",
     "build-compare": "node bin/build-compare.js",
     "build-docs": "remark API.md -o API.md",
     "lint-docs": "remark --frail --quiet README.md API.md DEVELOPING.md CHANGES.md"
