@@ -64,7 +64,7 @@
     "vertices-bounding-box": "^1.0.0"
   },
   "scripts": {
-    "test": "standard | snazzy && tape test/util/index.js | faucet",
+    "test": "node bin/check-dependecies.js && standard | snazzy && tape test/util/index.js | faucet",
     "test-browser": "budo test/util/browser.js --open",
     "cover": "istanbul cover test/util/index.js",
     "bench-browser": "budo bench/bench.js --open",
@@ -76,7 +76,7 @@
     "build-script": "browserify regl.js --standalone createREGL > dist/regl.js",
     "build-min": "node bin/build-min.js",
     "build-bench": "browserify bench/bench.js | indexhtmlify > www/bench.html",
-    "build-gallery": "node bin/check-dependecies.js && node bin/build-gallery.js",
+    "build-gallery": "node bin/build-gallery.js",
     "build-compare": "node bin/build-compare.js",
     "build-docs": "remark API.md -o API.md",
     "lint-docs": "remark --frail --quiet README.md API.md DEVELOPING.md CHANGES.md"
