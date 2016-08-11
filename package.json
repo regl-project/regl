@@ -18,6 +18,8 @@
     "canvas-orbit-camera": "^1.0.2",
     "control-panel": "^1.2.0",
     "conway-hart": "^0.1.0",
+    "deglob": "^1.1.1",
+    "dependency-check": "^2.6.0",
     "disc": "^1.3.2",
     "falafel": "^1.2.0",
     "faucet": "0.0.1",
@@ -62,7 +64,7 @@
     "vertices-bounding-box": "^1.0.0"
   },
   "scripts": {
-    "test": "standard | snazzy && tape test/util/index.js | faucet",
+    "test": "node bin/check-dependecies.js && standard | snazzy && tape test/util/index.js | faucet",
     "test-browser": "budo test/util/browser.js --open",
     "cover": "istanbul cover test/util/index.js",
     "bench-browser": "budo bench/bench.js --open",
