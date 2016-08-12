@@ -1,9 +1,69 @@
-# regl
+<div align="center">
+  :crown:
+</div>
+<h1 align="center">
+  regl
+</h1>
 
- [![Join the chat at https://gitter.im/ark-lang/ark](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/mikolalysenko/regl) [![Circle CI](https://circleci.com/gh/mikolalysenko/regl.svg?style=shield)](https://circleci.com/gh/mikolalysenko/regl) [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com/)
- [![npm version](https://badge.fury.io/js/regl.svg)](https://badge.fury.io/js/regl) ![file size](https://badge-size.herokuapp.com/mikolalysenko/regl/gh-pages/dist/regl.min.js.svg?compression=gzip)
+<div align="center">
+  Fast functional WebGL.
+</div>
 
-`regl` is a fast functional framework for WebGL. [For detailed info, check out the API docs.](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md)
+<br />
+
+<div align="center">
+  <!-- Stability -->
+  <a href="https://nodejs.org/api/documentation.html#documentation_stability_index">
+    <img src="https://img.shields.io/badge/stability-experimental-orange.svg?style=flat-square"
+      alt="API stability" />
+  </a>
+  <!-- NPM version -->
+  <a href="https://npmjs.org/package/regl">
+    <img src="https://img.shields.io/npm/v/regl.svg?style=flat-square"
+      alt="NPM version" />
+  </a>
+  <!-- Build Status -->
+  <a href="https://circleci.com/gh/mikolalysenko/regl">
+    <img src="https://circleci.com/gh/mikolalysenko/regl.svg?style=shield"
+      alt="Build Status" />
+  </a>
+  <!-- File size -->
+  <a href="https://npmcdn.com/regl/dist/regl.min.js">
+    <img src="https://badge-size.herokuapp.com/mikolalysenko/regl/gh-pages/dist/regl.min.js.svg?compression=gzip" alt="File Size" />
+  </a>
+  <!-- Downloads -->
+  <a href="https://npmjs.org/package/regl">
+    <img src="https://img.shields.io/npm/dm/regl.svg?style=flat-square"
+      alt="Downloads" />
+  </a>
+  <!-- Standard -->
+  <a href="https://standardjs.com">
+    <img src="https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square"
+      alt="Standard" />
+  </a>
+</div>
+
+<div align="center">
+  <h3>
+    <a href="https://github.com/mikolalysenko/regl/blob/gh-pages/API.md">
+      Docs
+    </a>
+    <span> | </span>
+    <a href="https://gitter.im/mikolalysenko/regl">
+      Chat
+    </a>
+    <span> | </span>
+    <a href="https://npmcdn.com/regl/dist/regl.js">
+      Download
+    </a>
+    <span> | </span>
+    <a href="https://npmcdn.com/regl/dist/regl.min.js">
+      Minified
+    </a>
+  </h3>
+</div>
+
+`regl` is a fast functional framework for WebGL.
 
 ## Example
 
