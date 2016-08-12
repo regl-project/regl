@@ -6,7 +6,7 @@
 </h1>
 
 <div align="center">
-  Fast functional WebGL.
+  Fast functional WebGL
 </div>
 
 <br />
@@ -63,11 +63,9 @@
   </h3>
 </div>
 
-`regl` is a fast functional framework for WebGL.
-
 ## Example
 
-In `regl`, there are two fundamental abstractions, **resources** and **commands**:
+`regl` simplifies WebGL programming by removing as much shared state as it can get away with.  To do this, it replaces the WebGL API with two fundamental abstractions, **resources** and **commands**:
 
 * A **resource** is a handle to a GPU resident object, like a texture, FBO or buffer.
 * A **command** is a complete representation of the WebGL state required to perform some draw call.
