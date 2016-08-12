@@ -224,7 +224,7 @@ The following is an incomplete list of projects using regl:
 
 If you have a project using regl that isn't on this list that you would like to see added, [please send us a pull request!](https://github.com/mikolalysenko/regl/edit/gh-pages/README.md)
 
-## Help Wanted
+## [Help Wanted](https://github.com/mikolalysenko/regl/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
 
 regl is still under active developement, and anyone willing to contribute is very much welcome to do so. Right now, what we need the most is for people to write examples and demos with the framework. This will allow us to find bugs and deficiencies in the API. We have a list of examples we would like to be implemented [here](https://github.com/mikolalysenko/regl/issues?q=is%3Aopen+is%3Aissue+label%3Aexample), but you are of course welcome to come up with your own examples. To add an example to our gallery of examples, [please send us a pull request!](https://github.com/mikolalysenko/regl/pulls)
 
@@ -232,13 +232,13 @@ regl is still under active developement, and anyone willing to contribute is ver
 
 `regl` has extensive API documentation.  You can browse the [docs online here](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md).
 
-## Development
+## [Development](https://github.com/mikolalysenko/regl/blob/gh-pages/DEVELOPING.md)
 
 The latest changes in `regl` can be found in the [CHANGELOG](https://github.com/mikolalysenko/regl/blob/gh-pages/CHANGES.md).
 
 [For info on how to build and test headless, see the contributing guide here](https://github.com/mikolalysenko/regl/blob/gh-pages/DEVELOPING.md)
 
-### License
+## [License](LICENSE)
 
 All code (c) 2016 MIT License
 
