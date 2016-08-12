@@ -141,6 +141,7 @@
     -   [Extensions](#extensions)
     -   [Device capabilities and limits](#device-capabilities-and-limits)
     -   [Performance metrics](#performance-metrics)
+    -   [Clocks and timers](#clocks-and-timers)
     -   [Clean up](#clean-up)
     -   [Context loss](#context-loss)
     -   [Unsafe escape hatch](#unsafe-escape-hatch)
@@ -150,12 +151,10 @@
     -   [Reuse commands](#reuse-commands)
     -   [Reuse resources (buffers, elements, textures, etc.)](#reuse-resources-buffers-elements-textures-etc)
     -   [Preallocate memory](#preallocate-memory)
-    -   [Debug vs release](#debug-vs-release)
+    -   [Removing assertions](#removing-assertions)
     -   [Profiling tips](#profiling-tips)
     -   [Context loss mitigation](#context-loss-mitigation)
-    -   [Cameras](#cameras)
     -   [Use batch mode](#use-batch-mode)
-    -   [Use glslify](#use-glslify)
 
 ## Initialization
 
