@@ -2468,9 +2468,19 @@ regl.destroy()
 
 ### Context loss
 
-`regl` makes a best faith effort to handle context loss by default.  This means that buffers and textures are reinitialized on a context restore with their contents.
+`regl` makes a best faith effort to handle context loss by default.  This means that buffers and textures are reinitialized on a context restore with their contents.  This can be done using the context loss events exposed by `regl`.  For example:
 
-**TODO**
+```javascript
+var regl = require('regl')()
+
+regl.on('lost', function () {
+  console.log('lost webgl context')
+})
+
+regl.on('restore', function () {
+  console.log('webgl context restored')
+})
+```
 
 * * *
 
