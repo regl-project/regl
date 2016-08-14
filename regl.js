@@ -138,6 +138,10 @@ module.exports = function wrapREGL (args) {
   var canvas = gl.canvas
 
   var rafCallbacks = []
+  var lossCallbacks = []
+  var restoreCallbacks = []
+  var destroyCallbacks = [config.onDestroy]
+
   var activeRAF = null
   function handleRAF () {
     if (rafCallbacks.length === 0) {
@@ -192,6 +196,11 @@ module.exports = function wrapREGL (args) {
 
     // pause request animation frame
     stopRAF()
+
+    // lose context
+    lossCallbacks.forEach(function (cb) {
+      cb()
+    })
   }
 
   function handleContextRestored (event) {
@@ -217,6 +226,11 @@ module.exports = function wrapREGL (args) {
 
     // restart RAF
     startRAF()
+
+    // restore context
+    restoreCallbacks.forEach(function (cb) {
+      cb()
+    })
   }
 
   if (canvas) {
@@ -244,7 +258,9 @@ module.exports = function wrapREGL (args) {
       timer.clear()
     }
 
-    config.onDestroy()
+    destroyCallbacks.forEach(function (cb) {
+      cb()
+    })
   }
 
   function compileProcedure (options) {
@@ -453,6 +469,40 @@ module.exports = function wrapREGL (args) {
 
   refresh()
 
+  function addListener (event, callback) {
+    check.type(callback, 'function', 'listener callback must be a function')
+
+    var callbacks
+    switch (event) {
+      case 'frame':
+        return frame(callback)
+      case 'lost':
+        callbacks = lossCallbacks
+        break
+      case 'restore':
+        callbacks = restoreCallbacks
+        break
+      case 'destroy':
+        callbacks = destroyCallbacks
+        break
+      default:
+        check.raise('invalid event, must be one of frame,lost,restore,destroy')
+    }
+
+    callbacks.push(callback)
+    return {
+      cancel: function () {
+        for (var i = 0; i < callbacks.length; ++i) {
+          if (callbacks[i] === callback) {
+            callbacks[i] = callbacks[callbacks.length - 1]
+            callbacks.pop()
+            return
+          }
+        }
+      }
+    }
+  }
+
   var regl = extend(compileProcedure, {
     // Clear current FBO
     clear: clear,
@@ -483,6 +533,7 @@ module.exports = function wrapREGL (args) {
 
     // Frame rendering
     frame: frame,
+    on: addListener,
 
     // System limits
     limits: limits,
