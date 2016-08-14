@@ -49,6 +49,7 @@ module.exports = function wrapREGL (args) {
 
   var gl = config.gl
   var glAttributes = gl.getContextAttributes()
+  var contextLost = gl.isContextLost()
 
   var extensionState = wrapExtensions(gl, config)
   if (!extensionState) {
@@ -184,11 +185,38 @@ module.exports = function wrapREGL (args) {
   }
 
   function handleContextLoss (event) {
-    // TODO
+    event.preventDefault()
+
+    // set context lost flag
+    contextLost = true
+
+    // pause request animation frame
+    stopRAF()
   }
 
   function handleContextRestored (event) {
-    // TODO
+    // clear error code
+    gl.getError()
+
+    // clear context lost flag
+    contextLost = false
+
+    // refresh state
+    extensionState.restore()
+    shaderState.restore()
+    bufferState.restore()
+    textureState.restore()
+    renderbufferState.restore()
+    framebufferState.restore()
+    if (timer) {
+      timer.restore()
+    }
+
+    // refresh state
+    core.procs.refresh()
+
+    // restart RAF
+    startRAF()
   }
 
   if (canvas) {
@@ -296,6 +324,9 @@ module.exports = function wrapREGL (args) {
 
     function REGLCommand (args, body) {
       var i
+      if (contextLost) {
+        check.raise('context lost')
+      }
       if (typeof args === 'function') {
         return scope.call(this, null, args, 0)
       } else if (typeof body === 'function') {
@@ -436,9 +467,11 @@ module.exports = function wrapREGL (args) {
 
     // Resources
     buffer: function (options) {
-      return bufferState.create(options, GL_ARRAY_BUFFER)
+      return bufferState.create(options, GL_ARRAY_BUFFER, false, false)
     },
-    elements: elementState.create,
+    elements: function (options) {
+      return elementState.create(options, false)
+    },
     texture: textureState.create2D,
     cube: textureState.createCube,
     renderbuffer: renderbufferState.create,
