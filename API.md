@@ -141,6 +141,7 @@
     -   [Extensions](#extensions)
     -   [Device capabilities and limits](#device-capabilities-and-limits)
     -   [Performance metrics](#performance-metrics)
+    -   [Clocks and timers](#clocks-and-timers)
     -   [Clean up](#clean-up)
     -   [Context loss](#context-loss)
     -   [Unsafe escape hatch](#unsafe-escape-hatch)
@@ -150,12 +151,10 @@
     -   [Reuse commands](#reuse-commands)
     -   [Reuse resources (buffers, elements, textures, etc.)](#reuse-resources-buffers-elements-textures-etc)
     -   [Preallocate memory](#preallocate-memory)
-    -   [Debug vs release](#debug-vs-release)
+    -   [Removing assertions](#removing-assertions)
     -   [Profiling tips](#profiling-tips)
     -   [Context loss mitigation](#context-loss-mitigation)
-    -   [Cameras](#cameras)
     -   [Use batch mode](#use-batch-mode)
-    -   [Use glslify](#use-glslify)
 
 ## Initialization
 
@@ -2511,23 +2510,69 @@ The following are some random tips for writing WebGL programs.  Some are regl sp
 
 ### Reuse commands
 
+Creating commands in `regl` is expensive because `regl` does many complex optimizations up front in order to ensure the best possible performance.  As a result, it is expected that users should declare commands once and then call them many times.  For example:
+
+```javascript
+// Good usage:
+var command = regl({
+  vert: `...`,
+  frag: `...`
+})
+
+regl.frame(() => {
+  command()
+})
+```
+
+**Do not generate a command in your frame loop**:
+
+```javascript
+// BAD! Do not do this!
+regl.frame(() => {
+  // This creates a new command object and executes it each frame.
+  // It will be very slow.
+  regl({
+    vert: `...`,
+    frag: `...`
+  })()
+})
+```
+
 ### Reuse resources (buffers, elements, textures, etc.)
+
+Similarly, you should reuse buffers and textures wherever possible.  If you are continually uploading data to the GPU you should reuse whatever buffers or textures you can.  For example, suppose you want to play a video.  Then it is better to reuse the buffer as follows:
+
+```javascript
+// Get a reference to the video element
+const myVideo = document.querySelector('video')
+
+// Create a video texture
+const videoTexture = regl.texture(myVideo)
+
+regl.frame(() => {
+  // Update the frames of the video
+  videoTexture.subimage(myVideo)
+})
+```
+
+For dynamic buffers or elements, remember to allocate them using `stream` or `dynamic` usage.
 
 ### Preallocate memory
 
--   Reuse property objects passed to commands to avoid garbage collection
+The most common cause of jank in JavaScript applications is garbage collection.  In general, the only way to avoid this is to not allocate temporary objects.  To avoid this in `regl` you can reuse parameter objects which are passed to commands and preallocate arrays/matrices.
 
-### Debug vs release
+### Removing assertions
 
--   Debug mode inserts many checks
--   Compiling in release mode removes these assertions, improves performance and reduces bundle size
+By default, `regl` is compiled with a number of assertions, checks and validations to make it easier to find and fix errors.  However these assertions will increase your code size and in some cases may slightly slow things down.  Fortunately, they can be removed with the help of a transform in `bin/remove-check`.
 
 ### Profiling tips
 
+If your application is running too slow and you want to understand what is going on, regl provides many hooks which you can use to monitor and [debug your performance](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#profiling).
+
 ### Context loss mitigation
 
-### Cameras
+A WebGL application must be prepared to lose context at any time.  This is an unfortunate part of life when working on the web.  If this happens `regl` will make a best faith effort to recover functionality after the context is restored, however it is still up to the user to handle this situation.
 
 ### Use batch mode
 
-### Use glslify
+If you want to draw a bunch of copies of the same object, only with different properties, be sure to use [batch mode](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#batch-rendering).  Commands rendered in batch mode can be optimized by avoiding certain state checks which are required for serial commands.
