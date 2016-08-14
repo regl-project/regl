@@ -160,6 +160,8 @@ function testContextLoss (t, gl, extLoseContext, onDone) {
     depth: { enable: false }
   })
 
+  var tex = regl.texture(512, 512)
+
   var textureCommand = regl({
     vert: [
       'precision highp float;',
@@ -187,12 +189,21 @@ function testContextLoss (t, gl, extLoseContext, onDone) {
 
     uniforms: {
       color: regl.prop('color'),
-      tex: regl.texture(512, 512)
+      tex: regl.prop('tex')
     },
 
     depth: { enable: false },
 
     count: 3
+  })
+
+  // test framebuffer objects
+  var framebuffer = regl.framebuffer({
+    shape: [5, 4]
+  })
+
+  var setFBO = regl({
+    framebuffer: framebuffer
   })
 
   var testCases = {
@@ -205,7 +216,19 @@ function testContextLoss (t, gl, extLoseContext, onDone) {
       elementCommand()
     },
     'texture test': function () {
-      textureCommand()
+      textureCommand({
+        tex: tex
+      })
+    },
+    'framebuffer test': function () {
+      setFBO(function () {
+        regl.clear({
+          color: [1, 0, 1, 1]
+        })
+      })
+      textureCommand({
+        tex: framebuffer
+      })
     }
   }
 
