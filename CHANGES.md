@@ -2,13 +2,9 @@
 
 ## Planned
 
-* Context loss
-
 * Write comparison suite
 
 * Comments for all core modules
-
-* Update contributing guidelines, make it easier for people to help out
 
 * Add a mechanism for users to specify minimum resource requirements (texture size, varying units, etc.)
 
@@ -31,7 +27,6 @@
 
 * Helper modules
 
-  * A camera helper module to make getting started with 3D code easier
   * Debugging tools for inspecting the state of framebuffers, textures, buffers
 
 * Recipe book/example set
@@ -43,6 +38,8 @@
 
 ## Next
 
+* Implement basic context loss handling
+* Add `regl.on` for hooking events
 * Add `regl.now()`, allows sampling timer at high resolution outside of `regl.frame` in order to better synchronize DOM events
 
 ## 0.11.0
