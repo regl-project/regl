@@ -21,23 +21,60 @@ tape('context loss', function (t) {
 function testContextLoss (t, gl, extLoseContext, onDone) {
   var regl = createREGL(gl)
 
+  t.throws(function () {
+    regl.on('blaaaaaa', function () {})
+  }, /\(regl\)/, 'listener throws with event')
+
+  t.throws(function () {
+    regl.on('frame', 12356)
+  }, /\(regl\)/, 'listener throws with bad callback')
+
+  var lossCount = 0
+  var restoreCount = 0
+
+  regl.on('lost', function () {
+    lossCount += 1
+  })
+
+  regl.on('restore', function () {
+    restoreCount += 1
+  })
+
   function verify (cmd, desc, next) {
     var expected, actual
+    var prevLoss = lossCount
+    var prevRestore = restoreCount
     var tasks = [
       function () {
+        regl.clear({
+          color: [0, 0, 0, 0],
+          depth: 1,
+          stencil: 0
+        })
         cmd()
         expected = regl.read()
         extLoseContext.loseContext()
+        t.equals(lossCount, prevLoss, 'loss count ok')
+        t.equals(restoreCount, prevRestore, 'restore count ok')
       },
       function () {
         t.throws(function () {
           cmd()
         }, /\(regl\)/, 'context lost')
         extLoseContext.restoreContext()
+        t.equals(lossCount, prevLoss + 1, 'loss count ok')
+        t.equals(restoreCount, prevRestore, 'restore count ok')
       },
       function () {
+        regl.clear({
+          color: [0, 0, 0, 0],
+          depth: 1,
+          stencil: 0
+        })
         cmd()
         actual = regl.read()
+        t.equals(lossCount, prevLoss + 1, 'loss count ok')
+        t.equals(restoreCount, prevRestore + 1, 'restore count ok')
         t.same(actual, expected, desc)
       },
       next
@@ -84,6 +121,77 @@ function testContextLoss (t, gl, extLoseContext, onDone) {
       color: regl.prop('color')
     },
 
+    depth: { enable: false },
+
+    count: 3
+  })
+
+  var elementCommand = regl({
+    vert: [
+      'precision highp float;',
+      'attribute vec2 position;',
+      'void main () {',
+      '  gl_Position = vec4(position, 0, 1);',
+      '}'
+    ].join('\n'),
+
+    frag: [
+      'precision highp float;',
+      'void main () {',
+      '  gl_FragColor = vec4(1, 1, 1, 1);',
+      '}'
+    ].join('\n'),
+
+    attributes: {
+      position: [
+        0, 0,
+        1, 0,
+        -1, 0.5,
+        1, -1
+      ]
+    },
+
+    elements: [
+      [2, 1],
+      [1, 3],
+      [0, 2]
+    ],
+
+    depth: { enable: false }
+  })
+
+  var textureCommand = regl({
+    vert: [
+      'precision highp float;',
+      'attribute vec2 position;',
+      'void main () {',
+      '  gl_Position = vec4(position, 0, 1);',
+      '}'
+    ].join('\n'),
+
+    frag: [
+      'precision highp float;',
+      'uniform sampler2D tex;',
+      'void main () {',
+      '  gl_FragColor = texture2D(tex, vec2(0, 0)) + vec4(1, 0, 0, 1);',
+      '}'
+    ].join('\n'),
+
+    attributes: {
+      position: [
+        -4, 0,
+        4, 4,
+        4, -4
+      ]
+    },
+
+    uniforms: {
+      color: regl.prop('color'),
+      tex: regl.texture(512, 512)
+    },
+
+    depth: { enable: false },
+
     count: 3
   })
 
@@ -92,6 +200,12 @@ function testContextLoss (t, gl, extLoseContext, onDone) {
       simpleCommand({
         color: [1, 0, 1, 1]
       })
+    },
+    'elements test': function () {
+      elementCommand()
+    },
+    'texture test': function () {
+      textureCommand()
     }
   }
 
