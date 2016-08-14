@@ -1,5 +1,4 @@
 require('../context-loss')
-/*
 require('../constructor')
 require('../projection')
 require('../projection-lines')
@@ -58,4 +57,3 @@ require('../dynamic-viewport')
 require('../missing-shader')
 require('../attribute-constants')
 require('../attributes-nested')
-*/
