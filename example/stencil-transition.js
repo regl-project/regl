@@ -274,7 +274,7 @@ const createMask = regl({
     opFront: {
       fail: 'replace',
       zfail: 'replace',
-      pass: 'replace'
+      zpass: 'replace'
     }
   },
   // we want to write only to the stencil buffer,
