@@ -273,6 +273,11 @@ module.exports = function wrapREGL (args) {
       delete result.attributes
       delete result.context
 
+      if ('stencil' in result && result.stencil.op) {
+        result.stencil.opBack = result.stencil.opFront = result.stencil.op
+        delete result.stencil.op
+      }
+
       function merge (name) {
         if (name in result) {
           var child = result[name]
