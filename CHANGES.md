@@ -38,6 +38,7 @@
 
 ## Next
 
+* Rename stencil op `pass` to `zpass`
 * Attribute pointers can now use buffer literals
 * Implement basic context loss handling
 * Add `regl.on` for hooking events
