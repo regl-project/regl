@@ -971,12 +971,12 @@ var command = regl({
     opFront: {
       fail: 'keep',
       zfail: 'keep',
-      pass: 'keep'
+      zpass: 'keep'
     },
     opBack: {
       fail: 'keep',
       zfail: 'keep',
-      pass: 'keep'
+      zpass: 'keep'
     }
   },
 
@@ -989,8 +989,9 @@ var command = regl({
 | `enable`  | Toggles `gl.enable(gl.STENCIL_TEST)`       | `false`                                  |
 | `mask`    | Sets `gl.stencilMask`                      | `-1`                                     |
 | `func`    | Sets `gl.stencilFunc`                      | `{cmp:'always',ref:0,mask:-1}`           |
-| `opFront` | Sets `gl.stencilOpSeparate` for front face | `{fail:'keep',zfail:'keep',pass:'keep'}` |
-| `opBack`  | Sets `gl.stencilOpSeparate` for back face  | `{fail:'keep',zfail:'keep',pass:'keep'}` |
+| `opFront` | Sets `gl.stencilOpSeparate` for front face | `{fail:'keep',zfail:'keep',zpass:'keep'}` |
+| `opBack`  | Sets `gl.stencilOpSeparate` for back face  | `{fail:'keep',zfail:'keep',zpass:'keep'}` |
+| `op` | Sets `opFront` and `opBack` simultaneously | |
 
 **Notes**
 
@@ -1017,9 +1018,9 @@ var command = regl({
 
     -   `fail`, the stencil op which is applied when the stencil test fails
     -   `zfail`, the stencil op which is applied when the stencil test passes and the depth test fails
-    -   `pass`, the stencil op which is applied when both stencil and depth tests pass
+    -   `zpass`, the stencil op which is applied when both stencil and depth tests pass
 
--   Values for `opFront.fail`, `opFront.zfail`, etc. can come from the following table
+-   Values for `op.fail`, `op.zfail`, `op.zpass` can come from the following table
 
 | Stencil Op         | Description    |
 | ------------------ | -------------- |
