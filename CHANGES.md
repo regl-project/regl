@@ -38,6 +38,7 @@
 
 ## Next
 
+* Attribute pointers can now use buffer literals
 * Implement basic context loss handling
 * Add `regl.on` for hooking events
 * Add `regl.now()`, allows sampling timer at high resolution outside of `regl.frame` in order to better synchronize DOM events
