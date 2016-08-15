@@ -71,7 +71,9 @@ tape('stencil', function (t) {
     same(gl.STENCIL_WRITEMASK, flags.mask, 'mask')
 
     function sameOp (pname, name, face) {
-      same(pname, stencilOps[flags[face][name]], face + '.' + name)
+      same(pname,
+        stencilOps.op ? stencilOps.op[name] : stencilOps[flags[face][name]],
+        face + '.' + name)
     }
 
     sameOp(gl.STENCIL_FAIL, 'fail', 'opFront')
@@ -120,6 +122,20 @@ tape('stencil', function (t) {
         fail: 'zero',
         zfail: 'decrement',
         zpass: 'decrement wrap'
+      }
+    },
+    {
+      enable: true,
+      func: {
+        cmp: 'always',
+        ref: 0,
+        mask: 0xff
+      },
+      mask: 0xff,
+      op: {
+        fail: 'keep',
+        zfail: 'replace',
+        zpass: 'keep'
       }
     }
   ]
@@ -190,11 +206,17 @@ tape('stencil', function (t) {
   }, staticOptions))
 
   permutations.forEach(function (params, i) {
+    if (params.op) {
+      return
+    }
     dynamicDraw(params)
     testFlags('dynamic 1-shot - #' + i + ' - x', params)
   })
 
   permutations.forEach(function (params, i) {
+    if (params.op) {
+      return
+    }
     dynamicDraw([params])
     testFlags('batch - #' + i + ' - x', params)
   })
@@ -232,11 +254,17 @@ tape('stencil', function (t) {
   }, staticOptions))
 
   permutations.forEach(function (params, i) {
+    if (params.op) {
+      return
+    }
     nestedDynamicDraw(params)
     testFlags('nested dynamic 1-shot - #' + i + ' - ', params)
   })
 
   permutations.forEach(function (params, i) {
+    if (params.op) {
+      return
+    }
     nestedDynamicDraw([params])
     testFlags('nested batch - #' + i + ' - ', params)
   })
