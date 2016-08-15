@@ -71,16 +71,18 @@ tape('stencil', function (t) {
     same(gl.STENCIL_WRITEMASK, flags.mask, 'mask')
 
     function sameOp (pname, name, face) {
-      same(pname, stencilOps[flags[face][name]], face + '.' + name)
+      same(pname,
+        stencilOps.op ? stencilOps.op[name] : stencilOps[flags[face][name]],
+        face + '.' + name)
     }
 
     sameOp(gl.STENCIL_FAIL, 'fail', 'opFront')
     sameOp(gl.STENCIL_PASS_DEPTH_FAIL, 'zfail', 'opFront')
-    sameOp(gl.STENCIL_PASS_DEPTH_PASS, 'pass', 'opFront')
+    sameOp(gl.STENCIL_PASS_DEPTH_PASS, 'zpass', 'opFront')
 
     sameOp(gl.STENCIL_BACK_FAIL, 'fail', 'opBack')
     sameOp(gl.STENCIL_BACK_PASS_DEPTH_FAIL, 'zfail', 'opBack')
-    sameOp(gl.STENCIL_BACK_PASS_DEPTH_PASS, 'pass', 'opBack')
+    sameOp(gl.STENCIL_BACK_PASS_DEPTH_PASS, 'zpass', 'opBack')
   }
 
   var permutations = [
@@ -95,12 +97,12 @@ tape('stencil', function (t) {
       opFront: {
         fail: 'keep',
         zfail: 'replace',
-        pass: 'keep'
+        zpass: 'keep'
       },
       opBack: {
         fail: 'keep',
         zfail: 'keep',
-        pass: 'keep'
+        zpass: 'keep'
       }
     },
     {
@@ -114,12 +116,26 @@ tape('stencil', function (t) {
       opFront: {
         fail: 'invert',
         zfail: 'increment',
-        pass: 'increment wrap'
+        zpass: 'increment wrap'
       },
       opBack: {
         fail: 'zero',
         zfail: 'decrement',
-        pass: 'decrement wrap'
+        zpass: 'decrement wrap'
+      }
+    },
+    {
+      enable: true,
+      func: {
+        cmp: 'always',
+        ref: 0,
+        mask: 0xff
+      },
+      mask: 0xff,
+      op: {
+        fail: 'keep',
+        zfail: 'replace',
+        zpass: 'keep'
       }
     }
   ]
@@ -137,12 +153,12 @@ tape('stencil', function (t) {
       opFront: {
         fail: 'keep',
         zfail: 'keep',
-        pass: 'keep'
+        zpass: 'keep'
       },
       opBack: {
         fail: 'keep',
         zfail: 'keep',
-        pass: 'keep'
+        zpass: 'keep'
       }
     }
     )
@@ -190,11 +206,17 @@ tape('stencil', function (t) {
   }, staticOptions))
 
   permutations.forEach(function (params, i) {
+    if (params.op) {
+      return
+    }
     dynamicDraw(params)
     testFlags('dynamic 1-shot - #' + i + ' - x', params)
   })
 
   permutations.forEach(function (params, i) {
+    if (params.op) {
+      return
+    }
     dynamicDraw([params])
     testFlags('batch - #' + i + ' - x', params)
   })
@@ -221,22 +243,28 @@ tape('stencil', function (t) {
       opFront: {
         fail: regl.prop('opFront.fail'),
         zfail: regl.prop('opFront.zfail'),
-        pass: regl.prop('opFront.pass')
+        zpass: regl.prop('opFront.zpass')
       },
       opBack: {
         fail: regl.prop('opBack.fail'),
         zfail: regl.prop('opBack.zfail'),
-        pass: regl.prop('opBack.pass')
+        zpass: regl.prop('opBack.zpass')
       }
     }
   }, staticOptions))
 
   permutations.forEach(function (params, i) {
+    if (params.op) {
+      return
+    }
     nestedDynamicDraw(params)
     testFlags('nested dynamic 1-shot - #' + i + ' - ', params)
   })
 
   permutations.forEach(function (params, i) {
+    if (params.op) {
+      return
+    }
     nestedDynamicDraw([params])
     testFlags('nested batch - #' + i + ' - ', params)
   })

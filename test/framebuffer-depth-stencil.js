@@ -55,10 +55,10 @@ tape('framebuffer - depth stencil attachment', function (t) {
         }
       },
       opFront: {
-        pass: 'increment'
+        zpass: 'increment'
       },
       opBack: {
-        pass: 'increment'
+        zpass: 'increment'
       }
     }
   })
