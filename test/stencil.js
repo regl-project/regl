@@ -76,11 +76,11 @@ tape('stencil', function (t) {
 
     sameOp(gl.STENCIL_FAIL, 'fail', 'opFront')
     sameOp(gl.STENCIL_PASS_DEPTH_FAIL, 'zfail', 'opFront')
-    sameOp(gl.STENCIL_PASS_DEPTH_PASS, 'pass', 'opFront')
+    sameOp(gl.STENCIL_PASS_DEPTH_PASS, 'zpass', 'opFront')
 
     sameOp(gl.STENCIL_BACK_FAIL, 'fail', 'opBack')
     sameOp(gl.STENCIL_BACK_PASS_DEPTH_FAIL, 'zfail', 'opBack')
-    sameOp(gl.STENCIL_BACK_PASS_DEPTH_PASS, 'pass', 'opBack')
+    sameOp(gl.STENCIL_BACK_PASS_DEPTH_PASS, 'zpass', 'opBack')
   }
 
   var permutations = [
@@ -95,12 +95,12 @@ tape('stencil', function (t) {
       opFront: {
         fail: 'keep',
         zfail: 'replace',
-        pass: 'keep'
+        zpass: 'keep'
       },
       opBack: {
         fail: 'keep',
         zfail: 'keep',
-        pass: 'keep'
+        zpass: 'keep'
       }
     },
     {
@@ -114,12 +114,12 @@ tape('stencil', function (t) {
       opFront: {
         fail: 'invert',
         zfail: 'increment',
-        pass: 'increment wrap'
+        zpass: 'increment wrap'
       },
       opBack: {
         fail: 'zero',
         zfail: 'decrement',
-        pass: 'decrement wrap'
+        zpass: 'decrement wrap'
       }
     }
   ]
@@ -137,12 +137,12 @@ tape('stencil', function (t) {
       opFront: {
         fail: 'keep',
         zfail: 'keep',
-        pass: 'keep'
+        zpass: 'keep'
       },
       opBack: {
         fail: 'keep',
         zfail: 'keep',
-        pass: 'keep'
+        zpass: 'keep'
       }
     }
     )
@@ -221,12 +221,12 @@ tape('stencil', function (t) {
       opFront: {
         fail: regl.prop('opFront.fail'),
         zfail: regl.prop('opFront.zfail'),
-        pass: regl.prop('opFront.pass')
+        zpass: regl.prop('opFront.zpass')
       },
       opBack: {
         fail: regl.prop('opBack.fail'),
         zfail: regl.prop('opBack.zfail'),
-        pass: regl.prop('opBack.pass')
+        zpass: regl.prop('opBack.zpass')
       }
     }
   }, staticOptions))
