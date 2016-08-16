@@ -1,10 +1,2 @@
-bench/*
-example/*
-test/*
-www/*
-bin/*
-dist/*
 coverage/*
-images/*
-compare/*
 CNAME
