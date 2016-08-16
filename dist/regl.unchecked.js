@@ -106,6 +106,8 @@ module.exports = function wrapBufferState (gl, stats, config) {
     this.dimension = 1
     this.dtype = GL_UNSIGNED_BYTE
 
+    this.persistentData = null
+
     if (config.profile) {
       this.stats = {size: 0}
     }
@@ -127,7 +129,7 @@ module.exports = function wrapBufferState (gl, stats, config) {
       buffer = new REGLBuffer(type)
     }
     buffer.bind()
-    initBufferFromData(buffer, data, GL_STREAM_DRAW, 0, 1)
+    initBufferFromData(buffer, data, GL_STREAM_DRAW, 0, 1, false)
     return buffer
   }
 
@@ -140,7 +142,7 @@ module.exports = function wrapBufferState (gl, stats, config) {
     gl.bufferData(buffer.type, data, usage)
   }
 
-  function initBufferFromData (buffer, data, usage, dtype, dimension) {
+  function initBufferFromData (buffer, data, usage, dtype, dimension, persist) {
     buffer.usage = usage
     if (Array.isArray(data)) {
       buffer.dtype = dtype || GL_FLOAT
@@ -153,13 +155,21 @@ module.exports = function wrapBufferState (gl, stats, config) {
             data.length * buffer.dimension)
           flatten(flatData, data, buffer.dimension)
           initBufferFromTypedArray(buffer, flatData, usage)
-          pool.freeType(flatData)
+          if (persist) {
+            buffer.persistentData = flatData
+          } else {
+            pool.freeType(flatData)
+          }
         } else if (typeof data[0] === 'number') {
           buffer.dimension = dimension
           var typedData = pool.allocType(buffer.dtype, data.length)
           copyArray(typedData, data)
           initBufferFromTypedArray(buffer, typedData, usage)
-          pool.freeType(typedData)
+          if (persist) {
+            buffer.persistentData = typedData
+          } else {
+            pool.freeType(typedData)
+          }
         } else if (isTypedArray(data[0])) {
           buffer.dimension = data[0].length
           buffer.dtype = dtype || typedArrayCode(data[0]) || GL_FLOAT
@@ -168,7 +178,11 @@ module.exports = function wrapBufferState (gl, stats, config) {
             data.length * buffer.dimension)
           flatten(flatData, data, buffer.dimension)
           initBufferFromTypedArray(buffer, flatData, usage)
-          pool.freeType(flatData)
+          if (persist) {
+            buffer.persistentData = flatData
+          } else {
+            pool.freeType(flatData)
+          }
         } else {
           
         }
@@ -177,6 +191,9 @@ module.exports = function wrapBufferState (gl, stats, config) {
       buffer.dtype = dtype || typedArrayCode(data)
       buffer.dimension = dimension
       initBufferFromTypedArray(buffer, data, usage)
+      if (persist) {
+        buffer.persistentData = new Uint8Array(new Uint8Array(data.buffer))
+      }
     } else if (isNDArrayLike(data)) {
       var shape = data.shape
       var stride = data.stride
@@ -210,7 +227,11 @@ module.exports = function wrapBufferState (gl, stats, config) {
         strideX, strideY,
         offset)
       initBufferFromTypedArray(buffer, transposeData, usage)
-      pool.freeType(transposeData)
+      if (persist) {
+        buffer.persistentData = transposeData
+      } else {
+        pool.freeType(transposeData)
+      }
     } else {
       
     }
@@ -226,7 +247,7 @@ module.exports = function wrapBufferState (gl, stats, config) {
     delete bufferSet[buffer.id]
   }
 
-  function createBuffer (options, type, deferInit) {
+  function createBuffer (options, type, deferInit, persistent) {
     stats.bufferCount++
 
     var buffer = new REGLBuffer(type)
@@ -281,7 +302,7 @@ module.exports = function wrapBufferState (gl, stats, config) {
         buffer.dimension = dimension
         buffer.byteLength = byteLength
       } else {
-        initBufferFromData(buffer, data, usage, dtype, dimension)
+        initBufferFromData(buffer, data, usage, dtype, dimension, persistent)
       }
 
       if (config.profile) {
@@ -373,6 +394,15 @@ module.exports = function wrapBufferState (gl, stats, config) {
     return reglBuffer
   }
 
+  function restoreBuffers () {
+    values(bufferSet).forEach(function (buffer) {
+      buffer.buffer = gl.createBuffer()
+      gl.bindBuffer(buffer.type, buffer.buffer)
+      gl.bufferData(
+        buffer.type, buffer.persistentData || buffer.byteLength, buffer.usage)
+    })
+  }
+
   if (config.profile) {
     stats.getTotalBufferSize = function () {
       var total = 0
@@ -401,6 +431,8 @@ module.exports = function wrapBufferState (gl, stats, config) {
       }
       return null
     },
+
+    restore: restoreBuffers,
 
     _initBuffer: initBufferFromData
   }
@@ -1013,7 +1045,7 @@ module.exports = function reglCore (
     return profileEnable
   }
 
-  function parseFramebuffer (options) {
+  function parseFramebuffer (options, env) {
     var staticOptions = options.static
     var dynamicOptions = options.dynamic
 
@@ -1093,7 +1125,7 @@ module.exports = function reglCore (
     }
   }
 
-  function parseViewportScissor (options, framebuffer) {
+  function parseViewportScissor (options, framebuffer, env) {
     var staticOptions = options.static
     var dynamicOptions = options.dynamic
 
@@ -1281,7 +1313,7 @@ module.exports = function reglCore (
     }
   }
 
-  function parseDraw (options) {
+  function parseDraw (options, env) {
     var staticOptions = options.static
     var dynamicOptions = options.dynamic
 
@@ -1289,7 +1321,7 @@ module.exports = function reglCore (
       if (S_ELEMENTS in staticOptions) {
         var elements = staticOptions[S_ELEMENTS]
         if (isBufferArgs(elements)) {
-          elements = elementState.getElements(elementState.create(elements))
+          elements = elementState.getElements(elementState.create(elements, true))
         } else if (elements) {
           elements = elementState.getElements(elements)
           
@@ -1481,7 +1513,7 @@ module.exports = function reglCore (
     }
   }
 
-  function parseGLState (options) {
+  function parseGLState (options, env) {
     var staticOptions = options.static
     var dynamicOptions = options.dynamic
 
@@ -1706,7 +1738,7 @@ module.exports = function reglCore (
               
               var fail = value.fail || 'keep'
               var zfail = value.zfail || 'keep'
-              var pass = value.pass || 'keep'
+              var zpass = value.zpass || 'keep'
               
               
               
@@ -1714,7 +1746,7 @@ module.exports = function reglCore (
                 prop === S_STENCIL_OPBACK ? GL_BACK : GL_FRONT,
                 stencilOps[fail],
                 stencilOps[zfail],
-                stencilOps[pass]
+                stencilOps[zpass]
               ]
             },
             function (env, scope, value) {
@@ -1735,7 +1767,7 @@ module.exports = function reglCore (
                 prop === S_STENCIL_OPBACK ? GL_BACK : GL_FRONT,
                 read('fail'),
                 read('zfail'),
-                read('pass')
+                read('zpass')
               ]
             })
 
@@ -1833,39 +1865,7 @@ module.exports = function reglCore (
     return STATE
   }
 
-  function parseOptions (options) {
-    var staticOptions = options.static
-    var dynamicOptions = options.dynamic
-
-    
-
-    var framebuffer = parseFramebuffer(options)
-    var viewportAndScissor = parseViewportScissor(options, framebuffer)
-    var draw = parseDraw(options)
-    var state = parseGLState(options)
-    var shader = parseProgram(options)
-
-    function copyBox (name) {
-      var defn = viewportAndScissor[name]
-      if (defn) {
-        state[name] = defn
-      }
-    }
-    copyBox(S_VIEWPORT)
-    copyBox(propName(S_SCISSOR_BOX))
-
-    var dirty = Object.keys(state).length > 0
-
-    return {
-      framebuffer: framebuffer,
-      draw: draw,
-      shader: shader,
-      state: state,
-      dirty: dirty
-    }
-  }
-
-  function parseUniforms (uniforms) {
+  function parseUniforms (uniforms, env) {
     var staticUniforms = uniforms.static
     var dynamicUniforms = uniforms.dynamic
 
@@ -1921,7 +1921,7 @@ module.exports = function reglCore (
     return UNIFORMS
   }
 
-  function parseAttributes (attributes) {
+  function parseAttributes (attributes, env) {
     var staticAttributes = attributes.static
     var dynamicAttributes = attributes.dynamic
 
@@ -1935,7 +1935,7 @@ module.exports = function reglCore (
       if (isBufferArgs(value)) {
         record.state = ATTRIB_STATE_POINTER
         record.buffer = bufferState.getBuffer(
-          bufferState.create(value, GL_ARRAY_BUFFER, false))
+          bufferState.create(value, GL_ARRAY_BUFFER, false, true))
         record.type = record.buffer.dtype
       } else {
         var buffer = bufferState.getBuffer(value)
@@ -1960,7 +1960,12 @@ module.exports = function reglCore (
               })
             }
           } else {
-            buffer = bufferState.getBuffer(value.buffer)
+            if (isBufferArgs(value.buffer)) {
+              buffer = bufferState.getBuffer(
+                bufferState.create(value.buffer, GL_ARRAY_BUFFER, false, true))
+            } else {
+              buffer = bufferState.getBuffer(value.buffer)
+            }
             
 
             var offset = value.offset | 0
@@ -2069,7 +2074,11 @@ module.exports = function reglCore (
             )
           }).join(''),
           '}}else{',
+          'if(', IS_BUFFER_ARGS, '(', VALUE, '.buffer)){',
+          BUFFER, '=', BUFFER_STATE, '.createStream(', GL_ARRAY_BUFFER, ',', VALUE, '.buffer);',
+          '}else{',
           BUFFER, '=', BUFFER_STATE, '.getBuffer(', VALUE, '.buffer);',
+          '}',
           TYPE, '="type" in ', VALUE, '?',
           shared.glTypes, '[', VALUE, '.type]:', BUFFER, '.dtype;',
           result.normalized, '=!!', VALUE, '.normalized;')
@@ -2123,13 +2132,41 @@ module.exports = function reglCore (
     return result
   }
 
-  function parseArguments (options, attributes, uniforms, context) {
-    var result = parseOptions(options)
+  function parseArguments (options, attributes, uniforms, context, env) {
+    var staticOptions = options.static
+    var dynamicOptions = options.dynamic
 
-    result.profile = parseProfile(options)
-    result.uniforms = parseUniforms(uniforms)
-    result.attributes = parseAttributes(attributes)
-    result.context = parseContext(context)
+    
+
+    var framebuffer = parseFramebuffer(options, env)
+    var viewportAndScissor = parseViewportScissor(options, framebuffer, env)
+    var draw = parseDraw(options, env)
+    var state = parseGLState(options, env)
+    var shader = parseProgram(options, env)
+
+    function copyBox (name) {
+      var defn = viewportAndScissor[name]
+      if (defn) {
+        state[name] = defn
+      }
+    }
+    copyBox(S_VIEWPORT)
+    copyBox(propName(S_SCISSOR_BOX))
+
+    var dirty = Object.keys(state).length > 0
+
+    var result = {
+      framebuffer: framebuffer,
+      draw: draw,
+      shader: shader,
+      state: state,
+      dirty: dirty
+    }
+
+    result.profile = parseProfile(options, env)
+    result.uniforms = parseUniforms(uniforms, env)
+    result.attributes = parseAttributes(attributes, env)
+    result.context = parseContext(context, env)
     return result
   }
 
@@ -3307,7 +3344,7 @@ module.exports = function reglCore (
       splatObject(env, options, name)
     })
 
-    var args = parseArguments(options, attributes, uniforms, context)
+    var args = parseArguments(options, attributes, uniforms, context, env)
 
     emitDrawProc(env, args)
     emitScopeProc(env, args)
@@ -3576,7 +3613,8 @@ module.exports = function wrapElementsState (gl, extensions, bufferState, stats)
       result = new REGLElementBuffer(bufferState.create(
         null,
         GL_ELEMENT_ARRAY_BUFFER,
-        true)._buffer)
+        true,
+        false)._buffer)
     }
     initElements(result, data, GL_STREAM_DRAW, -1, -1, 0, 0)
     return result
@@ -3671,7 +3709,7 @@ module.exports = function wrapElementsState (gl, extensions, bufferState, stats)
     elements.buffer = null
   }
 
-  function createElements (options) {
+  function createElements (options, persistent) {
     var buffer = bufferState.create(null, GL_ELEMENT_ARRAY_BUFFER, true)
     var elements = new REGLElementBuffer(buffer._buffer)
     stats.elementsCount++
@@ -3810,7 +3848,14 @@ module.exports = function createExtensionCache (gl, config) {
   config.optionalExtensions.forEach(tryLoadExtension)
 
   return {
-    extensions: extensions
+    extensions: extensions,
+    restore: function () {
+      Object.keys(extensions).forEach(function (name) {
+        if (!tryLoadExtension(name)) {
+          throw new Error('(regl): error restoring extension ' + name)
+        }
+      })
+    }
   }
 }
 
@@ -4616,6 +4661,13 @@ module.exports = function wrapFBOState (
     })
   }
 
+  function restoreFramebuffers () {
+    values(framebufferSet).forEach(function (fb) {
+      fb.framebuffer = gl.createFramebuffer()
+      updateFramebuffer(fb)
+    })
+  }
+
   return extend(framebufferState, {
     getFramebuffer: function (object) {
       if (typeof object === 'function' && object._reglType === 'framebuffer') {
@@ -4630,7 +4682,8 @@ module.exports = function wrapFBOState (
     createCube: createCubeFBO,
     clear: function () {
       values(framebufferSet).forEach(destroy)
-    }
+    },
+    restore: restoreFramebuffers
   })
 }
 
@@ -5038,11 +5091,21 @@ module.exports = function (gl, extensions, limits, stats, config) {
     }
   }
 
+  function restoreRenderbuffers () {
+    values(renderbufferSet).forEach(function (rb) {
+      rb.renderbuffer = gl.createRenderbuffer()
+      gl.bindRenderbuffer(GL_RENDERBUFFER, rb.renderbuffer)
+      gl.renderbufferStorage(GL_RENDERBUFFER, rb.format, rb.width, rb.height)
+    })
+    gl.bindRenderbuffer(GL_RENDERBUFFER, null)
+  }
+
   return {
     create: createRenderbuffer,
     clear: function () {
       values(renderbufferSet).forEach(destroy)
-    }
+    },
+    restore: restoreRenderbuffers
   }
 }
 
@@ -5208,6 +5271,14 @@ module.exports = function wrapShaderState (gl, stringStore, stats, config) {
     }
   }
 
+  function restoreShaders () {
+    fragShaders = {}
+    vertShaders = {}
+    for (var i = 0; i < programList.length; ++i) {
+      linkProgram(programList[i])
+    }
+  }
+
   return {
     clear: function () {
       var deleteShader = gl.deleteShader.bind(gl)
@@ -5244,6 +5315,8 @@ module.exports = function wrapShaderState (gl, stringStore, stats, config) {
       }
       return program
     },
+
+    restore: restoreShaders,
 
     shader: getShader,
 
@@ -6336,18 +6409,6 @@ module.exports = function createTextureSet (
     }
   }
 
-  var infoPool = []
-
-  function allocInfo () {
-    var result = infoPool.pop() || new TexInfo()
-    TexInfo.call(result)
-    return result
-  }
-
-  function freeInfo (info) {
-    infoPool.push(info)
-  }
-
   // -------------------------------------------------------
   // Full texture object
   // -------------------------------------------------------
@@ -6372,6 +6433,8 @@ module.exports = function createTextureSet (
 
     this.unit = -1
     this.bindCount = 0
+
+    this.texInfo = new TexInfo()
 
     if (config.profile) {
       this.stats = {size: 0}
@@ -6459,7 +6522,8 @@ module.exports = function createTextureSet (
     stats.textureCount++
 
     function reglTexture2D (a, b) {
-      var texInfo = allocInfo()
+      var texInfo = texture.texInfo
+      TexInfo.call(texInfo)
       var mipData = allocMipMap()
 
       if (typeof a === 'number') {
@@ -6495,7 +6559,6 @@ module.exports = function createTextureSet (
       setTexInfo(texInfo, GL_TEXTURE_2D)
       tempRestore()
 
-      freeInfo(texInfo)
       freeMipMap(mipData)
 
       if (config.profile) {
@@ -6604,7 +6667,8 @@ module.exports = function createTextureSet (
 
     function reglTextureCube (a0, a1, a2, a3, a4, a5) {
       var i
-      var texInfo = allocInfo()
+      var texInfo = texture.texInfo
+      TexInfo.call(texInfo)
       for (i = 0; i < 6; ++i) {
         faces[i] = allocMipMap()
       }
@@ -6672,8 +6736,6 @@ module.exports = function createTextureSet (
           texInfo.genMipmaps,
           true)
       }
-
-      freeInfo(texInfo)
 
       for (i = 0; i < 6; ++i) {
         freeMipMap(faces[i])
@@ -6790,13 +6852,50 @@ module.exports = function createTextureSet (
     }
   }
 
+  function restoreTextures () {
+    values(textureSet).forEach(function (texture) {
+      texture.texture = gl.createTexture()
+      gl.bindTexture(texture.target, texture.texture)
+      for (var i = 0; i < 32; ++i) {
+        if ((texture.mipmask & (1 << i)) === 0) {
+          continue
+        }
+        if (texture.target === GL_TEXTURE_2D) {
+          gl.texImage2D(GL_TEXTURE_2D,
+            i,
+            texture.internalformat,
+            texture.width >> i,
+            texture.height >> i,
+            0,
+            texture.internalformat,
+            texture.type,
+            null)
+        } else {
+          for (var j = 0; j < 6; ++j) {
+            gl.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + j,
+              i,
+              texture.internalformat,
+              texture.width >> i,
+              texture.height >> i,
+              0,
+              texture.internalformat,
+              texture.type,
+              null)
+          }
+        }
+      }
+      setTexInfo(texture.texInfo, texture.target)
+    })
+  }
+
   return {
     create2D: createTexture2D,
     createCube: createTextureCube,
     clear: destroyTextures,
     getTexture: function (wrapper) {
       return null
-    }
+    },
+    restore: restoreTextures
   }
 }
 
@@ -6930,6 +7029,10 @@ module.exports = function (gl, extensions) {
       for (var i = 0; i < queryPool.length; i++) {
         extTimer.deleteQueryEXT(queryPool[i])
       }
+      pendingQueries.length = 0
+      queryPool.length = 0
+    },
+    restore: function () {
       pendingQueries.length = 0
       queryPool.length = 0
     }
@@ -7586,6 +7689,7 @@ module.exports = function wrapREGL (args) {
 
   var gl = config.gl
   var glAttributes = gl.getContextAttributes()
+  var contextLost = gl.isContextLost()
 
   var extensionState = wrapExtensions(gl, config)
   if (!extensionState) {
@@ -7674,6 +7778,10 @@ module.exports = function wrapREGL (args) {
   var canvas = gl.canvas
 
   var rafCallbacks = []
+  var lossCallbacks = []
+  var restoreCallbacks = []
+  var destroyCallbacks = [config.onDestroy]
+
   var activeRAF = null
   function handleRAF () {
     if (rafCallbacks.length === 0) {
@@ -7721,11 +7829,48 @@ module.exports = function wrapREGL (args) {
   }
 
   function handleContextLoss (event) {
-    // TODO
+    event.preventDefault()
+
+    // set context lost flag
+    contextLost = true
+
+    // pause request animation frame
+    stopRAF()
+
+    // lose context
+    lossCallbacks.forEach(function (cb) {
+      cb()
+    })
   }
 
   function handleContextRestored (event) {
-    // TODO
+    // clear error code
+    gl.getError()
+
+    // clear context lost flag
+    contextLost = false
+
+    // refresh state
+    extensionState.restore()
+    shaderState.restore()
+    bufferState.restore()
+    textureState.restore()
+    renderbufferState.restore()
+    framebufferState.restore()
+    if (timer) {
+      timer.restore()
+    }
+
+    // refresh state
+    core.procs.refresh()
+
+    // restart RAF
+    startRAF()
+
+    // restore context
+    restoreCallbacks.forEach(function (cb) {
+      cb()
+    })
   }
 
   if (canvas) {
@@ -7753,7 +7898,9 @@ module.exports = function wrapREGL (args) {
       timer.clear()
     }
 
-    config.onDestroy()
+    destroyCallbacks.forEach(function (cb) {
+      cb()
+    })
   }
 
   function compileProcedure (options) {
@@ -7765,6 +7912,11 @@ module.exports = function wrapREGL (args) {
       delete result.uniforms
       delete result.attributes
       delete result.context
+
+      if ('stencil' in result && result.stencil.op) {
+        result.stencil.opBack = result.stencil.opFront = result.stencil.op
+        delete result.stencil.op
+      }
 
       function merge (name) {
         if (name in result) {
@@ -7833,6 +7985,9 @@ module.exports = function wrapREGL (args) {
 
     function REGLCommand (args, body) {
       var i
+      if (contextLost) {
+        
+      }
       if (typeof args === 'function') {
         return scope.call(this, null, args, 0)
       } else if (typeof body === 'function') {
@@ -7957,6 +8112,40 @@ module.exports = function wrapREGL (args) {
 
   refresh()
 
+  function addListener (event, callback) {
+    
+
+    var callbacks
+    switch (event) {
+      case 'frame':
+        return frame(callback)
+      case 'lost':
+        callbacks = lossCallbacks
+        break
+      case 'restore':
+        callbacks = restoreCallbacks
+        break
+      case 'destroy':
+        callbacks = destroyCallbacks
+        break
+      default:
+        
+    }
+
+    callbacks.push(callback)
+    return {
+      cancel: function () {
+        for (var i = 0; i < callbacks.length; ++i) {
+          if (callbacks[i] === callback) {
+            callbacks[i] = callbacks[callbacks.length - 1]
+            callbacks.pop()
+            return
+          }
+        }
+      }
+    }
+  }
+
   var regl = extend(compileProcedure, {
     // Clear current FBO
     clear: clear,
@@ -7971,9 +8160,11 @@ module.exports = function wrapREGL (args) {
 
     // Resources
     buffer: function (options) {
-      return bufferState.create(options, GL_ARRAY_BUFFER)
+      return bufferState.create(options, GL_ARRAY_BUFFER, false, false)
     },
-    elements: elementState.create,
+    elements: function (options) {
+      return elementState.create(options, false)
+    },
     texture: textureState.create2D,
     cube: textureState.createCube,
     renderbuffer: renderbufferState.create,
@@ -7985,6 +8176,7 @@ module.exports = function wrapREGL (args) {
 
     // Frame rendering
     frame: frame,
+    on: addListener,
 
     // System limits
     limits: limits,
