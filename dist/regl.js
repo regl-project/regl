@@ -106,6 +106,8 @@ module.exports = function wrapBufferState (gl, stats, config) {
     this.dimension = 1
     this.dtype = GL_UNSIGNED_BYTE
 
+    this.persistentData = null
+
     if (config.profile) {
       this.stats = {size: 0}
     }
@@ -127,7 +129,7 @@ module.exports = function wrapBufferState (gl, stats, config) {
       buffer = new REGLBuffer(type)
     }
     buffer.bind()
-    initBufferFromData(buffer, data, GL_STREAM_DRAW, 0, 1)
+    initBufferFromData(buffer, data, GL_STREAM_DRAW, 0, 1, false)
     return buffer
   }
 
@@ -140,7 +142,7 @@ module.exports = function wrapBufferState (gl, stats, config) {
     gl.bufferData(buffer.type, data, usage)
   }
 
-  function initBufferFromData (buffer, data, usage, dtype, dimension) {
+  function initBufferFromData (buffer, data, usage, dtype, dimension, persist) {
     buffer.usage = usage
     if (Array.isArray(data)) {
       buffer.dtype = dtype || GL_FLOAT
@@ -153,13 +155,21 @@ module.exports = function wrapBufferState (gl, stats, config) {
             data.length * buffer.dimension)
           flatten(flatData, data, buffer.dimension)
           initBufferFromTypedArray(buffer, flatData, usage)
-          pool.freeType(flatData)
+          if (persist) {
+            buffer.persistentData = flatData
+          } else {
+            pool.freeType(flatData)
+          }
         } else if (typeof data[0] === 'number') {
           buffer.dimension = dimension
           var typedData = pool.allocType(buffer.dtype, data.length)
           copyArray(typedData, data)
           initBufferFromTypedArray(buffer, typedData, usage)
-          pool.freeType(typedData)
+          if (persist) {
+            buffer.persistentData = typedData
+          } else {
+            pool.freeType(typedData)
+          }
         } else if (isTypedArray(data[0])) {
           buffer.dimension = data[0].length
           buffer.dtype = dtype || typedArrayCode(data[0]) || GL_FLOAT
@@ -168,7 +178,11 @@ module.exports = function wrapBufferState (gl, stats, config) {
             data.length * buffer.dimension)
           flatten(flatData, data, buffer.dimension)
           initBufferFromTypedArray(buffer, flatData, usage)
-          pool.freeType(flatData)
+          if (persist) {
+            buffer.persistentData = flatData
+          } else {
+            pool.freeType(flatData)
+          }
         } else {
           check.raise('invalid buffer data')
         }
@@ -177,6 +191,9 @@ module.exports = function wrapBufferState (gl, stats, config) {
       buffer.dtype = dtype || typedArrayCode(data)
       buffer.dimension = dimension
       initBufferFromTypedArray(buffer, data, usage)
+      if (persist) {
+        buffer.persistentData = new Uint8Array(new Uint8Array(data.buffer))
+      }
     } else if (isNDArrayLike(data)) {
       var shape = data.shape
       var stride = data.stride
@@ -210,7 +227,11 @@ module.exports = function wrapBufferState (gl, stats, config) {
         strideX, strideY,
         offset)
       initBufferFromTypedArray(buffer, transposeData, usage)
-      pool.freeType(transposeData)
+      if (persist) {
+        buffer.persistentData = transposeData
+      } else {
+        pool.freeType(transposeData)
+      }
     } else {
       check.raise('invalid buffer data')
     }
@@ -226,7 +247,7 @@ module.exports = function wrapBufferState (gl, stats, config) {
     delete bufferSet[buffer.id]
   }
 
-  function createBuffer (options, type, deferInit) {
+  function createBuffer (options, type, deferInit, persistent) {
     stats.bufferCount++
 
     var buffer = new REGLBuffer(type)
@@ -288,7 +309,7 @@ module.exports = function wrapBufferState (gl, stats, config) {
         buffer.dimension = dimension
         buffer.byteLength = byteLength
       } else {
-        initBufferFromData(buffer, data, usage, dtype, dimension)
+        initBufferFromData(buffer, data, usage, dtype, dimension, persistent)
       }
 
       if (config.profile) {
@@ -381,6 +402,15 @@ module.exports = function wrapBufferState (gl, stats, config) {
     return reglBuffer
   }
 
+  function restoreBuffers () {
+    values(bufferSet).forEach(function (buffer) {
+      buffer.buffer = gl.createBuffer()
+      gl.bindBuffer(buffer.type, buffer.buffer)
+      gl.bufferData(
+        buffer.type, buffer.persistentData || buffer.byteLength, buffer.usage)
+    })
+  }
+
   if (config.profile) {
     stats.getTotalBufferSize = function () {
       var total = 0
@@ -409,6 +439,8 @@ module.exports = function wrapBufferState (gl, stats, config) {
       }
       return null
     },
+
+    restore: restoreBuffers,
 
     _initBuffer: initBufferFromData
   }
@@ -1034,7 +1066,7 @@ module.exports = function reglCore (
     return profileEnable
   }
 
-  function parseFramebuffer (options) {
+  function parseFramebuffer (options, env) {
     var staticOptions = options.static
     var dynamicOptions = options.dynamic
 
@@ -1118,29 +1150,29 @@ module.exports = function reglCore (
     }
   }
 
-  function parseViewportScissor (options, framebuffer) {
+  function parseViewportScissor (options, framebuffer, env) {
     var staticOptions = options.static
     var dynamicOptions = options.dynamic
 
     function parseBox (param) {
       if (param in staticOptions) {
         var box = staticOptions[param]
-        check.commandType(box, 'object', 'invalid ' + param)
+        check.commandType(box, 'object', 'invalid ' + param, env.commandStr)
 
         var isStatic = true
         var x = box.x | 0
         var y = box.y | 0
-        check.command(x >= 0 && y >= 0, 'invalid ' + param)
+        check.command(x >= 0 && y >= 0, 'invalid ' + param, env.commandStr)
         var w, h
         if ('width' in box) {
           w = box.width | 0
-          check.command(w > 0, 'invalid ' + param)
+          check.command(w > 0, 'invalid ' + param, env.commandStr)
         } else {
           isStatic = false
         }
         if ('height' in box) {
           h = box.height | 0
-          check.command(h > 0, 'invalid ' + param)
+          check.command(h > 0, 'invalid ' + param, env.commandStr)
         } else {
           isStatic = false
         }
@@ -1155,13 +1187,13 @@ module.exports = function reglCore (
             if (!('width' in box)) {
               BOX_W = scope.def(CONTEXT, '.', S_FRAMEBUFFER_WIDTH, '-', x)
             } else {
-              check.command(w > 0, 'invalid ' + param)
+              check.command(w > 0, 'invalid ' + param, env.commandStr)
             }
             var BOX_H = h
             if (!('height' in box)) {
               BOX_H = scope.def(CONTEXT, '.', S_FRAMEBUFFER_HEIGHT, '-', y)
             } else {
-              check.command(h > 0, 'invalid ' + param)
+              check.command(h > 0, 'invalid ' + param, env.commandStr)
             }
             return [x, y, BOX_W, BOX_H]
           })
@@ -1327,7 +1359,7 @@ module.exports = function reglCore (
     }
   }
 
-  function parseDraw (options) {
+  function parseDraw (options, env) {
     var staticOptions = options.static
     var dynamicOptions = options.dynamic
 
@@ -1335,10 +1367,10 @@ module.exports = function reglCore (
       if (S_ELEMENTS in staticOptions) {
         var elements = staticOptions[S_ELEMENTS]
         if (isBufferArgs(elements)) {
-          elements = elementState.getElements(elementState.create(elements))
+          elements = elementState.getElements(elementState.create(elements, true))
         } else if (elements) {
           elements = elementState.getElements(elements)
-          check.command(elements, 'invalid elements')
+          check.command(elements, 'invalid elements', env.commandStr)
         }
         var result = createStaticDecl(function (env, scope) {
           if (elements) {
@@ -1392,7 +1424,7 @@ module.exports = function reglCore (
     function parsePrimitive () {
       if (S_PRIMITIVE in staticOptions) {
         var primitive = staticOptions[S_PRIMITIVE]
-        check.commandParameter(primitive, primTypes, 'invalid primitve')
+        check.commandParameter(primitive, primTypes, 'invalid primitve', env.commandStr)
         return createStaticDecl(function (env, scope) {
           return primTypes[primitive]
         })
@@ -1436,7 +1468,7 @@ module.exports = function reglCore (
     function parseParam (param, isOffset) {
       if (param in staticOptions) {
         var value = staticOptions[param] | 0
-        check.command(!isOffset || value >= 0, 'invalid ' + param)
+        check.command(!isOffset || value >= 0, 'invalid ' + param, env.commandStr)
         return createStaticDecl(function (env, scope) {
           if (isOffset) {
             env.OFFSET = value
@@ -1472,7 +1504,7 @@ module.exports = function reglCore (
       if (S_COUNT in staticOptions) {
         var count = staticOptions[S_COUNT] | 0
         check.command(
-          typeof count === 'number' && count >= 0, 'invalid vertex count')
+          typeof count === 'number' && count >= 0, 'invalid vertex count', env.commandStr)
         return createStaticDecl(function () {
           return count
         })
@@ -1554,7 +1586,7 @@ module.exports = function reglCore (
     }
   }
 
-  function parseGLState (options) {
+  function parseGLState (options, env) {
     var staticOptions = options.static
     var dynamicOptions = options.dynamic
 
@@ -1590,14 +1622,14 @@ module.exports = function reglCore (
         case S_DEPTH_MASK:
           return parseParam(
             function (value) {
-              check.commandType(value, 'boolean', prop)
+              check.commandType(value, 'boolean', prop, env.commandStr)
               return value
             },
             function (env, scope, value) {
               check.optional(function () {
                 env.assert(scope,
                   'typeof ' + value + '==="boolean"',
-                  'invalid flag ' + prop)
+                  'invalid flag ' + prop, env.commandStr)
               })
               return value
             })
@@ -1605,7 +1637,7 @@ module.exports = function reglCore (
         case S_DEPTH_FUNC:
           return parseParam(
             function (value) {
-              check.commandParameter(value, compareFuncs, 'invalid ' + prop)
+              check.commandParameter(value, compareFuncs, 'invalid ' + prop, env.commandStr)
               return compareFuncs[value]
             },
             function (env, scope, value) {
@@ -1627,7 +1659,8 @@ module.exports = function reglCore (
                 typeof value[0] === 'number' &&
                 typeof value[1] === 'number' &&
                 value[0] <= value[1],
-                'depth range is 2d array')
+                'depth range is 2d array',
+                env.commandStr)
               return value
             },
             function (env, scope, value) {
@@ -1649,19 +1682,19 @@ module.exports = function reglCore (
         case S_BLEND_FUNC:
           return parseParam(
             function (value) {
-              check.commandType(value, 'object', 'blend.func')
+              check.commandType(value, 'object', 'blend.func', env.commandStr)
               var srcRGB = ('srcRGB' in value ? value.srcRGB : value.src)
               var srcAlpha = ('srcAlpha' in value ? value.srcAlpha : value.src)
               var dstRGB = ('dstRGB' in value ? value.dstRGB : value.dst)
               var dstAlpha = ('dstAlpha' in value ? value.dstAlpha : value.dst)
-              check.commandParameter(srcRGB, blendFuncs, param + '.srcRGB')
-              check.commandParameter(srcAlpha, blendFuncs, param + '.srcAlpha')
-              check.commandParameter(dstRGB, blendFuncs, param + '.dstRGB')
-              check.commandParameter(dstAlpha, blendFuncs, param + '.dstAlpha')
+              check.commandParameter(srcRGB, blendFuncs, param + '.srcRGB', env.commandStr)
+              check.commandParameter(srcAlpha, blendFuncs, param + '.srcAlpha', env.commandStr)
+              check.commandParameter(dstRGB, blendFuncs, param + '.dstRGB', env.commandStr)
+              check.commandParameter(dstAlpha, blendFuncs, param + '.dstAlpha', env.commandStr)
 
               check.command(
                 (invalidBlendCombinations.indexOf(srcRGB + ', ' + dstRGB) === -1),
-                'unallowed blending combination (srcRGB, dstRGB) = (' + srcRGB + ', ' + dstRGB + ')')
+                'unallowed blending combination (srcRGB, dstRGB) = (' + srcRGB + ', ' + dstRGB + ')', env.commandStr)
 
               return [
                 blendFuncs[srcRGB],
@@ -1719,22 +1752,22 @@ module.exports = function reglCore (
           return parseParam(
             function (value) {
               if (typeof value === 'string') {
-                check.commandParameter(value, blendEquations, 'invalid ' + prop)
+                check.commandParameter(value, blendEquations, 'invalid ' + prop, env.commandStr)
                 return [
                   blendEquations[value],
                   blendEquations[value]
                 ]
               } else if (typeof value === 'object') {
                 check.commandParameter(
-                  value.rgb, blendEquations, prop + '.rgb')
+                  value.rgb, blendEquations, prop + '.rgb', env.commandStr)
                 check.commandParameter(
-                  value.alpha, blendEquations, prop + '.alpha')
+                  value.alpha, blendEquations, prop + '.alpha', env.commandStr)
                 return [
                   blendEquations[value.rgb],
                   blendEquations[value.alpha]
                 ]
               } else {
-                check.commandRaise('invalid blend.equation')
+                check.commandRaise('invalid blend.equation', env.commandStr)
               }
             },
             function (env, scope, value) {
@@ -1777,7 +1810,7 @@ module.exports = function reglCore (
               check.command(
                 isArrayLike(value) &&
                 value.length === 4,
-                'blend.color must be a 4d array')
+                'blend.color must be a 4d array', env.commandStr)
               return loop(4, function (i) {
                 return +value[i]
               })
@@ -1797,7 +1830,7 @@ module.exports = function reglCore (
         case S_STENCIL_MASK:
           return parseParam(
             function (value) {
-              check.commandType(value, 'number', param)
+              check.commandType(value, 'number', param, env.commandStr)
               return value | 0
             },
             function (env, scope, value) {
@@ -1812,13 +1845,13 @@ module.exports = function reglCore (
         case S_STENCIL_FUNC:
           return parseParam(
             function (value) {
-              check.commandType(value, 'object', param)
+              check.commandType(value, 'object', param, env.commandStr)
               var cmp = value.cmp || 'keep'
               var ref = value.ref || 0
               var mask = 'mask' in value ? value.mask : -1
-              check.commandParameter(cmp, compareFuncs, prop + '.cmp')
-              check.commandType(ref, 'number', prop + '.ref')
-              check.commandType(mask, 'number', prop + '.mask')
+              check.commandParameter(cmp, compareFuncs, prop + '.cmp', env.commandStr)
+              check.commandType(ref, 'number', prop + '.ref', env.commandStr)
+              check.commandType(mask, 'number', prop + '.mask', env.commandStr)
               return [
                 compareFuncs[cmp],
                 ref,
@@ -1852,18 +1885,18 @@ module.exports = function reglCore (
         case S_STENCIL_OPBACK:
           return parseParam(
             function (value) {
-              check.commandType(value, 'object', param)
+              check.commandType(value, 'object', param, env.commandStr)
               var fail = value.fail || 'keep'
               var zfail = value.zfail || 'keep'
-              var pass = value.pass || 'keep'
-              check.commandParameter(fail, stencilOps, prop + '.fail')
-              check.commandParameter(zfail, stencilOps, prop + '.zfail')
-              check.commandParameter(pass, stencilOps, prop + '.pass')
+              var zpass = value.zpass || 'keep'
+              check.commandParameter(fail, stencilOps, prop + '.fail', env.commandStr)
+              check.commandParameter(zfail, stencilOps, prop + '.zfail', env.commandStr)
+              check.commandParameter(zpass, stencilOps, prop + '.zpass', env.commandStr)
               return [
                 prop === S_STENCIL_OPBACK ? GL_BACK : GL_FRONT,
                 stencilOps[fail],
                 stencilOps[zfail],
-                stencilOps[pass]
+                stencilOps[zpass]
               ]
             },
             function (env, scope, value) {
@@ -1893,18 +1926,18 @@ module.exports = function reglCore (
                 prop === S_STENCIL_OPBACK ? GL_BACK : GL_FRONT,
                 read('fail'),
                 read('zfail'),
-                read('pass')
+                read('zpass')
               ]
             })
 
         case S_POLYGON_OFFSET_OFFSET:
           return parseParam(
             function (value) {
-              check.commandType(value, 'object', param)
+              check.commandType(value, 'object', param, env.commandStr)
               var factor = value.factor | 0
               var units = value.units | 0
-              check.commandType(factor, 'number', param + '.factor')
-              check.commandType(units, 'number', param + '.units')
+              check.commandType(factor, 'number', param + '.factor', env.commandStr)
+              check.commandType(units, 'number', param + '.units', env.commandStr)
               return [factor, units]
             },
             function (env, scope, value) {
@@ -1929,7 +1962,7 @@ module.exports = function reglCore (
               } else if (value === 'back') {
                 face = GL_BACK
               }
-              check.command(!!face, param)
+              check.command(!!face, param, env.commandStr)
               return face
             },
             function (env, scope, value) {
@@ -1950,7 +1983,7 @@ module.exports = function reglCore (
                 value >= limits.lineWidthDims[0] &&
                 value <= limits.lineWidthDims[1],
                 'invalid line width, must positive number between ' +
-                limits.lineWidthDims[0] + ' and ' + limits.lineWidthDims[1])
+                limits.lineWidthDims[0] + ' and ' + limits.lineWidthDims[1], env.commandStr)
               return value
             },
             function (env, scope, value) {
@@ -1968,7 +2001,7 @@ module.exports = function reglCore (
         case S_FRONT_FACE:
           return parseParam(
             function (value) {
-              check.commandParameter(value, orientationType, param)
+              check.commandParameter(value, orientationType, param, env.commandStr)
               return orientationType[value]
             },
             function (env, scope, value) {
@@ -1986,7 +2019,7 @@ module.exports = function reglCore (
             function (value) {
               check.command(
                 isArrayLike(value) && value.length === 4,
-                'color.mask must be length 4 array')
+                'color.mask must be length 4 array', env.commandStr)
               return value.map(function (v) { return !!v })
             },
             function (env, scope, value) {
@@ -2004,13 +2037,13 @@ module.exports = function reglCore (
         case S_SAMPLE_COVERAGE:
           return parseParam(
             function (value) {
-              check.command(typeof value === 'object' && value, param)
+              check.command(typeof value === 'object' && value, param, env.commandStr)
               var sampleValue = 'value' in value ? value.value : 1
               var sampleInvert = !!value.invert
               check.command(
                 typeof sampleValue === 'number' &&
                 sampleValue >= 0 && sampleValue <= 1,
-                'sample.coverage.value must be a number between 0 and 1')
+                'sample.coverage.value must be a number between 0 and 1', env.commandStr)
               return [sampleValue, sampleInvert]
             },
             function (env, scope, value) {
@@ -2030,65 +2063,7 @@ module.exports = function reglCore (
     return STATE
   }
 
-  function parseOptions (options) {
-    var staticOptions = options.static
-    var dynamicOptions = options.dynamic
-
-    check.optional(function () {
-      var command = check.guessCommand()
-
-      var KEY_NAMES = [
-        S_FRAMEBUFFER,
-        S_VERT,
-        S_FRAG,
-        S_ELEMENTS,
-        S_PRIMITIVE,
-        S_OFFSET,
-        S_COUNT,
-        S_INSTANCES,
-        S_PROFILE
-      ].concat(GL_STATE_NAMES)
-
-      function checkKeys (dict) {
-        Object.keys(dict).forEach(function (key) {
-          check.command(
-            KEY_NAMES.indexOf(key) >= 0,
-            'unknown parameter "' + key + '"',
-            command)
-        })
-      }
-
-      checkKeys(staticOptions)
-      checkKeys(dynamicOptions)
-    })
-
-    var framebuffer = parseFramebuffer(options)
-    var viewportAndScissor = parseViewportScissor(options, framebuffer)
-    var draw = parseDraw(options)
-    var state = parseGLState(options)
-    var shader = parseProgram(options)
-
-    function copyBox (name) {
-      var defn = viewportAndScissor[name]
-      if (defn) {
-        state[name] = defn
-      }
-    }
-    copyBox(S_VIEWPORT)
-    copyBox(propName(S_SCISSOR_BOX))
-
-    var dirty = Object.keys(state).length > 0
-
-    return {
-      framebuffer: framebuffer,
-      draw: draw,
-      shader: shader,
-      state: state,
-      dirty: dirty
-    }
-  }
-
-  function parseUniforms (uniforms) {
+  function parseUniforms (uniforms, env) {
     var staticUniforms = uniforms.static
     var dynamicUniforms = uniforms.dynamic
 
@@ -2111,13 +2086,13 @@ module.exports = function reglCore (
           })
         } else if (reglType === 'framebuffer' ||
                    reglType === 'framebufferCube') {
-          check(value.color.length > 0,
-            'missing color attachment for framebuffer sent to uniform "' + name + '"')
+          check.command(value.color.length > 0,
+            'missing color attachment for framebuffer sent to uniform "' + name + '"', env.commandStr)
           result = createStaticDecl(function (env) {
             return env.link(value.color[0])
           })
         } else {
-          check.raise('invalid data for uniform "' + name + '"')
+          check.commandRaise('invalid data for uniform "' + name + '"', env.commandStr)
         }
       } else if (isArrayLike(value)) {
         result = createStaticDecl(function (env) {
@@ -2126,13 +2101,13 @@ module.exports = function reglCore (
               check.command(
                 typeof value[i] === 'number' ||
                 typeof value[i] === 'boolean',
-                'invalid uniform ' + name)
+                'invalid uniform ' + name, env.commandStr)
               return value[i]
             }), ']')
           return ITEM
         })
       } else {
-        check.commandRaise('invalid or missing data for uniform "' + name + '"')
+        check.commandRaise('invalid or missing data for uniform "' + name + '"', env.commandStr)
       }
       result.value = value
       UNIFORMS[name] = result
@@ -2148,7 +2123,7 @@ module.exports = function reglCore (
     return UNIFORMS
   }
 
-  function parseAttributes (attributes) {
+  function parseAttributes (attributes, env) {
     var staticAttributes = attributes.static
     var dynamicAttributes = attributes.dynamic
 
@@ -2162,7 +2137,7 @@ module.exports = function reglCore (
       if (isBufferArgs(value)) {
         record.state = ATTRIB_STATE_POINTER
         record.buffer = bufferState.getBuffer(
-          bufferState.create(value, GL_ARRAY_BUFFER, false))
+          bufferState.create(value, GL_ARRAY_BUFFER, false, true))
         record.type = record.buffer.dtype
       } else {
         var buffer = bufferState.getBuffer(value)
@@ -2172,7 +2147,7 @@ module.exports = function reglCore (
           record.type = buffer.dtype
         } else {
           check.command(typeof value === 'object' && value,
-            'invalid data for attribute ' + attribute)
+            'invalid data for attribute ' + attribute, env.commandStr)
           if (value.constant) {
             var constant = value.constant
             record.buffer = 'null'
@@ -2184,7 +2159,7 @@ module.exports = function reglCore (
                 isArrayLike(constant) &&
                 constant.length > 0 &&
                 constant.length <= 4,
-                'invalid constant for attribute ' + attribute)
+                'invalid constant for attribute ' + attribute, env.commandStr)
               CUTE_COMPONENTS.forEach(function (c, i) {
                 if (i < constant.length) {
                   record[c] = constant[i]
@@ -2192,20 +2167,25 @@ module.exports = function reglCore (
               })
             }
           } else {
-            buffer = bufferState.getBuffer(value.buffer)
-            check.command(!!buffer, 'missing buffer for attribute "' + attribute + '"')
+            if (isBufferArgs(value.buffer)) {
+              buffer = bufferState.getBuffer(
+                bufferState.create(value.buffer, GL_ARRAY_BUFFER, false, true))
+            } else {
+              buffer = bufferState.getBuffer(value.buffer)
+            }
+            check.command(!!buffer, 'missing buffer for attribute "' + attribute + '"', env.commandStr)
 
             var offset = value.offset | 0
             check.command(offset >= 0,
-              'invalid offset for attribute "' + attribute + '"')
+              'invalid offset for attribute "' + attribute + '"', env.commandStr)
 
             var stride = value.stride | 0
             check.command(stride >= 0 && stride < 256,
-              'invalid stride for attribute "' + attribute + '", must be integer betweeen [0, 255]')
+              'invalid stride for attribute "' + attribute + '", must be integer betweeen [0, 255]', env.commandStr)
 
             var size = value.size | 0
             check.command(!('size' in value) || (size > 0 && size <= 4),
-              'invalid size for attribute "' + attribute + '", must be 1,2,3,4')
+              'invalid size for attribute "' + attribute + '", must be 1,2,3,4', env.commandStr)
 
             var normalized = !!value.normalized
 
@@ -2213,20 +2193,20 @@ module.exports = function reglCore (
             if ('type' in value) {
               check.commandParameter(
                 value.type, glTypes,
-                'invalid type for attribute ' + attribute)
+                'invalid type for attribute ' + attribute, env.commandStr)
               type = glTypes[value.type]
             }
 
             var divisor = value.divisor | 0
             if ('divisor' in value) {
               check.command(divisor === 0 || extInstancing,
-                'cannot specify divisor for attribute "' + attribute + '", instancing not supported')
+                'cannot specify divisor for attribute "' + attribute + '", instancing not supported', env.commandStr)
               check.command(divisor >= 0,
-                'invalid divisor for attribute "' + attribute + '"')
+                'invalid divisor for attribute "' + attribute + '"', env.commandStr)
             }
 
             check.optional(function () {
-              var command = check.guessCommand()
+              var command = env.commandStr
 
               var VALID_KEYS = [
                 'buffer',
@@ -2296,6 +2276,7 @@ module.exports = function reglCore (
             IS_BUFFER_ARGS + '(' + VALUE + ')||' +
             BUFFER_STATE + '.getBuffer(' + VALUE + ')||' +
             BUFFER_STATE + '.getBuffer(' + VALUE + '.buffer)||' +
+            IS_BUFFER_ARGS + '(' + VALUE + '.buffer)||' +
             '("constant" in ' + VALUE +
             '&&(typeof ' + VALUE + '.constant==="number"||' +
             shared.isArrayLike + '(' + VALUE + '.constant))))',
@@ -2338,7 +2319,11 @@ module.exports = function reglCore (
             )
           }).join(''),
           '}}else{',
+          'if(', IS_BUFFER_ARGS, '(', VALUE, '.buffer)){',
+          BUFFER, '=', BUFFER_STATE, '.createStream(', GL_ARRAY_BUFFER, ',', VALUE, '.buffer);',
+          '}else{',
           BUFFER, '=', BUFFER_STATE, '.getBuffer(', VALUE, '.buffer);',
+          '}',
           TYPE, '="type" in ', VALUE, '?',
           shared.glTypes, '[', VALUE, '.type]:', BUFFER, '.dtype;',
           result.normalized, '=!!', VALUE, '.normalized;')
@@ -2392,13 +2377,65 @@ module.exports = function reglCore (
     return result
   }
 
-  function parseArguments (options, attributes, uniforms, context) {
-    var result = parseOptions(options)
+  function parseArguments (options, attributes, uniforms, context, env) {
+    var staticOptions = options.static
+    var dynamicOptions = options.dynamic
 
-    result.profile = parseProfile(options)
-    result.uniforms = parseUniforms(uniforms)
-    result.attributes = parseAttributes(attributes)
-    result.context = parseContext(context)
+    check.optional(function () {
+      var KEY_NAMES = [
+        S_FRAMEBUFFER,
+        S_VERT,
+        S_FRAG,
+        S_ELEMENTS,
+        S_PRIMITIVE,
+        S_OFFSET,
+        S_COUNT,
+        S_INSTANCES,
+        S_PROFILE
+      ].concat(GL_STATE_NAMES)
+
+      function checkKeys (dict) {
+        Object.keys(dict).forEach(function (key) {
+          check.command(
+            KEY_NAMES.indexOf(key) >= 0,
+            'unknown parameter "' + key + '"',
+            env.commandStr)
+        })
+      }
+
+      checkKeys(staticOptions)
+      checkKeys(dynamicOptions)
+    })
+
+    var framebuffer = parseFramebuffer(options, env)
+    var viewportAndScissor = parseViewportScissor(options, framebuffer, env)
+    var draw = parseDraw(options, env)
+    var state = parseGLState(options, env)
+    var shader = parseProgram(options, env)
+
+    function copyBox (name) {
+      var defn = viewportAndScissor[name]
+      if (defn) {
+        state[name] = defn
+      }
+    }
+    copyBox(S_VIEWPORT)
+    copyBox(propName(S_SCISSOR_BOX))
+
+    var dirty = Object.keys(state).length > 0
+
+    var result = {
+      framebuffer: framebuffer,
+      draw: draw,
+      shader: shader,
+      state: state,
+      dirty: dirty
+    }
+
+    result.profile = parseProfile(options, env)
+    result.uniforms = parseUniforms(uniforms, env)
+    result.attributes = parseAttributes(attributes, env)
+    result.context = parseContext(context, env)
     return result
   }
 
@@ -2822,7 +2859,7 @@ module.exports = function reglCore (
           var value = arg.value
           check.command(
             value !== null && typeof value !== 'undefined',
-            'missing uniform "' + name + '"')
+            'missing uniform "' + name + '"', env.commandStr)
           if (type === GL_SAMPLER_2D || type === GL_SAMPLER_CUBE) {
             check.command(
               typeof value === 'function' &&
@@ -2832,7 +2869,7 @@ module.exports = function reglCore (
               (type === GL_SAMPLER_CUBE &&
                 (value._reglType === 'textureCube' ||
                 value._reglType === 'framebufferCube'))),
-              'invalid texture for uniform ' + name)
+              'invalid texture for uniform ' + name, env.commandStr)
             var TEX_VALUE = env.link(value._texture || value.color[0]._texture)
             scope(GL, '.uniform1i(', LOCATION, ',', TEX_VALUE + '.bind());')
             scope.exit(TEX_VALUE, '.unbind();')
@@ -2842,12 +2879,12 @@ module.exports = function reglCore (
             type === GL_FLOAT_MAT4) {
             check.optional(function () {
               check.command(isArrayLike(value),
-                'invalid matrix for uniform ' + name)
+                'invalid matrix for uniform ' + name, env.commandStr)
               check.command(
                 (type === GL_FLOAT_MAT2 && value.length === 4) ||
                 (type === GL_FLOAT_MAT3 && value.length === 9) ||
                 (type === GL_FLOAT_MAT4 && value.length === 16),
-                'invalid length for matrix uniform ' + name)
+                'invalid length for matrix uniform ' + name, env.commandStr)
             })
             var MAT_VALUE = env.global.def('new Float32Array([' +
               Array.prototype.slice.call(value) + '])')
@@ -2863,69 +2900,69 @@ module.exports = function reglCore (
           } else {
             switch (type) {
               case GL_FLOAT:
-                check.commandType(value, 'number', 'uniform ' + name)
+                check.commandType(value, 'number', 'uniform ' + name, env.commandStr)
                 infix = '1f'
                 break
               case GL_FLOAT_VEC2:
                 check.command(
                   isArrayLike(value) && value.length === 2,
-                  'uniform ' + name)
+                  'uniform ' + name, env.commandStr)
                 infix = '2f'
                 break
               case GL_FLOAT_VEC3:
                 check.command(
                   isArrayLike(value) && value.length === 3,
-                  'uniform ' + name)
+                  'uniform ' + name, env.commandStr)
                 infix = '3f'
                 break
               case GL_FLOAT_VEC4:
                 check.command(
                   isArrayLike(value) && value.length === 4,
-                  'uniform ' + name)
+                  'uniform ' + name, env.commandStr)
                 infix = '4f'
                 break
               case GL_BOOL:
-                check.commandType(value, 'boolean', 'uniform ' + name)
+                check.commandType(value, 'boolean', 'uniform ' + name, env.commandStr)
                 infix = '1i'
                 break
               case GL_INT:
-                check.commandType(value, 'number', 'uniform ' + name)
+                check.commandType(value, 'number', 'uniform ' + name, env.commandStr)
                 infix = '1i'
                 break
               case GL_BOOL_VEC2:
                 check.command(
                   isArrayLike(value) && value.length === 2,
-                  'uniform ' + name)
+                  'uniform ' + name, env.commandStr)
                 infix = '2i'
                 break
               case GL_INT_VEC2:
                 check.command(
                   isArrayLike(value) && value.length === 2,
-                  'uniform ' + name)
+                  'uniform ' + name, env.commandStr)
                 infix = '2i'
                 break
               case GL_BOOL_VEC3:
                 check.command(
                   isArrayLike(value) && value.length === 3,
-                  'uniform ' + name)
+                  'uniform ' + name, env.commandStr)
                 infix = '3i'
                 break
               case GL_INT_VEC3:
                 check.command(
                   isArrayLike(value) && value.length === 3,
-                  'uniform ' + name)
+                  'uniform ' + name, env.commandStr)
                 infix = '3i'
                 break
               case GL_BOOL_VEC4:
                 check.command(
                   isArrayLike(value) && value.length === 4,
-                  'uniform ' + name)
+                  'uniform ' + name, env.commandStr)
                 infix = '4i'
                 break
               case GL_INT_VEC4:
                 check.command(
                   isArrayLike(value) && value.length === 4,
-                  'uniform ' + name)
+                  'uniform ' + name, env.commandStr)
                 infix = '4i'
                 break
             }
@@ -2960,7 +2997,7 @@ module.exports = function reglCore (
       check.optional(function () {
         function check (pred, message) {
           env.assert(scope, pred,
-            'bad data for uniform "' + name + '".  ' + message)
+            'bad data or missing for uniform "' + name + '".  ' + message)
         }
 
         function checkType (type) {
@@ -2972,7 +3009,7 @@ module.exports = function reglCore (
         function checkVector (n, type) {
           check(
             shared.isArrayLike + '(' + VALUE + ')&&' + VALUE + '.length===' + n,
-            'invalid vector, should have length ' + n)
+            'invalid vector, should have length ' + n, env.commandStr)
         }
 
         function checkTexture (target) {
@@ -2980,7 +3017,7 @@ module.exports = function reglCore (
             'typeof ' + VALUE + '==="function"&&' +
             VALUE + '._reglType==="texture' +
             (target === GL_TEXTURE_2D ? '2d' : 'Cube') + '"',
-            'invalid texture type')
+            'invalid texture type', env.commandStr)
         }
 
         switch (type) {
@@ -3707,7 +3744,7 @@ module.exports = function reglCore (
       splatObject(env, options, name)
     })
 
-    var args = parseArguments(options, attributes, uniforms, context)
+    var args = parseArguments(options, attributes, uniforms, context, env)
 
     emitDrawProc(env, args)
     emitScopeProc(env, args)
@@ -3976,7 +4013,8 @@ module.exports = function wrapElementsState (gl, extensions, bufferState, stats)
       result = new REGLElementBuffer(bufferState.create(
         null,
         GL_ELEMENT_ARRAY_BUFFER,
-        true)._buffer)
+        true,
+        false)._buffer)
     }
     initElements(result, data, GL_STREAM_DRAW, -1, -1, 0, 0)
     return result
@@ -4074,7 +4112,7 @@ module.exports = function wrapElementsState (gl, extensions, bufferState, stats)
     elements.buffer = null
   }
 
-  function createElements (options) {
+  function createElements (options, persistent) {
     var buffer = bufferState.create(null, GL_ELEMENT_ARRAY_BUFFER, true)
     var elements = new REGLElementBuffer(buffer._buffer)
     stats.elementsCount++
@@ -4228,7 +4266,14 @@ module.exports = function createExtensionCache (gl, config) {
   config.optionalExtensions.forEach(tryLoadExtension)
 
   return {
-    extensions: extensions
+    extensions: extensions,
+    restore: function () {
+      Object.keys(extensions).forEach(function (name) {
+        if (!tryLoadExtension(name)) {
+          throw new Error('(regl): error restoring extension ' + name)
+        }
+      })
+    }
   }
 }
 
@@ -5096,6 +5141,13 @@ module.exports = function wrapFBOState (
     })
   }
 
+  function restoreFramebuffers () {
+    values(framebufferSet).forEach(function (fb) {
+      fb.framebuffer = gl.createFramebuffer()
+      updateFramebuffer(fb)
+    })
+  }
+
   return extend(framebufferState, {
     getFramebuffer: function (object) {
       if (typeof object === 'function' && object._reglType === 'framebuffer') {
@@ -5110,7 +5162,8 @@ module.exports = function wrapFBOState (
     createCube: createCubeFBO,
     clear: function () {
       values(framebufferSet).forEach(destroy)
-    }
+    },
+    restore: restoreFramebuffers
   })
 }
 
@@ -5546,11 +5599,21 @@ module.exports = function (gl, extensions, limits, stats, config) {
     }
   }
 
+  function restoreRenderbuffers () {
+    values(renderbufferSet).forEach(function (rb) {
+      rb.renderbuffer = gl.createRenderbuffer()
+      gl.bindRenderbuffer(GL_RENDERBUFFER, rb.renderbuffer)
+      gl.renderbufferStorage(GL_RENDERBUFFER, rb.format, rb.width, rb.height)
+    })
+    gl.bindRenderbuffer(GL_RENDERBUFFER, null)
+  }
+
   return {
     create: createRenderbuffer,
     clear: function () {
       values(renderbufferSet).forEach(destroy)
-    }
+    },
+    restore: restoreRenderbuffers
   }
 }
 
@@ -5721,6 +5784,14 @@ module.exports = function wrapShaderState (gl, stringStore, stats, config) {
     }
   }
 
+  function restoreShaders () {
+    fragShaders = {}
+    vertShaders = {}
+    for (var i = 0; i < programList.length; ++i) {
+      linkProgram(programList[i])
+    }
+  }
+
   return {
     clear: function () {
       var deleteShader = gl.deleteShader.bind(gl)
@@ -5757,6 +5828,8 @@ module.exports = function wrapShaderState (gl, stringStore, stats, config) {
       }
       return program
     },
+
+    restore: restoreShaders,
 
     shader: getShader,
 
@@ -6880,18 +6953,6 @@ module.exports = function createTextureSet (
     }
   }
 
-  var infoPool = []
-
-  function allocInfo () {
-    var result = infoPool.pop() || new TexInfo()
-    TexInfo.call(result)
-    return result
-  }
-
-  function freeInfo (info) {
-    infoPool.push(info)
-  }
-
   // -------------------------------------------------------
   // Full texture object
   // -------------------------------------------------------
@@ -6916,6 +6977,8 @@ module.exports = function createTextureSet (
 
     this.unit = -1
     this.bindCount = 0
+
+    this.texInfo = new TexInfo()
 
     if (config.profile) {
       this.stats = {size: 0}
@@ -7003,7 +7066,8 @@ module.exports = function createTextureSet (
     stats.textureCount++
 
     function reglTexture2D (a, b) {
-      var texInfo = allocInfo()
+      var texInfo = texture.texInfo
+      TexInfo.call(texInfo)
       var mipData = allocMipMap()
 
       if (typeof a === 'number') {
@@ -7039,7 +7103,6 @@ module.exports = function createTextureSet (
       setTexInfo(texInfo, GL_TEXTURE_2D)
       tempRestore()
 
-      freeInfo(texInfo)
       freeMipMap(mipData)
 
       if (config.profile) {
@@ -7160,7 +7223,8 @@ module.exports = function createTextureSet (
 
     function reglTextureCube (a0, a1, a2, a3, a4, a5) {
       var i
-      var texInfo = allocInfo()
+      var texInfo = texture.texInfo
+      TexInfo.call(texInfo)
       for (i = 0; i < 6; ++i) {
         faces[i] = allocMipMap()
       }
@@ -7230,8 +7294,6 @@ module.exports = function createTextureSet (
           texInfo.genMipmaps,
           true)
       }
-
-      freeInfo(texInfo)
 
       for (i = 0; i < 6; ++i) {
         freeMipMap(faces[i])
@@ -7361,13 +7423,50 @@ module.exports = function createTextureSet (
     }
   }
 
+  function restoreTextures () {
+    values(textureSet).forEach(function (texture) {
+      texture.texture = gl.createTexture()
+      gl.bindTexture(texture.target, texture.texture)
+      for (var i = 0; i < 32; ++i) {
+        if ((texture.mipmask & (1 << i)) === 0) {
+          continue
+        }
+        if (texture.target === GL_TEXTURE_2D) {
+          gl.texImage2D(GL_TEXTURE_2D,
+            i,
+            texture.internalformat,
+            texture.width >> i,
+            texture.height >> i,
+            0,
+            texture.internalformat,
+            texture.type,
+            null)
+        } else {
+          for (var j = 0; j < 6; ++j) {
+            gl.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + j,
+              i,
+              texture.internalformat,
+              texture.width >> i,
+              texture.height >> i,
+              0,
+              texture.internalformat,
+              texture.type,
+              null)
+          }
+        }
+      }
+      setTexInfo(texture.texInfo, texture.target)
+    })
+  }
+
   return {
     create2D: createTexture2D,
     createCube: createTextureCube,
     clear: destroyTextures,
     getTexture: function (wrapper) {
       return null
-    }
+    },
+    restore: restoreTextures
   }
 }
 
@@ -7501,6 +7600,10 @@ module.exports = function (gl, extensions) {
       for (var i = 0; i < queryPool.length; i++) {
         extTimer.deleteQueryEXT(queryPool[i])
       }
+      pendingQueries.length = 0
+      queryPool.length = 0
+    },
+    restore: function () {
       pendingQueries.length = 0
       queryPool.length = 0
     }
@@ -7744,6 +7847,7 @@ function checkShaderError (gl, shader, source, type, command) {
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     var errLog = gl.getShaderInfoLog(shader)
     var typeName = type === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex'
+    checkCommandType(source, 'string', typeName + ' shader source must be a string', command)
     var files = parseSource(source, command)
     var errors = parseErrorLog(errLog)
     annotateFiles(files, errors)
@@ -8802,6 +8906,7 @@ module.exports = function wrapREGL (args) {
 
   var gl = config.gl
   var glAttributes = gl.getContextAttributes()
+  var contextLost = gl.isContextLost()
 
   var extensionState = wrapExtensions(gl, config)
   if (!extensionState) {
@@ -8890,6 +8995,10 @@ module.exports = function wrapREGL (args) {
   var canvas = gl.canvas
 
   var rafCallbacks = []
+  var lossCallbacks = []
+  var restoreCallbacks = []
+  var destroyCallbacks = [config.onDestroy]
+
   var activeRAF = null
   function handleRAF () {
     if (rafCallbacks.length === 0) {
@@ -8937,11 +9046,48 @@ module.exports = function wrapREGL (args) {
   }
 
   function handleContextLoss (event) {
-    // TODO
+    event.preventDefault()
+
+    // set context lost flag
+    contextLost = true
+
+    // pause request animation frame
+    stopRAF()
+
+    // lose context
+    lossCallbacks.forEach(function (cb) {
+      cb()
+    })
   }
 
   function handleContextRestored (event) {
-    // TODO
+    // clear error code
+    gl.getError()
+
+    // clear context lost flag
+    contextLost = false
+
+    // refresh state
+    extensionState.restore()
+    shaderState.restore()
+    bufferState.restore()
+    textureState.restore()
+    renderbufferState.restore()
+    framebufferState.restore()
+    if (timer) {
+      timer.restore()
+    }
+
+    // refresh state
+    core.procs.refresh()
+
+    // restart RAF
+    startRAF()
+
+    // restore context
+    restoreCallbacks.forEach(function (cb) {
+      cb()
+    })
   }
 
   if (canvas) {
@@ -8969,7 +9115,9 @@ module.exports = function wrapREGL (args) {
       timer.clear()
     }
 
-    config.onDestroy()
+    destroyCallbacks.forEach(function (cb) {
+      cb()
+    })
   }
 
   function compileProcedure (options) {
@@ -8981,6 +9129,11 @@ module.exports = function wrapREGL (args) {
       delete result.uniforms
       delete result.attributes
       delete result.context
+
+      if ('stencil' in result && result.stencil.op) {
+        result.stencil.opBack = result.stencil.opFront = result.stencil.op
+        delete result.stencil.op
+      }
 
       function merge (name) {
         if (name in result) {
@@ -9049,6 +9202,9 @@ module.exports = function wrapREGL (args) {
 
     function REGLCommand (args, body) {
       var i
+      if (contextLost) {
+        check.raise('context lost')
+      }
       if (typeof args === 'function') {
         return scope.call(this, null, args, 0)
       } else if (typeof body === 'function') {
@@ -9175,6 +9331,40 @@ module.exports = function wrapREGL (args) {
 
   refresh()
 
+  function addListener (event, callback) {
+    check.type(callback, 'function', 'listener callback must be a function')
+
+    var callbacks
+    switch (event) {
+      case 'frame':
+        return frame(callback)
+      case 'lost':
+        callbacks = lossCallbacks
+        break
+      case 'restore':
+        callbacks = restoreCallbacks
+        break
+      case 'destroy':
+        callbacks = destroyCallbacks
+        break
+      default:
+        check.raise('invalid event, must be one of frame,lost,restore,destroy')
+    }
+
+    callbacks.push(callback)
+    return {
+      cancel: function () {
+        for (var i = 0; i < callbacks.length; ++i) {
+          if (callbacks[i] === callback) {
+            callbacks[i] = callbacks[callbacks.length - 1]
+            callbacks.pop()
+            return
+          }
+        }
+      }
+    }
+  }
+
   var regl = extend(compileProcedure, {
     // Clear current FBO
     clear: clear,
@@ -9189,9 +9379,11 @@ module.exports = function wrapREGL (args) {
 
     // Resources
     buffer: function (options) {
-      return bufferState.create(options, GL_ARRAY_BUFFER)
+      return bufferState.create(options, GL_ARRAY_BUFFER, false, false)
     },
-    elements: elementState.create,
+    elements: function (options) {
+      return elementState.create(options, false)
+    },
     texture: textureState.create2D,
     cube: textureState.createCube,
     renderbuffer: renderbufferState.create,
@@ -9203,6 +9395,7 @@ module.exports = function wrapREGL (args) {
 
     // Frame rendering
     frame: frame,
+    on: addListener,
 
     // System limits
     limits: limits,
