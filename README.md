@@ -221,6 +221,9 @@ The following is an incomplete list of projects using regl:
 * [GPGPU Smooth Life](https://github.com/rreusser/regl-smooth-life)
 * [Summed Area Tables](https://github.com/realazthat/glsl-sat)
 * [GPGPU Fourier Analysis](https://github.com/dfcreative/gl-fourier)
+* [GPU accelerated handwritten digit recognition with regl using Convolutional Neural Networks](https://github.com/Erkaman/regl-cnn)
+
+https://github.com/Erkaman/regl-cnn
 
 If you have a project using regl that isn't on this list that you would like to see added, [please send us a pull request!](https://github.com/mikolalysenko/regl/edit/gh-pages/README.md)
 
