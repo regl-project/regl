@@ -223,8 +223,6 @@ The following is an incomplete list of projects using regl:
 * [GPGPU Fourier Analysis](https://github.com/dfcreative/gl-fourier)
 * [GPU accelerated handwritten digit recognition with regl using Convolutional Neural Networks](https://github.com/Erkaman/regl-cnn)
 
-https://github.com/Erkaman/regl-cnn
-
 If you have a project using regl that isn't on this list that you would like to see added, [please send us a pull request!](https://github.com/mikolalysenko/regl/edit/gh-pages/README.md)
 
 ## [Help Wanted](https://github.com/mikolalysenko/regl/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
