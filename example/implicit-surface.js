@@ -1,24 +1,28 @@
 /*
-  <p>Implicit surface raytracing demo. Many ideas and pieces of code taken from https://github.com/kevinroast/webglshaders/blob/master/distancefield1.html</p>
+  <p>Implicit surface raytracing demo. Many ideas and pieces of code taken from https://github.com/kevinroast/webglshaders/blob/master/distancefield1.html and http://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm</p>
 
  */
 
 const regl = require('../regl')()
 
-regl({
+const camera = require('./util/camera')(regl, {
+  center: [-12, 5, 1],
+  phi: -0.2,
+})
+
+const raytrace = regl({
   vert: `
     precision mediump float;
     attribute vec2 position;
     void main () {
       gl_Position = vec4(position, 0, 1);
     }`,
-
   frag: `
     precision mediump float;
     const vec3 LightDir1 = vec3(.7,1,-1.0);
     const vec3 LightColour1 = vec3(1.2,1.05,1);
     const vec3 LightDir2 = vec3(0,0,1);
-    const vec3 LightColour2 = vec3(.38,.4,.6);
+    const vec3 LightColour2 = vec3(0.38,0.4,0.6);
     const float LightSpecular = 64.0;
     const float LightSpecularHardness = 256.0;
     const vec3 Diffuse = vec3(0.85);
@@ -32,17 +36,43 @@ regl({
       return length(q)-t.y;
     }
 
-    float opRep( vec3 p, vec3 c )
+    float sphere( vec3 p, float s )
     {
-      vec3 q = mod(p,c)-0.5*c;
-      vec2 t = vec2(0.75,0.3);
-      return min(torus(q, t), torus(q.yxz,t));
+      return length(p)-s;
     }
 
-    float distanceEstimate(vec3 pos)
+    vec2 opU(vec2 d1, vec2 d2)
     {
-      vec3 c = vec3(5);
-      return opRep(pos, c);
+      return (d1.x<d2.x) ? d1 : d2;
+    }
+
+    vec3 opRep(vec3 p, vec3 c)
+    {
+      return vec3(mod(p.yz,c.yz)-0.5*c.yz, p.x);
+    }
+
+    float plane( vec3 p, vec4 n )
+    {
+      // n must be normalized
+      return dot(p,n.xyz) + n.w;
+    }
+
+    uniform float timestep;
+    vec2 distanceEstimate(vec3 pos)
+    {
+      float cellSize = 5.0;
+      float cellNumber = floor(pos.y/cellSize)+1.0;
+      float period = 50.0/cellNumber;
+      float s = sin(timestep/period);
+      float c = cos(timestep/period);
+      mat3 r = mat3(c, -s, 0.0,
+                    s, c, 0.0,
+                    0.0, 0.0, 1.0);
+      vec2 ball = vec2(sphere(opRep(pos-vec3(0,0,s*2.0), vec3(cellSize)), 0.5), 40.0);
+      vec2 tor = vec2(torus(opRep(pos, vec3(cellSize))*r, vec2(1.0, 0.25)), 15.0);
+      vec2 floor = vec2(plane(pos, vec4(0,1,0,-1)), 0.0);
+      vec2 objects = opU(tor, ball);
+      return opU(floor, objects);
     }
 
     vec3 getNormal(vec3 pos)
@@ -50,26 +80,43 @@ regl({
        const vec2 delta = vec2(0.01, 0);
 
        vec3 n;
-       n.x = distanceEstimate( pos + delta.xyy ) - distanceEstimate( pos - delta.xyy );
-       n.y = distanceEstimate( pos + delta.yxy ) - distanceEstimate( pos - delta.yxy );
-       n.z = distanceEstimate( pos + delta.yyx ) - distanceEstimate( pos - delta.yyx );
+       n.x = distanceEstimate( pos + delta.xyy ).x - distanceEstimate( pos - delta.xyy ).x;
+       n.y = distanceEstimate( pos + delta.yxy ).x - distanceEstimate( pos - delta.yxy ).x;
+       n.z = distanceEstimate( pos + delta.yyx ).x - distanceEstimate( pos - delta.yyx ).x;
 
        return normalize(n);
     }
 
-    vec4 Shading(vec3 pos, vec3 rayDir, vec3 norm)
+    float softshadow( in vec3 ro, in vec3 rd, in float mint, in float tmax )
     {
-      vec3 light1 = LightColour1 * max(0.0, dot(norm, normalize(LightDir1)));
-      vec3 light2 = LightColour2 * max(0.0, dot(norm, normalize(LightDir2)));
-
-      vec3 view = normalize(-rayDir);
-      vec3 heading = normalize(view + LightDir1);
-      float specular = pow(max(0.0, dot(heading, norm)), LightSpecularHardness);
-
-      return vec4(Diffuse * (light1 + light2) + (specular * LightSpecular * LightColour1), 1.0);
+      float res = 1.0;
+        float t = mint;
+        for( int i=0; i<16; i++ )
+        {
+        float h = distanceEstimate( ro + rd*t ).x;
+            res = min( res, 8.0*h/t );
+            t += clamp( h, 0.02, 0.11 );
+            if( h<0.001 || t>tmax ) break;
+        }
+        return clamp( res, 0.0, 1.0 );
     }
 
-    vec3 sunLight  = normalize( vec3(0.35, 0.2, .3) );
+    float calcAO( in vec3 pos, in vec3 nor )
+    {
+      float occ = 0.0;
+        float sca = 1.0;
+        for( int i=0; i<5; i++ )
+        {
+            float hr = 0.01 + 0.12*float(i)/4.0;
+            vec3 aopos =  nor * hr + pos;
+            float dd = distanceEstimate( aopos ).x;
+            occ += -(dd-hr)*sca;
+            sca *= 0.95;
+        }
+        return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );
+    }
+
+    vec3 sunLight  = normalize(vec3(-0.6, 0.7, 0.5));
     vec3 sunColour = vec3(1.0, .75, .6);
     vec3 Sky(in vec3 rayDir)
     {
@@ -82,60 +129,107 @@ regl({
       return clamp(sky, 0.0, 1.0);
     }
 
-    vec4 March(vec3 rayOrigin, vec3 rayDir)
+    vec2 castRay(vec3 rayOrigin, vec3 rayDir)
     {
        float t = 0.0;
-       float d = 1.0;
        for (int i=0; i<128; i++)
        {
           vec3 p = rayOrigin + rayDir * t;
-          d = distanceEstimate(p);
-          if (abs(d) < 0.01)
+          vec2 d = distanceEstimate(p);
+          if (abs(d.x) < 0.01)
           {
-             return vec4(p, 1.0);
+             return vec2(t, d.y);
           }
-          t += d;
+          t += d.x;
           if (t >= 100.0) break;
        }
-       return vec4(0.0);
+       return vec2(t, -1.0);
     }
 
     vec3 getRay(vec3 dir, vec2 pos) {
-       pos = pos - 0.5;
-       pos.x *= resolution.x/resolution.y;
+      pos = pos - 0.5;
+      pos.x *= resolution.x/resolution.y;
 
-       dir = normalize(dir);
-       vec3 right = normalize(cross(vec3(0.,1.,0.),dir));
-       vec3 up = normalize(cross(dir,right));
+      dir = normalize(dir);
+      vec3 right = normalize(cross(vec3(0.,1.,0.),dir));
+      vec3 up = normalize(cross(dir,right));
 
-       return dir + right*pos.x + up*pos.y;
+      return dir + right*pos.x + up*pos.y;
     }
 
-    void main () {
-      vec3 camLook = vec3(0,0,0);
-      vec3 camPos = vec3(5,10.0,6.0);
-      vec2 p = gl_FragCoord.xy / resolution.xy;
-      vec3 rayDir = normalize(getRay(camLook-camPos, p));
-      vec4 res = March(camPos, rayDir);
-      if (res.a == 1.0) res.xyz = clamp(Shading(res.xyz, rayDir, getNormal(res.xyz)).xyz, 0.0, 1.0);
-      else res.xyz = Sky(res.xyz);
+    vec3 render( in vec3 ro, in vec3 rd )
+    {
+      vec3 skyColor = Sky(rd);
+      vec3 color = skyColor;
+      vec2 res = castRay(ro, rd);
+      float t = res.x;
+      float material = res.y;
+      if (t < 100.0)
+      {
+        vec3 pos = ro + t*rd;
+        vec3 normal = getNormal(pos);
+        vec3 reflectionDir = reflect(rd, normal);
 
+        // material
+        color = 0.45 + 0.3*sin(vec3(0.05, 0.08, 0.10)) * material;
+
+        if( material == 0.0 )
+        {
+            float f = mod( floor(2.0*pos.z) + floor(2.0*pos.x), 2.0);
+            color = 0.4 + 0.1*f*vec3(1.0);
+        }
+
+        // lighting
+        float occ = calcAO( pos, normal );
+        float amb = clamp( 0.5+0.5*normal.y, 0.0, 1.0 );
+        float dif = clamp( dot( normal, sunLight ), 0.0, 1.0 );
+        float bac = clamp( dot( normal, normalize(vec3(-sunLight.x,0.0,-sunLight.z))), 0.0, 1.0 )*clamp( 1.0-pos.y,0.0,1.0);
+        float dom = smoothstep( -0.1, 0.1, reflectionDir.y );
+        float fre = pow( clamp(1.0+dot(normal,rd),0.0,1.0), 2.0 );
+        float spe = pow(clamp( dot( reflectionDir, sunLight ), 0.0, 1.0 ),16.0);
+
+        dif *= softshadow( pos, sunLight, 0.02, 2.5 );
+        dom *= softshadow( pos, reflectionDir, 0.02, 2.5 );
+
+        vec3 lin = vec3(0.0);
+        lin += 1.20*dif*vec3(1.00,0.85,0.55);
+        lin += 1.20*spe*vec3(1.00,0.85,0.55)*dif;
+        lin += 0.20*amb*vec3(0.50,0.70,1.00)*occ;
+        lin += 0.30*dom*vec3(0.50,0.70,1.00)*occ;
+        lin += 0.30*bac*vec3(0.25,0.25,0.25)*occ;
+        lin += 0.40*fre*vec3(1.00,1.00,1.00)*occ;
+        color = color*lin;
+
+        color = mix( color, skyColor, 1.0-exp( -0.001*t*t ) );
+      }
+      return vec3( clamp(color,0.0,1.0) );
+    }
+
+    uniform vec3 eye, center;
+    void main () {
+      vec2 p = gl_FragCoord.xy / resolution.xy;
+      vec3 rayDir = normalize(getRay(eye-center, p));
+      vec3 res = render(center, rayDir);
       gl_FragColor = vec4(res.rgb, 1.0);
     }`,
-
   attributes: {
     position: [
-      [1,1],
+      [1, 1],
       [1, -1],
       [-1, -1],
-      [-1,1],
+      [-1, 1]
     ]
   },
-
   uniforms: {
     height: regl.context('viewportHeight'),
-    width: regl.context('viewportWidth')
+    width: regl.context('viewportWidth'),
+    timestep: regl.context('tick')
   },
+  elements: [[0, 1, 2], [0, 3, 2]]
+})
 
-  elements: [[0,1,2], [0,3,2]]
-})()
+regl.frame(() => {
+  camera(() => {
+    raytrace()
+  })
+})
