@@ -196,29 +196,24 @@ const raytrace = regl({
 
         color = mix(color, skyColor, 1.0-exp(-0.001*t*t));
       }
-      return vec3(clamp(color, 0.0, 1.0));
+      return vec3(clamp(color, 0., 1.));
     }
 
     void main () {
       vec2 p = gl_FragCoord.xy / resolution.xy;
       vec3 rayDir = normalize(getRay(eye-center, p));
       vec3 res = render(center, rayDir);
-      gl_FragColor = vec4(res.rgb, 1.0);
+      gl_FragColor = vec4(res.rgb, 1.);
     }`,
   attributes: {
-    position: [
-      [1, 1],
-      [1, -1],
-      [-1, -1],
-      [-1, 1]
-    ]
+    position: [-4, -4, 4, -4, 0, 4]
   },
   uniforms: {
     height: regl.context('viewportHeight'),
     width: regl.context('viewportWidth'),
     timestep: regl.context('tick')
   },
-  elements: [[0, 1, 2], [0, 3, 2]]
+  count: 3
 })
 
 regl.frame(() => {
