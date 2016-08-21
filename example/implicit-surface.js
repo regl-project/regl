@@ -7,7 +7,7 @@ const regl = require('../regl')()
 
 const camera = require('./util/camera')(regl, {
   center: [-12, 5, 1],
-  phi: -0.2,
+  phi: -0.2
 })
 
 const raytrace = regl({
