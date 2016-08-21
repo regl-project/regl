@@ -1,5 +1,5 @@
 /*
-  <p>Implicit surface raytracing demo. Many ideas and pieces of code taken from https://github.com/kevinroast/webglshaders/blob/master/distancefield1.html and http://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm</p>
+  <p>Implicit surface raytracing demo. Many ideas and pieces of code taken from <a href="https://github.com/kevinroast/webglshaders/blob/master/distancefield1.html">here</a> and <a href="http://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm">here</a>  </p>
 
  */
 
