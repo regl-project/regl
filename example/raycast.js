@@ -8,7 +8,6 @@ const bunny = require('bunny')
 const normals = require('angle-normals')
 var mp = require('mouse-position')(canvas)
 var mb = require('mouse-pressed')(canvas)
-var intersect = require('ray-triangle-intersection')
 
 var viewMatrix = new Float32Array([1, -0, 0, 0, 0, 0.876966655254364, 0.48055124282836914, 0, -0, -0.48055124282836914, 0.876966655254364, 0, 0, 0, -11.622776985168457, 1])
 var projectionMatrix = new Float32Array(16)
@@ -18,6 +17,44 @@ var lightDir = [0.39, 0.87, 0.29]
 const planeElements = []
 var planePosition = []
 var planeNormal = []
+
+
+
+
+var cross = require('gl-vec3/cross');
+var dot = require('gl-vec3/dot');
+var sub = require('gl-vec3/subtract');
+
+var EPSILON = 0.000001;
+var edge1 = [0,0,0];
+var edge2 = [0,0,0];
+var tvec = [0,0,0];
+var pvec = [0,0,0];
+var qvec = [0,0,0];
+
+function intersectTriangle (out, pt, dir, tri) {
+  sub(edge1, tri[1], tri[0]);
+  sub(edge2, tri[2], tri[0]);
+
+  cross(pvec, dir, edge2);
+  var det = dot(edge1, pvec);
+
+  if (det < EPSILON) return null;
+  sub(tvec, pt, tri[0]);
+  var u = dot(tvec, pvec);
+  if (u < 0 || u > det) return null;
+  cross(qvec, tvec, edge1);
+  var v = dot(dir, qvec);
+  if (v < 0 || u + v > det) return null;
+
+  var t = dot(edge2, qvec) / det;
+  out[0] = pt[0] + t * dir[0];
+  out[1] = pt[1] + t * dir[1];
+  out[2] = pt[2] + t * dir[2];
+  return t;
+}
+
+
 
 planePosition.push([-0.5, 0.0, -0.5])
 planePosition.push([+0.5, 0.0, -0.5])
@@ -66,14 +103,7 @@ var boxNormal = [
 
 const globalScope = regl({
   uniforms: {
-    lightDir: lightDir
-  }
-})
-
-// render the object with lighting, using the previously rendered cubemap
-// to render the shadows.
-const drawNormal = regl({
-  uniforms: {
+    lightDir: lightDir,
     view: () => viewMatrix,
     projection: ({viewportWidth, viewportHeight}) =>
       mat4.perspective(projectionMatrix,
@@ -81,7 +111,12 @@ const drawNormal = regl({
                        viewportWidth / viewportHeight,
                        0.01,
                        1000)
-  },
+  }
+})
+
+// render the object with lighting, using the previously rendered cubemap
+// to render the shadows.
+const drawNormal = regl({
   frag: `
   precision mediump float;
 
@@ -121,6 +156,37 @@ const drawNormal = regl({
   }`
 })
 
+const drawOutline = regl({
+  frag: `
+  precision mediump float;
+
+  void main () {
+    gl_FragColor = vec4(vec3(1.0, 1.0, 0.0), 1.0);
+  }`,
+  vert: `
+  precision mediump float;
+
+  attribute vec3 position;
+  attribute vec3 normal;
+
+  uniform mat4 projection, view, model;
+  uniform bool isRound;
+
+  void main() {
+    float s = 0.1;
+    vec4 worldSpacePosition = model * vec4(
+      isRound ? (position + normal * s) : (position * (0.5*s+1.0)),
+
+      1);
+    gl_Position = projection * view * worldSpacePosition;
+  }`,
+
+  depth: {
+    enable: true,
+    mask: false
+  }
+})
+
 function Mesh (elements, position, normal) {
   this.elements = elements
   this.position = position
@@ -145,7 +211,9 @@ Mesh.prototype.draw = regl({
     },
     ambientLightAmount: 0.3,
     diffuseLightAmount: 0.7,
-    color: regl.prop('color')
+    color: regl.prop('color'),
+    isRound: regl.prop('isRound')
+
   },
   attributes: {
     position: regl.this('position'),
@@ -162,10 +230,19 @@ var boxMesh = new Mesh(boxElements, boxPosition, boxNormal)
 var planeMesh = new Mesh(planeElements, planePosition, planeNormal)
 
 var meshes = [
+  //
+  {scale: 80.0, translate: [0.0, 0.0, 0.0], color: [0.5, 0.5, 0.5], mesh: planeMesh},
+
+  {scale: 0.2, translate: [0.0, 0.0, 0.0], color: [0.6, 0.0, 0.0], mesh: bunnyMesh},
+
   {scale: 2.0, translate: [4.0, 0.0, 0.0], color: [0.6, 0.0, 0.0], mesh: boxMesh},
   {scale: 1.3, translate: [-3.0, 0.0, -4.0], color: [0.0, 0.6, 0.0], mesh: boxMesh},
-  {scale: 0.7, translate: [-3.0, -2.0, 4.0], color: [0.0, 0.0, 0.8], mesh: boxMesh}
+  {scale: 0.7, translate: [-3.0, 4.0, 4.0], color: [0.0, 0.0, 0.8], mesh: boxMesh},
+
+
 ]
+
+var selectedMesh = -1
 
 mb.on('down', function () {
   var vp = mat4.multiply([], projectionMatrix, viewMatrix)
@@ -176,10 +253,8 @@ mb.on('down', function () {
   var rayOrigin = vec3.transformMat4([], [0, 0, 0], mat4.invert([], viewMatrix))
 
   var rayDir = vec3.normalize([], vec3.subtract([], rayPoint, rayOrigin))
-  /*
-    console.log('ray orig', rayOrigin)
-    console.log('ray dir', rayDir)
-  */
+
+  var minT = 10000000.0
   for (var i = 0; i < meshes.length; i++) {
     var m = meshes[i]
 
@@ -192,16 +267,20 @@ mb.on('down', function () {
         vec3.transformMat4([], m.mesh.position[f[1]], modelMatrix),
         vec3.transformMat4([], m.mesh.position[f[2]], modelMatrix)
       ]
-      //      console.log('tri: ', tri)
-
-      var res = intersect([], rayPoint, rayDir, tri)
-      if (res !== null) {
-        console.log('INTERSECT!')
-        return
+      var res = []
+      var t = intersectTriangle(res, rayPoint, rayDir, tri)
+      if (t !== null) {
+        if(t < minT) {
+          console.log('new mesh: ', t, i)
+          minT = t
+          selectedMesh = i
+          break
+        }
       }
     }
   }
 })
+
 
 regl.frame(({tick}) => {
   regl.clear({
@@ -209,17 +288,23 @@ regl.frame(({tick}) => {
     depth: 1
   })
 
-  var drawMeshes = () => {
+  globalScope(() => {
     for (var i = 0; i < meshes.length; i++) {
       var m = meshes[i]
+      if (i !== selectedMesh) {
+        drawNormal(() => {
+          m.mesh.draw(m)
+        })
+      } else {
+        drawOutline(() => {
+          m.isRound = (m.mesh !== boxMesh)
 
-      m.mesh.draw({scale: m.scale, translate: m.translate, color: m.color})
+          m.mesh.draw(m)
+        })
+        drawNormal(() => {
+          m.mesh.draw(m)
+        })
+      }
     }
-  }
-
-  globalScope(() => {
-    drawNormal(() => {
-      drawMeshes()
-    })
   })
 })
