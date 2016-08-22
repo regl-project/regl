@@ -36,7 +36,11 @@
   * Asset loading (obj, ply, etc.)
   * Water Reflection(though cubic-framebuffers)
 
-## Next
+## 1.1.0
+
+* Can now access format and filtering mode for textures and render buffers
+
+## 1.0.0
 
 * Support `stencil.op`
 * Rename stencil op `pass` to `zpass`
