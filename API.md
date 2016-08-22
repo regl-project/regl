@@ -83,6 +83,7 @@
             -   [Texture subimage](#texture-subimage)
             -   [Texture resize](#texture-resize)
 
+        -   [Texture properties](#texture-properties)
         -   [Texture destructor](#texture-destructor)
 
         -   [Texture profiling](#texture-profiling)
@@ -1860,6 +1861,37 @@ Finally, textures can be resized with the `.resize()` method.  Note that this cl
 var texture = regl.texture(5)
 
 texture.resize(3, 7)
+```
+
+##### Texture properties
+
+The following properties contains information about the texture.
+
+| Property           | Description                      |
+| ------------------ | -------------------------------- |
+| `width`            | Width of texture                 |
+| `height`           | Height of texture                |
+| `format`           | Texture Format                   |
+| `type`             | Texture Type                     |
+| `mag`              | Texture magnification filter     |
+| `min`              | Texture minification filter      |
+| `wrapS`            | Texture wrap mode on S axis      |
+| `wrapT`            | Texture wrap mode on T axis      |
+
+They can be accessed after texture creation like this:
+
+```javascript
+var t = regl.texture({
+  shape: [16, 16],
+  min: 'nearest mipmap linear',
+  mag: 'linear',
+  wrapS: 'mirror',
+  wrapT: 'repeat',
+  format: 'rgb',
+  type: 'uint8'
+})
+
+console.log('tex info: ', t.width, t.height, t.min, t.mag, t.wrapS, t.wrapT, t.format, t.type)
 ```
 
 #### Texture destructor
