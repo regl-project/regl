@@ -2002,6 +2002,32 @@ var cubemap = regl.cube({ ... })
 cubemap.resize(16)
 ```
 
+#### Cube map properties
+
+The following properties contains information about the cube map.
+
+| Property           | Description                      |
+| ------------------ | -------------------------------- |
+| `width`            | Width of a single cube map face                 |
+| `height`           | Height of a single cube map face                |
+| `format`           | Texture Format                   |
+| `type`             | Texture Type                     |
+| `mag`              | Texture magnification filter     |
+| `min`              | Texture minification filter      |
+| `wrapS`            | Texture wrap mode on S axis      |
+| `wrapT`            | Texture wrap mode on T axis      |
+
+They can be accessed after cube map creation like this:
+
+```javascript
+var c = regl.cube({
+  width: 2,
+  height: 2
+})
+
+console.log('cube: ', c.width, c.height, c.format, c.type, c.mag, c.min, c.wrapS, c.wrapT)
+```
+
 #### Cube map profiling
 
 The following stats are tracked for each cube map in the `.stats` property:
@@ -2090,6 +2116,26 @@ var renderbuffer = regl.renderbuffer({
 })
 
 renderbuffer.resize(32, 32)
+```
+
+#### Renderbufffer properties
+
+The following properties contains information about the cube map.
+
+| Property           | Description                      |
+| ------------------ | -------------------------------- |
+| `width`            | Width of the renderbuffer                 |
+| `height`           | Height of the renderbuffer                 |
+| `format`           | Format of the renderbuffer                   |
+
+They can be accessed after renderbuffer creation like this:
+
+```javascript
+var r = regl.renderbuffer({shape: [1, 1],
+  format: 'rgb5 a1'
+})
+
+console.log('renderbuffer: ', r.width, r.height, r.format)
 ```
 
 #### Renderbuffers destructor
