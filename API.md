@@ -110,7 +110,7 @@
         -   [Renderbuffer update](#renderbuffer-update)
 
             -   [Renderbuffer resize](#renderbuffer-resize)
-        -   [Renderbuffer properties](#renderbuffer-properties)
+        -   [Renderbuffer properties](#renderbufffer-properties)
 
         -   [Renderbuffers destructor](#renderbuffers-destructor)
 
