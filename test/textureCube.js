@@ -6,7 +6,12 @@ tape('texture cube', function (t) {
   var gl = createContext(16, 16)
   var regl = createREGL({
     gl: gl,
-    optionalExtensions: ['ext_texture_filter_anisotropic']
+    optionalExtensions: [
+      'ext_texture_filter_anisotropic',
+      'oes_texture_float',
+      'oes_texture_half_float',
+      'ext_srgb'
+    ]
   })
 
   var renderCubeFace = regl({
@@ -106,6 +111,15 @@ tape('texture cube', function (t) {
 
     t.equals(texture.width, width, name + ' width')
     t.equals(texture.height, height, name + ' height')
+
+    t.equals(texture.format, props.format || 'rgba', name + ': format')
+    t.equals(texture.type, props.type || 'uint8', name + ': type')
+
+    t.equals(texture.mag, props.mag || 'nearest', name + ': mag filter')
+    t.equals(texture.min, props.min || 'nearest', name + ': min filter')
+
+    t.equals(texture.wrapS, props.wrapS || 'clamp', name + ': wrapS')
+    t.equals(texture.wrapT, props.wrapT || 'clamp', name + ': wrapT')
 
     if ('faces' in props) {
       comparePixels(texture, width, height, props.faces, props.tolerance || 0,
@@ -354,6 +368,64 @@ tape('texture cube', function (t) {
         0, 0, 0, 0, 0, 0, 0, 0
       ]
     ]
+  })
+
+  // in the below tests, we make sure that we can properly read the properties
+  // 'format', 'type', 'min', 'mag', 'wrapS, 'wrapT' from the created texture.
+
+  var testCases = [
+    {format: 'rgba', type: 'uint8'},
+    {format: 'rgba4', type: 'rgba4'},
+    {format: 'rgb565', type: 'rgb565'},
+    {format: 'rgb5 a1', type: 'rgb5 a1'},
+    {format: 'alpha', type: 'uint8'},
+    {format: 'luminance', type: 'uint8'},
+    {format: 'luminance alpha', type: 'uint8'}
+  ]
+
+  if (regl.hasExtension('oes_texture_float')) {
+    testCases.push({format: 'rgba', type: 'float32'})
+    testCases.push({format: 'rgb', type: 'float32'})
+    testCases.push({format: 'luminance', type: 'float32'})
+    testCases.push({format: 'luminance alpha', type: 'float32'})
+  }
+
+  if (regl.hasExtension('oes_texture_half_float')) {
+    testCases.push({format: 'rgba', type: 'float16'})
+    testCases.push({format: 'luminance', type: 'float16'})
+    testCases.push({format: 'luminance alpha', type: 'float16'})
+  }
+
+  if (regl.hasExtension('ext_srgb')) {
+    testCases.push({format: 'srgba', type: 'uint8'})
+    testCases.push({format: 'srgb', type: 'uint8'})
+  }
+  // TODO: also add compressed formats to 'testCases'
+
+  testCases.push({mag: 'nearest', min: 'nearest'})
+  testCases.push({mag: 'linear', min: 'linear'})
+  testCases.push({mag: 'linear', min: 'linear mipmap linear'})
+  testCases.push({mag: 'linear', min: 'nearest mipmap linear'})
+  testCases.push({mag: 'linear', min: 'linear mipmap nearest'})
+  testCases.push({mag: 'linear', min: 'nearest mipmap nearest'})
+
+  testCases.push({wrapS: 'clamp', wrapT: 'clamp'})
+
+  testCases.forEach(function (testCase, i) {
+    var name
+
+    if (testCase.format) { // case for 'format' and 'type'.
+      name = 'for format = ' + testCase.format + ' and type = ' + testCase.type
+    } else if (testCase.mag) { // case for 'mag' and 'min'
+      name = 'for mag = ' + testCase.mag + ' and min = ' + testCase.min
+    } else { // case for 'wrapS' and 'wrapT'
+      name = 'for wrapS = ' + testCase.wrapS + ' and wrapT = ' + testCase.wrapT
+    }
+
+    var arg = testCase
+    arg.width = 1
+    arg.height = 1
+    checkProperties(name, regl.cube(arg), testCase)
   })
 
   // TODO mipmaps
