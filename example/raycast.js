@@ -18,43 +18,37 @@ const planeElements = []
 var planePosition = []
 var planeNormal = []
 
-
-
-
-var cross = require('gl-vec3/cross');
-var dot = require('gl-vec3/dot');
-var sub = require('gl-vec3/subtract');
-
-var EPSILON = 0.000001;
-var edge1 = [0,0,0];
-var edge2 = [0,0,0];
-var tvec = [0,0,0];
-var pvec = [0,0,0];
-var qvec = [0,0,0];
-
+// A slightly modified version of this code:
+// https://github.com/substack/ray-triangle-intersection
+// It does intersection between ray and triangle.
 function intersectTriangle (out, pt, dir, tri) {
-  sub(edge1, tri[1], tri[0]);
-  sub(edge2, tri[2], tri[0]);
+  var EPSILON = 0.000001
+  var edge1 = [0, 0, 0]
+  var edge2 = [0, 0, 0]
+  var tvec = [0, 0, 0]
+  var pvec = [0, 0, 0]
+  var qvec = [0, 0, 0]
 
-  cross(pvec, dir, edge2);
-  var det = dot(edge1, pvec);
+  vec3.subtract(edge1, tri[1], tri[0])
+  vec3.subtract(edge2, tri[2], tri[0])
 
-  if (det < EPSILON) return null;
-  sub(tvec, pt, tri[0]);
-  var u = dot(tvec, pvec);
-  if (u < 0 || u > det) return null;
-  cross(qvec, tvec, edge1);
-  var v = dot(dir, qvec);
-  if (v < 0 || u + v > det) return null;
+  vec3.cross(pvec, dir, edge2)
+  var det = vec3.dot(edge1, pvec)
 
-  var t = dot(edge2, qvec) / det;
-  out[0] = pt[0] + t * dir[0];
-  out[1] = pt[1] + t * dir[1];
-  out[2] = pt[2] + t * dir[2];
-  return t;
+  if (det < EPSILON) return null
+  vec3.subtract(tvec, pt, tri[0])
+  var u = vec3.dot(tvec, pvec)
+  if (u < 0 || u > det) return null
+  vec3.cross(qvec, tvec, edge1)
+  var v = vec3.dot(dir, qvec)
+  if (v < 0 || u + v > det) return null
+
+  var t = vec3.dot(edge2, qvec) / det
+  out[0] = pt[0] + t * dir[0]
+  out[1] = pt[1] + t * dir[1]
+  out[2] = pt[2] + t * dir[2]
+  return t
 }
-
-
 
 planePosition.push([-0.5, 0.0, -0.5])
 planePosition.push([+0.5, 0.0, -0.5])
@@ -230,16 +224,13 @@ var boxMesh = new Mesh(boxElements, boxPosition, boxNormal)
 var planeMesh = new Mesh(planeElements, planePosition, planeNormal)
 
 var meshes = [
-  //
   {scale: 80.0, translate: [0.0, 0.0, 0.0], color: [0.5, 0.5, 0.5], mesh: planeMesh},
 
   {scale: 0.2, translate: [0.0, 0.0, 0.0], color: [0.6, 0.0, 0.0], mesh: bunnyMesh},
 
   {scale: 2.0, translate: [4.0, 0.0, 0.0], color: [0.6, 0.0, 0.0], mesh: boxMesh},
   {scale: 1.3, translate: [-3.0, 0.0, -4.0], color: [0.0, 0.6, 0.0], mesh: boxMesh},
-  {scale: 0.7, translate: [-3.0, 4.0, 4.0], color: [0.0, 0.0, 0.8], mesh: boxMesh},
-
-
+  {scale: 0.7, translate: [-3.0, 4.0, 4.0], color: [0.0, 0.0, 0.8], mesh: boxMesh}
 ]
 
 var selectedMesh = -1
@@ -261,17 +252,21 @@ mb.on('down', function () {
     var modelMatrix = createModelMatrix(m)
 
     for (var j = 0; j < m.mesh.elements.length; j++) {
+      if (m.mesh === planeMesh) {
+        continue // we don't allow clicking the plane mesh.
+      }
       var f = m.mesh.elements[j]
-      var tri = [
-        vec3.transformMat4([], m.mesh.position[f[0]], modelMatrix),
-        vec3.transformMat4([], m.mesh.position[f[1]], modelMatrix),
-        vec3.transformMat4([], m.mesh.position[f[2]], modelMatrix)
+      var tri =
+          [vec3.transformMat4([], m.mesh.position[f[0]], modelMatrix),
+           vec3.transformMat4([], m.mesh.position[f[1]], modelMatrix),
+           vec3.transformMat4([], m.mesh.position[f[2]], modelMatrix)
       ]
       var res = []
       var t = intersectTriangle(res, rayPoint, rayDir, tri)
       if (t !== null) {
-        if(t < minT) {
-          console.log('new mesh: ', t, i)
+        if (t < minT) {
+          // mesh was closer than any object thus far.
+          // for the time being, make it the selected object.
           minT = t
           selectedMesh = i
           break
@@ -280,7 +275,6 @@ mb.on('down', function () {
     }
   }
 })
-
 
 regl.frame(({tick}) => {
   regl.clear({
@@ -291,20 +285,19 @@ regl.frame(({tick}) => {
   globalScope(() => {
     for (var i = 0; i < meshes.length; i++) {
       var m = meshes[i]
-      if (i !== selectedMesh) {
-        drawNormal(() => {
-          m.mesh.draw(m)
-        })
-      } else {
+
+      // draw outline of selected object.
+      if (i === selectedMesh) {
         drawOutline(() => {
           m.isRound = (m.mesh !== boxMesh)
-
-          m.mesh.draw(m)
-        })
-        drawNormal(() => {
           m.mesh.draw(m)
         })
       }
+
+      // then draw object normally.
+      drawNormal(() => {
+        m.mesh.draw(m)
+      })
     }
   })
 })
