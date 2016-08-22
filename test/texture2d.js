@@ -7,7 +7,7 @@ tape('texture 2d', function (t) {
   var regl = createREGL(
     {
       gl: gl,
-      optionalExtensions: ['webgl_compressed_texture_s3tc', 'ext_texture_filter_anisotropic', 'oes_texture_float']
+      optionalExtensions: ['webgl_compressed_texture_s3tc', 'ext_texture_filter_anisotropic', 'oes_texture_float', 'oes_texture_half_float']
     })
 
   var renderTexture = regl({
@@ -670,16 +670,74 @@ tape('texture 2d', function (t) {
         type: 'float32'
       },
       'float type infer')
+
+    checkProperties(
+      regl.texture({type: 'float', shape: [1, 1, 1], format: 'luminance'}),
+      {width: 1, height: 1, format: 'luminance', type: 'float32'},
+      'luminance_float32')
+
+    checkProperties(
+      regl.texture({type: 'float', shape: [1, 1], format: 'alpha'}),
+      {width: 1, height: 1, format: 'alpha', type: 'float32'},
+      'alpha_float32')
+
+    checkProperties(
+      regl.texture({type: 'float', shape: [1, 1, 2]}),
+      {width: 1, height: 1, format: 'luminance alpha', type: 'float32'},
+      'luminance_alpha_float32')
+
+    checkProperties(
+      regl.texture({type: 'float', shape: [1, 1, 3]}),
+      {width: 1, height: 1, format: 'rgb', type: 'float32'},
+      'rgb_float32')
   } else {
     checkShouldThrow({
       width: 2,
       height: 2,
+
       data: new Float32Array(16)
     }, 'float missing')
   }
 
+  if (regl.hasExtension('oes_texture_half_float')) {
+    //
+    // TODO: we need to also test the pixels of half-float
+    //
+
+    checkProperties(
+      regl.texture({type: 'float16', shape: [1, 1, 1], format: 'luminance'}),
+      {width: 1, height: 1, format: 'luminance', type: 'float16'},
+      'luminance_float16')
+
+    checkProperties(
+      regl.texture({type: 'float16', shape: [1, 1], format: 'alpha'}),
+      {width: 1, height: 1, format: 'alpha', type: 'float16'},
+      'alpha_float16')
+
+    checkProperties(
+      regl.texture({type: 'float16', shape: [1, 1, 2]}),
+      {width: 1, height: 1, format: 'luminance alpha', type: 'float16'},
+      'luminance_alpha_float16')
+
+    checkProperties(
+      regl.texture({type: 'float16', shape: [1, 1, 3]}),
+      {width: 1, height: 1, format: 'rgb', type: 'float16'},
+      'rgb_float16')
+  } else {
+    checkShouldThrow({
+      width: 2,
+      height: 2,
+      type: 'float16',
+      data: [
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0
+      ]
+    }, 'half float missing')
+  }
+
   // TODO Test 'mipmapHint'
-  // TODO test half float
   function getZeros (n) {
     var a = []
     for (var i = 0; i < n; i++) {
