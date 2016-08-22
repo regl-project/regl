@@ -2,13 +2,16 @@ const canvas = document.body.appendChild(document.createElement('canvas'))
 const fit = require('canvas-fit')
 const regl = require('../regl')({canvas: canvas})
 const mat4 = require('gl-mat4')
+const vec3 = require('gl-vec3')
 window.addEventListener('resize', fit(canvas), false)
 const bunny = require('bunny')
 const normals = require('angle-normals')
 var mp = require('mouse-position')(canvas)
 var mb = require('mouse-pressed')(canvas)
+var intersect = require('ray-triangle-intersection')
 
-var viewMatrix = [1, -0, 0, 0, 0, 0.876966655254364, 0.48055124282836914, 0, -0, -0.48055124282836914, 0.876966655254364, 0, 0, 0, -11.622776985168457, 1]
+var viewMatrix = new Float32Array([1, -0, 0, 0, 0, 0.876966655254364, 0.48055124282836914, 0, -0, -0.48055124282836914, 0.876966655254364, 0, 0, 0, -11.622776985168457, 1])
+var projectionMatrix = new Float32Array(16)
 
 var lightDir = [0.39, 0.87, 0.29]
 
@@ -61,7 +64,6 @@ var boxNormal = [
   [0.0, -1.0, 0.0], [0.0, -1.0, 0.0], [0.0, -1.0, 0.0], [0.0, -1.0, 0.0]
 ]
 
-// This call encapsulates the common state between `drawNormal` and `drawDepth`
 const globalScope = regl({
   uniforms: {
     lightDir: lightDir
@@ -74,11 +76,11 @@ const drawNormal = regl({
   uniforms: {
     view: () => viewMatrix,
     projection: ({viewportWidth, viewportHeight}) =>
-      mat4.perspective([],
+      mat4.perspective(projectionMatrix,
                        Math.PI / 4,
                        viewportWidth / viewportHeight,
                        0.01,
-                       1000),
+                       1000)
   },
   frag: `
   precision mediump float;
@@ -125,16 +127,21 @@ function Mesh (elements, position, normal) {
   this.normal = normal
 }
 
+function createModelMatrix (props) {
+  var m = mat4.identity([])
+
+  mat4.translate(m, m, props.translate)
+
+  var s = props.scale
+  mat4.scale(m, m, [s, s, s])
+
+  return m
+}
+
 Mesh.prototype.draw = regl({
   uniforms: {
     model: (_, props, batchId) => {
-      var m = mat4.identity([])
-
-      mat4.translate(m, m, props.translate)
-
-      var s = props.scale
-      mat4.scale(m, m, [s, s, s])
-      return m
+      return createModelMatrix(props)
     },
     ambientLightAmount: 0.3,
     diffuseLightAmount: 0.7,
@@ -154,16 +161,46 @@ var bunnyMesh = new Mesh(bunny.cells, bunny.positions, normals(bunny.cells, bunn
 var boxMesh = new Mesh(boxElements, boxPosition, boxNormal)
 var planeMesh = new Mesh(planeElements, planePosition, planeNormal)
 
-boxMeshes = [
-  /*
-  {scale: 4.2, translate: [10.0, 9.0, 20.0], color: [0.6, 0.0, 0.0]},
-  {scale: 4.2, translate: [-10.0, 9.0, 20.0], color: [0.0, 0.0, 0.5]},
-  */
-  {scale: 1.0, translate: [0.0, 0.0, 0.0], color: [0.6, 0.0, 0.0]},
+var meshes = [
+  {scale: 2.0, translate: [4.0, 0.0, 0.0], color: [0.6, 0.0, 0.0], mesh: boxMesh},
+  {scale: 1.3, translate: [-3.0, 0.0, -4.0], color: [0.0, 0.6, 0.0], mesh: boxMesh},
+  {scale: 0.7, translate: [-3.0, -2.0, 4.0], color: [0.0, 0.0, 0.8], mesh: boxMesh}
 ]
 
 mb.on('down', function () {
-  console.log('click')
+  var vp = mat4.multiply([], projectionMatrix, viewMatrix)
+  var invVp = mat4.invert([], vp)
+
+  var rayPoint = vec3.transformMat4([], [2.0 * mp.x / canvas.width - 1.0, -2.0 * mp.y / canvas.height + 1.0, 0.0], invVp)
+
+  var rayOrigin = vec3.transformMat4([], [0, 0, 0], mat4.invert([], viewMatrix))
+
+  var rayDir = vec3.normalize([], vec3.subtract([], rayPoint, rayOrigin))
+  /*
+    console.log('ray orig', rayOrigin)
+    console.log('ray dir', rayDir)
+  */
+  for (var i = 0; i < meshes.length; i++) {
+    var m = meshes[i]
+
+    var modelMatrix = createModelMatrix(m)
+
+    for (var j = 0; j < m.mesh.elements.length; j++) {
+      var f = m.mesh.elements[j]
+      var tri = [
+        vec3.transformMat4([], m.mesh.position[f[0]], modelMatrix),
+        vec3.transformMat4([], m.mesh.position[f[1]], modelMatrix),
+        vec3.transformMat4([], m.mesh.position[f[2]], modelMatrix)
+      ]
+      //      console.log('tri: ', tri)
+
+      var res = intersect([], rayPoint, rayDir, tri)
+      if (res !== null) {
+        console.log('INTERSECT!')
+        return
+      }
+    }
+  }
 })
 
 regl.frame(({tick}) => {
@@ -172,18 +209,15 @@ regl.frame(({tick}) => {
     depth: 1
   })
 
-  if(mb.left) {
-  //  console.log('click')
-  }
-
   var drawMeshes = () => {
-    boxMesh.draw(boxMeshes)
+    for (var i = 0; i < meshes.length; i++) {
+      var m = meshes[i]
 
-    planeMesh.draw({scale: 130.0, translate: [0.0, 0.0, 0.0], color: [1.0, 1.0, 1.0]})
+      m.mesh.draw({scale: m.scale, translate: m.translate, color: m.color})
+    }
   }
 
   globalScope(() => {
-
     drawNormal(() => {
       drawMeshes()
     })

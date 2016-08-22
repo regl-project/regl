@@ -45,6 +45,7 @@
     "parse-dds": "^1.2.1",
     "present": "^1.0.0",
     "primitive-sphere": "^2.0.0",
+    "ray-triangle-intersection": "^1.0.3",
     "regl-stats-widget": "0.0.1",
     "remark": "^5.0.1",
     "remark-cli": "^1.0.0",
