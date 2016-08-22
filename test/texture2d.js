@@ -996,6 +996,98 @@ tape('texture 2d', function (t) {
     // TODO check video elements
   }
 
+  function checkPropertiesMagWrap (texture, props, name) {
+    t.equals(texture.mag, props.mag, name + ' mag')
+    t.equals(texture.min, props.min, name + ' min')
+    t.equals(texture.wrapS, props.wrapS, name + ' wrapS')
+    t.equals(texture.wrapT, props.wrapT, name + ' wrapT')
+  }
+
+  checkPropertiesMagWrap(
+    regl.texture(),
+    {
+      wrapS: 'clamp',
+      wrapT: 'clamp',
+      min: 'nearest',
+      mag: 'nearest'
+    },
+    'magwrap empty')
+
+  checkPropertiesMagWrap(
+    regl.texture({
+      min: 'linear',
+      mag: 'linear',
+      wrapS: 'repeat',
+      wrapT: 'clamp'
+    }),
+    {
+      wrapS: 'repeat',
+      wrapT: 'clamp',
+      min: 'linear',
+      mag: 'linear'
+    },
+    'magwrap1')
+
+  checkPropertiesMagWrap(
+    regl.texture({
+      min: 'linear mipmap linear',
+      mag: 'nearest',
+      wrapS: 'clamp',
+      wrapT: 'repeat'
+    }),
+    {
+      wrapS: 'clamp',
+      wrapT: 'repeat',
+      min: 'linear mipmap linear',
+      mag: 'nearest'
+    },
+    'magwrap2')
+
+  checkPropertiesMagWrap(
+    regl.texture({
+      min: 'nearest mipmap linear',
+      mag: 'nearest',
+      wrapS: 'mirror',
+      wrapT: 'repeat'
+    }),
+    {
+      wrapS: 'mirror',
+      wrapT: 'repeat',
+      min: 'nearest mipmap linear',
+      mag: 'nearest'
+    },
+    'magwrap3')
+
+  checkPropertiesMagWrap(
+    regl.texture({
+      min: 'linear mipmap nearest',
+      mag: 'nearest',
+      wrapS: 'repeat',
+      wrapT: 'mirror'
+    }),
+    {
+      wrapS: 'repeat',
+      wrapT: 'mirror',
+      min: 'linear mipmap nearest',
+      mag: 'nearest'
+    },
+    'magwrap4')
+
+  checkPropertiesMagWrap(
+    regl.texture({
+      min: 'nearest mipmap nearest',
+      mag: 'nearest',
+      wrapS: 'mirror',
+      wrapT: 'mirror'
+    }),
+    {
+      wrapS: 'mirror',
+      wrapT: 'mirror',
+      min: 'nearest mipmap nearest',
+      mag: 'nearest'
+    },
+    'magwrap4')
+
   if (typeof document !== 'undefined') {
     runDOMTests()
   } else {
