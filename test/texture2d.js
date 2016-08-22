@@ -7,7 +7,7 @@ tape('texture 2d', function (t) {
   var regl = createREGL(
     {
       gl: gl,
-      optionalExtensions: ['webgl_compressed_texture_s3tc', 'ext_texture_filter_anisotropic']
+      optionalExtensions: ['webgl_compressed_texture_s3tc', 'ext_texture_filter_anisotropic', 'oes_texture_float', 'oes_texture_half_float']
     })
 
   var renderTexture = regl({
@@ -178,6 +178,9 @@ tape('texture 2d', function (t) {
     t.equals(texture.width, width, name + ' width')
     t.equals(texture.height, height, name + ' height')
 
+    t.equals(texture.format, props.format, name + ' format')
+    t.equals(texture.type, props.type, name + ' type')
+
     if ('pixels' in props) {
       comparePixels(texture, width, height, props.pixels, props.tolerance || 0, name + ' pixels')
     } else if ('mipmap' in props) {
@@ -219,7 +222,9 @@ tape('texture 2d', function (t) {
       magFilter: gl.NEAREST,
       pixels: [
         0, 0, 0, 0
-      ]
+      ],
+      format: 'rgba',
+      type: 'uint8'
     },
     'empty')
 
@@ -235,7 +240,9 @@ tape('texture 2d', function (t) {
       magFilter: gl.NEAREST,
       pixels: [
         0, 0, 0, 0
-      ]
+      ],
+      format: 'rgba',
+      type: 'uint8'
     },
     'empty object')
 
@@ -258,7 +265,9 @@ tape('texture 2d', function (t) {
         0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0
-      ]
+      ],
+      format: 'rgba',
+      type: 'uint8'
     },
     '2x3')
 
@@ -275,7 +284,9 @@ tape('texture 2d', function (t) {
       pixels: [
         0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0
-      ]
+      ],
+      format: 'rgba',
+      type: 'uint8'
     },
     '2x2')
 
@@ -297,7 +308,9 @@ tape('texture 2d', function (t) {
         1, 1, 1, 255, 2, 2, 2, 255, 3, 3, 3, 255,
         4, 4, 4, 255, 5, 5, 5, 255, 6, 6, 6, 255,
         7, 7, 7, 255, 8, 8, 8, 255, 9, 9, 9, 255
-      ]
+      ],
+      format: 'luminance',
+      type: 'uint8'
     }, '2d nested array')
 
   checkProperties(
@@ -317,7 +330,9 @@ tape('texture 2d', function (t) {
       pixels: new Uint8Array([
         1, 1, 1, 2, 5, 5, 5, 6,
         3, 3, 3, 4, 7, 7, 7, 8
-      ])
+      ]),
+      format: 'luminance alpha',
+      type: 'uint8'
     },
     'ndarray-like input')
 
@@ -351,7 +366,9 @@ tape('texture 2d', function (t) {
           2, 2, 2, 255, 3, 3, 3, 255
         ]),
         new Uint8Array([0, 0, 0, 255])
-      ]
+      ],
+      format: 'luminance',
+      type: 'uint8'
     },
     'simple mipmaps')
 
@@ -388,7 +405,6 @@ tape('texture 2d', function (t) {
     {
       width: 4,
       height: 4,
-      format: gl.RGB,
       wrapS: gl.CLAMP_TO_EDGE,
       wrapT: gl.CLAMP_TO_EDGE,
       minFilter: gl.LINEAR_MIPMAP_LINEAR,
@@ -398,7 +414,9 @@ tape('texture 2d', function (t) {
         0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255,
         0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255,
         0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255
-      ])
+      ]),
+      format: 'rgb',
+      type: 'uint8'
     },
     'width&height')
 
@@ -415,7 +433,9 @@ tape('texture 2d', function (t) {
       pixels: [
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-      ]
+      ],
+      format: 'luminance alpha',
+      type: 'uint8'
     },
     'shape & wrap')
 
@@ -447,7 +467,9 @@ tape('texture 2d', function (t) {
       pixels: [
         0, 0, 0, 255, 0, 0, 255, 0,
         0, 255, 0, 0, 255, 0, 0, 0
-      ]
+      ],
+      format: 'rgba4',
+      type: 'rgba4'
     },
     'rgba4')
 
@@ -463,7 +485,9 @@ tape('texture 2d', function (t) {
       pixels: new Uint8Array([
         0, 0, 0, 255, 255, 0, 0, 0,
         0, 255, 0, 0, 0, 0, 255, 0
-      ])
+      ]),
+      format: 'rgb5 a1',
+      type: 'rgb5 a1'
     },
     'rgb5 a1')
 
@@ -480,7 +504,9 @@ tape('texture 2d', function (t) {
         height: 1,
         pixels: new Uint8Array([
           255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255
-        ])
+        ]),
+        format: 'rgb565',
+        type: 'rgb565'
       },
       'rgb565')
   }
@@ -499,7 +525,9 @@ tape('texture 2d', function (t) {
       data: new Uint8Array([
         3, 3, 3, 255, 4, 4, 4, 255,
         1, 1, 1, 255, 2, 2, 2, 255
-      ])
+      ]),
+      format: 'luminance',
+      type: 'uint8'
     },
     'unpack parameters simple')
 
@@ -544,7 +572,9 @@ tape('texture 2d', function (t) {
           3, 3, 3, 255, 4, 4, 4, 255
         ]),
         new Uint8Array([30, 30, 30, 255])
-      ]
+      ],
+      format: 'luminance',
+      type: 'uint8'
     },
     'unpack parameters mipmap')
 
@@ -567,7 +597,9 @@ tape('texture 2d', function (t) {
         255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255,
         255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255,
         255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255
-      ]
+      ],
+      format: 'rgba',
+      type: 'uint8'
     },
     'copy tex image2d')
 
@@ -588,7 +620,9 @@ tape('texture 2d', function (t) {
         0, 255, 0, 255,
         0, 255, 0, 255,
         0, 255, 0, 255
-      ]
+      ],
+      format: 'rgba',
+      type: 'uint8'
     },
     'copy tex image2d with offset')
 
@@ -604,7 +638,7 @@ tape('texture 2d', function (t) {
     height: 10
   }, 'copy out of bounds (shape)')
 
-  if (regl.limits.extensions.indexOf('oes_texture_float') >= 0) {
+  if (regl.hasExtension('oes_texture_float')) {
     checkProperties(
       regl.texture({
         width: 2,
@@ -616,7 +650,9 @@ tape('texture 2d', function (t) {
         width: 2,
         height: 2,
         pixels: new Float32Array(
-          [1, 2, 3, 4, -5, -6, -7, -8, 1000, 10000, 100000, 1000000, 0, 0.25, -0.25, 0.5])
+          [1, 2, 3, 4, -5, -6, -7, -8, 1000, 10000, 100000, 1000000, 0, 0.25, -0.25, 0.5]),
+        format: 'rgba',
+        type: 'float32'
       },
       'float')
 
@@ -629,19 +665,79 @@ tape('texture 2d', function (t) {
       {
         width: 1,
         height: 1,
-        pixels: new Float32Array([1, 2, 3, 4])
+        pixels: new Float32Array([1, 2, 3, 4]),
+        format: 'rgba',
+        type: 'float32'
       },
       'float type infer')
+
+    checkProperties(
+      regl.texture({type: 'float', shape: [1, 1, 1], format: 'luminance'}),
+      {width: 1, height: 1, format: 'luminance', type: 'float32'},
+      'luminance_float32')
+
+    checkProperties(
+      regl.texture({type: 'float', shape: [1, 1], format: 'alpha'}),
+      {width: 1, height: 1, format: 'alpha', type: 'float32'},
+      'alpha_float32')
+
+    checkProperties(
+      regl.texture({type: 'float', shape: [1, 1, 2]}),
+      {width: 1, height: 1, format: 'luminance alpha', type: 'float32'},
+      'luminance_alpha_float32')
+
+    checkProperties(
+      regl.texture({type: 'float', shape: [1, 1, 3]}),
+      {width: 1, height: 1, format: 'rgb', type: 'float32'},
+      'rgb_float32')
   } else {
     checkShouldThrow({
       width: 2,
       height: 2,
+
       data: new Float32Array(16)
     }, 'float missing')
   }
 
+  if (regl.hasExtension('oes_texture_half_float')) {
+    //
+    // TODO: we need to also test the pixels of half-float
+    //
+
+    checkProperties(
+      regl.texture({type: 'float16', shape: [1, 1, 1], format: 'luminance'}),
+      {width: 1, height: 1, format: 'luminance', type: 'float16'},
+      'luminance_float16')
+
+    checkProperties(
+      regl.texture({type: 'float16', shape: [1, 1], format: 'alpha'}),
+      {width: 1, height: 1, format: 'alpha', type: 'float16'},
+      'alpha_float16')
+
+    checkProperties(
+      regl.texture({type: 'float16', shape: [1, 1, 2]}),
+      {width: 1, height: 1, format: 'luminance alpha', type: 'float16'},
+      'luminance_alpha_float16')
+
+    checkProperties(
+      regl.texture({type: 'float16', shape: [1, 1, 3]}),
+      {width: 1, height: 1, format: 'rgb', type: 'float16'},
+      'rgb_float16')
+  } else {
+    checkShouldThrow({
+      width: 2,
+      height: 2,
+      type: 'float16',
+      data: [
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0
+      ]
+    }, 'half float missing')
+  }
+
   // TODO Test 'mipmapHint'
-  // TODO test half float
   function getZeros (n) {
     var a = []
     for (var i = 0; i < n; i++) {
@@ -695,7 +791,9 @@ tape('texture 2d', function (t) {
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    ])
+    ]),
+    format: 'rgba',
+    type: 'uint8'
   }, 'subimage simple')
 
   regl.clear({
@@ -716,7 +814,9 @@ tape('texture 2d', function (t) {
       0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 255, 255, 255, 0, 255, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 255, 255, 255, 0, 255, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    ])
+    ]),
+    format: 'rgba',
+    type: 'uint8'
   }, 'copyTexSubImage')
 
   // Test resize
@@ -735,7 +835,9 @@ tape('texture 2d', function (t) {
     pixels: new Uint8Array([
       255, 0, 255, 255, 255, 0, 255, 255,
       255, 0, 255, 255, 255, 0, 255, 255
-    ])
+    ]),
+    format: 'rgba',
+    type: 'uint8'
   }, 'simple before resize')
 
   initTexture.resize(3, 3)
@@ -747,7 +849,9 @@ tape('texture 2d', function (t) {
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    ])
+    ]),
+    format: 'rgba',
+    type: 'uint8'
   }, 'simple after resize')
 
   var mipTexture = regl.texture({
@@ -773,7 +877,9 @@ tape('texture 2d', function (t) {
       255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
       255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
       255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
-    ])
+    ]),
+    format: 'rgba',
+    type: 'uint8'
   }, 'mipmap before resize')
 
   mipTexture.resize(2)
@@ -786,7 +892,9 @@ tape('texture 2d', function (t) {
     pixels: new Uint8Array([
       0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0
-    ])
+    ]),
+    format: 'rgba',
+    type: 'uint8'
   }, 'mipmap after resize')
 
   function runDOMTests () {
@@ -812,7 +920,9 @@ tape('texture 2d', function (t) {
           255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 255, 0, 0, 0, 255,
           0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255,
           0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255
-        ]
+        ],
+        format: 'rgba',
+        type: 'uint8'
       },
       'canvas dom element')
 
@@ -828,7 +938,9 @@ tape('texture 2d', function (t) {
           255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 255, 0, 0, 0, 255,
           0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255,
           0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255
-        ]
+        ],
+        format: 'rgba',
+        type: 'uint8'
       },
       'context 2d')
 
@@ -848,7 +960,9 @@ tape('texture 2d', function (t) {
             255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 255, 0, 0, 0, 255,
             0, 0, 0, 255, 0, 0, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255,
             0, 0, 0, 255, 0, 0, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255
-          ]
+          ],
+          format: 'rgba',
+          type: 'uint8'
         },
         'DOM image element')
 
@@ -865,7 +979,9 @@ tape('texture 2d', function (t) {
           0, 0, 0, 255, 0, 0, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 0, 0, 0,
           0, 0, 0, 255, 0, 0, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 0, 0, 0,
           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-        ]
+        ],
+        format: 'rgba',
+        type: 'uint8'
       }, 'DOM image element - subimage')
 
       endTest()
@@ -879,6 +995,98 @@ tape('texture 2d', function (t) {
 
     // TODO check video elements
   }
+
+  function checkPropertiesMagWrap (texture, props, name) {
+    t.equals(texture.mag, props.mag, name + ' mag')
+    t.equals(texture.min, props.min, name + ' min')
+    t.equals(texture.wrapS, props.wrapS, name + ' wrapS')
+    t.equals(texture.wrapT, props.wrapT, name + ' wrapT')
+  }
+
+  checkPropertiesMagWrap(
+    regl.texture(),
+    {
+      wrapS: 'clamp',
+      wrapT: 'clamp',
+      min: 'nearest',
+      mag: 'nearest'
+    },
+    'magwrap empty')
+
+  checkPropertiesMagWrap(
+    regl.texture({
+      min: 'linear',
+      mag: 'linear',
+      wrapS: 'repeat',
+      wrapT: 'clamp'
+    }),
+    {
+      wrapS: 'repeat',
+      wrapT: 'clamp',
+      min: 'linear',
+      mag: 'linear'
+    },
+    'magwrap1')
+
+  checkPropertiesMagWrap(
+    regl.texture({
+      min: 'linear mipmap linear',
+      mag: 'nearest',
+      wrapS: 'clamp',
+      wrapT: 'repeat'
+    }),
+    {
+      wrapS: 'clamp',
+      wrapT: 'repeat',
+      min: 'linear mipmap linear',
+      mag: 'nearest'
+    },
+    'magwrap2')
+
+  checkPropertiesMagWrap(
+    regl.texture({
+      min: 'nearest mipmap linear',
+      mag: 'nearest',
+      wrapS: 'mirror',
+      wrapT: 'repeat'
+    }),
+    {
+      wrapS: 'mirror',
+      wrapT: 'repeat',
+      min: 'nearest mipmap linear',
+      mag: 'nearest'
+    },
+    'magwrap3')
+
+  checkPropertiesMagWrap(
+    regl.texture({
+      min: 'linear mipmap nearest',
+      mag: 'nearest',
+      wrapS: 'repeat',
+      wrapT: 'mirror'
+    }),
+    {
+      wrapS: 'repeat',
+      wrapT: 'mirror',
+      min: 'linear mipmap nearest',
+      mag: 'nearest'
+    },
+    'magwrap4')
+
+  checkPropertiesMagWrap(
+    regl.texture({
+      min: 'nearest mipmap nearest',
+      mag: 'nearest',
+      wrapS: 'mirror',
+      wrapT: 'mirror'
+    }),
+    {
+      wrapS: 'mirror',
+      wrapT: 'mirror',
+      min: 'nearest mipmap nearest',
+      mag: 'nearest'
+    },
+    'magwrap4')
 
   if (typeof document !== 'undefined') {
     runDOMTests()
