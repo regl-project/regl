@@ -1663,6 +1663,7 @@ A data source from an image can be one of the following types:
 | `premultiplyAlpha` | Premultiply alpha when unpacking                                                                                                                                 | `false`     |
 | `colorSpace`       | Sets colorspace conversion                                                                                                                                       | `'none'`    |
 | `data`             | Image data for the texture                                                                                                                                       | `null`      |
+| `channels`             | Number of channels for the texture format                                                                                                                                       | `null`      |
 
 -   `mipmap`. If `boolean`, then it sets whether or not we should regenerate the mipmaps. If a `string`, it allows you to specify a hint to the mipmap generator. It can be one of the hints below
 
@@ -1690,6 +1691,17 @@ regl.texture({
 ```
 
 -   `shape` can be used as an array shortcut for `[width, height, channels]` of image
+-   `channels` can be used to set the number of color channels of the texture. Examples:
+
+```
+var t1 = regl.texture({width: 1, height: 1, channels: 3}) // 'format' will be 'rgb'
+var t2 = regl.texture({shape: [2, 2, 2]}) // 'format' will be 'luminance alpha'
+var t3 = regl.texture({shape: [2, 2, 4]}) // 'format' will be 'rgba'
+```
+
+So it can be used as an alternative to `format`.
+
+
 -   `radius` can be specified for square images and sets both `width` and `height`
 -   `data` can take one of the following values,
 -   If an image element is specified and not yet loaded, then regl will upload a temporary image and hook a callback on the image
