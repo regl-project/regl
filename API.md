@@ -110,7 +110,7 @@
         -   [Renderbuffer update](#renderbuffer-update)
 
             -   [Renderbuffer resize](#renderbuffer-resize)
-        -   [Renderbuffer properties](#renderbufffer-properties)
+        -   [Renderbuffer properties](#renderbuffer-properties)
 
         -   [Renderbuffers destructor](#renderbuffers-destructor)
 
@@ -2120,9 +2120,9 @@ var renderbuffer = regl.renderbuffer({
 renderbuffer.resize(32, 32)
 ```
 
-#### Renderbufffer properties
+#### Renderbuffer properties
 
-The following properties contains information about the cube map.
+The following properties contains information about the renderbuffer.
 
 | Property           | Description                      |
 | ------------------ | -------------------------------- |
