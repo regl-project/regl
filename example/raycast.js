@@ -98,7 +98,10 @@ var boxNormal = [
 const globalScope = regl({
   uniforms: {
     lightDir: lightDir,
-    view: () => viewMatrix,
+    view: (context, {eye}) => mat4.lookAt(viewMatrix,
+                            eye,
+                            [0, 0, 0],
+                            [0, 1, 0]),
     projection: ({viewportWidth, viewportHeight}) =>
       mat4.perspective(projectionMatrix,
                        Math.PI / 4,
@@ -276,13 +279,27 @@ mb.on('down', function () {
   }
 })
 
-regl.frame(({tick}) => {
+var prevMpX = mp.x
+var theta = 0
+
+regl.frame(({tick, viewportWidth}) => {
   regl.clear({
     color: [0, 0, 0, 255],
     depth: 1
   })
 
-  globalScope(() => {
+  if (mb.left) {
+    theta += 2.0 * Math.PI * ((mp.x - prevMpX) / viewportWidth)
+  }
+
+  prevMpX = mp.x
+
+  globalScope({eye: [
+    13 * Math.sin(theta),
+    8,
+    13 * Math.cos(theta)
+
+  ]}, () => {
     for (var i = 0; i < meshes.length; i++) {
       var m = meshes[i]
 
