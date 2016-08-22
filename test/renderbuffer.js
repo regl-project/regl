@@ -181,6 +181,33 @@ tape('renderbuffer parsing', function (t) {
     })
   }
 
+  function checkFormat (args) {
+    args.shape = [1, 1]
+    var r = regl.renderbuffer(args)
+    var expectedFormat = args.format
+    t.equals(r.format, expectedFormat, ' format str for format ' + expectedFormat)
+  }
+
+  checkFormat({format: 'rgba4'})
+  checkFormat({format: 'rgb565'})
+  checkFormat({format: 'rgb5 a1'})
+  checkFormat({format: 'depth'})
+  checkFormat({format: 'stencil'})
+  checkFormat({format: 'depth stencil'})
+
+  if (regl.hasExtension('ext_srgb')) {
+    checkFormat({format: 'srgba'})
+  }
+
+  if (regl.hasExtension('webgl_color_buffer_float')) {
+    checkFormat({format: 'rgba32f'})
+  }
+
+  if (regl.hasExtension('ext_color_buffer_half_float')) {
+    checkFormat({format: 'rgba16f'})
+    checkFormat({format: 'rgb16f'})
+  }
+
   regl.destroy()
   t.equals(gl.getError(), 0, 'error ok')
   createContext.destroy(gl)
