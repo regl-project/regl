@@ -400,11 +400,27 @@ tape('texture cube', function (t) {
     testCases.push({format: 'srgba', type: 'uint8'})
     testCases.push({format: 'srgb', type: 'uint8'})
   }
-
   // TODO: also add compressed formats to 'testCases'
 
+  testCases.push({mag: 'nearest', min: 'nearest'})
+  testCases.push({mag: 'linear', min: 'linear'})
+  testCases.push({mag: 'linear', min: 'linear mipmap linear'})
+  testCases.push({mag: 'linear', min: 'nearest mipmap linear'})
+  testCases.push({mag: 'linear', min: 'linear mipmap nearest'})
+  testCases.push({mag: 'linear', min: 'nearest mipmap nearest'})
+
+  testCases.push({wrapS: 'clamp', wrapT: 'clamp'})
+
   testCases.forEach(function (testCase, i) {
-    var name = 'for format = ' + testCase.format + ' and type = ' + testCase.type
+    var name
+
+    if (testCase.format) { // case for 'format' and 'type'.
+      name = 'for format = ' + testCase.format + ' and type = ' + testCase.type
+    } else if (testCase.mag) { // case for 'mag' and 'min'
+      name = 'for mag = ' + testCase.mag + ' and min = ' + testCase.min
+    } else { // case for 'wrapS' and 'wrapT'
+      name = 'for wrapS = ' + testCase.wrapS + ' and wrapT = ' + testCase.wrapT
+    }
 
     var arg = testCase
     arg.width = 1
