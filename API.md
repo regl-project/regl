@@ -97,6 +97,7 @@
             -   [Cube map subimage](#cube-map-subimage)
 
         -   [Cube map resize](#cube-map-resize)
+        -   [Cube map properties](#cube-map-properties)
 
         -   [Cube map profiling](#cube-map-profiling)
 
@@ -109,6 +110,7 @@
         -   [Renderbuffer update](#renderbuffer-update)
 
             -   [Renderbuffer resize](#renderbuffer-resize)
+        -   [Renderbuffer properties](#renderbuffer-properties)
 
         -   [Renderbuffers destructor](#renderbuffers-destructor)
 
