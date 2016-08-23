@@ -186,11 +186,11 @@ const drawOutline = regl({
   uniform bool isRound;
 
   void main() {
-    float s = 0.1;
+    float s = 0.19;
     vec4 worldSpacePosition = model * vec4(
       // for objects with lots of jagged edges, the ususal approach doesn't work.
       // We use an alternative way of enlarging the object for such objects.
-      isRound ? (position + normal * s) : (position * (0.5*s+1.0)),
+      isRound ? (position + normal * s) : (position * (0.3*s+1.0)),
       1);
     gl_Position = projection * view * worldSpacePosition;
   }`,
@@ -247,7 +247,7 @@ var meshes = [
 
   {scale: 0.2, translate: [0.0, 0.0, 0.0], color: [0.6, 0.0, 0.0], mesh: bunnyMesh},
   {scale: 0.3, translate: [-6.0, 0.0, -3.0], color: [0.6, 0.6, 0.0], mesh: bunnyMesh},
-  {scale: 0.12, translate: [6.0, 0.0, 3.0], color: [0.2, 0.5, 0.6], mesh: bunnyMesh},
+  {scale: 0.16, translate: [3.0, 0.0, 2.0], color: [0.2, 0.5, 0.6], mesh: bunnyMesh},
 
   {scale: 2.0, translate: [4.0, 1.0, 0.0], color: [0.6, 0.0, 0.0], mesh: boxMesh},
   {scale: 1.3, translate: [-3.0, 0.6, -4.0], color: [0.0, 0.6, 0.0], mesh: boxMesh},
@@ -303,23 +303,32 @@ mb.on('down', function () {
   }
 })
 
-regl.frame(({tick, viewportWidth}) => {
+regl.frame(({tick}) => {
   regl.clear({
     color: [0, 0, 0, 255],
     depth: 1
   })
 
   globalScope(() => {
+    var m
     for (var i = 0; i < meshes.length; i++) {
-      var m = meshes[i]
-
-      // draw outline of selected object.
-      if (i === iSelectedMesh) {
-        drawOutline(() => {
-          m.isRound = (m.mesh !== boxMesh)
+      m = meshes[i]
+      if (i !== iSelectedMesh) {
+        // then draw object normally.
+        drawNormal(() => {
           m.mesh.draw(m)
         })
       }
+    }
+
+    // we need to render the selected object last.
+    if(iSelectedMesh !== -1) {
+      m = meshes[iSelectedMesh]
+
+      drawOutline(() => {
+        m.isRound = (m.mesh !== boxMesh)
+        m.mesh.draw(m)
+      })
 
       // then draw object normally.
       drawNormal(() => {
