@@ -264,7 +264,7 @@ mb.on('down', function () {
   var invVp = mat4.invert([], vp)
 
   // get a single point on the camera ray.
-  var rayPoint = vec3.transformMat4([], [2.0 * mp.x / canvas.width - 1.0, -2.0 * mp.y / canvas.height + 1.0, 0.0], invVp)
+  var rayPoint = vec3.transformMat4([], [2.0 * mp[0] / canvas.width - 1.0, -2.0 * mp[1] / canvas.height + 1.0, 0.0], invVp)
 
   // get the position of the camera.
   var rayOrigin = vec3.transformMat4([], [0, 0, 0], mat4.invert([], viewMatrix))
