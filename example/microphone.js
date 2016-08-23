@@ -1,7 +1,7 @@
 /*
   tags: audio, basic
 
-  <p>No description</p>
+  <p>This example shows how to create a simple audio visualization, using your microphone as input.</p>
 
  */
 /* global AudioContext */

@@ -1,6 +1,7 @@
 /*
   tags: audio, advanced
-  <p>No description</p>
+
+  <p>This example shows how to implement an audio visualization, using an mp3-file as input.</p>
 
 */
 /* global AudioContext */
