@@ -1,4 +1,6 @@
 /*
+  tags: fbo, basic
+
   <p>This example implements the game of life in regl.</p>
 
  */

@@ -1,4 +1,6 @@
 /*
+  tags: physics, advanced
+
 <p>In this example, we use the mass-spring model described by Thomas Jakobsen to implement
 a simple cloth simulation. It is also demonstrated how we can manage a dynamic mesh in regl. <p>
 

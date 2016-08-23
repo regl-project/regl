@@ -1,4 +1,6 @@
 /*
+  tags: advanced
+
   <p>This example shows how you can render reflections with an environment map.</p>
 
  */
