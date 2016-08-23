@@ -28,6 +28,7 @@ h2 {
 
 h1 {
   font-size: 3.0em;
+  margin-top: 70px;
 }
 
 p a {
@@ -139,7 +140,7 @@ function generateGallery (files) {
 
   html += '<div id="container">'
 
-  html += '<h1>Example Gallery</h1>'
+  html += '<h1>regl Example Gallery</h1>'
 
   html += '<h2>Filter Tags</h2>'
 
