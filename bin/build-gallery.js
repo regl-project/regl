@@ -76,6 +76,7 @@ p a:hover {
 #exList > li p {
   padding-bottom: 16px;
   max-width: 390px;
+  line-height: 1.2em;
 }
 
 #exList > li {
@@ -89,7 +90,7 @@ p a:hover {
 #tagList > li {
   padding: 0 10px;
 
-  font-size: 1.3em;
+  font-size: 1.25em;
 
   display: inline;
   border-right: 1px solid #333;
@@ -100,6 +101,24 @@ p a:hover {
   margin:0;
   padding: 0;
   text-align: center;
+}
+
+.unselected > a {
+  text-decoration: none;
+  color: #555;
+}
+
+.unselected > a:hover {
+  color: #600;
+}
+
+.selected > a {
+  text-decoration: none;
+  color: #C44;
+}
+
+.selected > a:hover {
+  color: #C44;
 }
 `
 
@@ -122,23 +141,20 @@ function generateGallery (files) {
 
   html += '<h1>Example Gallery</h1>'
 
-  html += '<h2>Example Filter Tags</h2>'
+  html += '<h2>Filter Tags</h2>'
 
-  var ulStr = ''
 
-  function getLiId (i) {
-    return 'liId' + i
-  }
 
-  ulStr += '<ul id="exList">'
+  var exListStr = '' // <ul> containing the example list.
+  exListStr += '<ul id="exList">'
 
   // this set contains all the tags used in the gallery.
   var allTags = {}
   allTags['all'] = true // we have a tag 'all', which means we show all the examples.
 
-  // get the parsed files:
+  // parse all the necessary information from the example files:
   var pfiles = files.map(function (file, i) {
-    var id = getLiId(i)
+    var id = 'liId' + i
     var li = `\n<li id="${id}">` // begin list item
 
     var link = file.replace('example', 'gallery') + '.html'
@@ -148,6 +164,9 @@ function generateGallery (files) {
         id +
       '?rel=0" frameborder="0" allowfullscreen" frameborder="0" allowfullscreen></iframe>'
     }
+
+    //
+    // Inject link to image or video below:
 
     li += '<a href="' + link + '">'
     var img = imgName(file)
@@ -166,7 +185,15 @@ function generateGallery (files) {
     }
     li += '</a>'
 
+    //
+    // Done injecting link to image or video.
+    //
+
+    // inject example title.
     li += '<a href="' + link + '"><h2>' + file.replace('example/', '') + '</h2></a>'
+
+    //
+    // Next, parse the example file, and extract the tags and the example description.
 
     var fileSrc = fs.readFileSync(file) + ''
     var beg = fileSrc.search('/\\*')
@@ -204,8 +231,8 @@ function generateGallery (files) {
       tags[i] = s
     }
 
+    // after the tags is the description comment.
     var desc = raw.substring(endTagsIndex).trim()
-
     li += desc
 
     // run example link
@@ -222,6 +249,7 @@ function generateGallery (files) {
       '">Source Code</a>' +
       '</p>'
 
+    // tag list
     li += '<p>' +
       '<b>Tags: </b>' + tags.join(', ') +
       '</p>'
@@ -231,71 +259,73 @@ function generateGallery (files) {
     return {li: li, tags: tags, id: id}
   })
 
-  // we'll put the basic examples first in the list.
+  // next, we'll make sure to put the basic examples first in the list.
   var laterStr = ''
   for (i = 0; i < pfiles.length; i++) {
     var pfile = pfiles[i]
     if (pfile.tags.indexOf('basic') >= 0) {
-      ulStr += pfile.li + '\n'  // add basic first.
+      exListStr += pfile.li + '\n'  // add basic first.
     } else {
       laterStr += pfile.li + '\n' // add later.
     }
   }
-  ulStr += laterStr
-  ulStr += '</ul>'
+  exListStr += laterStr
+  exListStr += '</ul>' // list of examples done.
 
-  /*
-  var selectStr = ''
-  var selectId = 'selector'
-  selectStr += `<select id="${selectId}">`
-//  <option value="Audi">Audi
-  selectStr += '  <option value="Audi">Audi'
-  selectStr += '</select>'
-  */
-
+  // now create a list that can be used to select tags.
   var tagList = ''
   tagList += '<ul id="tagList">'
   tagList += Object.keys(allTags).map(function (tag) {
-    return `<li><a href="#" onclick="filterTag('${tag}');return false;">${tag}</a></li>`
+    return `<li id="id_${tag}" class="unselected"><a href="#" onclick="selectTag('${tag}');return false;">${tag}</a></li>`
   }).join('\n')
   tagList += '</ul>'
 
+  // now actually add the created html code of the two lists.
   html += tagList
-  html += ulStr
-
+  html += exListStr
   html += '</div>'
 
+  // collect the list of tags and ids.
   var json = []
   for (i = 0; i < pfiles.length; i++) {
     var p = pfiles[i]
     json.push({tags: p.tags, id: p.id})
   }
 
+  // next, we inject some javascript code that is used to implement the tag-filtering system.
   html += '<script>'
 
-  html += 'var json = ' + JSON.stringify(json)
+  // inject two variables into the code.
+  html += 'var json = ' + JSON.stringify(json) + '\n'
+  html += 'var allTags = ' + JSON.stringify(allTags)
 
   html += `
-  function filterTag(tag) {
-    console.log('filteR: ', tag)
-
-    for(var i = 0; i < json.length; i++) {
+  function selectTag(tag) {
+    for (var i = 0; i < json.length; i++) {
       var p = json[i]
 
       var elem = document.getElementById(p.id)
 
-      if(tag === 'all') { // all tags pass!
+      if (tag === 'all') { // all tags pass!
         elem.style.display = 'list-item';
       } else { // else, do tag filtering.
-
-        if(p.tags.indexOf(tag) >= 0) {
+        if (p.tags.indexOf(tag) >= 0) {
           elem.style.display = 'list-item';
         } else {
           elem.style.display = 'none';
         }
       }
+      elem.style.lineHeight = '30px'
     }
+
+    Object.keys(allTags).map(function (itag) {
+      document.getElementById('id_' + itag).className = 'unselected'
+    })
+    document.getElementById('id_' + tag).className = 'selected'
+
   }`
+  html += 'selectTag("all")'
+
   html += '</script>'
 
   html += `
