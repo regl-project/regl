@@ -1,7 +1,7 @@
 /*
   tags: basic
 
-  <p>No description</p>
+  <p>This example shows how to render a 360 panoramic environment map.</p>
 
  */
 
