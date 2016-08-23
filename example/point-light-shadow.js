@@ -1,4 +1,6 @@
 /*
+  tags: shadows, fbo, advanced
+
   <p>This example shows how you can render shadows for point-lights using `regl.framebufferCube` </p>
 
   <p>

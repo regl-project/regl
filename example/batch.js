@@ -1,4 +1,7 @@
-/*  <p>This example demonstrates how to use batch mode commands</p>
+/*
+  tags: basic
+
+  <p>This example demonstrates how to use batch mode commands</p>
 
 <p> To use a command in batch mode, we pass in an array of objects.  Then
  the command is executed once for each object in the array. </p>

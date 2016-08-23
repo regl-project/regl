@@ -1,4 +1,6 @@
 /*
+  tags: basic, game
+
   <p> In this example, we implement a simple pong game. </p>
 
   <p> The demonstratred features are: batching, and how you can
