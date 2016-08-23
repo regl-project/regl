@@ -1,4 +1,6 @@
 /*
+  tags: advanced, fbo
+
   <p>This examples demonstrates how we can render a height map, how to place out several models(using the batching feature), and how to
   implement a simple fullscreen post-process effect(using the framebuffer feature) in regl. </p>
 

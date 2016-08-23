@@ -1,4 +1,6 @@
 /*
+  tags: shadows, stencil, advanced
+
   <p> This example shows how to implement shadow volumes. </p>
 
   <p>This implementation was based on Mikola Lysneko's implementation

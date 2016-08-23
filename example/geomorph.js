@@ -1,4 +1,6 @@
 /*
+  tags: advanced
+
   <p>No description</p>
  */
 const regl = require('../regl')()
