@@ -1,6 +1,8 @@
 /*
+  tags: advanced
+
   <p>
-  In this demo, it is shown how to implement 3D object picking in regl.
+  In this demo, it is shown how to implement 3D object picking.
   If you click on an object, an outline is drawn around it.
   </p>
  */
@@ -322,7 +324,7 @@ regl.frame(({tick}) => {
     }
 
     // we need to render the selected object last.
-    if(iSelectedMesh !== -1) {
+    if (iSelectedMesh !== -1) {
       m = meshes[iSelectedMesh]
 
       drawOutline(() => {
