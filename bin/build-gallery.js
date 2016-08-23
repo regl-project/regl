@@ -19,19 +19,15 @@ function imgName (file) {
 }
 
 var stylesheet = `
+h2 {
+  font-size: 1.4em;
 
-body {
-    margin: 0 auto;
-    max-width: 860px;
+  margin-top: 50px;
+  margin-bottom: 20px;
 }
 
-li a {
-  text-decoration: none;
-  color: #000;
-}
-
-li a:hover {
-  color: #666;
+h1 {
+  font-size: 3.0em;
 }
 
 p a {
@@ -47,53 +43,69 @@ p a:hover {
   color: #00F;
 }
 
-
 * {margin: 0; padding: 0;}
 
-div {
-  margin: 20px;
+#exList > li img {
+  float: right;
+  margin: 40px 15px 0 0;
 }
 
-ul {
-  list-style-type: none;
-}
-
-h3 {
-  font: 700 1.27em verdana;
-  margin-top: 50px;
-  margin-bottom: 20px;
-}
-
-h1 {
-  font: 700 3.27em verdana;
-  max-width: 600px;
+#container {
   margin: 0 auto;
+  max-width: 760px;
+
+  font-family: verdana;
+  font-weight: 300;
+  font-size: 1.0em;
 }
 
-li img {
+#exList > li > a {
+  text-decoration: none;
+  color: #000;
+}
+
+#exList > li a:hover {
+  color: #666;
+}
+
+#exList > li iframe {
   float: right;
   margin: 40px 15px 0 0;
 }
 
-li iframe {
-  float: right;
-  margin: 40px 15px 0 0;
-}
-
-li p {
-  font: 95%/1.3 verdana;
-  max-width: 390px;
+#exList > li p {
   padding-bottom: 16px;
+  max-width: 390px;
 }
 
-li {
-  padding: 50px;
+#exList > li {
+  padding-top: 50px;
+  padding-bottom: 50px;
+
   overflow: auto;
   list-style-type: none;
+}
+
+#tagList > li {
+  padding: 0 10px;
+
+  font-size: 1.3em;
+
+  display: inline;
+  border-right: 1px solid #333;
+  line-height: 30px;
+}
+
+#tagList {
+  margin:0;
+  padding: 0;
+  text-align: center;
 }
 `
 
 function generateGallery (files) {
+  var i
+  var s
   var html = `<!DOCTYPE html>
     <html>
       <head>
@@ -106,12 +118,28 @@ function generateGallery (files) {
       </head>
     <body>`
 
+  html += '<div id="container">'
+
   html += '<h1>Example Gallery</h1>'
 
-  html += '<ul>'
+  html += '<h2>Example Filter Tags</h2>'
 
-  html += files.map(function (file) {
-    var li = '<li>' // begin list item
+  var ulStr = ''
+
+  function getLiId (i) {
+    return 'liId' + i
+  }
+
+  ulStr += '<ul id="exList">'
+
+  // this set contains all the tags used in the gallery.
+  var allTags = {}
+  allTags['all'] = true // we have a tag 'all', which means we show all the examples.
+
+  // get the parsed files:
+  var pfiles = files.map(function (file, i) {
+    var id = getLiId(i)
+    var li = `\n<li id="${id}">` // begin list item
 
     var link = file.replace('example', 'gallery') + '.html'
 
@@ -124,7 +152,7 @@ function generateGallery (files) {
     li += '<a href="' + link + '">'
     var img = imgName(file)
 
-    var s = file.replace('example/', '').replace('.js', '')
+    s = file.replace('example/', '').replace('.js', '')
 
     if (fs.existsSync('example/img/' + s + '.txt')) {
       li += getEmbedTag(
@@ -138,7 +166,7 @@ function generateGallery (files) {
     }
     li += '</a>'
 
-    li += '<a href="' + link + '"><h3>' + file.replace('example/', '') + '</h3></a>'
+    li += '<a href="' + link + '"><h2>' + file.replace('example/', '') + '</h2></a>'
 
     var fileSrc = fs.readFileSync(file) + ''
     var beg = fileSrc.search('/\\*')
@@ -149,27 +177,126 @@ function generateGallery (files) {
         'The example ' + file +
           ' must begin with a description commment')
     }
-    var desc = fileSrc.substring(beg + 2, end - 1)
+    var raw = fileSrc.substring(beg + 2, end - 1)
+
+    var tagsIndex = raw.indexOf('tags:')
+    if (tagsIndex === -1) {
+      throw new Error(
+        'The example ' + file +
+          ' must supply tags')
+    }
+    var begTagsIndex = tagsIndex + 5 // skip after the 'tags:' string.
+    var endTagsIndex = raw.indexOf('\n', begTagsIndex)
+
+    var tagsString = raw.substring(begTagsIndex, endTagsIndex)
+    var tags = tagsString.split(',') // now actually parse the tags.
+
+    // For good measure, normalize the tag strings: trim, and convert to lowercase.
+    for (i = 0; i < tags.length; i++) {
+      s = tags[i]
+      s = s.trim().toLowerCase()
+
+      // also, add to list of tags.
+      if (!(s in allTags)) {
+        allTags[s] = true
+      }
+
+      tags[i] = s
+    }
+
+    var desc = raw.substring(endTagsIndex).trim()
+
     li += desc
 
+    // run example link
     li += '<p>' +
       '<a href="' +
       link +
       '">Run Example</a>' +
       '</p>'
 
+    // source code link
     li += '<p>' +
       '<a href="' +
       'https://github.com/mikolalysenko/regl/blob/gh-pages/' + file +
       '">Source Code</a>' +
       '</p>'
 
+    li += '<p>' +
+      '<b>Tags: </b>' + tags.join(', ') +
+      '</p>'
+
     li += '</li>'
 
-    return li
-  }).join('\n')
+    return {li: li, tags: tags, id: id}
+  })
 
-  html += '</ul>'
+  // we'll put the basic examples first in the list.
+  var laterStr = ''
+  for (i = 0; i < pfiles.length; i++) {
+    var pfile = pfiles[i]
+    if (pfile.tags.indexOf('basic') >= 0) {
+      ulStr += pfile.li + '\n'  // add basic first.
+    } else {
+      laterStr += pfile.li + '\n' // add later.
+    }
+  }
+  ulStr += laterStr
+  ulStr += '</ul>'
+
+  /*
+  var selectStr = ''
+  var selectId = 'selector'
+  selectStr += `<select id="${selectId}">`
+//  <option value="Audi">Audi
+  selectStr += '  <option value="Audi">Audi'
+  selectStr += '</select>'
+  */
+
+  var tagList = ''
+  tagList += '<ul id="tagList">'
+  tagList += Object.keys(allTags).map(function (tag) {
+    return `<li><a href="#" onclick="filterTag('${tag}');return false;">${tag}</a></li>`
+  }).join('\n')
+  tagList += '</ul>'
+
+  html += tagList
+  html += ulStr
+
+  html += '</div>'
+
+  var json = []
+  for (i = 0; i < pfiles.length; i++) {
+    var p = pfiles[i]
+    json.push({tags: p.tags, id: p.id})
+  }
+
+  html += '<script>'
+
+  html += 'var json = ' + JSON.stringify(json)
+
+  html += `
+  function filterTag(tag) {
+    console.log('filteR: ', tag)
+
+    for(var i = 0; i < json.length; i++) {
+      var p = json[i]
+
+      var elem = document.getElementById(p.id)
+
+      if(tag === 'all') { // all tags pass!
+        elem.style.display = 'list-item';
+      } else { // else, do tag filtering.
+
+        if(p.tags.indexOf(tag) >= 0) {
+          elem.style.display = 'list-item';
+        } else {
+          elem.style.display = 'none';
+        }
+      }
+    }
+  }`
+  html += '</script>'
 
   html += `
       </body>
