@@ -1,3 +1,10 @@
+/*
+  <p>
+  In this demo, it is shown how to implement 3D object picking in regl.
+  If you click on an object, an outline is drawn around it.
+  </p>
+ */
+
 const canvas = document.body.appendChild(document.createElement('canvas'))
 const fit = require('canvas-fit')
 const regl = require('../regl')({canvas: canvas})
@@ -12,15 +19,11 @@ var mb = require('mouse-pressed')(canvas)
 var viewMatrix = new Float32Array([1, -0, 0, 0, 0, 0.876966655254364, 0.48055124282836914, 0, -0, -0.48055124282836914, 0.876966655254364, 0, 0, 0, -11.622776985168457, 1])
 var projectionMatrix = new Float32Array(16)
 
-var lightDir = [0.39, 0.87, 0.29]
-
-const planeElements = []
-var planePosition = []
-var planeNormal = []
-
-// A slightly modified version of this code:
+// Below is a slightly modified version of this code:
 // https://github.com/substack/ray-triangle-intersection
 // It does intersection between ray and triangle.
+// With the original version, we had no way of accessing 't'
+// But we really needed that value.
 function intersectTriangle (out, pt, dir, tri) {
   var EPSILON = 0.000001
   var edge1 = [0, 0, 0]
@@ -50,6 +53,14 @@ function intersectTriangle (out, pt, dir, tri) {
   return t
 }
 
+//
+// Create plane geometry
+//
+
+const planeElements = []
+var planePosition = []
+var planeNormal = []
+
 planePosition.push([-0.5, 0.0, -0.5])
 planePosition.push([+0.5, 0.0, -0.5])
 planePosition.push([-0.5, 0.0, +0.5])
@@ -62,6 +73,10 @@ planeNormal.push([0.0, 1.0, 0.0])
 
 planeElements.push([3, 1, 0])
 planeElements.push([0, 2, 3])
+
+//
+// Create box geometry.
+//
 
 var boxPosition = [
   // side faces
@@ -95,13 +110,11 @@ var boxNormal = [
   [0.0, -1.0, 0.0], [0.0, -1.0, 0.0], [0.0, -1.0, 0.0], [0.0, -1.0, 0.0]
 ]
 
+// keeps track of all global state.
 const globalScope = regl({
   uniforms: {
-    lightDir: lightDir,
-    view: (context, {eye}) => mat4.lookAt(viewMatrix,
-                            eye,
-                            [0, 0, 0],
-                            [0, 1, 0]),
+    lightDir: [0.39, 0.87, 0.29],
+    view: () => viewMatrix,
     projection: ({viewportWidth, viewportHeight}) =>
       mat4.perspective(projectionMatrix,
                        Math.PI / 4,
@@ -111,8 +124,7 @@ const globalScope = regl({
   }
 })
 
-// render the object with lighting, using the previously rendered cubemap
-// to render the shadows.
+// render object with phong shading.
 const drawNormal = regl({
   frag: `
   precision mediump float;
@@ -153,12 +165,16 @@ const drawNormal = regl({
   }`
 })
 
+// render the object slightly bigger than it should be.  this is used
+// to draw the outline.  but we don't write to the depth buffer.  this
+// allows us to draw the object(that we wish to draw the outline for)
+// onto the slightly bigger object, thus forming the outine.
 const drawOutline = regl({
   frag: `
   precision mediump float;
 
   void main () {
-    gl_FragColor = vec4(vec3(1.0, 1.0, 0.0), 1.0);
+    gl_FragColor = vec4(vec3(0.7, 0.6, 0.0), 1.0);
   }`,
   vert: `
   precision mediump float;
@@ -172,15 +188,16 @@ const drawOutline = regl({
   void main() {
     float s = 0.1;
     vec4 worldSpacePosition = model * vec4(
+      // for objects with lots of jagged edges, the ususal approach doesn't work.
+      // We use an alternative way of enlarging the object for such objects.
       isRound ? (position + normal * s) : (position * (0.5*s+1.0)),
-
       1);
     gl_Position = projection * view * worldSpacePosition;
   }`,
 
   depth: {
     enable: true,
-    mask: false
+    mask: false // DONT write to depth buffer!
   }
 })
 
@@ -210,7 +227,6 @@ Mesh.prototype.draw = regl({
     diffuseLightAmount: 0.7,
     color: regl.prop('color'),
     isRound: regl.prop('isRound')
-
   },
   attributes: {
     position: regl.this('position'),
@@ -230,35 +246,43 @@ var meshes = [
   {scale: 80.0, translate: [0.0, 0.0, 0.0], color: [0.5, 0.5, 0.5], mesh: planeMesh},
 
   {scale: 0.2, translate: [0.0, 0.0, 0.0], color: [0.6, 0.0, 0.0], mesh: bunnyMesh},
+  {scale: 0.3, translate: [-6.0, 0.0, -3.0], color: [0.6, 0.6, 0.0], mesh: bunnyMesh},
+  {scale: 0.12, translate: [6.0, 0.0, 3.0], color: [0.2, 0.5, 0.6], mesh: bunnyMesh},
 
-  {scale: 2.0, translate: [4.0, 0.0, 0.0], color: [0.6, 0.0, 0.0], mesh: boxMesh},
-  {scale: 1.3, translate: [-3.0, 0.0, -4.0], color: [0.0, 0.6, 0.0], mesh: boxMesh},
-  {scale: 0.7, translate: [-3.0, 4.0, 4.0], color: [0.0, 0.0, 0.8], mesh: boxMesh}
+  {scale: 2.0, translate: [4.0, 1.0, 0.0], color: [0.6, 0.0, 0.0], mesh: boxMesh},
+  {scale: 1.3, translate: [-3.0, 0.6, -4.0], color: [0.0, 0.6, 0.0], mesh: boxMesh},
+  {scale: 0.7, translate: [-3.0, 0.5, 4.0], color: [0.0, 0.0, 0.8], mesh: boxMesh}
 ]
 
-var selectedMesh = -1
+var iSelectedMesh = -1
 
+// on click ,we raycast.
 mb.on('down', function () {
   var vp = mat4.multiply([], projectionMatrix, viewMatrix)
   var invVp = mat4.invert([], vp)
 
+  // get a single point on the camera ray.
   var rayPoint = vec3.transformMat4([], [2.0 * mp.x / canvas.width - 1.0, -2.0 * mp.y / canvas.height + 1.0, 0.0], invVp)
 
+  // get the position of the camera.
   var rayOrigin = vec3.transformMat4([], [0, 0, 0], mat4.invert([], viewMatrix))
 
   var rayDir = vec3.normalize([], vec3.subtract([], rayPoint, rayOrigin))
 
+  // now we iterate through all meshes, and find the closest mesh that intersects the camera ray.
   var minT = 10000000.0
   for (var i = 0; i < meshes.length; i++) {
     var m = meshes[i]
 
     var modelMatrix = createModelMatrix(m)
 
+    // we must check all triangles of the mesh.
     for (var j = 0; j < m.mesh.elements.length; j++) {
       if (m.mesh === planeMesh) {
         continue // we don't allow clicking the plane mesh.
       }
       var f = m.mesh.elements[j]
+      // apply model matrix on the triangle.
       var tri =
           [vec3.transformMat4([], m.mesh.position[f[0]], modelMatrix),
            vec3.transformMat4([], m.mesh.position[f[1]], modelMatrix),
@@ -271,7 +295,7 @@ mb.on('down', function () {
           // mesh was closer than any object thus far.
           // for the time being, make it the selected object.
           minT = t
-          selectedMesh = i
+          iSelectedMesh = i
           break
         }
       }
@@ -279,32 +303,18 @@ mb.on('down', function () {
   }
 })
 
-var prevMpX = mp.x
-var theta = 0
-
 regl.frame(({tick, viewportWidth}) => {
   regl.clear({
     color: [0, 0, 0, 255],
     depth: 1
   })
 
-  if (mb.left) {
-    theta += 2.0 * Math.PI * ((mp.x - prevMpX) / viewportWidth)
-  }
-
-  prevMpX = mp.x
-
-  globalScope({eye: [
-    13 * Math.sin(theta),
-    8,
-    13 * Math.cos(theta)
-
-  ]}, () => {
+  globalScope(() => {
     for (var i = 0; i < meshes.length; i++) {
       var m = meshes[i]
 
       // draw outline of selected object.
-      if (i === selectedMesh) {
+      if (i === iSelectedMesh) {
         drawOutline(() => {
           m.isRound = (m.mesh !== boxMesh)
           m.mesh.draw(m)
