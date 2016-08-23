@@ -1,4 +1,6 @@
 /*
+  tags: basic
+
   <p>No description</p>
 
  */

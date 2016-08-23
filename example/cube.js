@@ -1,4 +1,6 @@
 /*
+  tags: basic
+
   <p>This examples renders a spinning textured cube.</p>
 
  */

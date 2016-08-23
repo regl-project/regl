@@ -1,4 +1,6 @@
 /*
+  tags: basic
+
   <p> This example shows how to draw a mesh with regl </p>
 */
 const regl = require('../regl')()

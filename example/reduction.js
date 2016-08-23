@@ -1,4 +1,6 @@
 /*
+  tags: gpgpu, fbo
+
   <p>This example implements a parallell reduction algorithm on the GPU. </p>
 
   <p>Given some elements x0, x1, x2,..., and a binary operator 'op', the parallell reduction
