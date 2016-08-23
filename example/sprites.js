@@ -1,7 +1,8 @@
 /*
-  tags: basic
+  tags: basic, fbo
 
-  <p>No description</p>
+  <p>This example shows how to update and render some simple particles on the GPU,
+  creating a simple particle simulation. </p>
 
  */
 
