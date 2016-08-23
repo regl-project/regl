@@ -1,4 +1,6 @@
 /*
+  tags: basic
+
   <p>This example shows how you can use mipmaps in regl.</p>
 
  */

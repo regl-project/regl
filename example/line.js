@@ -1,4 +1,6 @@
 /*
+  tags: advanced
+
   <p>This example demonstrates rendering screen space projected lines
   from a technique described <a href="https://mattdesl.svbtle.com/drawing-lines-is-hard">here</a>.</p>
 

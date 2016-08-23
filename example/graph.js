@@ -1,4 +1,6 @@
 /*
+  tags: gpgpu, advanced
+
   <p>No description.</p>
 
  */

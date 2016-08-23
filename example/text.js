@@ -1,4 +1,6 @@
 /*
+  tags: basic
+
   <p>This example shows how you can draw vectorized text in regl.</p>
 
  */
