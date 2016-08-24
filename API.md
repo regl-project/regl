@@ -1654,8 +1654,8 @@ A data source from an image can be one of the following types:
 | `height`           | Height of texture                                                                                                                                                | `0`         |
 | `mag`              | Sets magnification filter (see table)                                                                                                                            | `'nearest'` |
 | `min`              | Sets minification filter (see table)                                                                                                                             | `'nearest'` |
-| `wrapS`            | Sets wrap mode on S axis (see table)                                                                                                                             | `'repeat'`  |
-| `wrapT`            | Sets wrap mode on T axis (see table)                                                                                                                             | `'repeat'`  |
+| `wrapS`            | Sets wrap mode on S axis (see table)                                                                                                                             | `'clamp'`  |
+| `wrapT`            | Sets wrap mode on T axis (see table)                                                                                                                             | `'clamp'`  |
 | `aniso`            | Sets number of anisotropic samples, requires [EXT_texture_filter_anisotropic](https://www.khronos.org/registry/webgl/extensions/EXT_texture_filter_anisotropic/) | `0`         |
 | `format`           | Texture format (see table)                                                                                                                                       | `'rgba'`    |
 | `type`             | Texture type (see table)                                                                                                                                         | `'uint8'`   |
