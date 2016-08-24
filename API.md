@@ -1480,6 +1480,7 @@ var starElements = regl.elements({
 | `usage`     | Usage hint (see `gl.bufferData`)          | `'static'`       |
 | `length`    | Length of the element buffer in bytes     | `0` \*           |
 | `primitive` | Default primitive type for element buffer | `'triangles'` \* |
+| `type`      | Data type for element buffer              | `'uint8'`        |
 | `count`     | Vertex count for element buffer           | `0` \*           |
 
 -   `usage` must take on one of the following values
@@ -1501,6 +1502,19 @@ var starElements = regl.elements({
 | `'triangles`       | `gl.TRIANGLES`      |
 | `'triangle strip'` | `gl.TRIANGLE_STRIP` |
 | `'triangle fan'`   | `gl.TRIANGLE_FAN`   |
+
+-   `type` can be one of the following data types
+
+ 
+ 
+ 
+| Data type          | Description          | Extension? |
+| ------------------ | ---------------------|------------|
+| `'uint8'`          | `gl.UNSIGNED_BYTE`   |            |
+| `'uint16'`         | `gl.UNSIGNED_SHORT`  |            |
+| `'uint32'`         | `gl.UNSIGNED_INT`    | [OES_element_index_uint](https://www.khronos.org/registry/webgl/extensions/OES_element_index_uint/)               |
+
+
 
 **Notes**
 
