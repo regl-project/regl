@@ -1360,12 +1360,27 @@ var positionBuffer = regl.buffer([
 | `data`   | The data for the vertex buffer (see below)                       | `null`     |
 | `length` | If `data` is `null` or not present reserves space for the buffer | `0`        |
 | `usage`  | Sets array buffer usage hint                                     | `'static'` |
+| `type`   | Data type for vertex buffer                                    | `'uint8'` |
 
+- `usage` can be one of the following values
+ 
 | Usage Hint  | Description       |
 | ----------- | ----------------- |
 | `'static'`  | `gl.DRAW_STATIC`  |
 | `'dynamic'` | `gl.DYNAMIC_DRAW` |
 | `'stream'`  | `gl.STREAM_DRAW`  |
+
+ - `type` can be one of the following data types
+ 
+| Data type          | Description          | 
+| ------------------ | ---------------------|
+| `'uint8'`          | `gl.UNSIGNED_BYTE`   |  
+| `'int8'`           | `gl.BYTE`            |  
+| `'uint16'`         | `gl.UNSIGNED_SHORT`  | 
+| `'int16'`          | `gl.SHORT`           | 
+| `'uint32'`         | `gl.INT`             | 
+| `'int32'`          | `gl.UNSIGNED_INT`    | 
+| `'float32'`, `'float'`  | `gl.FLOAT`    | 
 
 **Relevant WebGL APIs**
 
@@ -1504,9 +1519,6 @@ var starElements = regl.elements({
 | `'triangle fan'`   | `gl.TRIANGLE_FAN`   |
 
 -   `type` can be one of the following data types
-
- 
- 
  
 | Data type          | Description          | Extension? |
 | ------------------ | ---------------------|------------|
