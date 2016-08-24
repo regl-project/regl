@@ -16,9 +16,9 @@ tape('elements update', function (t) {
   const draw = regl({
     vert: `
     precision highp float;
-    attribute vec4 position;
+    attribute vec2 position;
     void main () {
-      gl_Position = position;
+      gl_Position = vec4(position, 0, 1);
     }
     `,
 
@@ -40,9 +40,7 @@ tape('elements update', function (t) {
   })
 
   elements([
-    [-4, 0, 0, 1],
-    [4, -4, 0, 1],
-    [4, 4, 0, 1]
+    [0, 1, 2]
   ])
 
   draw()
