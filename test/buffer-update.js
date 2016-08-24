@@ -46,8 +46,8 @@ tape('buffer update', function (t) {
   t.same(
     Array.prototype.slice.call(regl.read()),
     [
-      1, 1, 1, 1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1, 1, 1, 1
+      255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255
     ],
     'buffer update ok')
 
