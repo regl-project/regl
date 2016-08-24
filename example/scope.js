@@ -1,4 +1,6 @@
 /*
+  tags: basic
+
   <p>This examples demonstrates scopes</p>
 
  */

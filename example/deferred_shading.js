@@ -1,4 +1,6 @@
 /*
+  tags: advanced, fbo, lighting, mrt
+
   <p> This example is a simple implementation of deferred shading. </p>
 
   <p> The focus of this implementation was readability, so it is not an
