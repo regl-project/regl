@@ -4,14 +4,14 @@
  */
 
 const regl = require('../regl')()
-const isosurface = require("isosurface")
+const isosurface = require('isosurface')
 const normals = require('angle-normals')
-const mat3 = require("gl-mat3")
+const mat3 = require('gl-mat3')
 const camera = require('./util/camera')(regl, {
   distance: 1,
   maxDistance: 3,
   minDistance: 0.5,
-  center: [0.5,0.5,0.5],
+  center: [0.5, 0.5, 0.5]
 })
 
 const drawMetaballs = regl({
@@ -100,8 +100,8 @@ const drawMetaballs = regl({
     normal: (context, props) => normals(props.cells, props.positions)
   },
   uniforms: {
-    color: [36/255.0, 70/255.0, 106/255.0],
-    sphereColor: [36/255.0, 70/255.0, 106/255.0],
+    color: [36 / 255.0, 70 / 255.0, 106 / 255.0],
+    sphereColor: [36 / 255.0, 70 / 255.0, 106 / 255.0],
     normalScale: 1,
     texScale: 10,
     useSSS: 0,
@@ -119,18 +119,18 @@ const drawMetaballs = regl({
 
 const metaball = (px, py, pz, strength, subtract) => {
   return (x, y, z) => {
-    return (strength / (Math.pow(x-px, 2) + Math.pow(y-py, 2) + Math.pow(z-pz, 2))) - subtract
+    return (strength / (Math.pow(x - px, 2) + Math.pow(y - py, 2) + Math.pow(z - pz, 2))) - subtract
   }
 }
 
 const numblobs = 20
-const strength = 1.2 / ( ( Math.sqrt( numblobs ) - 1 ) / 4 + 1 )
+const strength = 1.2 / ((Math.sqrt(numblobs) - 1) / 4 + 1)
 const subtract = 12
 const balls = Array(numblobs).fill().map((_, i) => {
   return (time) => {
-    ballx = Math.sin( i + 1.26 * time * ( 1.03 + 0.5 * Math.cos( 0.21 * i ) ) ) * 0.27 + 0.5;
-    bally = Math.cos( i + 1.12 * time * 0.21 * Math.sin( ( 0.72 + 0.83 * i ) ) ) * 0.27 + 0.5;
-    ballz = Math.cos( i + 1.32 * time * 0.1 * Math.sin( ( 0.92 + 0.53 * i ) ) ) * 0.27 + 0.5;
+    let ballx = Math.sin(i + 1.26 * time * (1.03 + 0.5 * Math.cos(0.21 * i))) * 0.27 + 0.5
+    let bally = Math.cos(i + 1.12 * time * 0.21 * Math.sin((0.72 + 0.83 * i))) * 0.27 + 0.5
+    let ballz = Math.cos(i + 1.32 * time * 0.1 * Math.sin((0.92 + 0.53 * i))) * 0.27 + 0.5
     return metaball(ballx, bally, ballz, strength, subtract)
   }
 })
@@ -151,17 +151,16 @@ require('resl')({
       src: 'normaltexture.jpg',
       parser: (data) => regl.texture({
         data: data,
-        wrapT: "repeat",
-        wrapS: "repeat"
+        wrapT: 'repeat',
+        wrapS: 'repeat'
       })
     }
   },
-  onDone: ({ sphereTexture, normalTexture }) => {
-    let time = 0.05
-    let field = (x,y,z) => {
-      return balls.map((b) => b(1)(x,y,z)).reduce((a, b) => a + b)
+  onDone: ({sphereTexture, normalTexture}) => {
+    let field = (x, y, z) => {
+      return balls.map((b) => b(1)(x, y, z)).reduce((a, b) => a + b)
     }
-    let mesh = isosurface.surfaceNets([50,50,50], field, [[0,0,0], [1, 1, 1]])
+    let mesh = isosurface.surfaceNets([50, 50, 50], field, [[0, 0, 0], [1, 1, 1]])
 
     regl.frame(({tick}) => {
       // let time = 0.05 * tick
