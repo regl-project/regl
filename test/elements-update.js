@@ -14,19 +14,19 @@ tape('elements update', function (t) {
   const elements = regl.elements()
 
   const draw = regl({
-    vert: `
-    precision highp float;
-    attribute vec2 position;
-    void main () {
-      gl_Position = vec4(position, 0, 1);
-    }
-    `,
+    vert: [
+      'precision highp float;',
+      'attribute vec2 position;',
+      'void main () {',
+      '  gl_Position = vec4(position, 0, 1);',
+      '}'
+    ].join('\n'),
 
-    frag: `
-    void main () {
-      gl_FragColor = vec4(1, 1, 1, 1);
-    }
-    `,
+    frag: [
+      'void main () {',
+      '  gl_FragColor = vec4(1, 1, 1, 1);',
+      '}'
+    ].join('\n'),
 
     attributes: {
       position: [

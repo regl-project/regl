@@ -14,19 +14,19 @@ tape('buffer update', function (t) {
   const data = regl.buffer()
 
   const draw = regl({
-    vert: `
-    precision highp float;
-    attribute vec4 position;
-    void main () {
-      gl_Position = position;
-    }
-    `,
+    vert: [
+      'precision highp float;',
+      'attribute vec4 position;',
+      'void main () {',
+      '  gl_Position = position;',
+      '}'
+    ].join('\n'),
 
-    frag: `
-    void main () {
-      gl_FragColor = vec4(1, 1, 1, 1);
-    }
-    `,
+    frag: [
+      'void main () {',
+      '  gl_FragColor = vec4(1, 1, 1, 1);',
+      '}'
+    ].join('\n'),
 
     attributes: {
       position: data
