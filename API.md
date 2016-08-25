@@ -634,7 +634,7 @@ var command = regl({
   uniforms: {
     someUniform: [1, 0, 0, 1],
     anotherUniform: regl.prop('myProp'),
-    'nested.value', 5.3
+    'nested.value': 5.3
   },
 
   // ...
