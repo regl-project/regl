@@ -1,6 +1,7 @@
 /*
-  tags: basic
-  <p> This example demonstrates how you can use `elements` to draw lines. </p>
+  tags: basic, lines
+
+  <p> This example demonstrates how to draw line loops and line strips . </p>
 */
 
 const regl = require('../regl')()
@@ -9,21 +10,14 @@ var rng = require('seedrandom')('my_seed')
 
 var globalState = regl({
   uniforms: {
-    tick: ({tick}) => 1.0 * tick,
-
+    tick: ({tick}) => tick,
     projection: ({viewportWidth, viewportHeight}) =>
       mat4.perspective([],
                        Math.PI / 4,
                        viewportWidth / viewportHeight,
                        0.01,
                        1000),
-    view: ({tick}) => {
-      var t = 0.003 * tick
-      return mat4.lookAt([],
-                         [2.1, 0, 1.3],
-                         [0, 0.0, 0],
-                         [0, 0, 1])
-    }
+    view: mat4.lookAt([], [2.1, 0, 1.3], [0, 0.0, 0], [0, 0, 1])
   },
   frag: `
   precision mediump float;
@@ -48,22 +42,31 @@ var globalState = regl({
   void main() {
     vec2 p  = position;
 
+    // scale
     p *= scale;
 
+    // rotate
     float phi = tick * freq + phase;
-    // phi = 0.0;
     p = vec2(
       dot(vec2(+cos(phi), -sin(phi)), p),
       dot(vec2(+sin(phi), +cos(phi)), p)
     );
 
+    // translate
     p += offset;
 
     gl_Position = projection * view * vec4(p, 0, 1);
   }`
 })
 
-function createDrawcall (props) {
+// make sure to respect system limitations.
+var lineWidth = 3
+if (lineWidth > regl.limits.lineWidthDims[1]) {
+  lineWidth = regl.limits.lineWidthDims[1]
+}
+
+// this creates a drawCall that allows you to do draw single line primitive.
+function createDrawCall (props) {
   return regl({
     attributes: {
       position: props.position
@@ -77,20 +80,20 @@ function createDrawcall (props) {
       freq: props.freq
     },
 
-    lineWidth: 3,
+    lineWidth: lineWidth,
     count: props.position.length,
     primitive: props.primitive
   })
 }
 
-var drawcalls = []
+var drawCalls = []
 var i
 
 //
 // square
 //
-drawcalls.push(createDrawcall({
-  color: [1, 0, 0],
+drawCalls.push(createDrawCall({
+  color: [1, 0.1, 0.3],
   primitive: 'line loop',
   scale: 0.25,
   offset: [-0.7, 0.0],
@@ -109,8 +112,8 @@ function makeCircle (N) { // where N is tesselation degree.
 //
 // triangle
 //
-drawcalls.push(createDrawcall({
-  color: [0, 1, 0],
+drawCalls.push(createDrawCall({
+  color: [0.2, 0.8, 0.3],
   primitive: 'line loop',
   scale: 0.25,
   offset: [-0.7, 0.7],
@@ -122,8 +125,8 @@ drawcalls.push(createDrawcall({
 //
 // hexagon
 //
-drawcalls.push(createDrawcall({
-  color: [0.7, 0.3, 1],
+drawCalls.push(createDrawCall({
+  color: [0.7, 0.3, 0.9],
   primitive: 'line loop',
   scale: 0.25,
   offset: [0.0, 0.7],
@@ -134,8 +137,8 @@ drawcalls.push(createDrawcall({
 
 // star-shaped thingy
 var N = 30
-drawcalls.push(createDrawcall({
-  color: [0, 0, 1],
+drawCalls.push(createDrawCall({
+  color: [0.3, 0.6, 0.8],
   primitive: 'line loop',
   scale: 0.25,
   offset: [0.7, 0.7],
@@ -150,8 +153,8 @@ drawcalls.push(createDrawcall({
 
 // rock-like shape
 N = 70
-drawcalls.push(createDrawcall({
-  color: [0, 1, 1],
+drawCalls.push(createDrawCall({
+  color: [0.7, 0.8, 0.4],
   primitive: 'line loop',
   scale: 0.25,
   offset: [0.7, 0.0],
@@ -166,8 +169,8 @@ drawcalls.push(createDrawcall({
 
 // draw a spiral.
 N = 120
-drawcalls.push(createDrawcall({
-  color: [0, 1, 1],
+drawCalls.push(createDrawCall({
+  color: [0.3, 0.8, 0.76],
   primitive: 'line strip',
   scale: 0.25,
   offset: [0.0, 0.0],
@@ -185,7 +188,7 @@ drawcalls.push(createDrawcall({
 // see the wikipedia article for more info:
 // https://en.wikipedia.org/wiki/Rose_(mathematics)
 N = 300
-drawcalls.push(createDrawcall({
+drawCalls.push(createDrawCall({
   color: [1.0, 1.0, 1.0],
   primitive: 'line strip',
   scale: 0.25,
@@ -206,8 +209,8 @@ drawcalls.push(createDrawcall({
 // draw sine curve.
 N = 70
 var n = 5.0
-drawcalls.push(createDrawcall({
-  color: [1, 1, 0],
+drawCalls.push(createDrawCall({
+  color: [1, 0.7, 0.2],
   primitive: 'line strip',
   scale: 0.25,
   offset: [0.0, -0.6],
@@ -223,8 +226,8 @@ drawcalls.push(createDrawcall({
 // fading out sine curve
 N = 20
 n = 5.0
-drawcalls.push(createDrawcall({
-  color: [1, 0, 0.5],
+drawCalls.push(createDrawCall({
+  color: [0.9, 0.2, 0.6],
   primitive: 'line strip',
   scale: 0.25,
   offset: [-0.7, -0.6],
@@ -244,8 +247,8 @@ regl.frame(({tick}) => {
   })
 
   globalState(() => {
-    for (i = 0; i < drawcalls.length; i++) {
-      drawcalls[i]()
+    for (i = 0; i < drawCalls.length; i++) {
+      drawCalls[i]()
     }
   })
 })
