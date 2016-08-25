@@ -96,7 +96,7 @@ drawcalls.push(createDrawcall({
   color: [1, 0, 0],
   primitive: 'line loop',
   scale: 0.25,
-  offset: [-0.5, -0.2],
+  offset: [-0.7, 0.0],
   phase: 0.0,
   freq: 0.01,
   position: [[-1, -1], [+1, -1], [+1, +1], [-1, +1]]
@@ -116,7 +116,7 @@ drawcalls.push(createDrawcall({
   color: [0, 1, 0],
   primitive: 'line loop',
   scale: 0.25,
-  offset: [-0.5, 0.5],
+  offset: [-0.7, 0.7],
   phase: 0.8,
   freq: -0.02,
   position: makeCircle(3)
@@ -129,7 +129,7 @@ drawcalls.push(createDrawcall({
   color: [0.7, 0.3, 1],
   primitive: 'line loop',
   scale: 0.25,
-  offset: [0.2, 0.5],
+  offset: [0.0, 0.7],
   phase: 0.6,
   freq: 0.009,
   position: makeCircle(6)
@@ -141,7 +141,7 @@ drawcalls.push(createDrawcall({
   color: [0, 0, 1],
   primitive: 'line loop',
   scale: 0.25,
-  offset: [0.9, 0.5],
+  offset: [0.7, 0.7],
   phase: 0.6,
   freq: 0.015,
   position: Array(N).fill().map((_, i) => {
@@ -157,7 +157,7 @@ drawcalls.push(createDrawcall({
   color: [0, 1, 1],
   primitive: 'line loop',
   scale: 0.25,
-  offset: [0.9, -0.2],
+  offset: [0.7, 0.0],
   phase: 0.6,
   freq: 0.015,
   position: Array(N).fill().map((_, i) => {
@@ -173,7 +173,7 @@ drawcalls.push(createDrawcall({
   color: [0, 1, 1],
   primitive: 'line strip',
   scale: 0.25,
-  offset: [0.2, -0.2],
+  offset: [0.0, 0.0],
   phase: 0.6,
   freq: 0.015,
   position: Array(N).fill().map((_, i) => {
@@ -192,7 +192,7 @@ drawcalls.push(createDrawcall({
   color: [1.0, 1.0, 1.0],
   primitive: 'line strip',
   scale: 0.25,
-  offset: [0.9, -0.8],
+  offset: [0.7, -0.6],
   phase: 0.6,
   freq: -0.011,
   position: Array(N).fill().map((_, i) => {
@@ -213,7 +213,7 @@ drawcalls.push(createDrawcall({
   color: [1, 1, 0],
   primitive: 'line strip',
   scale: 0.25,
-  offset: [0.2, -0.8],
+  offset: [0.0, -0.6],
   phase: 0.6,
   freq: 0.015,
   position: Array(N).fill().map((_, i) => {
@@ -230,7 +230,7 @@ drawcalls.push(createDrawcall({
   color: [1, 0, 0.5],
   primitive: 'line strip',
   scale: 0.25,
-  offset: [-0.5, -0.8],
+  offset: [-0.7, -0.6],
   phase: 0.3,
   freq: -0.01,
   position: Array(N).fill().map((_, i) => {
