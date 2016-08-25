@@ -2138,13 +2138,13 @@ module.exports = function reglCore (
         record.state = ATTRIB_STATE_POINTER
         record.buffer = bufferState.getBuffer(
           bufferState.create(value, GL_ARRAY_BUFFER, false, true))
-        record.type = record.buffer.dtype
+        record.type = 0
       } else {
         var buffer = bufferState.getBuffer(value)
         if (buffer) {
           record.state = ATTRIB_STATE_POINTER
           record.buffer = buffer
-          record.type = buffer.dtype
+          record.type = 0
         } else {
           check.command(typeof value === 'object' && value,
             'invalid data for attribute ' + attribute, env.commandStr)
@@ -2251,6 +2251,7 @@ module.exports = function reglCore (
         })
         if (record.buffer) {
           result.buffer = env.link(record.buffer)
+          result.type = result.type || (result.buffer + '.dtype')
         }
         cache[id] = result
         return result
