@@ -19,11 +19,8 @@ var globalState = regl({
                        1000),
     view: ({tick}) => {
       var t = 0.003 * tick
-      var r = 2.3
-      var h = 1.3
-      t = 0
       return mat4.lookAt([],
-                         [r * Math.cos(t), r * Math.sin(t), h],
+                         [2.1, 0, 1.3],
                          [0, 0.0, 0],
                          [0, 0, 1])
     }
@@ -118,7 +115,7 @@ drawcalls.push(createDrawcall({
   scale: 0.25,
   offset: [-0.7, 0.7],
   phase: 0.8,
-  freq: -0.02,
+  freq: -0.014,
   position: makeCircle(3)
 }))
 
@@ -136,14 +133,14 @@ drawcalls.push(createDrawcall({
 }))
 
 // star-shaped thingy
-var N = 40
+var N = 30
 drawcalls.push(createDrawcall({
   color: [0, 0, 1],
   primitive: 'line loop',
   scale: 0.25,
   offset: [0.7, 0.7],
   phase: 0.6,
-  freq: 0.015,
+  freq: -0.011,
   position: Array(N).fill().map((_, i) => {
     var phi = 2 * Math.PI * (i / N)
     var A = 1.0 + 0.15 * Math.sin(phi * 70.0)
@@ -159,7 +156,7 @@ drawcalls.push(createDrawcall({
   scale: 0.25,
   offset: [0.7, 0.0],
   phase: 0.6,
-  freq: 0.015,
+  freq: 0.012,
   position: Array(N).fill().map((_, i) => {
     var phi = 2 * Math.PI * (i / N)
     var A = 1.0 + 0.15 * rng()
@@ -168,7 +165,7 @@ drawcalls.push(createDrawcall({
 }))
 
 // draw a spiral.
-N = 200
+N = 120
 drawcalls.push(createDrawcall({
   color: [0, 1, 1],
   primitive: 'line strip',
@@ -187,7 +184,7 @@ drawcalls.push(createDrawcall({
 // make a rose curve.
 // see the wikipedia article for more info:
 // https://en.wikipedia.org/wiki/Rose_(mathematics)
-N = 500
+N = 300
 drawcalls.push(createDrawcall({
   color: [1.0, 1.0, 1.0],
   primitive: 'line strip',
@@ -207,7 +204,7 @@ drawcalls.push(createDrawcall({
 }))
 
 // draw sine curve.
-N = 300
+N = 70
 var n = 5.0
 drawcalls.push(createDrawcall({
   color: [1, 1, 0],
