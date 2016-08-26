@@ -362,6 +362,11 @@ const renderPoints = regl({
   elements: null
 })
 
+var lineWidth = 2
+if (lineWidth > regl.limits.lineWidthDims[1]) {
+  lineWidth = regl.limits.lineWidthDims[1]
+}
+
 const renderEdges = regl({
   vert: `
   precision highp float;
@@ -402,7 +407,7 @@ const renderEdges = regl({
   depth: {enable: false, mask: false},
   count: ARCS.length,
   primitive: 'lines',
-  lineWidth: 2
+  lineWidth: lineWidth
 })
 
 const splatMouse = regl({
