@@ -47,6 +47,14 @@ tape('viewport', function (t) {
         width: 10,
         height: 10
       }
+    },
+    {
+      viewport: {
+        x: -1,
+        y: -10,
+        width: 100,
+        height: 100
+      }
     }
   ]
 
