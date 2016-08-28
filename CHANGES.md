@@ -40,6 +40,10 @@
 
 * Viewport and scissor box can go outside drawing buffer
 
+## 1.1.1
+
+* Fix bug with buffers and elements not updating type correctly
+
 ## 1.1.0
 
 * Can now access format and filtering mode for textures and render buffers
