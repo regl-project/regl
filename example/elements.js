@@ -1,5 +1,5 @@
 /*
-  tags: basic
+  tags: basic, lines
 <p> This example demonstrates how you can use `elements` to draw lines. </p>
  */
 
@@ -9,6 +9,11 @@ regl.clear({
   color: [0, 0, 0, 1],
   depth: 1
 })
+
+var lineWidth = 3
+if (lineWidth > regl.limits.lineWidthDims[1]) {
+  lineWidth = regl.limits.lineWidthDims[1]
+}
 
 regl({
   frag: `
@@ -49,5 +54,5 @@ regl({
     [3, 4]
   ],
 
-  lineWidth: 3
+  lineWidth: lineWidth
 })()
