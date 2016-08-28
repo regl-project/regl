@@ -36,6 +36,10 @@
   * Asset loading (obj, ply, etc.)
   * Water Reflection(though cubic-framebuffers)
 
+## Next
+
+* Viewport and scissor box can go outside drawing buffer
+
 ## 1.1.0
 
 * Can now access format and filtering mode for textures and render buffers
