@@ -107,31 +107,25 @@ const drawMetaballs = regl({
     normalScale: 1,
     texScale: 10,
     useSSS: 0,
+    noise: 0.4,
     useScreen: 1,
     normalMatrix: (context) => {
       let a = mat3.create()
       mat3.normalFromMat4(a, context.view)
       return a
     },
+    width: regl.context('viewportWidth'),
+    height: regl.context('viewportHeight'),
     textureMap: regl.prop('textureMap'),
     normalMap: regl.prop('normalMap')
   },
   elements: regl.prop('cells')
 })
 
-const metaball = (px, py, pz, strength, subtract) => {
-  return (x, y, z) => {
-    let fx = x - px
-    let fy = y - py
-    let fz = z - pz
-    return strength / (0.000001 + (fx * fx) + (fy * fy) + (fz * fz)) - subtract
-  }
-}
-
-const numblobs = 3
+const numblobs = 20
 const strength = 1.2 / ((Math.sqrt(numblobs) - 1) / 4 + 1)
 const subtract = 12
-const size = 30
+const size = 50
 const bounds = [[0, 0, 0], [1.5, 1.5, 1.5]]
 const position = (time, i) => {
   return [
@@ -142,66 +136,51 @@ const position = (time, i) => {
 }
 let start_bounds, end_bounds
 [start_bounds, end_bounds] = bounds
-let step_sizes = [0, 1, 2].map((i) => (end_bounds[i] - start_bounds[i]) / size)
+const step_sizes = [0, 1, 2].map((i) => (end_bounds[i] - start_bounds[i]) / size)
 const r = size * Math.sqrt(strength / subtract)
 
 const render = (tick) => {
   let time = 0.05 * tick
-  let fieldArray = ndarray(new Float32Array(size * size * size), [size, size, size])
-  let balls = Array(numblobs).fill().map((_, i) => {
-    let bx, by, bz
-    [bx, by, bz] = position(time, i)
-    return {
-      functional: metaball(bx, by, bz, strength, subtract),
-      center: [bx, by, bz]
-    }
-  })
+  let fieldArray = new Float32Array(size * size * size)
 
-  fill(fieldArray, (i, j, k) => {
-    let val = 0
+  for (let n = 0; n < numblobs; n++) {
+    let ballx, bally, ballz
+    [ballx, bally, ballz] = position(time, n)
+    let zs = ballz * size
+    let ys = bally * size
+    let xs = ballx * size
 
-    for (let n = 0; n < numblobs; n++) {
-      let ball = balls[n]
-      let zs = ball.center[2] * size
-      let ys = ball.center[1] * size
-      let xs = ball.center[0] * size
+    let min_z = Math.floor(zs - r)
+    if (min_z < 1) min_z = 1
+    let max_z = Math.floor(zs + r)
+    if (max_z > size - 1) max_z = size - 1
+    let min_y = Math.floor(ys - r)
+    if (min_y < 1) min_y = 1
+    let max_y = Math.floor(ys + r)
+    if (max_y > size - 1) max_y = size - 1
+    let min_x = Math.floor(xs - r)
+    if (min_x < 1) min_x = 1
+    let max_x = Math.floor(xs + r)
+    if (max_x > size - 1) max_x = size - 1
 
-      var min_z = Math.floor(zs - r)
-      if (min_z < 1) min_z = 1
-      var max_z = Math.floor(zs + r)
-      if (max_z > size - 1) max_z = size - 1
-      var min_y = Math.floor(ys - r)
-      if (min_y < 1) min_y = 1
-      var max_y = Math.floor(ys + r)
-      if (max_y > size - 1) max_y = size - 1
-      var min_x = Math.floor(xs - r)
-      if (min_x < 1) min_x = 1
-      var max_x = Math.floor(xs + r)
-      if (max_x > size - 1) max_x = size - 1
+    for (let z = min_z; z < max_z; z++) {
+      let z_offset = size * size * z
 
-      if ((max_x <= i) || (i < min_x)) {
-        continue
-      }
+      for (let y = min_y; y < max_y; y++) {
+        let y_offset = size * y
 
-      if ((max_y <= j) || (j < min_y)) {
-        continue
-      }
-
-      if ((max_z <= k) || (k < min_z)) {
-        continue
-      }
-
-      let x, y, z
-      [x, y, z] = [i, j, k].map((c, index) => start_bounds[index] + (c * step_sizes[index]))
-      let v = ball.functional(x, y, z)
-      if (v > 0.0) {
-        val += v
+        for (let x = min_x; x < max_x; x++) {
+          let fx = x / size - ballx
+          let fy = y / size - bally
+          let fz = z / size - ballz
+          let val = strength / (0.000001 + (fx * fx) + (fy * fy) + (fz * fz)) - subtract
+          if (val > 0.0) fieldArray[z_offset + y_offset + x] += val
+        }
       }
     }
-    return val
-  })
+  }
 
-  let mesh = surfaceNets(fieldArray, 80.0)
+  let mesh = surfaceNets(ndarray(fieldArray, [size, size, size]), 80.0)
   let coordinate_positions = mesh.positions.map((p) => {
     return p.map((index, i) => start_bounds[i] + (index * step_sizes[i]))
   })
