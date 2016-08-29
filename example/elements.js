@@ -10,6 +10,11 @@ regl.clear({
   depth: 1
 })
 
+var lineWidth = 3
+if (lineWidth > regl.limits.lineWidthDims[1]) {
+  lineWidth = regl.limits.lineWidthDims[1]
+}
+
 regl({
   frag: `
     precision mediump float;
@@ -49,5 +54,5 @@ regl({
     [3, 4]
   ],
 
-  lineWidth: 3
+  lineWidth: lineWidth
 })()
