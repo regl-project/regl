@@ -4,7 +4,9 @@
  */
 
 const regl = require('../regl')()
-const isosurface = require('isosurface')
+const surfaceNets = require('surface-nets')
+const ndarray = require('ndarray')
+const fill = require('ndarray-fill')
 const normals = require('angle-normals')
 const mat3 = require('gl-mat3')
 const camera = require('./util/camera')(regl, {
@@ -119,21 +121,92 @@ const drawMetaballs = regl({
 
 const metaball = (px, py, pz, strength, subtract) => {
   return (x, y, z) => {
-    return (strength / (Math.pow(x - px, 2) + Math.pow(y - py, 2) + Math.pow(z - pz, 2))) - subtract
+    let fx = x - px
+    let fy = y - py
+    let fz = z - pz
+    return strength / (0.000001 + (fx * fx) + (fy * fy) + (fz * fz)) - subtract
   }
 }
 
-const numblobs = 20
+const numblobs = 3
 const strength = 1.2 / ((Math.sqrt(numblobs) - 1) / 4 + 1)
 const subtract = 12
-const balls = Array(numblobs).fill().map((_, i) => {
-  return (time) => {
-    let ballx = Math.sin(i + 1.26 * time * (1.03 + 0.5 * Math.cos(0.21 * i))) * 0.27 + 0.5
-    let bally = Math.cos(i + 1.12 * time * 0.21 * Math.sin((0.72 + 0.83 * i))) * 0.27 + 0.5
-    let ballz = Math.cos(i + 1.32 * time * 0.1 * Math.sin((0.92 + 0.53 * i))) * 0.27 + 0.5
-    return metaball(ballx, bally, ballz, strength, subtract)
-  }
-})
+const size = 30
+const bounds = [[0, 0, 0], [1.5, 1.5, 1.5]]
+const position = (time, i) => {
+  return [
+    Math.sin(i + 1.26 * time * (1.03 + 0.5 * Math.cos(0.21 * i))) * 0.27 + 0.5,
+    Math.cos(i + 1.12 * time * 0.21 * Math.sin((0.72 + 0.83 * i))) * 0.27 + 0.5,
+    Math.cos(i + 1.32 * time * 0.1 * Math.sin((0.92 + 0.53 * i))) * 0.27 + 0.5
+  ]
+}
+let start_bounds, end_bounds
+[start_bounds, end_bounds] = bounds
+let step_sizes = [0, 1, 2].map((i) => (end_bounds[i] - start_bounds[i]) / size)
+const r = size * Math.sqrt(strength / subtract)
+
+const render = (tick) => {
+  let time = 0.05 * tick
+  let fieldArray = ndarray(new Float32Array(size * size * size), [size, size, size])
+  let balls = Array(numblobs).fill().map((_, i) => {
+    let bx, by, bz
+    [bx, by, bz] = position(time, i)
+    return {
+      functional: metaball(bx, by, bz, strength, subtract),
+      center: [bx, by, bz]
+    }
+  })
+
+  fill(fieldArray, (i, j, k) => {
+    let val = 0
+
+    for (let n = 0; n < numblobs; n++) {
+      let ball = balls[n]
+      let zs = ball.center[2] * size
+      let ys = ball.center[1] * size
+      let xs = ball.center[0] * size
+
+      var min_z = Math.floor(zs - r)
+      if (min_z < 1) min_z = 1
+      var max_z = Math.floor(zs + r)
+      if (max_z > size - 1) max_z = size - 1
+      var min_y = Math.floor(ys - r)
+      if (min_y < 1) min_y = 1
+      var max_y = Math.floor(ys + r)
+      if (max_y > size - 1) max_y = size - 1
+      var min_x = Math.floor(xs - r)
+      if (min_x < 1) min_x = 1
+      var max_x = Math.floor(xs + r)
+      if (max_x > size - 1) max_x = size - 1
+
+      if ((max_x <= i) || (i < min_x)) {
+        continue
+      }
+
+      if ((max_y <= j) || (j < min_y)) {
+        continue
+      }
+
+      if ((max_z <= k) || (k < min_z)) {
+        continue
+      }
+
+      let x, y, z
+      [x, y, z] = [i, j, k].map((c, index) => start_bounds[index] + (c * step_sizes[index]))
+      let v = ball.functional(x, y, z)
+      if (v > 0.0) {
+        val += v
+      }
+    }
+    return val
+  })
+
+  let mesh = surfaceNets(fieldArray, 80.0)
+  let coordinate_positions = mesh.positions.map((p) => {
+    return p.map((index, i) => start_bounds[i] + (index * step_sizes[i]))
+  })
+  return {positions: coordinate_positions, cells: mesh.cells}
+}
 
 require('resl')({
   manifest: {
@@ -157,17 +230,8 @@ require('resl')({
     }
   },
   onDone: ({sphereTexture, normalTexture}) => {
-    let field = (x, y, z) => {
-      return balls.map((b) => b(1)(x, y, z)).reduce((a, b) => a + b)
-    }
-    let mesh = isosurface.surfaceNets([50, 50, 50], field, [[0, 0, 0], [1, 1, 1]])
-
     regl.frame(({tick}) => {
-      // let time = 0.05 * tick
-      // let field = (x,y,z) => {
-      //   return balls.map((b) => b(time)(x,y,z)).reduce((a, b) => a + b)
-      // }
-      // let mesh = isosurface.surfaceNets([50,50,50], field, [[0,0,0], [1, 1, 1]])
+      let mesh = render(tick)
       camera(() => {
         drawMetaballs({
           positions: mesh.positions,
