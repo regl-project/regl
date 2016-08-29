@@ -14,6 +14,7 @@ const regl = require('../regl')({canvas: canvas})
 const mat4 = require('gl-mat4')
 window.addEventListener('resize', fit(canvas), false)
 
+
 const camera = require('./util/camera')(regl, {
   center: [0, 2.5, 0]
 })
@@ -35,6 +36,7 @@ const BtQuaternion = ammo.btQuaternion
 const BtRigidBody = ammo.btRigidBody
 const BtRigidBodyConstructionInfo = ammo.btRigidBodyConstructionInfo
 const BtBoxShape = ammo.btBoxShape
+const BtSphereShape = ammo.btSphereShape
 
 //
 // Create box geometry.
@@ -215,6 +217,34 @@ function createBox ({color, position, size}) {
   return {rigidBody: rigidBody, drawCall: boxMesh, color: color}
 }
 
+function createSphere ({color, position}) {
+
+  var mesh = require('primitive-sphere')(1.0, {
+    segments: 16
+  })
+
+  var sphereMesh = new Mesh(mesh.cells, mesh.positions, mesh.normals)
+
+  var mass = 1.0
+
+  var shape = new BtSphereShape(1);
+  shape.setMargin(0.05)
+
+  var motionState = new BtDefaultMotionState(new BtTransform(new BtQuaternion(0, 0, 0, 1), new BtVector3(position[0], position[1], position[2])))
+
+  var localInertia = new BtVector3(0, 0, 0)
+  shape.calculateLocalInertia(mass, localInertia)
+
+  var ci = new BtRigidBodyConstructionInfo(mass, motionState, shape, localInertia)
+  var rigidBody = new BtRigidBody(ci)
+  physicsWorld.addRigidBody(rigidBody)
+
+//  console.log('img: ' , rigidBody.applyImpulse)
+  rigidBody.applyImpulse(new BtVector3(-50,0,0), new BtVector3(position[0], position[1], position[2]) )
+
+  return {rigidBody: rigidBody, drawCall: sphereMesh, color: color}
+}
+
 var transformAux1 = new BtTransform()
 
 function getModelMatrix (rb) {
@@ -231,7 +261,7 @@ function getModelMatrix (rb) {
 }
 
 var objs = []
-objs.push(createPlane({color: [0.5, 0.5, 0.5]}))
+objs.push(createPlane({color: [0.8, 0.8, 0.8]}))
 
 var WALL_HEIGHT = 6
 var WALL_WIDTH = 6
@@ -249,6 +279,9 @@ for (var i = 0; i < WALL_HEIGHT; i++) {
     objs.push(createBox({color: c, position: [0.0, 0.5 + i * 1.0, -5.0 + 2.0 * j], size: [1.0, 1.0, 2.0]}))
   }
 }
+
+objs.push(createSphere({color: [1.0, 1.0, 1.0], position: [6.0, 2.5, 0.0]}))
+
 
 regl.frame(({tick}) => {
   regl.clear({
