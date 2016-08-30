@@ -274,18 +274,16 @@ require('resl')({
   manifest: {
     sphereTexture: {
       type: 'image',
-      src: 'spheretexture.jpg',
+      src: 'assets/spheretexture.jpg',
       parser: (data) => regl.texture({
         data: data,
-        wrapT: 'clamp',
-        wrapS: 'clamp',
         mag: 'linear',
         min: 'linear'
       })
     },
     normalTexture: {
       type: 'image',
-      src: 'normaltexture.jpg',
+      src: 'assets/normaltexture.jpg',
       parser: (data) => regl.texture({
         data: data,
         wrapT: 'repeat',
