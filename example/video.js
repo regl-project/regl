@@ -1,7 +1,7 @@
 /*
-  tags: basic
+  tags: basic, video
 
-  <p>No description</p>
+  <p>This example shows how to overlay a chroma keyed video over a background rendered by regl. </p>
 
  */
 
