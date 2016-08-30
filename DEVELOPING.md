@@ -43,7 +43,7 @@ In addition to the standard style guidelines, we also enforce two extra constrai
 * All test cases, benchmarks and library code must be written using strict ES5 style.
 * All examples use ES6
 
-The reason we do not use ES5 in the library or test code is that regl supports node 0.10, which does not implement ES6.  Because the examples are meant to be illustrative we do not enforce the same strict compatibility requirements.
+The reason we do not use ES6 in the library or test code is that regl supports node 0.10, which does not implement ES6.  Because the examples are meant to be illustrative we do not enforce the same strict compatibility requirements.
 
 For markdown, we're using [`remark`](https://github.com/wooorm/remark) and [`remark-lint`](https://github.com/wooorm/remark-lint).
 
