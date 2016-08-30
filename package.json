@@ -38,7 +38,6 @@
     "hsv2rgb": "^1.1.0",
     "indexhtmlify": "^1.2.1",
     "install": "^0.8.1",
-    "isosurface": "^1.0.0",
     "istanbul": "^0.4.3",
     "mkdirp": "^0.5.1",
     "mouse-change": "^1.3.0",
