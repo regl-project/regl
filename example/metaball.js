@@ -31,11 +31,11 @@ const normalBuffer = regl.buffer({
 })
 
 const cellsBuffer = regl.elements({
-  length: (maxCount*3* 3) * 3 * 2,
-  count: (maxCount*3* 3),
+  length: (maxCount * 3 * 3) * 3 * 2,
+  count: (maxCount * 3 * 3),
   type: 'uint16',
   usage: 'dynamic',
-  primitive: 'triangles',
+  primitive: 'triangles'
 })
 
 const drawBackground = regl({
@@ -152,6 +152,7 @@ const drawMetaballs = regl({
     }
 
     void main() {
+      // Using triplanar texturing, as in http://http.developer.nvidia.com/GPUGems3/gpugems3_ch01.html
       vec3 blend_weights = abs(normalize(vONormal.xyz));
       blend_weights = (blend_weights - 0.2) * 7.;
       blend_weights = max(blend_weights, 0.);
@@ -179,10 +180,10 @@ const drawMetaballs = regl({
     }`,
   attributes: {
     position: {
-      buffer: positionBuffer,
+      buffer: positionBuffer
     },
     normal: {
-      buffer: normalBuffer,
+      buffer: normalBuffer
     }
   },
   uniforms: {
