@@ -46,7 +46,6 @@
     "mouse-wheel": "^1.2.0",
     "ncp": "^2.0.0",
     "ndarray": "^1.0.18",
-    "ndarray-fill": "^1.0.1",
     "parse-dds": "^1.2.1",
     "present": "^1.0.0",
     "primitive-sphere": "^2.0.0",
