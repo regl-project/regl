@@ -235,7 +235,9 @@ require('resl')({
       parser: (data) => regl.texture({
         data: data,
         wrapT: 'clamp',
-        wrapS: 'clamp'
+        wrapS: 'clamp',
+        mag: 'linear',
+        min: 'linear'
       })
     },
     normalTexture: {
@@ -244,7 +246,9 @@ require('resl')({
       parser: (data) => regl.texture({
         data: data,
         wrapT: 'repeat',
-        wrapS: 'repeat'
+        wrapS: 'repeat',
+        min: 'linear mipmap linear',
+        mag: 'linear'
       })
     }
   },
