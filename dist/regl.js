@@ -2138,13 +2138,13 @@ module.exports = function reglCore (
         record.state = ATTRIB_STATE_POINTER
         record.buffer = bufferState.getBuffer(
           bufferState.create(value, GL_ARRAY_BUFFER, false, true))
-        record.type = record.buffer.dtype
+        record.type = 0
       } else {
         var buffer = bufferState.getBuffer(value)
         if (buffer) {
           record.state = ATTRIB_STATE_POINTER
           record.buffer = buffer
-          record.type = buffer.dtype
+          record.type = 0
         } else {
           check.command(typeof value === 'object' && value,
             'invalid data for attribute ' + attribute, env.commandStr)
@@ -2251,6 +2251,7 @@ module.exports = function reglCore (
         })
         if (record.buffer) {
           result.buffer = env.link(record.buffer)
+          result.type = result.type || (result.buffer + '.dtype')
         }
         cache[id] = result
         return result
@@ -2606,7 +2607,7 @@ module.exports = function reglCore (
   }
 
   function injectExtensions (env, scope) {
-    if (extInstancing && !env.instancing) {
+    if (extInstancing) {
       env.instancing = scope.def(
         env.shared.extensions, '.angle_instanced_arrays')
     }
@@ -5437,6 +5438,12 @@ module.exports = function (gl, extensions, limits, stats, config) {
     formatTypes['rgba32f'] = GL_RGBA32F_EXT
   }
 
+  var formatTypesInvert = []
+  Object.keys(formatTypes).forEach(function (key) {
+    var val = formatTypes[key]
+    formatTypesInvert[val] = key
+  })
+
   var renderbufferCount = 0
   var renderbufferSet = {}
 
@@ -5541,6 +5548,7 @@ module.exports = function (gl, extensions, limits, stats, config) {
       if (config.profile) {
         renderbuffer.stats.size = getRenderbufferSize(renderbuffer.format, renderbuffer.width, renderbuffer.height)
       }
+      reglRenderbuffer.format = formatTypesInvert[renderbuffer.format]
 
       return reglRenderbuffer
     }
@@ -6253,11 +6261,11 @@ module.exports = function createTextureSet (
   }
 
   var minFilters = extend({
+    'mipmap': GL_LINEAR_MIPMAP_LINEAR,
     'nearest mipmap nearest': GL_NEAREST_MIPMAP_NEAREST,
     'linear mipmap nearest': GL_LINEAR_MIPMAP_NEAREST,
     'nearest mipmap linear': GL_NEAREST_MIPMAP_LINEAR,
-    'linear mipmap linear': GL_LINEAR_MIPMAP_LINEAR,
-    'mipmap': GL_LINEAR_MIPMAP_LINEAR
+    'linear mipmap linear': GL_LINEAR_MIPMAP_LINEAR
   }, magFilters)
 
   var colorSpace = {
@@ -6353,6 +6361,40 @@ module.exports = function createTextureSet (
 
   var supportedFormats = Object.keys(textureFormats)
   limits.textureFormats = supportedFormats
+
+  // associate with every format string its
+  // corresponding GL-value.
+  var textureFormatsInvert = []
+  Object.keys(textureFormats).forEach(function (key) {
+    var val = textureFormats[key]
+    textureFormatsInvert[val] = key
+  })
+
+  // associate with every type string its
+  // corresponding GL-value.
+  var textureTypesInvert = []
+  Object.keys(textureTypes).forEach(function (key) {
+    var val = textureTypes[key]
+    textureTypesInvert[val] = key
+  })
+
+  var magFiltersInvert = []
+  Object.keys(magFilters).forEach(function (key) {
+    var val = magFilters[key]
+    magFiltersInvert[val] = key
+  })
+
+  var minFiltersInvert = []
+  Object.keys(minFilters).forEach(function (key) {
+    var val = minFilters[key]
+    minFiltersInvert[val] = key
+  })
+
+  var wrapModesInvert = []
+  Object.keys(wrapModes).forEach(function (key) {
+    var val = wrapModes[key]
+    wrapModesInvert[val] = key
+  })
 
   // colorFormats[] gives the format (channels) associated to an
   // internalformat
@@ -7114,6 +7156,14 @@ module.exports = function createTextureSet (
           texInfo.genMipmaps,
           false)
       }
+      reglTexture2D.format = textureFormatsInvert[texture.internalformat]
+      reglTexture2D.type = textureTypesInvert[texture.type]
+
+      reglTexture2D.mag = magFiltersInvert[texInfo.magFilter]
+      reglTexture2D.min = minFiltersInvert[texInfo.minFilter]
+
+      reglTexture2D.wrapS = wrapModesInvert[texInfo.wrapS]
+      reglTexture2D.wrapT = wrapModesInvert[texInfo.wrapT]
 
       return reglTexture2D
     }
@@ -7294,6 +7344,15 @@ module.exports = function createTextureSet (
           texInfo.genMipmaps,
           true)
       }
+
+      reglTextureCube.format = textureFormatsInvert[texture.internalformat]
+      reglTextureCube.type = textureTypesInvert[texture.type]
+
+      reglTextureCube.mag = magFiltersInvert[texInfo.magFilter]
+      reglTextureCube.min = minFiltersInvert[texInfo.minFilter]
+
+      reglTextureCube.wrapS = wrapModesInvert[texInfo.wrapS]
+      reglTextureCube.wrapT = wrapModesInvert[texInfo.wrapT]
 
       for (i = 0; i < 6; ++i) {
         freeMipMap(faces[i])
