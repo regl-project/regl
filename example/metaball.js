@@ -16,6 +16,28 @@ const camera = require('./util/camera')(regl, {
   theta: 1.0
 })
 
+let maxCount = 4096
+
+const positionBuffer = regl.buffer({
+  length: maxCount * 3 * 4,
+  type: 'float',
+  usage: 'dynamic'
+})
+
+const normalBuffer = regl.buffer({
+  length: maxCount * 3 * 4,
+  type: 'float',
+  usage: 'dynamic'
+})
+
+const cellsBuffer = regl.elements({
+  length: (maxCount*3* 3) * 3 * 2,
+  count: (maxCount*3* 3),
+  type: 'uint16',
+  usage: 'dynamic',
+  primitive: 'triangles',
+})
+
 const drawBackground = regl({
   vert: `
     precision mediump float;
@@ -143,8 +165,12 @@ const drawMetaballs = regl({
       gl_FragColor = vec4(base.rgb, 1.);
     }`,
   attributes: {
-    position: regl.prop('positions'),
-    normal: (context, props) => normals(props.cells, props.positions)
+    position: {
+      buffer: positionBuffer,
+    },
+    normal: {
+      buffer: normalBuffer,
+    }
   },
   uniforms: {
     color: [36 / 255.0, 70 / 255.0, 106 / 255.0],
@@ -159,7 +185,7 @@ const drawMetaballs = regl({
     textureMap: regl.prop('textureMap'),
     normalMap: regl.prop('normalMap')
   },
-  elements: regl.prop('cells')
+  elements: cellsBuffer
 })
 
 const numblobs = 20
@@ -255,12 +281,13 @@ require('resl')({
   onDone: ({sphereTexture, normalTexture}) => {
     regl.frame(({time}) => {
       let mesh = render(time)
+      positionBuffer({data: mesh.positions})
+      cellsBuffer({data: mesh.cells})
+      normalBuffer({data: normals(mesh.cells, mesh.positions)})
       camera(() => {
         drawBackground({depth: {enable: false, mask: false}})
         regl.clear({depth: 1})
         drawMetaballs({
-          positions: mesh.positions,
-          cells: mesh.cells,
           textureMap: sphereTexture,
           normalMap: normalTexture
         })
