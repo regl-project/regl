@@ -205,7 +205,6 @@ const numblobs = 20
 const strength = 1.2 / ((Math.sqrt(numblobs) - 1) / 4 + 1)
 const subtract = 12
 const size = 50
-const bounds = [[0.5, 0.5, 0.5], [1.5, 1.5, 1.5]]
 const position = (time, i) => {
   return [
     Math.sin(i + 1.26 * time * (1.03 + 0.5 * Math.cos(0.21 * i))) * 0.27 + 0.5,
@@ -213,42 +212,38 @@ const position = (time, i) => {
     Math.cos(i + 1.32 * time * 0.1 * Math.sin((0.92 + 0.53 * i))) * 0.27 + 0.5
   ]
 }
-let start_bounds, end_bounds
-[start_bounds, end_bounds] = bounds
+const start_bounds = [0.5, 0.5, 0.5]
+const end_bounds = [1.5, 1.5, 1.5]
 const step_sizes = [0, 1, 2].map((i) => (end_bounds[i] - start_bounds[i]) / size)
-const r = size * Math.sqrt(strength / subtract)
+
+// Outside the radius of influence, we assume field contribution of zero
+const radius = size * Math.sqrt(strength / subtract)
 
 const render = (tick) => {
   let time = 0.5 * tick
   let fieldArray = new Float32Array(size * size * size)
 
   for (let n = 0; n < numblobs; n++) {
-    let ballx, bally, ballz
+    let ballx, bally, ballz, x_bounds, y_bounds, z_bounds, bounds
     [ballx, bally, ballz] = position(time, n)
-    let zs = ballz * size
-    let ys = bally * size
-    let xs = ballx * size
+    bounds = [ballx, bally, ballz].map((c) => {
+      let coordCenter = c * size
+      return [
+        Math.max(Math.floor(coordCenter - radius), 1),
+        Math.min(Math.floor(coordCenter + radius), size - 1)
+      ]
+    })
+    x_bounds = bounds[0]
+    y_bounds = bounds[1]
+    z_bounds = bounds[2]
 
-    let min_z = Math.floor(zs - r)
-    if (min_z < 1) min_z = 1
-    let max_z = Math.floor(zs + r)
-    if (max_z > size - 1) max_z = size - 1
-    let min_y = Math.floor(ys - r)
-    if (min_y < 1) min_y = 1
-    let max_y = Math.floor(ys + r)
-    if (max_y > size - 1) max_y = size - 1
-    let min_x = Math.floor(xs - r)
-    if (min_x < 1) min_x = 1
-    let max_x = Math.floor(xs + r)
-    if (max_x > size - 1) max_x = size - 1
-
-    for (let z = min_z; z < max_z; z++) {
+    for (let z = z_bounds[0]; z < z_bounds[1]; z++) {
       let z_offset = size * size * z
 
-      for (let y = min_y; y < max_y; y++) {
+      for (let y = y_bounds[0]; y < y_bounds[1]; y++) {
         let y_offset = size * y
 
-        for (let x = min_x; x < max_x; x++) {
+        for (let x = x_bounds[0]; x < x_bounds[1]; x++) {
           let fx = x / size - ballx
           let fy = y / size - bally
           let fz = z / size - ballz
@@ -260,9 +255,18 @@ const render = (tick) => {
   }
 
   let mesh = surfaceNets(ndarray(fieldArray, [size, size, size]), 80.0)
-  let coordinate_positions = mesh.positions.map((p) => {
-    return p.map((index, i) => start_bounds[i] + (index * step_sizes[i]))
-  })
+
+  // Transform index coordinates to space coordinates
+  let coordinate_positions = new Array(mesh.positions.length)
+  for (let i = 0; i < mesh.positions.length; i++) {
+    let position = mesh.positions[i]
+    let transformed_position = new Array(3)
+    for (let j = 0; j < 3; j++) {
+      transformed_position[j] = start_bounds[j] + (position[j] * step_sizes[j])
+    }
+    coordinate_positions[i] = transformed_position
+  }
+
   return {positions: coordinate_positions, cells: mesh.cells}
 }
 
