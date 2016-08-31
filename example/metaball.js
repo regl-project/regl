@@ -275,7 +275,6 @@ require('resl')({
   manifest: {
     sphereTexture: {
       type: 'image',
-      // sphere texture from https://bensimonds.com/2010/07/30/matcap-generator/
       src: 'assets/spheretexture.jpg',
       parser: (data) => regl.texture({
         data: data,
@@ -285,7 +284,6 @@ require('resl')({
     },
     normalTexture: {
       type: 'image',
-      // normal texture from http://opengameart.org/node/21219
       src: 'assets/normaltexture.jpg',
       parser: (data) => regl.texture({
         data: data,
