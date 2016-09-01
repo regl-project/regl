@@ -23,8 +23,8 @@
       alt="NPM version" />
   </a>
   <!-- Build Status -->
-  <a href="https://circleci.com/gh/mikolalysenko/regl">
-    <img src="https://circleci.com/gh/mikolalysenko/regl.svg?style=shield"
+  <a href="https://circleci.com/gh/regl-project/regl">
+    <img src="https://circleci.com/gh/regl-project/regl.svg?style=shield"
       alt="Build Status" />
   </a>
   <!-- File size -->
