@@ -1,4 +1,6 @@
 /*
+  tags: advanced
+
   <p>Metaball rendering demo. Many ideas and code taken from <a href="https://www.clicktorelease.com/code/bumpy-metaballs">here</a></p>
 
  */
