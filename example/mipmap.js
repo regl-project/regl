@@ -42,7 +42,7 @@ const drawCheckerboard = regl({
     tick: ({tick}) => 0.005 * tick,
 
     texture: regl.texture({
-      min: 'nearest mipmap linear',
+      min: 'linear mipmap linear',
       mag: 'nearest',
       wrap: 'repeat',
       data: [
