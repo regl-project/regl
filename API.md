@@ -1413,8 +1413,8 @@ The arguments to the update pathway are the same as the constructor and the retu
 
 ##### Buffer subdata
 
-For performance reasons we may sometimes want to update just a portion of
-We can also update a portion of the buffer using the `subdata` method.  This can be useful if you are dealing with frequently changing or streaming vertex data.  Here is an example:
+For performance reasons we may sometimes want to update just a portion of the buffer. 
+You can update a portion of the buffer using the `subdata` method.  This can be useful if you are dealing with frequently changing or streaming vertex data.  Here is an example:
 
 ```javascript
 // First we preallocate a buffer with 100 bytes of data
