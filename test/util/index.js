@@ -1,3 +1,4 @@
+require('../flatten')
 require('../context-loss')
 require('../constructor')
 require('../projection')
