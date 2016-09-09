@@ -36,8 +36,9 @@
   * Asset loading (obj, ply, etc.)
   * Water Reflection(though cubic-framebuffers)
 
-## Next
+## 1.2.0
 
+* Simplified flattening logic for textures and buffers
 * Viewport and scissor box can go outside drawing buffer
 
 ## 1.1.1
