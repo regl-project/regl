@@ -229,7 +229,7 @@ if (isHeadless && !prettyPrint) {
 }
 
 }).call(this,require('_process'))
-},{"../../regl":72,"../lib/util/extend":34,"./list":11,"_process":70,"gl":68,"present":69}],2:[function(require,module,exports){
+},{"../../regl":73,"../lib/util/extend":34,"./list":11,"_process":71,"gl":69,"present":70}],2:[function(require,module,exports){
 module.exports = function (regl) {
   var buffer = regl.buffer()
   return function () {
@@ -330,7 +330,7 @@ module.exports = function (canvas, canvasWidth, canvasHeight) {
   }
 }
 
-},{"three":71}],5:[function(require,module,exports){
+},{"three":72}],5:[function(require,module,exports){
 /* global alert*/
 
 function flatten (data) {
@@ -764,7 +764,7 @@ module.exports = function (regl) {
   })
 }
 
-},{"gl-mat4":53}],7:[function(require,module,exports){
+},{"gl-mat4":54}],7:[function(require,module,exports){
 module.exports = function (regl) {
   var draw = regl({
     profile: false,
@@ -1025,6 +1025,10 @@ var isTypedArray = require('./util/is-typed-array')
 var isNDArrayLike = require('./util/is-ndarray')
 var values = require('./util/values')
 var pool = require('./util/pool')
+var flattenUtil = require('./util/flatten')
+
+var arrayFlatten = flattenUtil.flatten
+var arrayShape = flattenUtil.shape
 
 var arrayTypes = require('./constants/arraytypes.json')
 var bufferTypes = require('./constants/dtypes.json')
@@ -1061,16 +1065,6 @@ function transpose (
   for (var i = 0; i < shapeX; ++i) {
     for (var j = 0; j < shapeY; ++j) {
       result[ptr++] = data[strideX * i + strideY * j + offset]
-    }
-  }
-}
-
-function flatten (result, data, dimension) {
-  var ptr = 0
-  for (var i = 0; i < data.length; ++i) {
-    var v = data[i]
-    for (var j = 0; j < dimension; ++j) {
-      result[ptr++] = v[j]
     }
   }
 }
@@ -1125,17 +1119,20 @@ module.exports = function wrapBufferState (gl, stats, config) {
   }
 
   function initBufferFromData (buffer, data, usage, dtype, dimension, persist) {
+    var shape
     buffer.usage = usage
     if (Array.isArray(data)) {
       buffer.dtype = dtype || GL_FLOAT
       if (data.length > 0) {
         var flatData
         if (Array.isArray(data[0])) {
-          buffer.dimension = data[0].length
-          flatData = pool.allocType(
-            buffer.dtype,
-            data.length * buffer.dimension)
-          flatten(flatData, data, buffer.dimension)
+          shape = arrayShape(data)
+          var dim = 1
+          for (var i = 1; i < shape.length; ++i) {
+            dim *= shape[i]
+          }
+          buffer.dimension = dim
+          flatData = arrayFlatten(data, shape, buffer.dtype)
           initBufferFromTypedArray(buffer, flatData, usage)
           if (persist) {
             buffer.persistentData = flatData
@@ -1155,10 +1152,10 @@ module.exports = function wrapBufferState (gl, stats, config) {
         } else if (isTypedArray(data[0])) {
           buffer.dimension = data[0].length
           buffer.dtype = dtype || typedArrayCode(data[0]) || GL_FLOAT
-          flatData = pool.allocType(
-            buffer.dtype,
-            data.length * buffer.dimension)
-          flatten(flatData, data, buffer.dimension)
+          flatData = arrayFlatten(
+            data,
+            [data.length, data[0].length],
+            buffer.dtype)
           initBufferFromTypedArray(buffer, flatData, usage)
           if (persist) {
             buffer.persistentData = flatData
@@ -1177,7 +1174,7 @@ module.exports = function wrapBufferState (gl, stats, config) {
         buffer.persistentData = new Uint8Array(new Uint8Array(data.buffer))
       }
     } else if (isNDArrayLike(data)) {
-      var shape = data.shape
+      shape = data.shape
       var stride = data.stride
       var offset = data.offset
 
@@ -1310,6 +1307,7 @@ module.exports = function wrapBufferState (gl, stats, config) {
 
     function subdata (data, offset_) {
       var offset = (offset_ || 0) | 0
+      var shape
       buffer.bind()
       if (Array.isArray(data)) {
         if (data.length > 0) {
@@ -1319,9 +1317,8 @@ module.exports = function wrapBufferState (gl, stats, config) {
             setSubData(converted, offset)
             pool.freeType(converted)
           } else if (Array.isArray(data[0]) || isTypedArray(data[0])) {
-            var dimension = data[0].length
-            var flatData = pool.allocType(buffer.dtype, data.length * dimension)
-            flatten(flatData, data, dimension)
+            shape = arrayShape(data)
+            var flatData = arrayFlatten(data, shape, buffer.dtype)
             setSubData(flatData, offset)
             pool.freeType(flatData)
           } else {
@@ -1331,7 +1328,7 @@ module.exports = function wrapBufferState (gl, stats, config) {
       } else if (isTypedArray(data)) {
         setSubData(data, offset)
       } else if (isNDArrayLike(data)) {
-        var shape = data.shape
+        shape = data.shape
         var stride = data.stride
 
         var shapeX = 0
@@ -1428,7 +1425,7 @@ module.exports = function wrapBufferState (gl, stats, config) {
   }
 }
 
-},{"./constants/arraytypes.json":14,"./constants/dtypes.json":15,"./constants/usage.json":17,"./util/check":31,"./util/is-ndarray":36,"./util/is-typed-array":37,"./util/pool":39,"./util/values":42}],14:[function(require,module,exports){
+},{"./constants/arraytypes.json":14,"./constants/dtypes.json":15,"./constants/usage.json":17,"./util/check":31,"./util/flatten":35,"./util/is-ndarray":37,"./util/is-typed-array":38,"./util/pool":40,"./util/values":43}],14:[function(require,module,exports){
 module.exports={
   "[object Int8Array]": 5120
 , "[object Int16Array]": 5122
@@ -2144,17 +2141,16 @@ module.exports = function reglCore (
         var isStatic = true
         var x = box.x | 0
         var y = box.y | 0
-        check.command(x >= 0 && y >= 0, 'invalid ' + param, env.commandStr)
         var w, h
         if ('width' in box) {
           w = box.width | 0
-          check.command(w > 0, 'invalid ' + param, env.commandStr)
+          check.command(w >= 0, 'invalid ' + param, env.commandStr)
         } else {
           isStatic = false
         }
         if ('height' in box) {
           h = box.height | 0
-          check.command(h > 0, 'invalid ' + param, env.commandStr)
+          check.command(h >= 0, 'invalid ' + param, env.commandStr)
         } else {
           isStatic = false
         }
@@ -2168,14 +2164,10 @@ module.exports = function reglCore (
             var BOX_W = w
             if (!('width' in box)) {
               BOX_W = scope.def(CONTEXT, '.', S_FRAMEBUFFER_WIDTH, '-', x)
-            } else {
-              check.command(w > 0, 'invalid ' + param, env.commandStr)
             }
             var BOX_H = h
             if (!('height' in box)) {
               BOX_H = scope.def(CONTEXT, '.', S_FRAMEBUFFER_HEIGHT, '-', y)
-            } else {
-              check.command(h > 0, 'invalid ' + param, env.commandStr)
             }
             return [x, y, BOX_W, BOX_H]
           })
@@ -2202,10 +2194,8 @@ module.exports = function reglCore (
 
           check.optional(function () {
             env.assert(scope,
-              BOX_X + '>=0&&' +
-              BOX_Y + '>=0&&' +
-              BOX_W + '>0&&' +
-              BOX_H + '>0',
+              BOX_W + '>=0&&' +
+              BOX_H + '>=0',
               'invalid ' + param)
           })
 
@@ -4859,7 +4849,7 @@ module.exports = function reglCore (
   }
 }
 
-},{"./constants/dtypes.json":15,"./constants/primitives.json":16,"./dynamic":19,"./util/check":31,"./util/codegen":33,"./util/is-array-like":35,"./util/is-ndarray":36,"./util/is-typed-array":37,"./util/loop":38}],19:[function(require,module,exports){
+},{"./constants/dtypes.json":15,"./constants/primitives.json":16,"./dynamic":19,"./util/check":31,"./util/codegen":33,"./util/is-array-like":36,"./util/is-ndarray":37,"./util/is-typed-array":38,"./util/loop":39}],19:[function(require,module,exports){
 var VARIABLE_COUNTER = 0
 
 var DYN_FUNC = 0
@@ -5221,7 +5211,7 @@ module.exports = function wrapElementsState (gl, extensions, bufferState, stats)
   }
 }
 
-},{"./constants/primitives.json":16,"./constants/usage.json":17,"./util/check":31,"./util/is-ndarray":36,"./util/is-typed-array":37,"./util/values":42}],21:[function(require,module,exports){
+},{"./constants/primitives.json":16,"./constants/usage.json":17,"./util/check":31,"./util/is-ndarray":37,"./util/is-typed-array":38,"./util/values":43}],21:[function(require,module,exports){
 var check = require('./util/check')
 
 module.exports = function createExtensionCache (gl, config) {
@@ -6150,7 +6140,7 @@ module.exports = function wrapFBOState (
   })
 }
 
-},{"./util/check":31,"./util/extend":34,"./util/values":42}],23:[function(require,module,exports){
+},{"./util/check":31,"./util/extend":34,"./util/values":43}],23:[function(require,module,exports){
 var GL_SUBPIXEL_BITS = 0x0D50
 var GL_RED_BITS = 0x0D52
 var GL_GREEN_BITS = 0x0D53
@@ -6358,7 +6348,7 @@ module.exports = function wrapReadPixels (
   return readPixels
 }
 
-},{"./util/check":31,"./util/is-typed-array":37}],25:[function(require,module,exports){
+},{"./util/check":31,"./util/is-typed-array":38}],25:[function(require,module,exports){
 var check = require('./util/check')
 var values = require('./util/values')
 
@@ -6607,7 +6597,7 @@ module.exports = function (gl, extensions, limits, stats, config) {
   }
 }
 
-},{"./util/check":31,"./util/values":42}],26:[function(require,module,exports){
+},{"./util/check":31,"./util/values":43}],26:[function(require,module,exports){
 var check = require('./util/check')
 var values = require('./util/values')
 
@@ -6828,7 +6818,7 @@ module.exports = function wrapShaderState (gl, stringStore, stats, config) {
   }
 }
 
-},{"./util/check":31,"./util/values":42}],27:[function(require,module,exports){
+},{"./util/check":31,"./util/values":43}],27:[function(require,module,exports){
 
 module.exports = function stats () {
   return {
@@ -6874,6 +6864,7 @@ var isNDArrayLike = require('./util/is-ndarray')
 var pool = require('./util/pool')
 var convertToHalfFloat = require('./util/to-half-float')
 var isArrayLike = require('./util/is-array-like')
+var flattenUtils = require('./util/flatten')
 
 var dtypes = require('./constants/arraytypes.json')
 var arrayTypes = require('./constants/arraytypes.json')
@@ -7099,9 +7090,7 @@ function typedArrayCode (data) {
 }
 
 function convertData (result, data) {
-  var n = result.width * result.height * result.channels
-  check(data.length === n, 'inconsistent array length for texture. Expected: ' + n + '. Was: ' + data.length)
-
+  var n = data.length
   switch (result.type) {
     case GL_UNSIGNED_BYTE:
     case GL_UNSIGNED_SHORT:
@@ -7149,39 +7138,6 @@ function transposeData (image, array, strideX, strideY, strideC, offset) {
     for (var j = 0; j < w; ++j) {
       for (var k = 0; k < c; ++k) {
         data[p++] = array[strideX * j + strideY * i + strideC * k + offset]
-      }
-    }
-  }
-
-  postConvert(image, data)
-}
-
-function flatten2DData (image, array, w, h) {
-  var n = w * h
-  var data = preConvert(image, n)
-
-  var p = 0
-  for (var i = 0; i < h; ++i) {
-    var row = array[i]
-    for (var j = 0; j < w; ++j) {
-      data[p++] = row[j]
-    }
-  }
-
-  postConvert(image, data)
-}
-
-function flatten3DData (image, array, w, h, c) {
-  var n = w * h * c
-  var data = preConvert(image, n)
-
-  var p = 0
-  for (var i = 0; i < h; ++i) {
-    var row = array[i]
-    for (var j = 0; j < w; ++j) {
-      var pixel = row[j]
-      for (var k = 0; k < c; ++k) {
-        data[p++] = pixel[k]
       }
     }
   }
@@ -7413,7 +7369,7 @@ module.exports = function createTextureSet (
     // shape info
     this.width = 0
     this.height = 0
-    this.channels = 4
+    this.channels = 0
   }
 
   function copyFlags (result, other) {
@@ -7470,7 +7426,7 @@ module.exports = function createTextureSet (
         !(type === 'half float' || type === 'float16'),
         'you must enable the OES_texture_half_float extension in order to use 16-bit floating point textures.')
       check(extensions.webgl_depth_texture ||
-        !(type === 'depth' || type === 'depth stencil'),
+        !(type === 'uint16' || type === 'uint32' || type === 'depth stencil'),
         'you must enable the WEBGL_depth_texture extension in order to use depth/stencil textures.')
       check.parameter(type, textureTypes,
         'invalid texture type')
@@ -7616,12 +7572,15 @@ module.exports = function createTextureSet (
     } else if (!data) {
       image.width = image.width || 1
       image.height = image.height || 1
+      image.channels = image.channels || 4
     } else if (isTypedArray(data)) {
+      image.channels = image.channels || 4
       image.data = data
       if (!('type' in options) && image.type === GL_UNSIGNED_BYTE) {
         image.type = typedArrayCode(data)
       }
     } else if (isNumericArray(data)) {
+      image.channels = image.channels || 4
       convertData(image, data)
       image.alignment = 1
       image.needsFree = true
@@ -7660,25 +7619,34 @@ module.exports = function createTextureSet (
       }
       image.width = image.element.width
       image.height = image.element.height
+      image.channels = 4
     } else if (isImageElement(data)) {
       image.element = data
       image.width = data.naturalWidth
       image.height = data.naturalHeight
+      image.channels = 4
     } else if (isVideoElement(data)) {
       image.element = data
       image.width = data.videoWidth
       image.height = data.videoHeight
-      image.needsPoll = true
+      image.channels = 4
     } else if (isRectArray(data)) {
-      var w = data[0].length
-      var h = data.length
-      var c = 1
+      var w = image.width || data[0].length
+      var h = image.height || data.length
+      var c = image.channels
       if (isArrayLike(data[0][0])) {
-        c = data[0][0].length
-        flatten3DData(image, data, w, h, c)
+        c = c || data[0][0].length
       } else {
-        flatten2DData(image, data, w, h)
+        c = c || 1
       }
+      var arrayShape = flattenUtils.shape(data)
+      var n = 1
+      for (var dd = 0; dd < arrayShape.length; ++dd) {
+        n *= arrayShape[dd]
+      }
+      var allocData = preConvert(image, n)
+      flattenUtils.flatten(data, arrayShape, '', allocData)
+      postConvert(image, allocData)
       image.alignment = 1
       image.width = w
       image.height = h
@@ -7782,6 +7750,7 @@ module.exports = function createTextureSet (
     mipmap.mipmask = 1
     img.width = mipmap.width = width
     img.height = mipmap.height = height
+    img.channels = mipmap.channels = 4
   }
 
   function parseMipMapFromObject (mipmap, options) {
@@ -8159,11 +8128,11 @@ module.exports = function createTextureSet (
 
       var imageData = allocImage()
       copyFlags(imageData, texture)
-      imageData.width >>= level
-      imageData.height >>= level
-      imageData.width -= x
-      imageData.height -= y
+      imageData.width = 0
+      imageData.height = 0
       parseImage(imageData, image)
+      imageData.width = imageData.width || ((texture.width >> level) - x)
+      imageData.height = imageData.height || ((texture.height >> level) - y)
 
       check(
         texture.type === imageData.type &&
@@ -8354,11 +8323,11 @@ module.exports = function createTextureSet (
 
       var imageData = allocImage()
       copyFlags(imageData, texture)
-      imageData.width >>= level
-      imageData.height >>= level
-      imageData.width -= x
-      imageData.height -= y
+      imageData.width = 0
+      imageData.height = 0
       parseImage(imageData, image)
+      imageData.width = imageData.width || ((texture.width >> level) - x)
+      imageData.height = imageData.height || ((texture.height >> level) - y)
 
       check(
         texture.type === imageData.type &&
@@ -8511,7 +8480,7 @@ module.exports = function createTextureSet (
   }
 }
 
-},{"./constants/arraytypes.json":14,"./util/check":31,"./util/extend":34,"./util/is-array-like":35,"./util/is-ndarray":36,"./util/is-typed-array":37,"./util/pool":39,"./util/to-half-float":41,"./util/values":42}],30:[function(require,module,exports){
+},{"./constants/arraytypes.json":14,"./util/check":31,"./util/extend":34,"./util/flatten":35,"./util/is-array-like":36,"./util/is-ndarray":37,"./util/is-typed-array":38,"./util/pool":40,"./util/to-half-float":42,"./util/values":43}],30:[function(require,module,exports){
 var GL_QUERY_RESULT_EXT = 0x8866
 var GL_QUERY_RESULT_AVAILABLE_EXT = 0x8867
 var GL_TIME_ELAPSED_EXT = 0x88BF
@@ -9291,7 +9260,7 @@ module.exports = extend(check, {
   textureCube: checkTextureCube
 })
 
-},{"./extend":34,"./is-typed-array":37}],32:[function(require,module,exports){
+},{"./extend":34,"./is-typed-array":38}],32:[function(require,module,exports){
 /* globals performance */
 module.exports =
   (typeof performance !== 'undefined' && performance.now)
@@ -9492,12 +9461,107 @@ module.exports = function (base, opts) {
 }
 
 },{}],35:[function(require,module,exports){
+var pool = require('./pool')
+
+module.exports = {
+  shape: arrayShape,
+  flatten: flattenArray
+}
+
+function flatten1D (array, nx, out) {
+  for (var i = 0; i < nx; ++i) {
+    out[i] = array[i]
+  }
+}
+
+function flatten2D (array, nx, ny, out) {
+  var ptr = 0
+  for (var i = 0; i < nx; ++i) {
+    var row = array[i]
+    for (var j = 0; j < ny; ++j) {
+      out[ptr++] = row[j]
+    }
+  }
+}
+
+function flatten3D (array, nx, ny, nz, out, ptr_) {
+  var ptr = ptr_
+  for (var i = 0; i < nx; ++i) {
+    var row = array[i]
+    for (var j = 0; j < ny; ++j) {
+      var col = row[j]
+      for (var k = 0; k < nz; ++k) {
+        out[ptr++] = col[k]
+      }
+    }
+  }
+}
+
+function flattenRec (array, shape, level, out, ptr) {
+  var stride = 1
+  for (var i = level + 1; i < shape.length; ++i) {
+    stride *= shape[i]
+  }
+  var n = shape[level]
+  if (shape.length - level === 4) {
+    var nx = shape[level + 1]
+    var ny = shape[level + 2]
+    var nz = shape[level + 3]
+    for (i = 0; i < n; ++i) {
+      flatten3D(array[i], nx, ny, nz, out, ptr)
+      ptr += stride
+    }
+  } else {
+    for (i = 0; i < n; ++i) {
+      flattenRec(array[i], shape, level + 1, out, ptr)
+      ptr += stride
+    }
+  }
+}
+
+function flattenArray (array, shape, type, out_) {
+  var sz = 1
+  if (shape.length) {
+    for (var i = 0; i < shape.length; ++i) {
+      sz *= shape[i]
+    }
+  } else {
+    sz = 0
+  }
+  var out = out_ || pool.allocType(type, sz)
+  switch (shape.length) {
+    case 0:
+      break
+    case 1:
+      flatten1D(array, shape[0], out)
+      break
+    case 2:
+      flatten2D(array, shape[0], shape[1], out)
+      break
+    case 3:
+      flatten3D(array, shape[0], shape[1], shape[2], out, 0)
+      break
+    default:
+      flattenRec(array, shape, 0, out, 0)
+  }
+  return out
+}
+
+function arrayShape (array_) {
+  var shape = []
+  for (var array = array_; array.length; array = array[0]) {
+    shape.push(array.length)
+  }
+  return shape
+}
+
+},{"./pool":40}],36:[function(require,module,exports){
 var isTypedArray = require('./is-typed-array')
 module.exports = function isArrayLike (s) {
   return Array.isArray(s) || isTypedArray(s)
 }
 
-},{"./is-typed-array":37}],36:[function(require,module,exports){
+},{"./is-typed-array":38}],37:[function(require,module,exports){
 var isTypedArray = require('./is-typed-array')
 
 module.exports = function isNDArrayLike (obj) {
@@ -9512,13 +9576,13 @@ module.exports = function isNDArrayLike (obj) {
       isTypedArray(obj.data)))
 }
 
-},{"./is-typed-array":37}],37:[function(require,module,exports){
+},{"./is-typed-array":38}],38:[function(require,module,exports){
 var dtypes = require('../constants/arraytypes.json')
 module.exports = function (x) {
   return Object.prototype.toString.call(x) in dtypes
 }
 
-},{"../constants/arraytypes.json":14}],38:[function(require,module,exports){
+},{"../constants/arraytypes.json":14}],39:[function(require,module,exports){
 module.exports = function loop (n, f) {
   var result = Array(n)
   for (var i = 0; i < n; ++i) {
@@ -9527,7 +9591,7 @@ module.exports = function loop (n, f) {
   return result
 }
 
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 var loop = require('./loop')
 
 var GL_BYTE = 5120
@@ -9621,7 +9685,7 @@ module.exports = {
   freeType: freeType
 }
 
-},{"./loop":38}],40:[function(require,module,exports){
+},{"./loop":39}],41:[function(require,module,exports){
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
     typeof cancelAnimationFrame === 'function') {
@@ -9638,7 +9702,7 @@ if (typeof requestAnimationFrame === 'function' &&
   }
 }
 
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 var pool = require('./pool')
 
 var FLOAT = new Float32Array(1)
@@ -9684,12 +9748,12 @@ module.exports = function convertToHalfFloat (array) {
   return ushorts
 }
 
-},{"./pool":39}],42:[function(require,module,exports){
+},{"./pool":40}],43:[function(require,module,exports){
 module.exports = function (obj) {
   return Object.keys(obj).map(function (key) { return obj[key] })
 }
 
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 // Context and canvas creation helper functions
 var check = require('./util/check')
 var extend = require('./util/extend')
@@ -9895,7 +9959,7 @@ module.exports = function parseArgs (args_) {
   }
 }
 
-},{"./util/check":31,"./util/extend":34}],44:[function(require,module,exports){
+},{"./util/check":31,"./util/extend":34}],45:[function(require,module,exports){
 module.exports = adjoint;
 
 /**
@@ -9929,7 +9993,7 @@ function adjoint(out, a) {
     out[15] =  (a00 * (a11 * a22 - a12 * a21) - a10 * (a01 * a22 - a02 * a21) + a20 * (a01 * a12 - a02 * a11));
     return out;
 };
-},{}],45:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 module.exports = clone;
 
 /**
@@ -9958,7 +10022,7 @@ function clone(a) {
     out[15] = a[15];
     return out;
 };
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 module.exports = copy;
 
 /**
@@ -9987,7 +10051,7 @@ function copy(out, a) {
     out[15] = a[15];
     return out;
 };
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 module.exports = create;
 
 /**
@@ -10015,7 +10079,7 @@ function create() {
     out[15] = 1;
     return out;
 };
-},{}],48:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 module.exports = determinant;
 
 /**
@@ -10046,7 +10110,7 @@ function determinant(a) {
     // Calculate the determinant
     return b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
 };
-},{}],49:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 module.exports = fromQuat;
 
 /**
@@ -10094,7 +10158,7 @@ function fromQuat(out, q) {
 
     return out;
 };
-},{}],50:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 module.exports = fromRotationTranslation;
 
 /**
@@ -10148,7 +10212,7 @@ function fromRotationTranslation(out, q, v) {
     
     return out;
 };
-},{}],51:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 module.exports = frustum;
 
 /**
@@ -10185,7 +10249,7 @@ function frustum(out, left, right, bottom, top, near, far) {
     out[15] = 0;
     return out;
 };
-},{}],52:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 module.exports = identity;
 
 /**
@@ -10213,7 +10277,7 @@ function identity(out) {
     out[15] = 1;
     return out;
 };
-},{}],53:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 module.exports = {
   create: require('./create')
   , clone: require('./clone')
@@ -10239,7 +10303,7 @@ module.exports = {
   , lookAt: require('./lookAt')
   , str: require('./str')
 }
-},{"./adjoint":44,"./clone":45,"./copy":46,"./create":47,"./determinant":48,"./fromQuat":49,"./fromRotationTranslation":50,"./frustum":51,"./identity":52,"./invert":54,"./lookAt":55,"./multiply":56,"./ortho":57,"./perspective":58,"./perspectiveFromFieldOfView":59,"./rotate":60,"./rotateX":61,"./rotateY":62,"./rotateZ":63,"./scale":64,"./str":65,"./translate":66,"./transpose":67}],54:[function(require,module,exports){
+},{"./adjoint":45,"./clone":46,"./copy":47,"./create":48,"./determinant":49,"./fromQuat":50,"./fromRotationTranslation":51,"./frustum":52,"./identity":53,"./invert":55,"./lookAt":56,"./multiply":57,"./ortho":58,"./perspective":59,"./perspectiveFromFieldOfView":60,"./rotate":61,"./rotateX":62,"./rotateY":63,"./rotateZ":64,"./scale":65,"./str":66,"./translate":67,"./transpose":68}],55:[function(require,module,exports){
 module.exports = invert;
 
 /**
@@ -10295,7 +10359,7 @@ function invert(out, a) {
 
     return out;
 };
-},{}],55:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 var identity = require('./identity');
 
 module.exports = lookAt;
@@ -10386,7 +10450,7 @@ function lookAt(out, eye, center, up) {
 
     return out;
 };
-},{"./identity":52}],56:[function(require,module,exports){
+},{"./identity":53}],57:[function(require,module,exports){
 module.exports = multiply;
 
 /**
@@ -10429,7 +10493,7 @@ function multiply(out, a, b) {
     out[15] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
     return out;
 };
-},{}],57:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 module.exports = ortho;
 
 /**
@@ -10466,7 +10530,7 @@ function ortho(out, left, right, bottom, top, near, far) {
     out[15] = 1;
     return out;
 };
-},{}],58:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 module.exports = perspective;
 
 /**
@@ -10500,7 +10564,7 @@ function perspective(out, fovy, aspect, near, far) {
     out[15] = 0;
     return out;
 };
-},{}],59:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 module.exports = perspectiveFromFieldOfView;
 
 /**
@@ -10542,7 +10606,7 @@ function perspectiveFromFieldOfView(out, fov, near, far) {
 }
 
 
-},{}],60:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 module.exports = rotate;
 
 /**
@@ -10607,7 +10671,7 @@ function rotate(out, a, rad, axis) {
     }
     return out;
 };
-},{}],61:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 module.exports = rotateX;
 
 /**
@@ -10652,7 +10716,7 @@ function rotateX(out, a, rad) {
     out[11] = a23 * c - a13 * s;
     return out;
 };
-},{}],62:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 module.exports = rotateY;
 
 /**
@@ -10697,7 +10761,7 @@ function rotateY(out, a, rad) {
     out[11] = a03 * s + a23 * c;
     return out;
 };
-},{}],63:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 module.exports = rotateZ;
 
 /**
@@ -10742,7 +10806,7 @@ function rotateZ(out, a, rad) {
     out[7] = a13 * c - a03 * s;
     return out;
 };
-},{}],64:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 module.exports = scale;
 
 /**
@@ -10774,7 +10838,7 @@ function scale(out, a, v) {
     out[15] = a[15];
     return out;
 };
-},{}],65:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 module.exports = str;
 
 /**
@@ -10789,7 +10853,7 @@ function str(a) {
                     a[8] + ', ' + a[9] + ', ' + a[10] + ', ' + a[11] + ', ' + 
                     a[12] + ', ' + a[13] + ', ' + a[14] + ', ' + a[15] + ')';
 };
-},{}],66:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 module.exports = translate;
 
 /**
@@ -10828,7 +10892,7 @@ function translate(out, a, v) {
 
     return out;
 };
-},{}],67:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 module.exports = transpose;
 
 /**
@@ -10878,7 +10942,7 @@ function transpose(out, a) {
     
     return out;
 };
-},{}],68:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 'use strict'
 
 function createContext (width, height, options) {
@@ -10950,7 +11014,7 @@ function createContext (width, height, options) {
 
 module.exports = createContext
 
-},{}],69:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 (function (global){
 var performance = global.performance || {};
 
@@ -10982,7 +11046,7 @@ present.conflict();
 module.exports = present;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],70:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -11144,7 +11208,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],71:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 // File:src/Three.js
 
 /**
@@ -52907,7 +52971,7 @@ THREE.MorphBlendMesh.prototype.update = function ( delta ) {
 };
 
 
-},{}],72:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
 var check = require('./lib/util/check')
 var extend = require('./lib/util/extend')
 var dynamic = require('./lib/dynamic')
@@ -53485,6 +53549,6 @@ module.exports = function wrapREGL (args) {
   return regl
 }
 
-},{"./lib/attribute":12,"./lib/buffer":13,"./lib/core":18,"./lib/dynamic":19,"./lib/elements":20,"./lib/extension":21,"./lib/framebuffer":22,"./lib/limits":23,"./lib/read":24,"./lib/renderbuffer":25,"./lib/shader":26,"./lib/stats":27,"./lib/strings":28,"./lib/texture":29,"./lib/timer":30,"./lib/util/check":31,"./lib/util/clock":32,"./lib/util/extend":34,"./lib/util/raf":40,"./lib/webgl":43}]},{},[1]);
+},{"./lib/attribute":12,"./lib/buffer":13,"./lib/core":18,"./lib/dynamic":19,"./lib/elements":20,"./lib/extension":21,"./lib/framebuffer":22,"./lib/limits":23,"./lib/read":24,"./lib/renderbuffer":25,"./lib/shader":26,"./lib/stats":27,"./lib/strings":28,"./lib/texture":29,"./lib/timer":30,"./lib/util/check":31,"./lib/util/clock":32,"./lib/util/extend":34,"./lib/util/raf":41,"./lib/webgl":44}]},{},[1]);
 </script>
 </html>
