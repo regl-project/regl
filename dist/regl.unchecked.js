@@ -43,6 +43,10 @@ var isTypedArray = require('./util/is-typed-array')
 var isNDArrayLike = require('./util/is-ndarray')
 var values = require('./util/values')
 var pool = require('./util/pool')
+var flattenUtil = require('./util/flatten')
+
+var arrayFlatten = flattenUtil.flatten
+var arrayShape = flattenUtil.shape
 
 var arrayTypes = require('./constants/arraytypes.json')
 var bufferTypes = require('./constants/dtypes.json')
@@ -79,16 +83,6 @@ function transpose (
   for (var i = 0; i < shapeX; ++i) {
     for (var j = 0; j < shapeY; ++j) {
       result[ptr++] = data[strideX * i + strideY * j + offset]
-    }
-  }
-}
-
-function flatten (result, data, dimension) {
-  var ptr = 0
-  for (var i = 0; i < data.length; ++i) {
-    var v = data[i]
-    for (var j = 0; j < dimension; ++j) {
-      result[ptr++] = v[j]
     }
   }
 }
@@ -143,17 +137,20 @@ module.exports = function wrapBufferState (gl, stats, config) {
   }
 
   function initBufferFromData (buffer, data, usage, dtype, dimension, persist) {
+    var shape
     buffer.usage = usage
     if (Array.isArray(data)) {
       buffer.dtype = dtype || GL_FLOAT
       if (data.length > 0) {
         var flatData
         if (Array.isArray(data[0])) {
-          buffer.dimension = data[0].length
-          flatData = pool.allocType(
-            buffer.dtype,
-            data.length * buffer.dimension)
-          flatten(flatData, data, buffer.dimension)
+          shape = arrayShape(data)
+          var dim = 1
+          for (var i = 1; i < shape.length; ++i) {
+            dim *= shape[i]
+          }
+          buffer.dimension = dim
+          flatData = arrayFlatten(data, shape, buffer.dtype)
           initBufferFromTypedArray(buffer, flatData, usage)
           if (persist) {
             buffer.persistentData = flatData
@@ -173,10 +170,10 @@ module.exports = function wrapBufferState (gl, stats, config) {
         } else if (isTypedArray(data[0])) {
           buffer.dimension = data[0].length
           buffer.dtype = dtype || typedArrayCode(data[0]) || GL_FLOAT
-          flatData = pool.allocType(
-            buffer.dtype,
-            data.length * buffer.dimension)
-          flatten(flatData, data, buffer.dimension)
+          flatData = arrayFlatten(
+            data,
+            [data.length, data[0].length],
+            buffer.dtype)
           initBufferFromTypedArray(buffer, flatData, usage)
           if (persist) {
             buffer.persistentData = flatData
@@ -195,7 +192,7 @@ module.exports = function wrapBufferState (gl, stats, config) {
         buffer.persistentData = new Uint8Array(new Uint8Array(data.buffer))
       }
     } else if (isNDArrayLike(data)) {
-      var shape = data.shape
+      shape = data.shape
       var stride = data.stride
       var offset = data.offset
 
@@ -320,6 +317,7 @@ module.exports = function wrapBufferState (gl, stats, config) {
 
     function subdata (data, offset_) {
       var offset = (offset_ || 0) | 0
+      var shape
       buffer.bind()
       if (Array.isArray(data)) {
         if (data.length > 0) {
@@ -329,9 +327,8 @@ module.exports = function wrapBufferState (gl, stats, config) {
             setSubData(converted, offset)
             pool.freeType(converted)
           } else if (Array.isArray(data[0]) || isTypedArray(data[0])) {
-            var dimension = data[0].length
-            var flatData = pool.allocType(buffer.dtype, data.length * dimension)
-            flatten(flatData, data, dimension)
+            shape = arrayShape(data)
+            var flatData = arrayFlatten(data, shape, buffer.dtype)
             setSubData(flatData, offset)
             pool.freeType(flatData)
           } else {
@@ -341,7 +338,7 @@ module.exports = function wrapBufferState (gl, stats, config) {
       } else if (isTypedArray(data)) {
         setSubData(data, offset)
       } else if (isNDArrayLike(data)) {
-        var shape = data.shape
+        shape = data.shape
         var stride = data.stride
 
         var shapeX = 0
@@ -438,7 +435,7 @@ module.exports = function wrapBufferState (gl, stats, config) {
   }
 }
 
-},{"./constants/arraytypes.json":3,"./constants/dtypes.json":4,"./constants/usage.json":6,"./util/is-ndarray":24,"./util/is-typed-array":25,"./util/pool":27,"./util/values":30}],3:[function(require,module,exports){
+},{"./constants/arraytypes.json":3,"./constants/dtypes.json":4,"./constants/usage.json":6,"./util/flatten":23,"./util/is-ndarray":25,"./util/is-typed-array":26,"./util/pool":28,"./util/values":31}],3:[function(require,module,exports){
 module.exports={
   "[object Int8Array]": 5120
 , "[object Int16Array]": 5122
@@ -1137,7 +1134,6 @@ module.exports = function reglCore (
         var isStatic = true
         var x = box.x | 0
         var y = box.y | 0
-        
         var w, h
         if ('width' in box) {
           w = box.width | 0
@@ -1161,14 +1157,10 @@ module.exports = function reglCore (
             var BOX_W = w
             if (!('width' in box)) {
               BOX_W = scope.def(CONTEXT, '.', S_FRAMEBUFFER_WIDTH, '-', x)
-            } else {
-              
             }
             var BOX_H = h
             if (!('height' in box)) {
               BOX_H = scope.def(CONTEXT, '.', S_FRAMEBUFFER_HEIGHT, '-', y)
-            } else {
-              
             }
             return [x, y, BOX_W, BOX_H]
           })
@@ -3477,7 +3469,7 @@ module.exports = function reglCore (
   }
 }
 
-},{"./constants/dtypes.json":4,"./constants/primitives.json":5,"./dynamic":8,"./util/codegen":21,"./util/is-array-like":23,"./util/is-ndarray":24,"./util/is-typed-array":25,"./util/loop":26}],8:[function(require,module,exports){
+},{"./constants/dtypes.json":4,"./constants/primitives.json":5,"./dynamic":8,"./util/codegen":21,"./util/is-array-like":24,"./util/is-ndarray":25,"./util/is-typed-array":26,"./util/loop":27}],8:[function(require,module,exports){
 var VARIABLE_COUNTER = 0
 
 var DYN_FUNC = 0
@@ -3821,7 +3813,7 @@ module.exports = function wrapElementsState (gl, extensions, bufferState, stats)
   }
 }
 
-},{"./constants/primitives.json":5,"./constants/usage.json":6,"./util/is-ndarray":24,"./util/is-typed-array":25,"./util/values":30}],10:[function(require,module,exports){
+},{"./constants/primitives.json":5,"./constants/usage.json":6,"./util/is-ndarray":25,"./util/is-typed-array":26,"./util/values":31}],10:[function(require,module,exports){
 
 
 module.exports = function createExtensionCache (gl, config) {
@@ -4688,7 +4680,7 @@ module.exports = function wrapFBOState (
   })
 }
 
-},{"./util/extend":22,"./util/values":30}],12:[function(require,module,exports){
+},{"./util/extend":22,"./util/values":31}],12:[function(require,module,exports){
 var GL_SUBPIXEL_BITS = 0x0D50
 var GL_RED_BITS = 0x0D52
 var GL_GREEN_BITS = 0x0D53
@@ -4876,7 +4868,7 @@ module.exports = function wrapReadPixels (
   return readPixels
 }
 
-},{"./util/is-typed-array":25}],14:[function(require,module,exports){
+},{"./util/is-typed-array":26}],14:[function(require,module,exports){
 
 var values = require('./util/values')
 
@@ -5117,7 +5109,7 @@ module.exports = function (gl, extensions, limits, stats, config) {
   }
 }
 
-},{"./util/values":30}],15:[function(require,module,exports){
+},{"./util/values":31}],15:[function(require,module,exports){
 
 var values = require('./util/values')
 
@@ -5333,7 +5325,7 @@ module.exports = function wrapShaderState (gl, stringStore, stats, config) {
   }
 }
 
-},{"./util/values":30}],16:[function(require,module,exports){
+},{"./util/values":31}],16:[function(require,module,exports){
 
 module.exports = function stats () {
   return {
@@ -5379,6 +5371,7 @@ var isNDArrayLike = require('./util/is-ndarray')
 var pool = require('./util/pool')
 var convertToHalfFloat = require('./util/to-half-float')
 var isArrayLike = require('./util/is-array-like')
+var flattenUtils = require('./util/flatten')
 
 var dtypes = require('./constants/arraytypes.json')
 var arrayTypes = require('./constants/arraytypes.json')
@@ -5604,9 +5597,7 @@ function typedArrayCode (data) {
 }
 
 function convertData (result, data) {
-  var n = result.width * result.height * result.channels
-  
-
+  var n = data.length
   switch (result.type) {
     case GL_UNSIGNED_BYTE:
     case GL_UNSIGNED_SHORT:
@@ -5654,39 +5645,6 @@ function transposeData (image, array, strideX, strideY, strideC, offset) {
     for (var j = 0; j < w; ++j) {
       for (var k = 0; k < c; ++k) {
         data[p++] = array[strideX * j + strideY * i + strideC * k + offset]
-      }
-    }
-  }
-
-  postConvert(image, data)
-}
-
-function flatten2DData (image, array, w, h) {
-  var n = w * h
-  var data = preConvert(image, n)
-
-  var p = 0
-  for (var i = 0; i < h; ++i) {
-    var row = array[i]
-    for (var j = 0; j < w; ++j) {
-      data[p++] = row[j]
-    }
-  }
-
-  postConvert(image, data)
-}
-
-function flatten3DData (image, array, w, h, c) {
-  var n = w * h * c
-  var data = preConvert(image, n)
-
-  var p = 0
-  for (var i = 0; i < h; ++i) {
-    var row = array[i]
-    for (var j = 0; j < w; ++j) {
-      var pixel = row[j]
-      for (var k = 0; k < c; ++k) {
-        data[p++] = pixel[k]
       }
     }
   }
@@ -5918,7 +5876,7 @@ module.exports = function createTextureSet (
     // shape info
     this.width = 0
     this.height = 0
-    this.channels = 4
+    this.channels = 0
   }
 
   function copyFlags (result, other) {
@@ -6097,12 +6055,15 @@ module.exports = function createTextureSet (
     } else if (!data) {
       image.width = image.width || 1
       image.height = image.height || 1
+      image.channels = image.channels || 4
     } else if (isTypedArray(data)) {
+      image.channels = image.channels || 4
       image.data = data
       if (!('type' in options) && image.type === GL_UNSIGNED_BYTE) {
         image.type = typedArrayCode(data)
       }
     } else if (isNumericArray(data)) {
+      image.channels = image.channels || 4
       convertData(image, data)
       image.alignment = 1
       image.needsFree = true
@@ -6141,25 +6102,34 @@ module.exports = function createTextureSet (
       }
       image.width = image.element.width
       image.height = image.element.height
+      image.channels = 4
     } else if (isImageElement(data)) {
       image.element = data
       image.width = data.naturalWidth
       image.height = data.naturalHeight
+      image.channels = 4
     } else if (isVideoElement(data)) {
       image.element = data
       image.width = data.videoWidth
       image.height = data.videoHeight
-      image.needsPoll = true
+      image.channels = 4
     } else if (isRectArray(data)) {
-      var w = data[0].length
-      var h = data.length
-      var c = 1
+      var w = image.width || data[0].length
+      var h = image.height || data.length
+      var c = image.channels
       if (isArrayLike(data[0][0])) {
-        c = data[0][0].length
-        flatten3DData(image, data, w, h, c)
+        c = c || data[0][0].length
       } else {
-        flatten2DData(image, data, w, h)
+        c = c || 1
       }
+      var arrayShape = flattenUtils.shape(data)
+      var n = 1
+      for (var dd = 0; dd < arrayShape.length; ++dd) {
+        n *= arrayShape[dd]
+      }
+      var allocData = preConvert(image, n)
+      flattenUtils.flatten(data, arrayShape, '', allocData)
+      postConvert(image, allocData)
       image.alignment = 1
       image.width = w
       image.height = h
@@ -6261,6 +6231,7 @@ module.exports = function createTextureSet (
     mipmap.mipmask = 1
     img.width = mipmap.width = width
     img.height = mipmap.height = height
+    img.channels = mipmap.channels = 4
   }
 
   function parseMipMapFromObject (mipmap, options) {
@@ -6633,11 +6604,11 @@ module.exports = function createTextureSet (
 
       var imageData = allocImage()
       copyFlags(imageData, texture)
-      imageData.width >>= level
-      imageData.height >>= level
-      imageData.width -= x
-      imageData.height -= y
+      imageData.width = 0
+      imageData.height = 0
       parseImage(imageData, image)
+      imageData.width = imageData.width || ((texture.width >> level) - x)
+      imageData.height = imageData.height || ((texture.height >> level) - y)
 
       
       
@@ -6813,11 +6784,11 @@ module.exports = function createTextureSet (
 
       var imageData = allocImage()
       copyFlags(imageData, texture)
-      imageData.width >>= level
-      imageData.height >>= level
-      imageData.width -= x
-      imageData.height -= y
+      imageData.width = 0
+      imageData.height = 0
       parseImage(imageData, image)
+      imageData.width = imageData.width || ((texture.width >> level) - x)
+      imageData.height = imageData.height || ((texture.height >> level) - y)
 
       
       
@@ -6958,7 +6929,7 @@ module.exports = function createTextureSet (
   }
 }
 
-},{"./constants/arraytypes.json":3,"./util/extend":22,"./util/is-array-like":23,"./util/is-ndarray":24,"./util/is-typed-array":25,"./util/pool":27,"./util/to-half-float":29,"./util/values":30}],19:[function(require,module,exports){
+},{"./constants/arraytypes.json":3,"./util/extend":22,"./util/flatten":23,"./util/is-array-like":24,"./util/is-ndarray":25,"./util/is-typed-array":26,"./util/pool":28,"./util/to-half-float":30,"./util/values":31}],19:[function(require,module,exports){
 var GL_QUERY_RESULT_EXT = 0x8866
 var GL_QUERY_RESULT_AVAILABLE_EXT = 0x8867
 var GL_TIME_ELAPSED_EXT = 0x88BF
@@ -7299,12 +7270,107 @@ module.exports = function (base, opts) {
 }
 
 },{}],23:[function(require,module,exports){
+var pool = require('./pool')
+
+module.exports = {
+  shape: arrayShape,
+  flatten: flattenArray
+}
+
+function flatten1D (array, nx, out) {
+  for (var i = 0; i < nx; ++i) {
+    out[i] = array[i]
+  }
+}
+
+function flatten2D (array, nx, ny, out) {
+  var ptr = 0
+  for (var i = 0; i < nx; ++i) {
+    var row = array[i]
+    for (var j = 0; j < ny; ++j) {
+      out[ptr++] = row[j]
+    }
+  }
+}
+
+function flatten3D (array, nx, ny, nz, out, ptr_) {
+  var ptr = ptr_
+  for (var i = 0; i < nx; ++i) {
+    var row = array[i]
+    for (var j = 0; j < ny; ++j) {
+      var col = row[j]
+      for (var k = 0; k < nz; ++k) {
+        out[ptr++] = col[k]
+      }
+    }
+  }
+}
+
+function flattenRec (array, shape, level, out, ptr) {
+  var stride = 1
+  for (var i = level + 1; i < shape.length; ++i) {
+    stride *= shape[i]
+  }
+  var n = shape[level]
+  if (shape.length - level === 4) {
+    var nx = shape[level + 1]
+    var ny = shape[level + 2]
+    var nz = shape[level + 3]
+    for (i = 0; i < n; ++i) {
+      flatten3D(array[i], nx, ny, nz, out, ptr)
+      ptr += stride
+    }
+  } else {
+    for (i = 0; i < n; ++i) {
+      flattenRec(array[i], shape, level + 1, out, ptr)
+      ptr += stride
+    }
+  }
+}
+
+function flattenArray (array, shape, type, out_) {
+  var sz = 1
+  if (shape.length) {
+    for (var i = 0; i < shape.length; ++i) {
+      sz *= shape[i]
+    }
+  } else {
+    sz = 0
+  }
+  var out = out_ || pool.allocType(type, sz)
+  switch (shape.length) {
+    case 0:
+      break
+    case 1:
+      flatten1D(array, shape[0], out)
+      break
+    case 2:
+      flatten2D(array, shape[0], shape[1], out)
+      break
+    case 3:
+      flatten3D(array, shape[0], shape[1], shape[2], out, 0)
+      break
+    default:
+      flattenRec(array, shape, 0, out, 0)
+  }
+  return out
+}
+
+function arrayShape (array_) {
+  var shape = []
+  for (var array = array_; array.length; array = array[0]) {
+    shape.push(array.length)
+  }
+  return shape
+}
+
+},{"./pool":28}],24:[function(require,module,exports){
 var isTypedArray = require('./is-typed-array')
 module.exports = function isArrayLike (s) {
   return Array.isArray(s) || isTypedArray(s)
 }
 
-},{"./is-typed-array":25}],24:[function(require,module,exports){
+},{"./is-typed-array":26}],25:[function(require,module,exports){
 var isTypedArray = require('./is-typed-array')
 
 module.exports = function isNDArrayLike (obj) {
@@ -7319,13 +7385,13 @@ module.exports = function isNDArrayLike (obj) {
       isTypedArray(obj.data)))
 }
 
-},{"./is-typed-array":25}],25:[function(require,module,exports){
+},{"./is-typed-array":26}],26:[function(require,module,exports){
 var dtypes = require('../constants/arraytypes.json')
 module.exports = function (x) {
   return Object.prototype.toString.call(x) in dtypes
 }
 
-},{"../constants/arraytypes.json":3}],26:[function(require,module,exports){
+},{"../constants/arraytypes.json":3}],27:[function(require,module,exports){
 module.exports = function loop (n, f) {
   var result = Array(n)
   for (var i = 0; i < n; ++i) {
@@ -7334,7 +7400,7 @@ module.exports = function loop (n, f) {
   return result
 }
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 var loop = require('./loop')
 
 var GL_BYTE = 5120
@@ -7428,7 +7494,7 @@ module.exports = {
   freeType: freeType
 }
 
-},{"./loop":26}],28:[function(require,module,exports){
+},{"./loop":27}],29:[function(require,module,exports){
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
     typeof cancelAnimationFrame === 'function') {
@@ -7445,7 +7511,7 @@ if (typeof requestAnimationFrame === 'function' &&
   }
 }
 
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 var pool = require('./pool')
 
 var FLOAT = new Float32Array(1)
@@ -7491,12 +7557,12 @@ module.exports = function convertToHalfFloat (array) {
   return ushorts
 }
 
-},{"./pool":27}],30:[function(require,module,exports){
+},{"./pool":28}],31:[function(require,module,exports){
 module.exports = function (obj) {
   return Object.keys(obj).map(function (key) { return obj[key] })
 }
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 // Context and canvas creation helper functions
 
 var extend = require('./util/extend')
@@ -7696,7 +7762,7 @@ module.exports = function parseArgs (args_) {
   }
 }
 
-},{"./util/extend":22}],32:[function(require,module,exports){
+},{"./util/extend":22}],33:[function(require,module,exports){
 
 var extend = require('./lib/util/extend')
 var dynamic = require('./lib/dynamic')
@@ -8272,5 +8338,5 @@ module.exports = function wrapREGL (args) {
   return regl
 }
 
-},{"./lib/attribute":1,"./lib/buffer":2,"./lib/core":7,"./lib/dynamic":8,"./lib/elements":9,"./lib/extension":10,"./lib/framebuffer":11,"./lib/limits":12,"./lib/read":13,"./lib/renderbuffer":14,"./lib/shader":15,"./lib/stats":16,"./lib/strings":17,"./lib/texture":18,"./lib/timer":19,"./lib/util/clock":20,"./lib/util/extend":22,"./lib/util/raf":28,"./lib/webgl":31}]},{},[32])(32)
+},{"./lib/attribute":1,"./lib/buffer":2,"./lib/core":7,"./lib/dynamic":8,"./lib/elements":9,"./lib/extension":10,"./lib/framebuffer":11,"./lib/limits":12,"./lib/read":13,"./lib/renderbuffer":14,"./lib/shader":15,"./lib/stats":16,"./lib/strings":17,"./lib/texture":18,"./lib/timer":19,"./lib/util/clock":20,"./lib/util/extend":22,"./lib/util/raf":29,"./lib/webgl":32}]},{},[33])(33)
 });
