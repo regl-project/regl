@@ -1,10 +1,11 @@
 
 /*
-  tags: advanced
+  tags: advanced, physics
 
   <p>
-  In this demo, it is shown how to implement 3D object picking.
-  If you click on an object, an outline is drawn around it.
+  In this example, it is shown how you can integrate ammo.js into
+  regl, and use it to create a simple physics simulation. By clicking,
+  you are able to shoot balls at the wall.
   </p>
 */
 
@@ -237,14 +238,13 @@ function createBox ({color, position, size}) {
   return {rigidBody: rigidBody, drawCall: boxMesh, color: color}
 }
 
-function shootSphere ({color, position}) {
+function shootSphere () {
   /*
     First, we need a ray from the camera.
+    Because we need a shooting position, and a shooting direction.
   */
   var vp = mat4.multiply([], projectionMatrix, viewMatrix)
   var invVp = mat4.invert([], vp)
-
-  console.log('vp: ', vp, invVp)
 
   // get a single point on the camera ray.
   var rayPoint = vec3.transformMat4([], [2.0 * mp[0] / canvas.width - 1.0, -2.0 * mp[1] / canvas.height + 1.0, 0.0], invVp)
@@ -254,12 +254,11 @@ function shootSphere ({color, position}) {
 
   var rayDir = vec3.normalize([], vec3.subtract([], rayPoint, rayOrigin))
 
-  // we release the ball a bit front of the camera.
+  // we release the ball a bit in front of the camera.
   vec3.scaleAndAdd(rayOrigin, rayOrigin, rayDir, 4.4)
 
   /*
-
-    First, create the sphere mesh
+    Next, create the sphere mesh
     */
   var mesh = require('primitive-sphere')(1.0, {
     segments: 16
@@ -268,7 +267,7 @@ function shootSphere ({color, position}) {
 
   /*
     Then, create the rigid body.
-    */
+  */
   var mass = 1.0
   var shape = new BtSphereShape(1)
   shape.setMargin(0.05)
@@ -282,12 +281,12 @@ function shootSphere ({color, position}) {
   physicsWorld.addRigidBody(rigidBody)
 
   /*
-    Now send it flying!
+    Now send the rigid body flying!
   */
   var POWER = 80.0
   rigidBody.applyImpulse(new BtVector3(POWER * rayDir[0], POWER * rayDir[1], POWER * rayDir[2]), new BtVector3(rayOrigin[0], rayOrigin[1], rayOrigin[2]))
 
-  return {rigidBody: rigidBody, drawCall: sphereMesh, color: color}
+  return {rigidBody: rigidBody, drawCall: sphereMesh, color: [1.0, 1.0, 1.0]}
 }
 
 var transformTemp = new BtTransform()
@@ -305,12 +304,12 @@ function getModelMatrix (rb) {
   }
 }
 
-var objs = []
+var objs = [] // contains all the physics objects.
 objs.push(createPlane({color: [0.8, 0.8, 0.8]}))
 
+// create wall.
 var WALL_HEIGHT = 12
 var WALL_WIDTH = 30
-
 for (var i = 0; i < WALL_HEIGHT; i++) {
   for (var j = 0; j < WALL_WIDTH; j++) {
     var x = i * i + 2.1
@@ -326,7 +325,7 @@ for (var i = 0; i < WALL_HEIGHT; i++) {
 }
 
 mb.on('down', function () {
-  objs.push(shootSphere({color: [1.0, 1.0, 1.0], position: [6.0, 2.5, 0.0]}))
+  objs.push(shootSphere())
 })
 
 regl.frame(({tick}) => {
