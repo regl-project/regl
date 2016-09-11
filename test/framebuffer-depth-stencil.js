@@ -171,10 +171,7 @@ tape('framebuffer - depth stencil attachment', function (t) {
         depthStencil: false
       }),
       false, false)
-  }
 
-  /*
-  if (typeof document === 'undefined') {
     testFBO('depth renderbuffer - implicit',
       regl.framebuffer({
         radius: N,
@@ -201,36 +198,31 @@ tape('framebuffer - depth stencil attachment', function (t) {
         stencil: true
       }),
       false, true)
-  }
-  */
 
-  testFBO('depth-stencil renderbuffer - implicit',
-    regl.framebuffer({
-      radius: N,
-      depthStencil: true
-    }),
-    true, true)
+    testFBO('depth-stencil renderbuffer - implicit',
+      regl.framebuffer({
+        radius: N,
+        depthStencil: true
+      }),
+      true, true)
 
-  if (typeof document !== 'undefined') {
     testFBOCube('depth-stencil renderbuffer - implicit, cube fbo, ',
       regl.framebufferCube({
         radius: N,
         depthStencil: true
       }),
       true, true)
-  }
 
-  testFBO('depth-stencil renderbuffer',
-    regl.framebuffer({
-      radius: N,
-      depthStencil: regl.renderbuffer({
+    testFBO('depth-stencil renderbuffer',
+      regl.framebuffer({
         radius: N,
-        format: 'depth stencil'
-      })
-    }),
-    true, true)
+        depthStencil: regl.renderbuffer({
+          radius: N,
+          format: 'depth stencil'
+        })
+      }),
+      true, true)
 
-  if (typeof document !== 'undefined') {
     testFBOCube('depth-stencil renderbuffer, cube fbo, ',
       regl.framebufferCube({
         radius: N,
