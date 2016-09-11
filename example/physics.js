@@ -12,6 +12,10 @@ const canvas = document.body.appendChild(document.createElement('canvas'))
 const fit = require('canvas-fit')
 const regl = require('../regl')({canvas: canvas})
 const mat4 = require('gl-mat4')
+const vec3 = require('gl-vec3')
+var mp = require('mouse-position')(canvas)
+var mb = require('mouse-pressed')(canvas)
+
 window.addEventListener('resize', fit(canvas), false)
 
 var ammo = require('./util/ammo.js')
@@ -32,17 +36,23 @@ const BtRigidBodyConstructionInfo = ammo.btRigidBodyConstructionInfo
 const BtBoxShape = ammo.btBoxShape
 const BtSphereShape = ammo.btSphereShape
 
+var viewMatrix = new Float32Array(16)
+var projectionMatrix = new Float32Array(16)
+
 // keeps track of all global state.
 const globalScope = regl({
   uniforms: {
     lightDir: [0.92, 0.3, 0.2],
     projection: ({viewportWidth, viewportHeight}) => {
-      return mat4.perspective([], Math.PI / 4, viewportWidth / viewportHeight, 0.01, 1000.0)
+      return mat4.perspective(projectionMatrix, Math.PI / 4, viewportWidth / viewportHeight, 0.01, 1000.0)
     },
-    view: ({tick}) => mat4.lookAt([],
-                                  [30, 9.5, -15],
-                                  [0, 2.5, 0],
-                                  [0, 1, 0])
+    view: ({tick}) => {
+      var s = 0.8
+      return mat4.lookAt(viewMatrix,
+                         [50 * s, 9.5, 30 * s],
+                         [0, 2.5, 0],
+                         [0, 1, 0])
+    }
   }
 })
 
@@ -129,7 +139,7 @@ function createPlane ({color}) {
   var planePosition = []
   var planeNormal = []
 
-  var A = 100.0 // plane size.
+  var A = 1000.0 // plane size.
 
   planePosition.push([-0.5 * A, 0.0, -0.5 * A])
   planePosition.push([+0.5 * A, 0.0, -0.5 * A])
@@ -227,19 +237,42 @@ function createBox ({color, position, size}) {
   return {rigidBody: rigidBody, drawCall: boxMesh, color: color}
 }
 
-function createSphere ({color, position}) {
+function shootSphere ({color, position}) {
+  /*
+    First, we need a ray from the camera.
+  */
+  var vp = mat4.multiply([], projectionMatrix, viewMatrix)
+  var invVp = mat4.invert([], vp)
+
+  console.log('vp: ', vp, invVp)
+
+  // get a single point on the camera ray.
+  var rayPoint = vec3.transformMat4([], [2.0 * mp[0] / canvas.width - 1.0, -2.0 * mp[1] / canvas.height + 1.0, 0.0], invVp)
+
+  // get the position of the camera.
+  var rayOrigin = vec3.transformMat4([], [0, 0, 0], mat4.invert([], viewMatrix))
+
+  var rayDir = vec3.normalize([], vec3.subtract([], rayPoint, rayOrigin))
+
+  // we release the ball a bit front of the camera.
+  vec3.scaleAndAdd(rayOrigin, rayOrigin, rayDir, 4.4)
+
+  /*
+
+    First, create the sphere mesh
+    */
   var mesh = require('primitive-sphere')(1.0, {
     segments: 16
   })
-
   var sphereMesh = new Mesh(mesh.cells, mesh.positions, mesh.normals)
 
+  /*
+    Then, create the rigid body.
+    */
   var mass = 1.0
-
   var shape = new BtSphereShape(1)
   shape.setMargin(0.05)
-
-  var motionState = new BtDefaultMotionState(new BtTransform(new BtQuaternion(0, 0, 0, 1), new BtVector3(position[0], position[1], position[2])))
+  var motionState = new BtDefaultMotionState(new BtTransform(new BtQuaternion(0, 0, 0, 1), new BtVector3(rayOrigin[0], rayOrigin[1], rayOrigin[2])))
 
   var localInertia = new BtVector3(0, 0, 0)
   shape.calculateLocalInertia(mass, localInertia)
@@ -248,7 +281,11 @@ function createSphere ({color, position}) {
   var rigidBody = new BtRigidBody(ci)
   physicsWorld.addRigidBody(rigidBody)
 
-  rigidBody.applyImpulse(new BtVector3(-50, 0, 0), new BtVector3(position[0], position[1], position[2]))
+  /*
+    Now send it flying!
+  */
+  var POWER = 80.0
+  rigidBody.applyImpulse(new BtVector3(POWER * rayDir[0], POWER * rayDir[1], POWER * rayDir[2]), new BtVector3(rayOrigin[0], rayOrigin[1], rayOrigin[2]))
 
   return {rigidBody: rigidBody, drawCall: sphereMesh, color: color}
 }
@@ -271,8 +308,8 @@ function getModelMatrix (rb) {
 var objs = []
 objs.push(createPlane({color: [0.8, 0.8, 0.8]}))
 
-var WALL_HEIGHT = 6
-var WALL_WIDTH = 6
+var WALL_HEIGHT = 12
+var WALL_WIDTH = 30
 
 for (var i = 0; i < WALL_HEIGHT; i++) {
   for (var j = 0; j < WALL_WIDTH; j++) {
@@ -284,11 +321,13 @@ for (var i = 0; i < WALL_HEIGHT; i++) {
       ((Math.abs(143 * x * z + x * z * z + 19) % 11) / 11) * 0.65
     ]
 
-    objs.push(createBox({color: c, position: [0.0, 0.5 + i * 1.0, -5.0 + 2.0 * j], size: [1.0, 1.0, 2.0]}))
+    objs.push(createBox({color: c, position: [0.0, 0.5 + i * 1.0, -5.0 + 2.0 * (j - WALL_WIDTH / 2)], size: [1.0, 1.0, 2.0]}))
   }
 }
 
-objs.push(createSphere({color: [1.0, 1.0, 1.0], position: [6.0, 2.5, 0.0]}))
+mb.on('down', function () {
+  objs.push(shootSphere({color: [1.0, 1.0, 1.0], position: [6.0, 2.5, 0.0]}))
+})
 
 regl.frame(({tick}) => {
   regl.clear({
