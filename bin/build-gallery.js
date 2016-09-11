@@ -4,6 +4,7 @@ var browserify = require('browserify')
 var removeCheck = require('./remove-check')
 var ncp = require('ncp')
 var mkdirp = require('mkdirp')
+var es2020 = require('es2020')
 var ClosureCompiler = require('google-closure-compiler').compiler
 
 function pageName (file) {
@@ -356,6 +357,7 @@ mkdirp('www/gallery', function (err) {
       })
       b.add(file)
       b.transform(removeCheck)
+      b.transform(es2020)
       b.bundle(function (err, bundle) {
         if (err) {
           throw err
