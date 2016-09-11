@@ -1,10 +1,13 @@
 {
   "name": "regl",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "regl is a fast functional WebGL framework.",
   "main": "regl.js",
   "directories": {
     "example": "example"
+  },
+  "browserify": {
+    "transform": "./lib/transform"
   },
   "dependencies": {},
   "devDependencies": {
@@ -21,6 +24,7 @@
     "deglob": "^1.1.1",
     "dependency-check": "^2.6.0",
     "disc": "^1.3.2",
+    "es2020": "^1.1.9",
     "falafel": "^1.2.0",
     "faucet": "0.0.1",
     "fuse-vertices": "^0.1.2",
@@ -29,6 +33,7 @@
     "git-commits": "^1.2.0",
     "git-parse-commit": "^1.0.0",
     "gl": "^4.0.1",
+    "gl-mat3": "^1.0.0",
     "gl-mat4": "^1.1.4",
     "gl-vec2": "^1.0.0",
     "gl-vec3": "^1.0.3",
@@ -44,6 +49,7 @@
     "mouse-pressed": "^1.0.0",
     "mouse-wheel": "^1.2.0",
     "ncp": "^2.0.0",
+    "ndarray": "^1.0.18",
     "parse-dds": "^1.2.1",
     "present": "^1.0.0",
     "primitive-sphere": "^2.0.0",
@@ -58,6 +64,7 @@
     "seedrandom": "^2.4.2",
     "snazzy": "^3.0.0",
     "standard": "^6.0.7",
+    "surface-nets": "^1.0.2",
     "tape": "^4.4.0",
     "teapot": "^1.0.0",
     "three": "^0.79.0",

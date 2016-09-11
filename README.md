@@ -23,8 +23,8 @@
       alt="NPM version" />
   </a>
   <!-- Build Status -->
-  <a href="https://circleci.com/gh/mikolalysenko/regl">
-    <img src="https://circleci.com/gh/mikolalysenko/regl.svg?style=shield"
+  <a href="https://circleci.com/gh/regl-project/regl">
+    <img src="https://circleci.com/gh/regl-project/regl.svg?style=shield"
       alt="Build Status" />
   </a>
   <!-- File size -->
@@ -45,7 +45,7 @@
 
 <div align="center">
   <h3>
-    <a href="https://github.com/mikolalysenko/regl/blob/gh-pages/API.md">
+    <a href="https://github.com/regl-project/regl/blob/gh-pages/API.md">
       Docs
     </a>
     <span> | </span>
@@ -138,9 +138,9 @@ regl.frame(({time}) => {
 
 See this example [live](http://regl.party/examples/?basic)
 
-### [More examples](https://mikolalysenko.github.io/regl/www/gallery.html)
+### [More examples](https://regl-project.github.io/regl/www/gallery.html)
 
-Check out the [gallery](https://mikolalysenko.github.io/regl/www/gallery.html). The source code of all the gallery examples can be found [here](https://github.com/mikolalysenko/regl/tree/gh-pages/example).
+Check out the [gallery](https://regl-project.github.io/regl/www/gallery.html). The source code of all the gallery examples can be found [here](https://github.com/regl-project/regl/tree/gh-pages/example).
 
 ## Setup
 
@@ -198,19 +198,19 @@ There are some difference when using `regl` in standalone.  Because script tags 
 * **Simplicity** The interface is concise and emphasizes separation of concerns.  Removing shared state helps localize the effects and interactions of code, making it easier to reason about.
 * **Correctness** `regl` has more than 30,000 unit tests and above 95% code coverage. In development mode, `regl` performs strong validation and sanity checks on all input data to help you catch errors faster.
 * **Performance**  `regl` uses dynamic code generation and partial evaluation to remove almost all overhead.
-* **Minimalism** `regl` just wraps WebGL.  It is not a game engine and doesn't have opinions about scene graphs or vector math libraries.   Any feature in WebGL is accessible, including advanced extensions like [multiple render targets](https://github.com/mikolalysenko/regl/blob/gh-pages/example/deferred_shading.js) or [instancing](https://github.com/mikolalysenko/regl/blob/gh-pages/example/instance-triangle.js).
+* **Minimalism** `regl` just wraps WebGL.  It is not a game engine and doesn't have opinions about scene graphs or vector math libraries.   Any feature in WebGL is accessible, including advanced extensions like [multiple render targets](https://github.com/regl-project/regl/blob/gh-pages/example/deferred_shading.js) or [instancing](https://github.com/regl-project/regl/blob/gh-pages/example/instance-triangle.js).
 * **Stability** `regl` takes interface compatibility and semantic versioning seriously, making it well suited for long lived applications that must be supported for months or years down the road.  It also has no dependencies limiting exposure to risky or unplanned updates.
 
-### [Comparisons](https://mikolalysenko.github.io/regl/www/compare.html)
+### [Comparisons](https://regl-project.github.io/regl/www/compare.html)
 
-While `regl` is lower level than many 3D engines, code written in it tends to be highly compact and flexible.  A comparison of `regl` to various other WebGL [libraries across several tasks can be found here](https://mikolalysenko.github.io/regl/www/compare.html).
+While `regl` is lower level than many 3D engines, code written in it tends to be highly compact and flexible.  A comparison of `regl` to various other WebGL [libraries across several tasks can be found here](https://regl-project.github.io/regl/www/compare.html).
 
-### [Benchmarks](https://mikolalysenko.github.io/regl/www/bench-results/bench-result-8ea4a7e806beed0b9732)
+### [Benchmarks](https://regl-project.github.io/regl/www/bench-results/bench-result-8ea4a7e806beed0b9732)
 
-In order to prevent performance regressions, `regl` is continuously benchmarked.  You can run benchmarks locally using `npm run bench` or [check them out online](https://mikolalysenko.github.io/regl/www/bench.html). The [results for the last few days can be found here.](https://mikolalysenko.github.io/regl/www/bench-results/bench-result-5e92a749b35c37a43672)
+In order to prevent performance regressions, `regl` is continuously benchmarked.  You can run benchmarks locally using `npm run bench` or [check them out online](https://regl-project.github.io/regl/www/bench.html). The [results for the last few days can be found here.](https://regl-project.github.io/regl/www/bench-results/bench-result-5e92a749b35c37a43672)
 
 These measurements were taken using our custom scripts `bench-history` and
-`bench-graph`. You can read more about them in [the development guide](https://github.com/mikolalysenko/regl/blob/gh-pages/DEVELOPING.md).
+`bench-graph`. You can read more about them in [the development guide](https://github.com/regl-project/regl/blob/gh-pages/DEVELOPING.md).
 
 ### Projects using regl
 
@@ -223,21 +223,21 @@ The following is an incomplete list of projects using regl:
 * [GPGPU Fourier Analysis](https://github.com/dfcreative/gl-fourier)
 * [GPU accelerated handwritten digit recognition with regl using Convolutional Neural Networks](https://github.com/Erkaman/regl-cnn)
 
-If you have a project using regl that isn't on this list that you would like to see added, [please send us a pull request!](https://github.com/mikolalysenko/regl/edit/gh-pages/README.md)
+If you have a project using regl that isn't on this list that you would like to see added, [please send us a pull request!](https://github.com/regl-project/regl/edit/gh-pages/README.md)
 
-## [Help Wanted](https://github.com/mikolalysenko/regl/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
+## [Help Wanted](https://github.com/regl-project/regl/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
 
-regl is still under active developement, and anyone willing to contribute is very much welcome to do so. Right now, what we need the most is for people to write examples and demos with the framework. This will allow us to find bugs and deficiencies in the API. We have a list of examples we would like to be implemented [here](https://github.com/mikolalysenko/regl/issues?q=is%3Aopen+is%3Aissue+label%3Aexample), but you are of course welcome to come up with your own examples. To add an example to our gallery of examples, [please send us a pull request!](https://github.com/mikolalysenko/regl/pulls)
+regl is still under active developement, and anyone willing to contribute is very much welcome to do so. Right now, what we need the most is for people to write examples and demos with the framework. This will allow us to find bugs and deficiencies in the API. We have a list of examples we would like to be implemented [here](https://github.com/regl-project/regl/issues?q=is%3Aopen+is%3Aissue+label%3Aexample), but you are of course welcome to come up with your own examples. To add an example to our gallery of examples, [please send us a pull request!](https://github.com/regl-project/regl/pulls)
 
-## [API docs](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md)
+## [API docs](https://github.com/regl-project/regl/blob/gh-pages/API.md)
 
-`regl` has extensive API documentation.  You can browse the [docs online here](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md).
+`regl` has extensive API documentation.  You can browse the [docs online here](https://github.com/regl-project/regl/blob/gh-pages/API.md).
 
-## [Development](https://github.com/mikolalysenko/regl/blob/gh-pages/DEVELOPING.md)
+## [Development](https://github.com/regl-project/regl/blob/gh-pages/DEVELOPING.md)
 
-The latest changes in `regl` can be found in the [CHANGELOG](https://github.com/mikolalysenko/regl/blob/gh-pages/CHANGES.md).
+The latest changes in `regl` can be found in the [CHANGELOG](https://github.com/regl-project/regl/blob/gh-pages/CHANGES.md).
 
-[For info on how to build and test headless, see the contributing guide here](https://github.com/mikolalysenko/regl/blob/gh-pages/DEVELOPING.md)
+[For info on how to build and test headless, see the contributing guide here](https://github.com/regl-project/regl/blob/gh-pages/DEVELOPING.md)
 
 ## [License](LICENSE)
 
@@ -256,3 +256,5 @@ Many examples use creative commons or public domain artwork for illustrative pur
 * DDS test images (alpine_cliff_a, alpine_cliff_a_norm, alpine_cliff_a_spec) taken from the CC0 license [0-AD texture pack by Wildfire games](http://opengameart.org/content/0-ad-textures)
 * Tile set for tile mapping demo (tiles.png) from CC0 licensed [cobblestone paths pack](http://opengameart.org/content/rpg-tiles-cobble-stone-paths-town-objects)
 * Audio track for `audio.js` example is "[Bamboo Cactus](https://archive.org/details/8bp033)" by [8bitpeoples](https://archive.org/details/8bitpeoples).  CC BY-ND-NC 1.0 license
+* Matcap (spheretexture.jpg) by [Ben Simonds](https://bensimonds.com/2010/07/30/matcap-generator/). CC 3 license.
+* Normal map (normaltexture.jpg) by [rubberduck](http://opengameart.org/node/21219). CC0 license.
