@@ -171,62 +171,58 @@ tape('framebuffer - depth stencil attachment', function (t) {
         depthStencil: false
       }),
       false, false)
-  }
 
-  testFBO('depth renderbuffer - implicit',
-    regl.framebuffer({
-      radius: N,
-      depth: true,
-      stencil: false
-    }),
-    true, false)
-
-  testFBO('depth renderbuffer',
-    regl.framebuffer({
-      radius: N,
-      depth: regl.renderbuffer({
+    testFBO('depth renderbuffer - implicit',
+      regl.framebuffer({
         radius: N,
-        format: 'depth'
+        depth: true,
+        stencil: false
       }),
-      stencil: false
-    }),
-    true, false)
+      true, false)
 
-  testFBO('stencil renderbuffer - implicit',
-    regl.framebuffer({
-      radius: N,
-      depth: false,
-      stencil: true
-    }),
-    false, true)
+    testFBO('depth renderbuffer',
+      regl.framebuffer({
+        radius: N,
+        depth: regl.renderbuffer({
+          radius: N,
+          format: 'depth'
+        }),
+        stencil: false
+      }),
+      true, false)
 
-  testFBO('depth-stencil renderbuffer - implicit',
-    regl.framebuffer({
-      radius: N,
-      depthStencil: true
-    }),
-    true, true)
+    testFBO('stencil renderbuffer - implicit',
+      regl.framebuffer({
+        radius: N,
+        depth: false,
+        stencil: true
+      }),
+      false, true)
 
-  if (typeof document !== 'undefined') {
+    testFBO('depth-stencil renderbuffer - implicit',
+      regl.framebuffer({
+        radius: N,
+        depthStencil: true
+      }),
+      true, true)
+
     testFBOCube('depth-stencil renderbuffer - implicit, cube fbo, ',
       regl.framebufferCube({
         radius: N,
         depthStencil: true
       }),
       true, true)
-  }
 
-  testFBO('depth-stencil renderbuffer',
-    regl.framebuffer({
-      radius: N,
-      depthStencil: regl.renderbuffer({
+    testFBO('depth-stencil renderbuffer',
+      regl.framebuffer({
         radius: N,
-        format: 'depth stencil'
-      })
-    }),
-    true, true)
+        depthStencil: regl.renderbuffer({
+          radius: N,
+          format: 'depth stencil'
+        })
+      }),
+      true, true)
 
-  if (typeof document !== 'undefined') {
     testFBOCube('depth-stencil renderbuffer, cube fbo, ',
       regl.framebufferCube({
         radius: N,
