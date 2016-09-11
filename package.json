@@ -24,6 +24,7 @@
     "deglob": "^1.1.1",
     "dependency-check": "^2.6.0",
     "disc": "^1.3.2",
+    "es2020": "^1.1.9",
     "falafel": "^1.2.0",
     "faucet": "0.0.1",
     "fuse-vertices": "^0.1.2",
