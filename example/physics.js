@@ -14,21 +14,15 @@ const regl = require('../regl')({canvas: canvas})
 const mat4 = require('gl-mat4')
 window.addEventListener('resize', fit(canvas), false)
 
-
-const camera = require('./util/camera')(regl, {
-  center: [0, 2.5, 0]
-})
-
 var ammo = require('./util/ammo.js')
 
+// need to make sure that all classes start with a big letter, to avoid standardJs errors.
 const BtVector3 = ammo.btVector3
 const BtCollisionDispatcher = ammo.btCollisionDispatcher
 const BtDefaultCollisionConfiguration = ammo.btDefaultCollisionConfiguration
 const BtDbvtBroadphase = ammo.btDbvtBroadphase
 const BtSequentialImpulseConstraintSolver = ammo.btSequentialImpulseConstraintSolver
-
 const BtDiscreteDynamicsWorld = ammo.btDiscreteDynamicsWorld
-
 const BtStaticPlaneShape = ammo.btStaticPlaneShape
 const BtDefaultMotionState = ammo.btDefaultMotionState
 const BtTransform = ammo.btTransform
@@ -38,14 +32,17 @@ const BtRigidBodyConstructionInfo = ammo.btRigidBodyConstructionInfo
 const BtBoxShape = ammo.btBoxShape
 const BtSphereShape = ammo.btSphereShape
 
-//
-// Create box geometry.
-//
-
 // keeps track of all global state.
 const globalScope = regl({
   uniforms: {
-    lightDir: [0.92, 0.3, 0.2]
+    lightDir: [0.92, 0.3, 0.2],
+    projection: ({viewportWidth, viewportHeight}) => {
+      return mat4.perspective([], Math.PI / 4, viewportWidth / viewportHeight, 0.01, 1000.0)
+    },
+    view: ({tick}) => mat4.lookAt([],
+                                  [30, 9.5, -15],
+                                  [0, 2.5, 0],
+                                  [0, 1, 0])
   }
 })
 
@@ -115,20 +112,24 @@ Mesh.prototype.draw = regl({
   }
 })
 
-// create physics world.
+// setup physics world.
 var collisionConfiguration = new BtDefaultCollisionConfiguration()
 var dispatcher = new BtCollisionDispatcher(collisionConfiguration)
 var broadphase = new BtDbvtBroadphase()
 var solver = new BtSequentialImpulseConstraintSolver()
 var physicsWorld = new BtDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration)
-physicsWorld.setGravity(new BtVector3(0, -6, 0))
+physicsWorld.setGravity(new BtVector3(0, -6.0, 0))
 
 function createPlane ({color}) {
+  /*
+    First we create the plane mesh.
+    */
+
   const planeElements = []
   var planePosition = []
   var planeNormal = []
 
-  var A = 100.0
+  var A = 100.0 // plane size.
 
   planePosition.push([-0.5 * A, 0.0, -0.5 * A])
   planePosition.push([+0.5 * A, 0.0, -0.5 * A])
@@ -145,6 +146,10 @@ function createPlane ({color}) {
 
   var planeMesh = new Mesh(planeElements, planePosition, planeNormal)
 
+  /*
+    Then we create the rigid body.
+   */
+
   var shape = new BtStaticPlaneShape(new BtVector3(0, 1, 0), 0)
   shape.setMargin(0.05)
   var motionState = new BtDefaultMotionState(new BtTransform(new BtQuaternion(0, 0, 0, 1), new BtVector3(0, 0, 0)))
@@ -155,8 +160,10 @@ function createPlane ({color}) {
   return {rigidBody: rigidBody, drawCall: planeMesh, color: color}
 }
 
-// s == size
 function createBox ({color, position, size}) {
+  /*
+    First we create the box mesh
+    */
   var s = size
 
   var boxPosition = [
@@ -200,8 +207,11 @@ function createBox ({color, position, size}) {
 
   var boxMesh = new Mesh(boxElements, boxPosition, boxNormal)
 
-  var mass = 1.0
+  /*
+    Then we create the box rigid body.
+   */
 
+  var mass = 1.0
   var shape = new BtBoxShape(new BtVector3(s[0] * 0.5, s[1] * 0.5, s[2] * 0.5))
   shape.setMargin(0.05)
 
@@ -218,7 +228,6 @@ function createBox ({color, position, size}) {
 }
 
 function createSphere ({color, position}) {
-
   var mesh = require('primitive-sphere')(1.0, {
     segments: 16
   })
@@ -227,7 +236,7 @@ function createSphere ({color, position}) {
 
   var mass = 1.0
 
-  var shape = new BtSphereShape(1);
+  var shape = new BtSphereShape(1)
   shape.setMargin(0.05)
 
   var motionState = new BtDefaultMotionState(new BtTransform(new BtQuaternion(0, 0, 0, 1), new BtVector3(position[0], position[1], position[2])))
@@ -239,21 +248,20 @@ function createSphere ({color, position}) {
   var rigidBody = new BtRigidBody(ci)
   physicsWorld.addRigidBody(rigidBody)
 
-//  console.log('img: ' , rigidBody.applyImpulse)
-  rigidBody.applyImpulse(new BtVector3(-50,0,0), new BtVector3(position[0], position[1], position[2]) )
+  rigidBody.applyImpulse(new BtVector3(-50, 0, 0), new BtVector3(position[0], position[1], position[2]))
 
   return {rigidBody: rigidBody, drawCall: sphereMesh, color: color}
 }
 
-var transformAux1 = new BtTransform()
-
+var transformTemp = new BtTransform()
+// extracts the model matrix from a rigid body.
 function getModelMatrix (rb) {
   var ms = rb.getMotionState()
 
   if (ms) {
-    ms.getWorldTransform(transformAux1)
-    var p = transformAux1.getOrigin()
-    var q = transformAux1.getRotation()
+    ms.getWorldTransform(transformTemp)
+    var p = transformTemp.getOrigin()
+    var q = transformTemp.getRotation()
 
     return mat4.fromRotationTranslation(
       [], [q.x(), q.y(), q.z(), q.w()], [p.x(), p.y(), p.z()])
@@ -282,23 +290,22 @@ for (var i = 0; i < WALL_HEIGHT; i++) {
 
 objs.push(createSphere({color: [1.0, 1.0, 1.0], position: [6.0, 2.5, 0.0]}))
 
-
 regl.frame(({tick}) => {
   regl.clear({
     color: [0, 0, 0, 255],
     depth: 1
   })
 
+  // step simulation
   physicsWorld.stepSimulation(1.0 / 60.0, 10)
 
-  camera(() => {
-    globalScope(() => {
-      for (var i = 0; i < objs.length; i++) {
-        var o = objs[i]
-        drawNormal(() => {
-          o.drawCall.draw({model: getModelMatrix(o.rigidBody), color: o.color})
-        })
-      }
-    })
+  // render physics world.
+  globalScope(() => {
+    for (var i = 0; i < objs.length; i++) {
+      var o = objs[i]
+      drawNormal(() => {
+        o.drawCall.draw({model: getModelMatrix(o.rigidBody), color: o.color})
+      })
+    }
   })
 })
