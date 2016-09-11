@@ -6,6 +6,9 @@
   "directories": {
     "example": "example"
   },
+  "browserify": {
+    "transform": "./lib/transform"
+  },
   "dependencies": {},
   "devDependencies": {
     "angle-normals": "^1.0.0",
