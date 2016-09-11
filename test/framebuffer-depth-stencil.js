@@ -173,36 +173,32 @@ tape('framebuffer - depth stencil attachment', function (t) {
       false, false)
   }
 
-  /*
-  if (typeof document === 'undefined') {
-    testFBO('depth renderbuffer - implicit',
-      regl.framebuffer({
-        radius: N,
-        depth: true,
-        stencil: false
-      }),
-      true, false)
+  testFBO('depth renderbuffer - implicit',
+    regl.framebuffer({
+      radius: N,
+      depth: true,
+      stencil: false
+    }),
+    true, false)
 
-    testFBO('depth renderbuffer',
-      regl.framebuffer({
+  testFBO('depth renderbuffer',
+    regl.framebuffer({
+      radius: N,
+      depth: regl.renderbuffer({
         radius: N,
-        depth: regl.renderbuffer({
-          radius: N,
-          format: 'depth'
-        }),
-        stencil: false
+        format: 'depth'
       }),
-      true, false)
+      stencil: false
+    }),
+    true, false)
 
-    testFBO('stencil renderbuffer - implicit',
-      regl.framebuffer({
-        radius: N,
-        depth: false,
-        stencil: true
-      }),
-      false, true)
-  }
-  */
+  testFBO('stencil renderbuffer - implicit',
+    regl.framebuffer({
+      radius: N,
+      depth: false,
+      stencil: true
+    }),
+    false, true)
 
   testFBO('depth-stencil renderbuffer - implicit',
     regl.framebuffer({
