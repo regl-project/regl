@@ -126,7 +126,8 @@
   "standard": {
     "ignore": [
       "dist/*",
-      "www/*"
+      "www/*",
+      "example/util/ammo.js"
     ]
   },
   "homepage": "https://mikolalysenko.github.io/regl"
