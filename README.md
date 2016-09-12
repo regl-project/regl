@@ -207,7 +207,12 @@ While `regl` is lower level than many 3D engines, code written in it tends to be
 
 ### [Benchmarks](https://regl-project.github.io/regl/www/bench-results/bench-result-8ea4a7e806beed0b9732)
 
-In order to prevent performance regressions, `regl` is continuously benchmarked.  You can run benchmarks locally using `npm run bench` or [check them out online](https://regl-project.github.io/regl/www/bench.html). The [results for the last few days can be found here.](https://regl-project.github.io/regl/www/bench-results/bench-result-5e92a749b35c37a43672)
+In order to prevent performance regressions, `regl` is continuously
+benchmarked.  You can run benchmarks locally using `npm run bench` or
+[check them out
+online](https://regl-project.github.io/regl/www/bench.html). The
+[results for the last few days can be found
+here.](https://regl-project.github.io/regl/www/bench-results/bench-result-db4b76e25bd8ed6d7ed9)
 
 These measurements were taken using our custom scripts `bench-history` and
 `bench-graph`. You can read more about them in [the development guide](https://github.com/regl-project/regl/blob/gh-pages/DEVELOPING.md).
