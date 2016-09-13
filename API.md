@@ -1378,9 +1378,9 @@ var positionBuffer = regl.buffer([
 | `'int8'`           | `gl.BYTE`            |  
 | `'uint16'`         | `gl.UNSIGNED_SHORT`  | 
 | `'int16'`          | `gl.SHORT`           | 
-| `'uint32'`         | `gl.INT`             | 
-| `'int32'`          | `gl.UNSIGNED_INT`    | 
-| `'float32'`, `'float'`  | `gl.FLOAT`    | 
+| `'uint32'`         | `gl.UNSIGNED_INT`    | 
+| `'int32'`          | `gl.INT`             | 
+| `'float32'`, `'float'`  | `gl.FLOAT`      | 
 
 **Relevant WebGL APIs**
 
