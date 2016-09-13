@@ -127,6 +127,37 @@ tape('test regl.stats', function (t) {
 
     regl.destroy()
     t.equals(stats.shaderCount, 0, 'stats.shaderCount==0 after regl.destroy()')
+
+    regl = createREGL(gl)
+    stats = regl.stats
+
+    var frag = [
+      'precision mediump float;',
+      'void main () { gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); } '
+    ].join('\n')
+
+    var vert = [
+      'precision mediump float;',
+      'attribute vec2 position;',
+      'void main () {gl_Position = vec4(position, 0, 1); }'
+    ].join('\n')
+
+    var draw3 = regl({
+      frag: regl.prop('frag'),
+      vert: regl.prop('vert'),
+      attributes: { position: [[-1, 0], [0, -1], [1, 1]] },
+      uniforms: { color: [1, 0, 0, 1] },
+      count: 3
+    })
+
+    for (var i = 0; i < 30; i++) {
+      draw3({frag: frag, vert: vert})
+    }
+
+    t.equals(stats.shaderCount, 1, 'stats.shaderCount==1, after calling dynamic drawCommand several times')
+
+    regl.destroy()
+
     //
     // End Test stats.shaderCount
     //
