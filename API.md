@@ -1633,7 +1633,7 @@ var ndarrayTexture = regl.texture(require('baboon-image'))
 
 // Manual mipmap specification
 var mipmapTexture = regl.texture({
-  minFilter: 'mipmap'
+  min: 'mipmap'
 })
 
 // From an image element
