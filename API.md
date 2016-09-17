@@ -1513,8 +1513,8 @@ var starElements = regl.elements({
 | `'points'`         | `gl.POINTS`         |
 | `'lines'`          | `gl.LINES`          |
 | `'line strip'`     | `gl.LINE_STRIP`     |
-| `'line loop`       | `gl.LINE_LOOP`      |
-| `'triangles`       | `gl.TRIANGLES`      |
+| `'line loop'`      | `gl.LINE_LOOP`      |
+| `'triangles'`      | `gl.TRIANGLES`      |
 | `'triangle strip'` | `gl.TRIANGLE_STRIP` |
 | `'triangle fan'`   | `gl.TRIANGLE_FAN`   |
 
