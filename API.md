@@ -303,7 +303,7 @@ A command can also run multiple times by passing a non-negative integer or an ar
 // Runs the command `count`-times
 command(count)
 
-// Runs the command once for each args
+// Runs the command once for each props
 command([props0, props1, props2, ..., propsn])
 ```
 
@@ -367,11 +367,11 @@ var drawSpinningStretchyTriangle = regl({
     //  * batchId: which is the index of the draw command in the batch
     //
     angle: function (context, props, batchId) {
-      return args.speed * context.tick + 0.01 * batchId
+      return props.speed * context.tick + 0.01 * batchId
     },
 
     // As a shortcut/optimization we can also just read out a property
-    // from the args.  For example, this
+    // from the props.  For example, this
     //
     scale: regl.prop('scale'),
     //
