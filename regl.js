@@ -382,11 +382,11 @@ module.exports = function wrapREGL (args) {
     })
   }
 
-  function clear (options) {
-    check(
-      typeof options === 'object' && options,
-      'regl.clear() takes an object as input')
+  var setFBO = framebufferState.setFBO = compileProcedure({
+    framebuffer: dynamic.define.call(null, DYN_PROP, 'framebuffer')
+  })
 
+  function clearImpl (_, options) {
     var clearFlags = 0
     core.procs.poll()
 
@@ -406,6 +406,26 @@ module.exports = function wrapREGL (args) {
 
     check(!!clearFlags, 'called regl.clear with no buffer specified')
     gl.clear(clearFlags)
+  }
+
+  function clear (options) {
+    check(
+      typeof options === 'object' && options,
+      'regl.clear() takes an object as input')
+    if ('framebuffer' in options) {
+      if (options.framebuffer &&
+          options.framebuffer_reglType === 'framebufferCube') {
+        for (var i = 0; i < 6; ++i) {
+          setFBO(extend({
+            framebuffer: options.framebuffer.faces[i]
+          }, options), clearImpl)
+        }
+      } else {
+        setFBO(options, clearImpl)
+      }
+    } else {
+      clearImpl(null, options)
+    }
   }
 
   function frame (cb) {

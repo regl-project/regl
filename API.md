@@ -1363,7 +1363,7 @@ var positionBuffer = regl.buffer([
 | `type`   | Data type for vertex buffer                                    | `'uint8'` |
 
 - `usage` can be one of the following values
- 
+
 | Usage Hint  | Description       |
 | ----------- | ----------------- |
 | `'static'`  | `gl.DRAW_STATIC`  |
@@ -1371,16 +1371,16 @@ var positionBuffer = regl.buffer([
 | `'stream'`  | `gl.STREAM_DRAW`  |
 
  - `type` can be one of the following data types
- 
-| Data type          | Description          | 
+
+| Data type          | Description          |
 | ------------------ | ---------------------|
 | `'uint8'`          | `gl.UNSIGNED_BYTE`   |  
 | `'int8'`           | `gl.BYTE`            |  
-| `'uint16'`         | `gl.UNSIGNED_SHORT`  | 
-| `'int16'`          | `gl.SHORT`           | 
-| `'uint32'`         | `gl.UNSIGNED_INT`    | 
-| `'int32'`          | `gl.INT`             | 
-| `'float32'`, `'float'`  | `gl.FLOAT`      | 
+| `'uint16'`         | `gl.UNSIGNED_SHORT`  |
+| `'int16'`          | `gl.SHORT`           |
+| `'uint32'`         | `gl.UNSIGNED_INT`    |
+| `'int32'`          | `gl.INT`             |
+| `'float32'`, `'float'`  | `gl.FLOAT`      |
 
 **Relevant WebGL APIs**
 
@@ -1413,7 +1413,7 @@ The arguments to the update pathway are the same as the constructor and the retu
 
 ##### Buffer subdata
 
-For performance reasons we may sometimes want to update just a portion of the buffer. 
+For performance reasons we may sometimes want to update just a portion of the buffer.
 You can update a portion of the buffer using the `subdata` method.  This can be useful if you are dealing with frequently changing or streaming vertex data.  Here is an example:
 
 ```javascript
@@ -1519,7 +1519,7 @@ var starElements = regl.elements({
 | `'triangle fan'`   | `gl.TRIANGLE_FAN`   |
 
 -   `type` can be one of the following data types
- 
+
 | Data type          | Description          | Extension? |
 | ------------------ | ---------------------|------------|
 | `'uint8'`          | `gl.UNSIGNED_BYTE`   |            |
@@ -2264,6 +2264,29 @@ framebuffer({
 })
 ```
 
+##### Framebuffer binding
+
+For convenience it is possible to bind a framebuffer directly.  This is a short cut for creating a command which sets the framebuffer:
+
+```javascript
+var framebuffer = regl.framebuffer(5)
+
+framebuffer.bind(function () {
+  // now we can draw to the framebuffer
+})
+
+//
+// This is the same as doing the following:
+//
+var setFBO = regl({
+  framebuffer: framebuffer
+})
+
+setFBO(function () {
+  // .. same situation as above
+})
+```
+
 ##### Framebuffer resize
 
 Framebuffers can be resized using the `.resize()` method.  This method will also modify all of the framebuffer's attachments.
@@ -2378,6 +2401,7 @@ regl.clear({
 | `color`   | Sets the clear color         |
 | `depth`   | Sets the clear depth value   |
 | `stencil` | Sets the clear stencil value |
+| `framebuffer` | Sets the target framebuffer to clear (if unspecified, uses the current framebuffer object) |
 
 If an option is not present, then the corresponding buffer is not cleared
 
@@ -2431,6 +2455,7 @@ regl({framebuffer: fbo})(() => {
 | `y`      | The y-offset of the upper-left corner of the rectangle in pixels          | `0`                        |
 | `width`  | The width of the rectangle in pixels                                      | Current framebuffer width  |
 | `height` | The height of the rectangle in pixels                                     | Current framebuffer height |
+| `framebuffer` | Sets the framebuffer to read pixels from | The currently bound framebuffer |
 
 **Notes**
 
