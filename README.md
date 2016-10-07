@@ -160,6 +160,12 @@ npm i -S regl
 
 For more info on how to use npm, [check out the official docs](https://docs.npmjs.com/).
 
+If you are using npm, you may also want to try [`budo`](https://github.com/mattdesl/budo) which is a live development server.
+
+#### Run time error checking and browserify
+
+By default if you compile `regl` with `browserify` then all error messages and run time checks are removed.  This is done to reduce the size of the final bundle.  If you are developing an application, you should run browserify using the `--debug` flag in order to enable error messages.  This will also generate source maps which make reading the source code of your application easier.
+
 ### Standalone script tag
 
 You can also use `regl` as a standalone script if you are really stubborn.  The most recent versions can be found in the `dist/` folder and is also available from [npm cdn](https://npmcdn.com) in both minified and unminified versions.
