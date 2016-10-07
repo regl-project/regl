@@ -246,6 +246,14 @@ var regl = require('regl')(require('gl')(256, 256))
 
 * * *
 
+### Error messages and debug mode
+
+By default if you compile `regl` with browserify then all error messages and checks are removed.  This is done in order to reduce the size of the final bundle and to improve run time performance.  
+
+**If you want error messages and are using browserify make sure that you compile using `--debug`**.  Not only will this insert debug messages but it will also give you source maps which make finding errors easier.
+
+Alternatively, consider using [`budo`](https://github.com/mattdesl/budo) for your live development server.  `budo` automatically compiles your code in debug mode and also provides facilities for live reloading.
+
 ## Commands
 
 _Draw commands_ are the fundamental abstraction in `regl`.  A draw command wraps up all of the WebGL state associated with a draw call (either `drawArrays` or `drawElements`) and packages it into a single reusable function. For example, here is a command that draws a triangle,
