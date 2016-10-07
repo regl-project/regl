@@ -1,5 +1,10 @@
 # Release notes
 
+## Next
+
+* Add `framebuffer.bind()` method for quickly setting up framebuffer objects
+* `regl.clear` and `regl.read` now accept a framebuffer as a parameter
+
 ## 1.2.1
 
 * Fixed bug with depth and stencil attachments being cleared
