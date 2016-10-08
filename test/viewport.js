@@ -1,4 +1,4 @@
-var extend = require('../lib/util/extend')
+var extend = require('../lib/util/extend').default
 var createContext = require('./util/create-context')
 var createREGL = require('../../regl')
 var tape = require('tape')

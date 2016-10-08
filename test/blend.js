@@ -1,7 +1,7 @@
 var tape = require('tape')
-var extend = require('../lib/util/extend')
+var extend = require('../lib/util/extend').default
 var createContext = require('./util/create-context')
-var createREGL = require('../regl')
+var createREGL = require('../dist/regl')
 
 var GL_MIN_EXT = 0x8007
 var GL_MAX_EXT = 0x8008
