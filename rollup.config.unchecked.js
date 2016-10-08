@@ -14,9 +14,9 @@ config.plugins.push({
               return
             }
             break
-          case 'VariableDeclaration':
-            if (node.declarations.length === 1 &&
-                isCheckRequire(node.declarations[0])) {
+          case 'ImportDeclaration':
+            if (node.specifiers.length === 1 &&
+                isCheckImport(node.specifiers[0])) {
               node.update('')
               return
             }
@@ -25,9 +25,6 @@ config.plugins.push({
       })
       return { code: result.toString(), map: { mappings: '' } } // TODO sourcemap support?
     } catch (e) {
-      console.log(id)
-      console.log(code.slice(0, 100))
-      console.error(e.message)
       return null;
     }
   }
@@ -45,6 +42,6 @@ function isCheckCall (node) {
     node.object.name === 'check')
 }
 
-function isCheckRequire (node) {
-  return node.id.name === 'check'
+function isCheckImport (node) {
+  return node.local.name === 'check'
 }

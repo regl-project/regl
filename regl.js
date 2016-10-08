@@ -1,23 +1,23 @@
-var check = require('./lib/util/check')
-var extend = require('./lib/util/extend')
-var dynamic = require('./lib/dynamic')
-var raf = require('./lib/util/raf')
-var clock = require('./lib/util/clock')
-var createStringStore = require('./lib/strings')
-var initWebGL = require('./lib/webgl')
-var wrapExtensions = require('./lib/extension')
-var wrapLimits = require('./lib/limits')
-var wrapBuffers = require('./lib/buffer')
-var wrapElements = require('./lib/elements')
-var wrapTextures = require('./lib/texture')
-var wrapRenderbuffers = require('./lib/renderbuffer')
-var wrapFramebuffers = require('./lib/framebuffer')
-var wrapAttributes = require('./lib/attribute')
-var wrapShaders = require('./lib/shader')
-var wrapRead = require('./lib/read')
-var createCore = require('./lib/core')
-var createStats = require('./lib/stats')
-var createTimer = require('./lib/timer')
+import check from './lib/util/check'
+import extend from './lib/util/extend'
+import * as dynamic from './lib/dynamic'
+import raf from './lib/util/raf'
+import clock from './lib/util/clock'
+import createStringStore from './lib/strings'
+import initWebGL from './lib/webgl'
+import wrapExtensions from './lib/extension'
+import wrapLimits from './lib/limits'
+import wrapBuffers from './lib/buffer'
+import wrapElements from './lib/elements'
+import wrapTextures from './lib/texture'
+import wrapRenderbuffers from './lib/renderbuffer'
+import wrapFramebuffers from './lib/framebuffer'
+import wrapAttributes from './lib/attribute'
+import wrapShaders from './lib/shader'
+import wrapRead from './lib/read'
+import createCore from './lib/core'
+import createStats from './lib/stats'
+import createTimer from './lib/timer'
 
 var GL_COLOR_BUFFER_BIT = 16384
 var GL_DEPTH_BUFFER_BIT = 256
@@ -41,7 +41,7 @@ function find (haystack, needle) {
   return -1
 }
 
-module.exports = function wrapREGL (args) {
+export default function wrapREGL (args) {
   var config = initWebGL(args)
   if (!config) {
     return null
