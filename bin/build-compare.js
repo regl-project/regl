@@ -10,7 +10,6 @@ var buble = require('rollup-plugin-buble')
 var removeCheck = require('./remove-check')
 var ncp = require('ncp')
 var mkdirp = require('mkdirp')
-var es2020 = require('es2020')
 var ClosureCompiler = require('google-closure-compiler').compiler
 
 var ROOT_DIR = 'compare'
@@ -100,7 +99,7 @@ function handleCase (name, www, root, onComplete) {
         buble()
       ]
     }).then(function (bundle) {
-      console.log( `writing to ${bundlePath}` )
+      console.log(`writing to ${bundlePath}`)
       return bundle.write({
         format: 'iife',
         moduleName: 'bundle',
@@ -125,8 +124,9 @@ function handleCase (name, www, root, onComplete) {
       })
     })
     .catch(function (err) {
-      console.log( err.message );
-      throw err;
+      console.error(err.message)
+      console.error(err.stack)
+      process.exit(1)
     })
   }
 

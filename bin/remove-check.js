@@ -2,7 +2,7 @@ var falafel = require('falafel')
 
 module.exports = function removeCheck () {
   return {
-    transform ( code, id ) {
+    transform (code, id) {
       try {
         var result = falafel(code, { ecmaVersion: 6, sourceType: 'module' }, function (node) {
           switch (node.type) {
@@ -24,7 +24,7 @@ module.exports = function removeCheck () {
         return { code: result.toString(), map: { mappings: '' } } // TODO sourcemap support?
       } catch (e) {
         console.log(e.message)
-        return null;
+        return null
       }
     }
   }
