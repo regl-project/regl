@@ -1,5 +1,5 @@
 var tape = require('tape')
-var createREGL = require('../regl')
+var createREGL = require('../dist/regl')
 var createContext = require('./util/create-context')
 
 tape('dynamic scissor bug', function (t) {

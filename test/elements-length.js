@@ -1,6 +1,6 @@
 var tape = require('tape')
 var createContext = require('./util/create-context')
-var createREGL = require('../regl')
+var createREGL = require('../dist/regl')
 
 tape('elements - length', function (t) {
   var gl = createContext(5, 5)

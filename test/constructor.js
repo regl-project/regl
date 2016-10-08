@@ -1,6 +1,6 @@
 var tape = require('tape')
 var createContext = require('./util/create-context')
-var createREGL = require('../regl')
+var createREGL = require('../dist/regl')
 
 tape('regl constructor', function (t) {
   // loading from a bad selector string breaks
