@@ -388,7 +388,7 @@ mkdirp('www/gallery', function (err) {
 })
 
 function minifyAndGenPage (file, bundle) {
-  return new Promise(function (fulfil, reject) {
+  return new Promise(function (resolve, reject) {
     var jsFile = jsName(file)
     var minFile = jsFile.replace('.js', '.min.js')
 
@@ -418,10 +418,10 @@ function minifyAndGenPage (file, bundle) {
           writePage(file, data, function (err) {
             if (err) {
               reject(err)
-              return;
+              return
             }
             console.log('wrote page', pageName(file))
-            fulfil()
+            resolve()
           })
         })
       })
