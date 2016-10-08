@@ -1,7 +1,7 @@
 /* global performance*/
 var CASES = require('./list')
 var extend = require('../lib/util/extend')
-var createREGL = require('../../regl')
+var createREGL = require('../dist/regl')
 var present = require('present')
 
 const WIDTH = 384
