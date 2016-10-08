@@ -4,583 +4,13 @@
 	(global.createREGL = factory());
 }(this, (function () { 'use strict';
 
-var arraytypes = {
-	"[object Int8Array]": 5120,
-	"[object Int16Array]": 5122,
-	"[object Int32Array]": 5124,
-	"[object Uint8Array]": 5121,
-	"[object Uint8ClampedArray]": 5121,
-	"[object Uint16Array]": 5123,
-	"[object Uint32Array]": 5125,
-	"[object Float32Array]": 5126,
-	"[object Float64Array]": 5121,
-	"[object ArrayBuffer]": 5121
-};
-
-var arraytypes$1 = Object.freeze({
-	default: arraytypes
-});
-
-var require$$0 = ( arraytypes$1 && arraytypes$1['default'] ) || arraytypes$1;
-
-var dtypes = require$$0
-var isTypedArray$1 = function (x) {
-  return Object.prototype.toString.call(x) in dtypes
-}
-
-var extend$2 = function (base, opts) {
+function extend (base, opts) {
   var keys = Object.keys(opts)
   for (var i = 0; i < keys.length; ++i) {
     base[keys[i]] = opts[keys[i]]
   }
   return base
 }
-
-// Error checking and parameter validation.
-//
-// Statements for the form `check.someProcedure(...)` get removed by
-// a browserify transform for optimized/minified bundles.
-//
-/* globals btoa */
-var isTypedArray = isTypedArray$1
-var extend$1 = extend$2
-
-// only used for extracting shader names.  if btoa not present, then errors
-// will be slightly crappier
-function decodeB64 (str) {
-  if (typeof btoa !== 'undefined') {
-    return btoa(str)
-  }
-  return 'base64:' + str
-}
-
-function raise (message) {
-  var error = new Error('(regl) ' + message)
-  console.error(error)
-  throw error
-}
-
-function check (pred, message) {
-  if (!pred) {
-    raise(message)
-  }
-}
-
-function encolon (message) {
-  if (message) {
-    return ': ' + message
-  }
-  return ''
-}
-
-function checkParameter (param, possibilities, message) {
-  if (!(param in possibilities)) {
-    raise('unknown parameter (' + param + ')' + encolon(message) +
-          '. possible values: ' + Object.keys(possibilities).join())
-  }
-}
-
-function checkIsTypedArray (data, message) {
-  if (!isTypedArray(data)) {
-    raise(
-      'invalid parameter type' + encolon(message) +
-      '. must be a typed array')
-  }
-}
-
-function checkTypeOf (value, type, message) {
-  if (typeof value !== type) {
-    raise(
-      'invalid parameter type' + encolon(message) +
-      '. expected ' + type + ', got ' + (typeof value))
-  }
-}
-
-function checkNonNegativeInt (value, message) {
-  if (!((value >= 0) &&
-        ((value | 0) === value))) {
-    raise('invalid parameter type, (' + value + ')' + encolon(message) +
-          '. must be a nonnegative integer')
-  }
-}
-
-function checkOneOf (value, list, message) {
-  if (list.indexOf(value) < 0) {
-    raise('invalid value' + encolon(message) + '. must be one of: ' + list)
-  }
-}
-
-var constructorKeys = [
-  'gl',
-  'canvas',
-  'container',
-  'attributes',
-  'pixelRatio',
-  'extensions',
-  'optionalExtensions',
-  'profile',
-  'onDone'
-]
-
-function checkConstructor (obj) {
-  Object.keys(obj).forEach(function (key) {
-    if (constructorKeys.indexOf(key) < 0) {
-      raise('invalid regl constructor argument "' + key + '". must be one of ' + constructorKeys)
-    }
-  })
-}
-
-function leftPad (str, n) {
-  str = str + ''
-  while (str.length < n) {
-    str = ' ' + str
-  }
-  return str
-}
-
-function ShaderFile () {
-  this.name = 'unknown'
-  this.lines = []
-  this.index = {}
-  this.hasErrors = false
-}
-
-function ShaderLine (number, line) {
-  this.number = number
-  this.line = line
-  this.errors = []
-}
-
-function ShaderError (fileNumber, lineNumber, message) {
-  this.file = fileNumber
-  this.line = lineNumber
-  this.message = message
-}
-
-function guessCommand () {
-  var error = new Error()
-  var stack = (error.stack || error).toString()
-  var pat = /compileProcedure.*\n\s*at.*\((.*)\)/.exec(stack)
-  if (pat) {
-    return pat[1]
-  }
-  var pat2 = /compileProcedure.*\n\s*at\s+(.*)(\n|$)/.exec(stack)
-  if (pat2) {
-    return pat2[1]
-  }
-  return 'unknown'
-}
-
-function guessCallSite () {
-  var error = new Error()
-  var stack = (error.stack || error).toString()
-  var pat = /at REGLCommand.*\n\s+at.*\((.*)\)/.exec(stack)
-  if (pat) {
-    return pat[1]
-  }
-  var pat2 = /at REGLCommand.*\n\s+at\s+(.*)\n/.exec(stack)
-  if (pat2) {
-    return pat2[1]
-  }
-  return 'unknown'
-}
-
-function parseSource (source, command) {
-  var lines = source.split('\n')
-  var lineNumber = 1
-  var fileNumber = 0
-  var files = {
-    unknown: new ShaderFile(),
-    0: new ShaderFile()
-  }
-  files.unknown.name = files[0].name = command || guessCommand()
-  files.unknown.lines.push(new ShaderLine(0, ''))
-  for (var i = 0; i < lines.length; ++i) {
-    var line = lines[i]
-    var parts = /^\s*\#\s*(\w+)\s+(.+)\s*$/.exec(line)
-    if (parts) {
-      switch (parts[1]) {
-        case 'line':
-          var lineNumberInfo = /(\d+)(\s+\d+)?/.exec(parts[2])
-          if (lineNumberInfo) {
-            lineNumber = lineNumberInfo[1] | 0
-            if (lineNumberInfo[2]) {
-              fileNumber = lineNumberInfo[2] | 0
-              if (!(fileNumber in files)) {
-                files[fileNumber] = new ShaderFile()
-              }
-            }
-          }
-          break
-        case 'define':
-          var nameInfo = /SHADER_NAME(_B64)?\s+(.*)$/.exec(parts[2])
-          if (nameInfo) {
-            files[fileNumber].name = (nameInfo[1]
-                ? decodeB64(nameInfo[2])
-                : nameInfo[2])
-          }
-          break
-      }
-    }
-    files[fileNumber].lines.push(new ShaderLine(lineNumber++, line))
-  }
-  Object.keys(files).forEach(function (fileNumber) {
-    var file = files[fileNumber]
-    file.lines.forEach(function (line) {
-      file.index[line.number] = line
-    })
-  })
-  return files
-}
-
-function parseErrorLog (errLog) {
-  var result = []
-  errLog.split('\n').forEach(function (errMsg) {
-    if (errMsg.length < 5) {
-      return
-    }
-    var parts = /^ERROR\:\s+(\d+)\:(\d+)\:\s*(.*)$/.exec(errMsg)
-    if (parts) {
-      result.push(new ShaderError(
-        parts[1] | 0,
-        parts[2] | 0,
-        parts[3].trim()))
-    } else if (errMsg.length > 0) {
-      result.push(new ShaderError('unknown', 0, errMsg))
-    }
-  })
-  return result
-}
-
-function annotateFiles (files, errors) {
-  errors.forEach(function (error) {
-    var file = files[error.file]
-    if (file) {
-      var line = file.index[error.line]
-      if (line) {
-        line.errors.push(error)
-        file.hasErrors = true
-        return
-      }
-    }
-    files.unknown.hasErrors = true
-    files.unknown.lines[0].errors.push(error)
-  })
-}
-
-function checkShaderError (gl, shader, source, type, command) {
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    var errLog = gl.getShaderInfoLog(shader)
-    var typeName = type === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex'
-    checkCommandType(source, 'string', typeName + ' shader source must be a string', command)
-    var files = parseSource(source, command)
-    var errors = parseErrorLog(errLog)
-    annotateFiles(files, errors)
-
-    Object.keys(files).forEach(function (fileNumber) {
-      var file = files[fileNumber]
-      if (!file.hasErrors) {
-        return
-      }
-
-      var strings = ['']
-      var styles = ['']
-
-      function push (str, style) {
-        strings.push(str)
-        styles.push(style || '')
-      }
-
-      push('file number ' + fileNumber + ': ' + file.name + '\n', 'color:red;text-decoration:underline;font-weight:bold')
-
-      file.lines.forEach(function (line) {
-        if (line.errors.length > 0) {
-          push(leftPad(line.number, 4) + '|  ', 'background-color:yellow; font-weight:bold')
-          push(line.line + '\n', 'color:red; background-color:yellow; font-weight:bold')
-
-          // try to guess token
-          var offset = 0
-          line.errors.forEach(function (error) {
-            var message = error.message
-            var token = /^\s*\'(.*)\'\s*\:\s*(.*)$/.exec(message)
-            if (token) {
-              var tokenPat = token[1]
-              message = token[2]
-              switch (tokenPat) {
-                case 'assign':
-                  tokenPat = '='
-                  break
-              }
-              offset = Math.max(line.line.indexOf(tokenPat, offset), 0)
-            } else {
-              offset = 0
-            }
-
-            push(leftPad('| ', 6))
-            push(leftPad('^^^', offset + 3) + '\n', 'font-weight:bold')
-            push(leftPad('| ', 6))
-            push(message + '\n', 'font-weight:bold')
-          })
-          push(leftPad('| ', 6) + '\n')
-        } else {
-          push(leftPad(line.number, 4) + '|  ')
-          push(line.line + '\n', 'color:red')
-        }
-      })
-      if (typeof document !== 'undefined') {
-        styles[0] = strings.join('%c')
-        console.log.apply(console, styles)
-      } else {
-        console.log(strings.join(''))
-      }
-    })
-
-    
-  }
-}
-
-function checkLinkError (gl, program, fragShader, vertShader, command) {
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    var errLog = gl.getProgramInfoLog(program)
-    var fragParse = parseSource(fragShader, command)
-    var vertParse = parseSource(vertShader, command)
-
-    var header = 'Error linking program with vertex shader, "' +
-      vertParse[0].name + '", and fragment shader "' + fragParse[0].name + '"'
-
-    if (typeof document !== 'undefined') {
-      console.log('%c' + header + '\n%c' + errLog,
-        'color:red;text-decoration:underline;font-weight:bold',
-        'color:red')
-    } else {
-      console.log(header + '\n' + errLog)
-    }
-    
-  }
-}
-
-function saveCommandRef (object) {
-  object._commandRef = guessCommand()
-}
-
-function saveDrawCommandInfo (opts, uniforms, attributes, stringStore) {
-  saveCommandRef(opts)
-
-  function id (str) {
-    if (str) {
-      return stringStore.id(str)
-    }
-    return 0
-  }
-  opts._fragId = id(opts.static.frag)
-  opts._vertId = id(opts.static.vert)
-
-  function addProps (dict, set) {
-    Object.keys(set).forEach(function (u) {
-      dict[stringStore.id(u)] = true
-    })
-  }
-
-  var uniformSet = opts._uniformSet = {}
-  addProps(uniformSet, uniforms.static)
-  addProps(uniformSet, uniforms.dynamic)
-
-  var attributeSet = opts._attributeSet = {}
-  addProps(attributeSet, attributes.static)
-  addProps(attributeSet, attributes.dynamic)
-
-  opts._hasCount = (
-    'count' in opts.static ||
-    'count' in opts.dynamic ||
-    'elements' in opts.static ||
-    'elements' in opts.dynamic)
-}
-
-function commandRaise (message, command) {
-  var callSite = guessCallSite()
-  raise(message +
-    ' in command ' + (command || guessCommand()) +
-    (callSite === 'unknown' ? '' : ' called from ' + callSite))
-}
-
-function checkCommand (pred, message, command) {
-  if (!pred) {
-    commandRaise(message, command || guessCommand())
-  }
-}
-
-function checkParameterCommand (param, possibilities, message, command) {
-  if (!(param in possibilities)) {
-    commandRaise(
-      'unknown parameter (' + param + ')' + encolon(message) +
-      '. possible values: ' + Object.keys(possibilities).join(),
-      command || guessCommand())
-  }
-}
-
-function checkCommandType (value, type, message, command) {
-  if (typeof value !== type) {
-    commandRaise(
-      'invalid parameter type' + encolon(message) +
-      '. expected ' + type + ', got ' + (typeof value),
-      command || guessCommand())
-  }
-}
-
-function checkOptional (block) {
-  block()
-}
-
-function checkFramebufferFormat (attachment, texFormats, rbFormats) {
-  if (attachment.texture) {
-    checkOneOf(
-      attachment.texture._texture.internalformat,
-      texFormats,
-      'unsupported texture format for attachment')
-  } else {
-    checkOneOf(
-      attachment.renderbuffer._renderbuffer.format,
-      rbFormats,
-      'unsupported renderbuffer format for attachment')
-  }
-}
-
-var GL_CLAMP_TO_EDGE = 0x812F
-
-var GL_FLOAT = 5126
-
-function checkTexture2D (info, mipData, limits) {
-  var i
-  var w = mipData.width
-  var h = mipData.height
-  var c = mipData.channels
-
-  // Check texture shape
-  
-
-  // check wrap mode
-  if (info.wrapS !== GL_CLAMP_TO_EDGE || info.wrapT !== GL_CLAMP_TO_EDGE) {
-    
-  }
-
-  if (mipData.mipmask === 1) {
-    if (w !== 1 && h !== 1) {
-      
-    }
-  } else {
-    // texture must be power of 2
-    
-    
-  }
-
-  if (mipData.type === GL_FLOAT) {
-    if (limits.extensions.indexOf('oes_texture_float_linear') < 0) {
-      
-    }
-    
-  }
-
-  // check image complete
-  var mipimages = mipData.images
-  for (i = 0; i < 16; ++i) {
-    if (mipimages[i]) {
-      var mw = w >> i
-      var mh = h >> i
-      
-
-      var img = mipimages[i]
-
-      
-
-      
-
-      if (img.compressed) {
-        // TODO: check size for compressed images
-      } else if (img.data) {
-        
-      } else if (img.element) {
-        // TODO: check element can be loaded
-      } else if (img.copy) {
-        // TODO: check compatible format and type
-      }
-    } else if (!info.genMipmaps) {
-      
-    }
-  }
-
-  if (mipData.compressed) {
-    
-  }
-}
-
-function checkTextureCube (texture, info, faces, limits) {
-  var w = texture.width
-  var h = texture.height
-  var c = texture.channels
-
-  // Check texture shape
-  
-  
-  
-
-  for (var i = 0; i < faces.length; ++i) {
-    var face = faces[i]
-    
-
-    if (info.genMipmaps) {
-      
-      
-    } else {
-      // TODO: check mip and filter mode
-    }
-
-    var mipmaps = face.images
-    for (var j = 0; j < 16; ++j) {
-      var img = mipmaps[j]
-      if (img) {
-        var mw = w >> j
-        var mh = h >> j
-        
-        
-        
-
-        if (img.compressed) {
-          // TODO: check size for compressed images
-        } else if (img.data) {
-          
-        } else if (img.element) {
-          // TODO: check element can be loaded
-        } else if (img.copy) {
-          // TODO: check compatible format and type
-        }
-      }
-    }
-  }
-}
-
-var check_1 = extend$1(check, {
-  optional: checkOptional,
-  raise: raise,
-  commandRaise: commandRaise,
-  command: checkCommand,
-  parameter: checkParameter,
-  commandParameter: checkParameterCommand,
-  constructor: checkConstructor,
-  type: checkTypeOf,
-  commandType: checkCommandType,
-  isTypedArray: checkIsTypedArray,
-  nni: checkNonNegativeInt,
-  oneOf: checkOneOf,
-  shaderError: checkShaderError,
-  linkError: checkLinkError,
-  callSite: guessCallSite,
-  saveCommandRef: saveCommandRef,
-  saveDrawInfo: saveDrawCommandInfo,
-  framebufferFormat: checkFramebufferFormat,
-  guessCommand: guessCommand,
-  texture2D: checkTexture2D,
-  textureCube: checkTextureCube
-})
 
 var VARIABLE_COUNTER = 0
 
@@ -651,42 +81,32 @@ function unbox (x, path) {
   return x
 }
 
-var dynamic$1 = {
-  DynamicVariable: DynamicVariable,
-  define: defineDynamic,
-  isDynamic: isDynamic,
-  unbox: unbox,
-  accessor: toAccessorString
-}
+let raf
 
-function createCommonjsModule(fn, module) {
-	return module = { exports: {} }, fn(module, module.exports), module.exports;
-}
-
-var raf$1 = createCommonjsModule(function (module) {
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
     typeof cancelAnimationFrame === 'function') {
-  module.exports = {
+  raf = {
     next: function (x) { return requestAnimationFrame(x) },
     cancel: function (x) { return cancelAnimationFrame(x) }
   }
 } else {
-  module.exports = {
+  raf = {
     next: function (cb) {
       return setTimeout(cb, 16)
     },
     cancel: clearTimeout
   }
 }
-});
+
+var raf$1 = raf
 
 /* globals performance */
-var clock$1 = (typeof performance !== 'undefined' && performance.now)
+var clock = (typeof performance !== 'undefined' && performance.now)
   ? function () { return performance.now() }
   : function () { return +(new Date()) }
 
-var strings = function createStringStore () {
+function createStringStore () {
   var stringIds = {'': 0}
   var stringValues = ['']
   return {
@@ -708,11 +128,9 @@ var strings = function createStringStore () {
 
 // Context and canvas creation helper functions
 
-var extend$4 = extend$2
-
 function createCanvas (element, onDone, pixelRatio) {
   var canvas = document.createElement('canvas')
-  extend$4(canvas.style, {
+  extend(canvas.style, {
     border: 0,
     margin: 0,
     padding: 0,
@@ -723,7 +141,7 @@ function createCanvas (element, onDone, pixelRatio) {
 
   if (element === document.body) {
     canvas.style.position = 'absolute'
-    extend$4(element.style, {
+    extend(element.style, {
       margin: 0,
       padding: 0
     })
@@ -739,7 +157,7 @@ function createCanvas (element, onDone, pixelRatio) {
     }
     canvas.width = pixelRatio * w
     canvas.height = pixelRatio * h
-    extend$4(canvas.style, {
+    extend(canvas.style, {
       width: w + 'px',
       height: h + 'px'
     })
@@ -806,7 +224,7 @@ function getElement (desc) {
   return desc
 }
 
-var webgl = function parseArgs (args_) {
+function parseArgs (args_) {
   var args = args_ || {}
   var element, container, canvas, gl
   var contextAttributes = {}
@@ -905,7 +323,7 @@ var webgl = function parseArgs (args_) {
   }
 }
 
-var extension = function createExtensionCache (gl, config) {
+function createExtensionCache (gl, config) {
   var extensions = {}
 
   function tryLoadExtension (name_) {
@@ -974,7 +392,7 @@ var GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT = 0x84FF
 var GL_MAX_COLOR_ATTACHMENTS_WEBGL = 0x8CDF
 var GL_MAX_DRAW_BUFFERS_WEBGL = 0x8824
 
-var limits = function (gl, extensions) {
+function limits (gl, extensions) {
   var maxAnisotropic = 1
   if (extensions.ext_texture_filter_anisotropic) {
     maxAnisotropic = gl.getParameter(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT)
@@ -1034,9 +452,24 @@ var limits = function (gl, extensions) {
   }
 }
 
-var isTypedArray$4 = isTypedArray$1
+var arrayTypes = {
+	"[object Int8Array]": 5120,
+	"[object Int16Array]": 5122,
+	"[object Int32Array]": 5124,
+	"[object Uint8Array]": 5121,
+	"[object Uint8ClampedArray]": 5121,
+	"[object Uint16Array]": 5123,
+	"[object Uint32Array]": 5125,
+	"[object Float32Array]": 5126,
+	"[object Float64Array]": 5121,
+	"[object ArrayBuffer]": 5121
+};
 
-var isNdarray = function isNDArrayLike (obj) {
+var isTypedArray = function (x) {
+  return Object.prototype.toString.call(x) in arrayTypes
+}
+
+function isNDArrayLike (obj) {
   return (
     !!obj &&
     typeof obj === 'object' &&
@@ -1045,14 +478,14 @@ var isNdarray = function isNDArrayLike (obj) {
     typeof obj.offset === 'number' &&
     obj.shape.length === obj.stride.length &&
     (Array.isArray(obj.data) ||
-      isTypedArray$4(obj.data)))
+      isTypedArray(obj.data)))
 }
 
-var values$1 = function (obj) {
+var values = function (obj) {
   return Object.keys(obj).map(function (key) { return obj[key] })
 }
 
-var loop$1 = function loop$1 (n, f) {
+function loop (n, f) {
   var result = Array(n)
   for (var i = 0; i < n; ++i) {
     result[i] = f(i)
@@ -1060,15 +493,13 @@ var loop$1 = function loop$1 (n, f) {
   return result
 }
 
-var loop = loop$1
-
-var GL_BYTE$1 = 5120
-var GL_UNSIGNED_BYTE$2 = 5121
-var GL_SHORT$1 = 5122
-var GL_UNSIGNED_SHORT$1 = 5123
-var GL_INT$1 = 5124
-var GL_UNSIGNED_INT$1 = 5125
-var GL_FLOAT$2 = 5126
+var GL_BYTE = 5120
+var GL_UNSIGNED_BYTE$1 = 5121
+var GL_SHORT = 5122
+var GL_UNSIGNED_SHORT = 5123
+var GL_INT = 5124
+var GL_UNSIGNED_INT = 5125
+var GL_FLOAT$1 = 5126
 
 var bufferPool = loop(8, function () {
   return []
@@ -1112,25 +543,25 @@ function free (buf) {
 function allocType (type, n) {
   var result = null
   switch (type) {
-    case GL_BYTE$1:
+    case GL_BYTE:
       result = new Int8Array(alloc(n), 0, n)
       break
-    case GL_UNSIGNED_BYTE$2:
+    case GL_UNSIGNED_BYTE$1:
       result = new Uint8Array(alloc(n), 0, n)
       break
-    case GL_SHORT$1:
+    case GL_SHORT:
       result = new Int16Array(alloc(2 * n), 0, n)
       break
-    case GL_UNSIGNED_SHORT$1:
+    case GL_UNSIGNED_SHORT:
       result = new Uint16Array(alloc(2 * n), 0, n)
       break
-    case GL_INT$1:
+    case GL_INT:
       result = new Int32Array(alloc(4 * n), 0, n)
       break
-    case GL_UNSIGNED_INT$1:
+    case GL_UNSIGNED_INT:
       result = new Uint32Array(alloc(4 * n), 0, n)
       break
-    case GL_FLOAT$2:
+    case GL_FLOAT$1:
       result = new Float32Array(alloc(4 * n), 0, n)
       break
     default:
@@ -1144,20 +575,6 @@ function allocType (type, n) {
 
 function freeType (array) {
   free(array.buffer)
-}
-
-var pool$1 = {
-  alloc: alloc,
-  free: free,
-  allocType: allocType,
-  freeType: freeType
-}
-
-var pool$3 = pool$1
-
-var flatten = {
-  shape: arrayShape$1,
-  flatten: flattenArray
 }
 
 function flatten1D (array, nx, out) {
@@ -1220,7 +637,7 @@ function flattenArray (array, shape, type, out_) {
   } else {
     sz = 0
   }
-  var out = out_ || pool$3.allocType(type, sz)
+  var out = out_ || allocType(type, sz)
   switch (shape.length) {
     case 0:
       break
@@ -1255,7 +672,7 @@ var uint16 = 5123;
 var uint32 = 5125;
 var float = 5126;
 var float32 = 5126;
-var dtypes$1 = {
+var glTypes = {
 	int8: int8,
 	int16: int16,
 	int32: int32,
@@ -1266,54 +683,22 @@ var dtypes$1 = {
 	float32: float32
 };
 
-var dtypes$2 = Object.freeze({
-	int8: int8,
-	int16: int16,
-	int32: int32,
-	uint8: uint8,
-	uint16: uint16,
-	uint32: uint32,
-	float: float,
-	float32: float32,
-	default: dtypes$1
-});
-
-var dynamic$3 = 35048;
+var dynamic = 35048;
 var stream = 35040;
-var usage = {
-	dynamic: dynamic$3,
+var usageTypes = {
+	dynamic: dynamic,
 	stream: stream,
 	"static": 35044
 };
 
-var usage$1 = Object.freeze({
-	dynamic: dynamic$3,
-	stream: stream,
-	default: usage
-});
-
-var require$$0$4 = ( dtypes$2 && dtypes$2['default'] ) || dtypes$2;
-
-var require$$0$5 = ( usage$1 && usage$1['default'] ) || usage$1;
-
-var isTypedArray$3 = isTypedArray$1
-var isNDArrayLike$1 = isNdarray
-var values = values$1
-var pool = pool$1
-var flattenUtil = flatten
-
-var arrayFlatten = flattenUtil.flatten
-var arrayShape = flattenUtil.shape
-
-var arrayTypes = require$$0
-var bufferTypes = require$$0$4
-var usageTypes = require$$0$5
+var arrayFlatten = flattenArray
+var arrayShape = arrayShape$1
 
 var GL_STATIC_DRAW = 0x88E4
 var GL_STREAM_DRAW = 0x88E0
 
-var GL_UNSIGNED_BYTE$1 = 5121
-var GL_FLOAT$1 = 5126
+var GL_UNSIGNED_BYTE = 5121
+var GL_FLOAT = 5126
 
 var DTYPES_SIZES = []
 DTYPES_SIZES[5120] = 1 // int8
@@ -1344,7 +729,7 @@ function transpose (
   }
 }
 
-var buffer = function wrapBufferState (gl, stats, config) {
+function wrapBufferState (gl, stats, config) {
   var bufferCount = 0
   var bufferSet = {}
 
@@ -1355,7 +740,7 @@ var buffer = function wrapBufferState (gl, stats, config) {
     this.usage = GL_STATIC_DRAW
     this.byteLength = 0
     this.dimension = 1
-    this.dtype = GL_UNSIGNED_BYTE$1
+    this.dtype = GL_UNSIGNED_BYTE
 
     this.persistentData = null
 
@@ -1384,8 +769,8 @@ var buffer = function wrapBufferState (gl, stats, config) {
     return buffer
   }
 
-  function destroyStream (stream) {
-    streamPool.push(stream)
+  function destroyStream (stream$$1) {
+    streamPool.push(stream$$1)
   }
 
   function initBufferFromTypedArray (buffer, data, usage) {
@@ -1394,39 +779,39 @@ var buffer = function wrapBufferState (gl, stats, config) {
   }
 
   function initBufferFromData (buffer, data, usage, dtype, dimension, persist) {
-    var shape
+    var shape$$1
     buffer.usage = usage
     if (Array.isArray(data)) {
-      buffer.dtype = dtype || GL_FLOAT$1
+      buffer.dtype = dtype || GL_FLOAT
       if (data.length > 0) {
         var flatData
         if (Array.isArray(data[0])) {
-          shape = arrayShape(data)
+          shape$$1 = arrayShape(data)
           var dim = 1
-          for (var i = 1; i < shape.length; ++i) {
-            dim *= shape[i]
+          for (var i = 1; i < shape$$1.length; ++i) {
+            dim *= shape$$1[i]
           }
           buffer.dimension = dim
-          flatData = arrayFlatten(data, shape, buffer.dtype)
+          flatData = arrayFlatten(data, shape$$1, buffer.dtype)
           initBufferFromTypedArray(buffer, flatData, usage)
           if (persist) {
             buffer.persistentData = flatData
           } else {
-            pool.freeType(flatData)
+            freeType(flatData)
           }
         } else if (typeof data[0] === 'number') {
           buffer.dimension = dimension
-          var typedData = pool.allocType(buffer.dtype, data.length)
+          var typedData = allocType(buffer.dtype, data.length)
           copyArray(typedData, data)
           initBufferFromTypedArray(buffer, typedData, usage)
           if (persist) {
             buffer.persistentData = typedData
           } else {
-            pool.freeType(typedData)
+            freeType(typedData)
           }
-        } else if (isTypedArray$3(data[0])) {
+        } else if (isTypedArray(data[0])) {
           buffer.dimension = data[0].length
-          buffer.dtype = dtype || typedArrayCode(data[0]) || GL_FLOAT$1
+          buffer.dtype = dtype || typedArrayCode(data[0]) || GL_FLOAT
           flatData = arrayFlatten(
             data,
             [data.length, data[0].length],
@@ -1435,21 +820,21 @@ var buffer = function wrapBufferState (gl, stats, config) {
           if (persist) {
             buffer.persistentData = flatData
           } else {
-            pool.freeType(flatData)
+            freeType(flatData)
           }
         } else {
           
         }
       }
-    } else if (isTypedArray$3(data)) {
+    } else if (isTypedArray(data)) {
       buffer.dtype = dtype || typedArrayCode(data)
       buffer.dimension = dimension
       initBufferFromTypedArray(buffer, data, usage)
       if (persist) {
         buffer.persistentData = new Uint8Array(new Uint8Array(data.buffer))
       }
-    } else if (isNDArrayLike$1(data)) {
-      shape = data.shape
+    } else if (isNDArrayLike(data)) {
+      shape$$1 = data.shape
       var stride = data.stride
       var offset = data.offset
 
@@ -1457,24 +842,24 @@ var buffer = function wrapBufferState (gl, stats, config) {
       var shapeY = 0
       var strideX = 0
       var strideY = 0
-      if (shape.length === 1) {
-        shapeX = shape[0]
+      if (shape$$1.length === 1) {
+        shapeX = shape$$1[0]
         shapeY = 1
         strideX = stride[0]
         strideY = 0
-      } else if (shape.length === 2) {
-        shapeX = shape[0]
-        shapeY = shape[1]
+      } else if (shape$$1.length === 2) {
+        shapeX = shape$$1[0]
+        shapeY = shape$$1[1]
         strideX = stride[0]
         strideY = stride[1]
       } else {
         
       }
 
-      buffer.dtype = dtype || typedArrayCode(data.data) || GL_FLOAT$1
+      buffer.dtype = dtype || typedArrayCode(data.data) || GL_FLOAT
       buffer.dimension = shapeY
 
-      var transposeData = pool.allocType(buffer.dtype, shapeX * shapeY)
+      var transposeData = allocType(buffer.dtype, shapeX * shapeY)
       transpose(transposeData,
         data.data,
         shapeX, shapeY,
@@ -1484,7 +869,7 @@ var buffer = function wrapBufferState (gl, stats, config) {
       if (persist) {
         buffer.persistentData = transposeData
       } else {
-        pool.freeType(transposeData)
+        freeType(transposeData)
       }
     } else {
       
@@ -1514,8 +899,8 @@ var buffer = function wrapBufferState (gl, stats, config) {
       var dtype = 0
       var dimension = 1
       if (Array.isArray(options) ||
-          isTypedArray$3(options) ||
-          isNDArrayLike$1(options)) {
+          isTypedArray(options) ||
+          isNDArrayLike(options)) {
         data = options
       } else if (typeof options === 'number') {
         byteLength = options | 0
@@ -1534,7 +919,7 @@ var buffer = function wrapBufferState (gl, stats, config) {
 
         if ('type' in options) {
           
-          dtype = bufferTypes[options.type]
+          dtype = glTypes[options.type]
         }
 
         if ('dimension' in options) {
@@ -1551,7 +936,7 @@ var buffer = function wrapBufferState (gl, stats, config) {
       buffer.bind()
       if (!data) {
         gl.bufferData(buffer.type, byteLength, usage)
-        buffer.dtype = dtype || GL_UNSIGNED_BYTE$1
+        buffer.dtype = dtype || GL_UNSIGNED_BYTE
         buffer.usage = usage
         buffer.dimension = dimension
         buffer.byteLength = byteLength
@@ -1574,42 +959,42 @@ var buffer = function wrapBufferState (gl, stats, config) {
 
     function subdata (data, offset_) {
       var offset = (offset_ || 0) | 0
-      var shape
+      var shape$$1
       buffer.bind()
       if (Array.isArray(data)) {
         if (data.length > 0) {
           if (typeof data[0] === 'number') {
-            var converted = pool.allocType(buffer.dtype, data.length)
+            var converted = allocType(buffer.dtype, data.length)
             copyArray(converted, data)
             setSubData(converted, offset)
-            pool.freeType(converted)
-          } else if (Array.isArray(data[0]) || isTypedArray$3(data[0])) {
-            shape = arrayShape(data)
-            var flatData = arrayFlatten(data, shape, buffer.dtype)
+            freeType(converted)
+          } else if (Array.isArray(data[0]) || isTypedArray(data[0])) {
+            shape$$1 = arrayShape(data)
+            var flatData = arrayFlatten(data, shape$$1, buffer.dtype)
             setSubData(flatData, offset)
-            pool.freeType(flatData)
+            freeType(flatData)
           } else {
             
           }
         }
-      } else if (isTypedArray$3(data)) {
+      } else if (isTypedArray(data)) {
         setSubData(data, offset)
-      } else if (isNDArrayLike$1(data)) {
-        shape = data.shape
+      } else if (isNDArrayLike(data)) {
+        shape$$1 = data.shape
         var stride = data.stride
 
         var shapeX = 0
         var shapeY = 0
         var strideX = 0
         var strideY = 0
-        if (shape.length === 1) {
-          shapeX = shape[0]
+        if (shape$$1.length === 1) {
+          shapeX = shape$$1[0]
           shapeY = 1
           strideX = stride[0]
           strideY = 0
-        } else if (shape.length === 2) {
-          shapeX = shape[0]
-          shapeY = shape[1]
+        } else if (shape$$1.length === 2) {
+          shapeX = shape$$1[0]
+          shapeY = shape$$1[1]
           strideX = stride[0]
           strideY = stride[1]
         } else {
@@ -1619,14 +1004,14 @@ var buffer = function wrapBufferState (gl, stats, config) {
           ? buffer.dtype
           : typedArrayCode(data.data)
 
-        var transposeData = pool.allocType(dtype, shapeX * shapeY)
+        var transposeData = allocType(dtype, shapeX * shapeY)
         transpose(transposeData,
           data.data,
           shapeX, shapeY,
           strideX, strideY,
           data.offset)
         setSubData(transposeData, offset)
-        pool.freeType(transposeData)
+        freeType(transposeData)
       } else {
         
       }
@@ -1698,7 +1083,7 @@ var lines = 1;
 var line = 1;
 var triangles = 4;
 var triangle = 4;
-var primitives = {
+var primTypes = {
 	points: points,
 	point: point,
 	lines: lines,
@@ -1711,52 +1096,33 @@ var primitives = {
 	"triangle fan": 6
 };
 
-var primitives$1 = Object.freeze({
-	points: points,
-	point: point,
-	lines: lines,
-	line: line,
-	triangles: triangles,
-	triangle: triangle,
-	default: primitives
-});
-
-var require$$1$1 = ( primitives$1 && primitives$1['default'] ) || primitives$1;
-
-var isTypedArray$5 = isTypedArray$1
-var isNDArrayLike$2 = isNdarray
-var values$3 = values$1
-
-var primTypes = require$$1$1
-var usageTypes$1 = require$$0$5
-
 var GL_POINTS = 0
 var GL_LINES = 1
 var GL_TRIANGLES = 4
 
-var GL_BYTE$2 = 5120
-var GL_UNSIGNED_BYTE$3 = 5121
-var GL_SHORT$2 = 5122
-var GL_UNSIGNED_SHORT$2 = 5123
-var GL_INT$2 = 5124
-var GL_UNSIGNED_INT$2 = 5125
+var GL_BYTE$1 = 5120
+var GL_UNSIGNED_BYTE$2 = 5121
+var GL_SHORT$1 = 5122
+var GL_UNSIGNED_SHORT$1 = 5123
+var GL_INT$1 = 5124
+var GL_UNSIGNED_INT$1 = 5125
 
 var GL_ELEMENT_ARRAY_BUFFER = 34963
 
 var GL_STREAM_DRAW$1 = 0x88E0
 var GL_STATIC_DRAW$1 = 0x88E4
 
-var elements = function wrapElementsState (gl, extensions, bufferState, stats) {
+function wrapElementsState (gl, extensions, bufferState, stats) {
   var elementSet = {}
   var elementCount = 0
 
   var elementTypes = {
-    'uint8': GL_UNSIGNED_BYTE$3,
-    'uint16': GL_UNSIGNED_SHORT$2
+    'uint8': GL_UNSIGNED_BYTE$2,
+    'uint16': GL_UNSIGNED_SHORT$1
   }
 
   if (extensions.oes_element_index_uint) {
-    elementTypes.uint32 = GL_UNSIGNED_INT$2
+    elementTypes.uint32 = GL_UNSIGNED_INT$1
   }
 
   function REGLElementBuffer (buffer) {
@@ -1803,11 +1169,11 @@ var elements = function wrapElementsState (gl, extensions, bufferState, stats) {
     if (data) {
       var predictedType = type
       if (!type && (
-          !isTypedArray$5(data) ||
-         (isNDArrayLike$2(data) && !isTypedArray$5(data.data)))) {
+          !isTypedArray(data) ||
+         (isNDArrayLike(data) && !isTypedArray(data.data)))) {
         predictedType = extensions.oes_element_index_uint
-          ? GL_UNSIGNED_INT$2
-          : GL_UNSIGNED_SHORT$2
+          ? GL_UNSIGNED_INT$1
+          : GL_UNSIGNED_SHORT$1
       }
       bufferState._initBuffer(
         elements.buffer,
@@ -1817,7 +1183,7 @@ var elements = function wrapElementsState (gl, extensions, bufferState, stats) {
         3)
     } else {
       gl.bufferData(GL_ELEMENT_ARRAY_BUFFER, byteLength, usage)
-      elements.buffer.dtype = dtype || GL_UNSIGNED_BYTE$3
+      elements.buffer.dtype = dtype || GL_UNSIGNED_BYTE$2
       elements.buffer.usage = usage
       elements.buffer.dimension = 3
       elements.buffer.byteLength = byteLength
@@ -1826,19 +1192,19 @@ var elements = function wrapElementsState (gl, extensions, bufferState, stats) {
     var dtype = type
     if (!type) {
       switch (elements.buffer.dtype) {
-        case GL_UNSIGNED_BYTE$3:
-        case GL_BYTE$2:
-          dtype = GL_UNSIGNED_BYTE$3
+        case GL_UNSIGNED_BYTE$2:
+        case GL_BYTE$1:
+          dtype = GL_UNSIGNED_BYTE$2
           break
 
-        case GL_UNSIGNED_SHORT$2:
-        case GL_SHORT$2:
-          dtype = GL_UNSIGNED_SHORT$2
+        case GL_UNSIGNED_SHORT$1:
+        case GL_SHORT$1:
+          dtype = GL_UNSIGNED_SHORT$1
           break
 
-        case GL_UNSIGNED_INT$2:
-        case GL_INT$2:
-          dtype = GL_UNSIGNED_INT$2
+        case GL_UNSIGNED_INT$1:
+        case GL_INT$1:
+          dtype = GL_UNSIGNED_INT$1
           break
 
         default:
@@ -1855,9 +1221,9 @@ var elements = function wrapElementsState (gl, extensions, bufferState, stats) {
     var vertCount = count
     if (vertCount < 0) {
       vertCount = elements.buffer.byteLength
-      if (dtype === GL_UNSIGNED_SHORT$2) {
+      if (dtype === GL_UNSIGNED_SHORT$1) {
         vertCount >>= 1
-      } else if (dtype === GL_UNSIGNED_INT$2) {
+      } else if (dtype === GL_UNSIGNED_INT$1) {
         vertCount >>= 2
       }
     }
@@ -1894,12 +1260,12 @@ var elements = function wrapElementsState (gl, extensions, bufferState, stats) {
         buffer()
         elements.primType = GL_TRIANGLES
         elements.vertCount = 0
-        elements.type = GL_UNSIGNED_BYTE$3
+        elements.type = GL_UNSIGNED_BYTE$2
       } else if (typeof options === 'number') {
         buffer(options)
         elements.primType = GL_TRIANGLES
         elements.vertCount = options | 0
-        elements.type = GL_UNSIGNED_BYTE$3
+        elements.type = GL_UNSIGNED_BYTE$2
       } else {
         var data = null
         var usage = GL_STATIC_DRAW$1
@@ -1908,8 +1274,8 @@ var elements = function wrapElementsState (gl, extensions, bufferState, stats) {
         var byteLength = 0
         var dtype = 0
         if (Array.isArray(options) ||
-            isTypedArray$5(options) ||
-            isNDArrayLike$2(options)) {
+            isTypedArray(options) ||
+            isNDArrayLike(options)) {
           data = options
         } else {
           
@@ -1919,7 +1285,7 @@ var elements = function wrapElementsState (gl, extensions, bufferState, stats) {
           }
           if ('usage' in options) {
             
-            usage = usageTypes$1[options.usage]
+            usage = usageTypes[options.usage]
           }
           if ('primitive' in options) {
             
@@ -1937,9 +1303,9 @@ var elements = function wrapElementsState (gl, extensions, bufferState, stats) {
             byteLength = options.length | 0
           } else {
             byteLength = vertCount
-            if (dtype === GL_UNSIGNED_SHORT$2 || dtype === GL_SHORT$2) {
+            if (dtype === GL_UNSIGNED_SHORT$1 || dtype === GL_SHORT$1) {
               byteLength *= 2
-            } else if (dtype === GL_UNSIGNED_INT$2 || dtype === GL_INT$2) {
+            } else if (dtype === GL_UNSIGNED_INT$1 || dtype === GL_INT$1) {
               byteLength *= 4
             }
           }
@@ -1984,20 +1350,18 @@ var elements = function wrapElementsState (gl, extensions, bufferState, stats) {
       return null
     },
     clear: function () {
-      values$3(elementSet).forEach(destroyElements)
+      values(elementSet).forEach(destroyElements)
     }
   }
 }
 
-var pool$5 = pool$1
-
 var FLOAT = new Float32Array(1)
 var INT = new Uint32Array(FLOAT.buffer)
 
-var GL_UNSIGNED_SHORT$4 = 5123
+var GL_UNSIGNED_SHORT$3 = 5123
 
-var toHalfFloat = function convertToHalfFloat (array) {
-  var ushorts = pool$5.allocType(GL_UNSIGNED_SHORT$4, array.length)
+function convertToHalfFloat (array) {
+  var ushorts = allocType(GL_UNSIGNED_SHORT$3, array.length)
 
   for (var i = 0; i < array.length; ++i) {
     if (isNaN(array[i])) {
@@ -2034,22 +1398,9 @@ var toHalfFloat = function convertToHalfFloat (array) {
   return ushorts
 }
 
-var isTypedArray$7 = isTypedArray$1
-var isArrayLike$1 = function isArrayLike$1 (s) {
-  return Array.isArray(s) || isTypedArray$7(s)
+function isArrayLike (s) {
+  return Array.isArray(s) || isTypedArray(s)
 }
-
-var extend$5 = extend$2
-var values$4 = values$1
-var isTypedArray$6 = isTypedArray$1
-var isNDArrayLike$3 = isNdarray
-var pool$4 = pool$1
-var convertToHalfFloat$1 = toHalfFloat
-var isArrayLike = isArrayLike$1
-var flattenUtils = flatten
-
-var dtypes$3 = require$$0
-var arrayTypes$1 = require$$0
 
 var GL_COMPRESSED_TEXTURE_FORMATS = 0x86A3
 
@@ -2067,10 +1418,10 @@ var GL_RGBA4 = 0x8056
 var GL_RGB5_A1 = 0x8057
 var GL_RGB565 = 0x8D62
 
-var GL_UNSIGNED_SHORT_4_4_4_4$1 = 0x8033
-var GL_UNSIGNED_SHORT_5_5_5_1$1 = 0x8034
-var GL_UNSIGNED_SHORT_5_6_5$1 = 0x8363
-var GL_UNSIGNED_INT_24_8_WEBGL$1 = 0x84FA
+var GL_UNSIGNED_SHORT_4_4_4_4 = 0x8033
+var GL_UNSIGNED_SHORT_5_5_5_1 = 0x8034
+var GL_UNSIGNED_SHORT_5_6_5 = 0x8363
+var GL_UNSIGNED_INT_24_8_WEBGL = 0x84FA
 
 var GL_DEPTH_COMPONENT = 0x1902
 var GL_DEPTH_STENCIL = 0x84F9
@@ -2078,7 +1429,7 @@ var GL_DEPTH_STENCIL = 0x84F9
 var GL_SRGB_EXT = 0x8C40
 var GL_SRGB_ALPHA_EXT = 0x8C42
 
-var GL_HALF_FLOAT_OES$1 = 0x8D61
+var GL_HALF_FLOAT_OES = 0x8D61
 
 var GL_COMPRESSED_RGB_S3TC_DXT1_EXT = 0x83F0
 var GL_COMPRESSED_RGBA_S3TC_DXT1_EXT = 0x83F1
@@ -2096,27 +1447,27 @@ var GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG = 0x8C03
 
 var GL_COMPRESSED_RGB_ETC1_WEBGL = 0x8D64
 
-var GL_UNSIGNED_BYTE$4 = 0x1401
-var GL_UNSIGNED_SHORT$3 = 0x1403
-var GL_UNSIGNED_INT$3 = 0x1405
-var GL_FLOAT$3 = 0x1406
+var GL_UNSIGNED_BYTE$3 = 0x1401
+var GL_UNSIGNED_SHORT$2 = 0x1403
+var GL_UNSIGNED_INT$2 = 0x1405
+var GL_FLOAT$2 = 0x1406
 
 var GL_TEXTURE_WRAP_S = 0x2802
 var GL_TEXTURE_WRAP_T = 0x2803
 
 var GL_REPEAT = 0x2901
-var GL_CLAMP_TO_EDGE$1 = 0x812F
+var GL_CLAMP_TO_EDGE = 0x812F
 var GL_MIRRORED_REPEAT = 0x8370
 
 var GL_TEXTURE_MAG_FILTER = 0x2800
 var GL_TEXTURE_MIN_FILTER = 0x2801
 
-var GL_NEAREST$1 = 0x2600
+var GL_NEAREST = 0x2600
 var GL_LINEAR = 0x2601
-var GL_NEAREST_MIPMAP_NEAREST$1 = 0x2700
-var GL_LINEAR_MIPMAP_NEAREST$1 = 0x2701
-var GL_NEAREST_MIPMAP_LINEAR$1 = 0x2702
-var GL_LINEAR_MIPMAP_LINEAR$1 = 0x2703
+var GL_NEAREST_MIPMAP_NEAREST = 0x2700
+var GL_LINEAR_MIPMAP_NEAREST = 0x2701
+var GL_NEAREST_MIPMAP_LINEAR = 0x2702
+var GL_LINEAR_MIPMAP_LINEAR = 0x2703
 
 var GL_GENERATE_MIPMAP_HINT = 0x8192
 var GL_DONT_CARE = 0x1100
@@ -2135,10 +1486,10 @@ var GL_BROWSER_DEFAULT_WEBGL = 0x9244
 var GL_TEXTURE0 = 0x84C0
 
 var MIPMAP_FILTERS = [
-  GL_NEAREST_MIPMAP_NEAREST$1,
-  GL_NEAREST_MIPMAP_LINEAR$1,
-  GL_LINEAR_MIPMAP_NEAREST$1,
-  GL_LINEAR_MIPMAP_LINEAR$1
+  GL_NEAREST_MIPMAP_NEAREST,
+  GL_NEAREST_MIPMAP_LINEAR,
+  GL_LINEAR_MIPMAP_NEAREST,
+  GL_LINEAR_MIPMAP_LINEAR
 ]
 
 var CHANNELS_FORMAT = [
@@ -2169,7 +1520,7 @@ var CONTEXT2D_CLASS = objectName('CanvasRenderingContext2D')
 var IMAGE_CLASS = objectName('HTMLImageElement')
 var VIDEO_CLASS = objectName('HTMLVideoElement')
 
-var PIXEL_CLASSES = Object.keys(dtypes$3).concat([
+var PIXEL_CLASSES = Object.keys(arrayTypes).concat([
   CANVAS_CLASS,
   CONTEXT2D_CLASS,
   IMAGE_CLASS,
@@ -2179,12 +1530,12 @@ var PIXEL_CLASSES = Object.keys(dtypes$3).concat([
 // for every texture type, store
 // the size in bytes.
 var TYPE_SIZES = []
-TYPE_SIZES[GL_UNSIGNED_BYTE$4] = 1
-TYPE_SIZES[GL_FLOAT$3] = 4
-TYPE_SIZES[GL_HALF_FLOAT_OES$1] = 2
+TYPE_SIZES[GL_UNSIGNED_BYTE$3] = 1
+TYPE_SIZES[GL_FLOAT$2] = 4
+TYPE_SIZES[GL_HALF_FLOAT_OES] = 2
 
-TYPE_SIZES[GL_UNSIGNED_SHORT$3] = 2
-TYPE_SIZES[GL_UNSIGNED_INT$3] = 4
+TYPE_SIZES[GL_UNSIGNED_SHORT$2] = 2
+TYPE_SIZES[GL_UNSIGNED_INT$2] = 4
 
 var FORMAT_SIZES_SPECIAL = []
 FORMAT_SIZES_SPECIAL[GL_RGBA4] = 2
@@ -2257,27 +1608,27 @@ function isPixelData (object) {
   return (
     isNumericArray(object) ||
     isRectArray(object) ||
-    isNDArrayLike$3(object))
+    isNDArrayLike(object))
 }
 
 function typedArrayCode$1 (data) {
-  return arrayTypes$1[Object.prototype.toString.call(data)] | 0
+  return arrayTypes[Object.prototype.toString.call(data)] | 0
 }
 
 function convertData (result, data) {
   var n = data.length
   switch (result.type) {
-    case GL_UNSIGNED_BYTE$4:
-    case GL_UNSIGNED_SHORT$3:
-    case GL_UNSIGNED_INT$3:
-    case GL_FLOAT$3:
-      var converted = pool$4.allocType(result.type, n)
+    case GL_UNSIGNED_BYTE$3:
+    case GL_UNSIGNED_SHORT$2:
+    case GL_UNSIGNED_INT$2:
+    case GL_FLOAT$2:
+      var converted = allocType(result.type, n)
       converted.set(data)
       result.data = converted
       break
 
-    case GL_HALF_FLOAT_OES$1:
-      result.data = convertToHalfFloat$1(data)
+    case GL_HALF_FLOAT_OES:
+      result.data = convertToHalfFloat(data)
       break
 
     default:
@@ -2286,16 +1637,16 @@ function convertData (result, data) {
 }
 
 function preConvert (image, n) {
-  return pool$4.allocType(
-    image.type === GL_HALF_FLOAT_OES$1
-      ? GL_FLOAT$3
+  return allocType(
+    image.type === GL_HALF_FLOAT_OES
+      ? GL_FLOAT$2
       : image.type, n)
 }
 
 function postConvert (image, data) {
-  if (image.type === GL_HALF_FLOAT_OES$1) {
-    image.data = convertToHalfFloat$1(data)
-    pool$4.freeType(data)
+  if (image.type === GL_HALF_FLOAT_OES) {
+    image.data = convertToHalfFloat(data)
+    freeType(data)
   } else {
     image.data = data
   }
@@ -2350,7 +1701,7 @@ function getTextureSize (format, type, width, height, isMipmap, isCube) {
   }
 }
 
-var texture = function createTextureSet (
+function createTextureSet (
   gl, extensions, limits, reglPoll, contextState, stats, config) {
   // -------------------------------------------------------
   // Initialize constants and parameter tables here
@@ -2364,21 +1715,21 @@ var texture = function createTextureSet (
 
   var wrapModes = {
     'repeat': GL_REPEAT,
-    'clamp': GL_CLAMP_TO_EDGE$1,
+    'clamp': GL_CLAMP_TO_EDGE,
     'mirror': GL_MIRRORED_REPEAT
   }
 
   var magFilters = {
-    'nearest': GL_NEAREST$1,
+    'nearest': GL_NEAREST,
     'linear': GL_LINEAR
   }
 
-  var minFilters = extend$5({
-    'mipmap': GL_LINEAR_MIPMAP_LINEAR$1,
-    'nearest mipmap nearest': GL_NEAREST_MIPMAP_NEAREST$1,
-    'linear mipmap nearest': GL_LINEAR_MIPMAP_NEAREST$1,
-    'nearest mipmap linear': GL_NEAREST_MIPMAP_LINEAR$1,
-    'linear mipmap linear': GL_LINEAR_MIPMAP_LINEAR$1
+  var minFilters = extend({
+    'mipmap': GL_LINEAR_MIPMAP_LINEAR,
+    'nearest mipmap nearest': GL_NEAREST_MIPMAP_NEAREST,
+    'linear mipmap nearest': GL_LINEAR_MIPMAP_NEAREST,
+    'nearest mipmap linear': GL_NEAREST_MIPMAP_LINEAR,
+    'linear mipmap linear': GL_LINEAR_MIPMAP_LINEAR
   }, magFilters)
 
   var colorSpace = {
@@ -2387,10 +1738,10 @@ var texture = function createTextureSet (
   }
 
   var textureTypes = {
-    'uint8': GL_UNSIGNED_BYTE$4,
-    'rgba4': GL_UNSIGNED_SHORT_4_4_4_4$1,
-    'rgb565': GL_UNSIGNED_SHORT_5_6_5$1,
-    'rgb5 a1': GL_UNSIGNED_SHORT_5_5_5_1$1
+    'uint8': GL_UNSIGNED_BYTE$3,
+    'rgba4': GL_UNSIGNED_SHORT_4_4_4_4,
+    'rgb565': GL_UNSIGNED_SHORT_5_6_5,
+    'rgb5 a1': GL_UNSIGNED_SHORT_5_5_5_1
   }
 
   var textureFormats = {
@@ -2412,28 +1763,28 @@ var texture = function createTextureSet (
   }
 
   if (extensions.oes_texture_float) {
-    textureTypes.float32 = textureTypes.float = GL_FLOAT$3
+    textureTypes.float32 = textureTypes.float = GL_FLOAT$2
   }
 
   if (extensions.oes_texture_half_float) {
-    textureTypes['float16'] = textureTypes['half float'] = GL_HALF_FLOAT_OES$1
+    textureTypes['float16'] = textureTypes['half float'] = GL_HALF_FLOAT_OES
   }
 
   if (extensions.webgl_depth_texture) {
-    extend$5(textureFormats, {
+    extend(textureFormats, {
       'depth': GL_DEPTH_COMPONENT,
       'depth stencil': GL_DEPTH_STENCIL
     })
 
-    extend$5(textureTypes, {
-      'uint16': GL_UNSIGNED_SHORT$3,
-      'uint32': GL_UNSIGNED_INT$3,
-      'depth stencil': GL_UNSIGNED_INT_24_8_WEBGL$1
+    extend(textureTypes, {
+      'uint16': GL_UNSIGNED_SHORT$2,
+      'uint32': GL_UNSIGNED_INT$2,
+      'depth stencil': GL_UNSIGNED_INT_24_8_WEBGL
     })
   }
 
   if (extensions.webgl_compressed_texture_s3tc) {
-    extend$5(compressedTextureFormats, {
+    extend(compressedTextureFormats, {
       'rgb s3tc dxt1': GL_COMPRESSED_RGB_S3TC_DXT1_EXT,
       'rgba s3tc dxt1': GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
       'rgba s3tc dxt3': GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,
@@ -2442,7 +1793,7 @@ var texture = function createTextureSet (
   }
 
   if (extensions.webgl_compressed_texture_atc) {
-    extend$5(compressedTextureFormats, {
+    extend(compressedTextureFormats, {
       'rgb atc': GL_COMPRESSED_RGB_ATC_WEBGL,
       'rgba atc explicit alpha': GL_COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL,
       'rgba atc interpolated alpha': GL_COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL
@@ -2450,7 +1801,7 @@ var texture = function createTextureSet (
   }
 
   if (extensions.webgl_compressed_texture_pvrtc) {
-    extend$5(compressedTextureFormats, {
+    extend(compressedTextureFormats, {
       'rgb pvrtc 4bppv1': GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG,
       'rgb pvrtc 2bppv1': GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG,
       'rgba pvrtc 4bppv1': GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG,
@@ -2532,7 +1883,7 @@ var texture = function createTextureSet (
     // format info
     this.internalformat = GL_RGBA
     this.format = GL_RGBA
-    this.type = GL_UNSIGNED_BYTE$4
+    this.type = GL_UNSIGNED_BYTE$3
     this.compressed = false
 
     // pixel storage
@@ -2724,10 +2075,10 @@ var texture = function createTextureSet (
       image.width = image.width || 1
       image.height = image.height || 1
       image.channels = image.channels || 4
-    } else if (isTypedArray$6(data)) {
+    } else if (isTypedArray(data)) {
       image.channels = image.channels || 4
       image.data = data
-      if (!('type' in options) && image.type === GL_UNSIGNED_BYTE$4) {
+      if (!('type' in options) && image.type === GL_UNSIGNED_BYTE$3) {
         image.type = typedArrayCode$1(data)
       }
     } else if (isNumericArray(data)) {
@@ -2735,24 +2086,24 @@ var texture = function createTextureSet (
       convertData(image, data)
       image.alignment = 1
       image.needsFree = true
-    } else if (isNDArrayLike$3(data)) {
+    } else if (isNDArrayLike(data)) {
       var array = data.data
-      if (!Array.isArray(array) && image.type === GL_UNSIGNED_BYTE$4) {
+      if (!Array.isArray(array) && image.type === GL_UNSIGNED_BYTE$3) {
         image.type = typedArrayCode$1(array)
       }
-      var shape = data.shape
+      var shape$$1 = data.shape
       var stride = data.stride
       var shapeX, shapeY, shapeC, strideX, strideY, strideC
-      if (shape.length === 3) {
-        shapeC = shape[2]
+      if (shape$$1.length === 3) {
+        shapeC = shape$$1[2]
         strideC = stride[2]
       } else {
         
         shapeC = 1
         strideC = 1
       }
-      shapeX = shape[0]
-      shapeY = shape[1]
+      shapeX = shape$$1[0]
+      shapeY = shape$$1[1]
       strideX = stride[0]
       strideY = stride[1]
       image.alignment = 1
@@ -2790,13 +2141,13 @@ var texture = function createTextureSet (
       } else {
         c = c || 1
       }
-      var arrayShape = flattenUtils.shape(data)
+      var arrayShape = arrayShape$1(data)
       var n = 1
       for (var dd = 0; dd < arrayShape.length; ++dd) {
         n *= arrayShape[dd]
       }
       var allocData = preConvert(image, n)
-      flattenUtils.flatten(data, arrayShape, '', allocData)
+      flattenArray(data, arrayShape, '', allocData)
       postConvert(image, allocData)
       image.alignment = 1
       image.width = w
@@ -2806,9 +2157,9 @@ var texture = function createTextureSet (
       image.needsFree = true
     }
 
-    if (image.type === GL_FLOAT$3) {
+    if (image.type === GL_FLOAT$2) {
       
-    } else if (image.type === GL_HALF_FLOAT_OES$1) {
+    } else if (image.type === GL_HALF_FLOAT_OES) {
       
     }
 
@@ -2876,7 +2227,7 @@ var texture = function createTextureSet (
 
   function freeImage (image) {
     if (image.needsFree) {
-      pool$4.freeType(image.data)
+      freeType(image.data)
     }
     TexImage.call(image)
     imagePool.push(image)
@@ -2985,11 +2336,11 @@ var texture = function createTextureSet (
   // Tex info
   // -------------------------------------------------------
   function TexInfo () {
-    this.minFilter = GL_NEAREST$1
-    this.magFilter = GL_NEAREST$1
+    this.minFilter = GL_NEAREST
+    this.magFilter = GL_NEAREST
 
-    this.wrapS = GL_CLAMP_TO_EDGE$1
-    this.wrapT = GL_CLAMP_TO_EDGE$1
+    this.wrapS = GL_CLAMP_TO_EDGE
+    this.wrapT = GL_CLAMP_TO_EDGE
 
     this.anisotropic = 1
 
@@ -3071,7 +2422,7 @@ var texture = function createTextureSet (
           
       }
       if (hasMipMap && !('min' in options)) {
-        info.minFilter = GL_NEAREST_MIPMAP_NEAREST$1
+        info.minFilter = GL_NEAREST_MIPMAP_NEAREST
       }
     }
   }
@@ -3155,7 +2506,7 @@ var texture = function createTextureSet (
     stats.textureCount--
   }
 
-  extend$5(REGLTexture.prototype, {
+  extend(REGLTexture.prototype, {
     bind: function () {
       var texture = this
       texture.bindCount += 1
@@ -3534,7 +2885,7 @@ var texture = function createTextureSet (
       gl.bindTexture(GL_TEXTURE_2D, null)
       textureUnits[i] = null
     }
-    values$4(textureSet).forEach(destroy)
+    values(textureSet).forEach(destroy)
 
     stats.cubeCount = 0
     stats.textureCount = 0
@@ -3551,7 +2902,7 @@ var texture = function createTextureSet (
   }
 
   function restoreTextures () {
-    values$4(textureSet).forEach(function (texture) {
+    values(textureSet).forEach(function (texture) {
       texture.texture = gl.createTexture()
       gl.bindTexture(texture.target, texture.texture)
       for (var i = 0; i < 32; ++i) {
@@ -3597,8 +2948,6 @@ var texture = function createTextureSet (
   }
 }
 
-var values$5 = values$1
-
 var GL_RENDERBUFFER = 0x8D41
 
 var GL_RGBA4$1 = 0x8056
@@ -3634,7 +2983,7 @@ function getRenderbufferSize (format, width, height) {
   return FORMAT_SIZES[format] * width * height
 }
 
-var renderbuffer = function (gl, extensions, limits, stats, config) {
+var wrapRenderbuffers = function (gl, extensions, limits, stats, config) {
   var formatTypes = {
     'rgba4': GL_RGBA4$1,
     'rgb565': GL_RGB565$1,
@@ -3819,7 +3168,7 @@ var renderbuffer = function (gl, extensions, limits, stats, config) {
   }
 
   function restoreRenderbuffers () {
-    values$5(renderbufferSet).forEach(function (rb) {
+    values(renderbufferSet).forEach(function (rb) {
       rb.renderbuffer = gl.createRenderbuffer()
       gl.bindRenderbuffer(GL_RENDERBUFFER, rb.renderbuffer)
       gl.renderbufferStorage(GL_RENDERBUFFER, rb.format, rb.width, rb.height)
@@ -3830,14 +3179,11 @@ var renderbuffer = function (gl, extensions, limits, stats, config) {
   return {
     create: createRenderbuffer,
     clear: function () {
-      values$5(renderbufferSet).forEach(destroy)
+      values(renderbufferSet).forEach(destroy)
     },
     restore: restoreRenderbuffers
   }
 }
-
-var values$6 = values$1
-var extend$6 = extend$2
 
 // We store these constants so that the minifier can inline them
 var GL_FRAMEBUFFER = 0x8D40
@@ -3852,9 +3198,9 @@ var GL_STENCIL_ATTACHMENT = 0x8D20
 var GL_DEPTH_STENCIL_ATTACHMENT = 0x821A
 
 var GL_FRAMEBUFFER_COMPLETE = 0x8CD5
-var GL_HALF_FLOAT_OES$2 = 0x8D61
-var GL_UNSIGNED_BYTE$5 = 0x1401
-var GL_FLOAT$4 = 0x1406
+var GL_HALF_FLOAT_OES$1 = 0x8D61
+var GL_UNSIGNED_BYTE$4 = 0x1401
+var GL_FLOAT$3 = 0x1406
 
 var GL_RGBA$1 = 0x1908
 
@@ -3866,11 +3212,11 @@ textureFormatChannels[GL_RGBA$1] = 4
 // for every texture type, store
 // the size in bytes.
 var textureTypeSizes = []
-textureTypeSizes[GL_UNSIGNED_BYTE$5] = 1
-textureTypeSizes[GL_FLOAT$4] = 4
-textureTypeSizes[GL_HALF_FLOAT_OES$2] = 2
+textureTypeSizes[GL_UNSIGNED_BYTE$4] = 1
+textureTypeSizes[GL_FLOAT$3] = 4
+textureTypeSizes[GL_HALF_FLOAT_OES$1] = 2
 
-var framebuffer = function wrapFBOState (
+function wrapFBOState (
   gl,
   extensions,
   limits,
@@ -4418,7 +3764,7 @@ var framebuffer = function wrapFBOState (
 
     reglFramebuffer(a0, a1)
 
-    return extend$6(reglFramebuffer, {
+    return extend(reglFramebuffer, {
       resize: resize,
       _reglType: 'framebuffer',
       _framebuffer: framebuffer,
@@ -4574,7 +3920,7 @@ var framebuffer = function wrapFBOState (
         }
       }
 
-      return extend$6(reglFramebufferCube, {
+      return extend(reglFramebufferCube, {
         width: radius,
         height: radius,
         color: colorCubes
@@ -4606,7 +3952,7 @@ var framebuffer = function wrapFBOState (
 
     reglFramebufferCube(options)
 
-    return extend$6(reglFramebufferCube, {
+    return extend(reglFramebufferCube, {
       faces: faces,
       resize: resize,
       _reglType: 'framebufferCube',
@@ -4619,13 +3965,13 @@ var framebuffer = function wrapFBOState (
   }
 
   function restoreFramebuffers () {
-    values$6(framebufferSet).forEach(function (fb) {
+    values(framebufferSet).forEach(function (fb) {
       fb.framebuffer = gl.createFramebuffer()
       updateFramebuffer(fb)
     })
   }
 
-  return extend$6(framebufferState, {
+  return extend(framebufferState, {
     getFramebuffer: function (object) {
       if (typeof object === 'function' && object._reglType === 'framebuffer') {
         var fbo = object._framebuffer
@@ -4638,13 +3984,13 @@ var framebuffer = function wrapFBOState (
     create: createFBO,
     createCube: createCubeFBO,
     clear: function () {
-      values$6(framebufferSet).forEach(destroy)
+      values(framebufferSet).forEach(destroy)
     },
     restore: restoreFramebuffers
   })
 }
 
-var GL_FLOAT$5 = 5126
+var GL_FLOAT$4 = 5126
 
 function AttributeRecord () {
   this.state = 0
@@ -4657,13 +4003,13 @@ function AttributeRecord () {
   this.buffer = null
   this.size = 0
   this.normalized = false
-  this.type = GL_FLOAT$5
+  this.type = GL_FLOAT$4
   this.offset = 0
   this.stride = 0
   this.divisor = 0
 }
 
-var attribute = function wrapAttributeState (
+function wrapAttributeState (
   gl,
   extensions,
   limits,
@@ -4682,15 +4028,13 @@ var attribute = function wrapAttributeState (
   }
 }
 
-var values$7 = values$1
-
 var GL_FRAGMENT_SHADER = 35632
 var GL_VERTEX_SHADER = 35633
 
 var GL_ACTIVE_UNIFORMS = 0x8B86
 var GL_ACTIVE_ATTRIBUTES = 0x8B89
 
-var shader = function wrapShaderState (gl, stringStore, stats, config) {
+function wrapShaderState (gl, stringStore, stats, config) {
   // ===================================================
   // glsl compilation and linking
   // ===================================================
@@ -4853,9 +4197,9 @@ var shader = function wrapShaderState (gl, stringStore, stats, config) {
   return {
     clear: function () {
       var deleteShader = gl.deleteShader.bind(gl)
-      values$7(fragShaders).forEach(deleteShader)
+      values(fragShaders).forEach(deleteShader)
       fragShaders = {}
-      values$7(vertShaders).forEach(deleteShader)
+      values(vertShaders).forEach(deleteShader)
       vertShaders = {}
 
       programList.forEach(function (desc) {
@@ -4896,14 +4240,12 @@ var shader = function wrapShaderState (gl, stringStore, stats, config) {
   }
 }
 
-var isTypedArray$8 = isTypedArray$1
-
 var GL_RGBA$2 = 6408
-var GL_UNSIGNED_BYTE$6 = 5121
+var GL_UNSIGNED_BYTE$5 = 5121
 var GL_PACK_ALIGNMENT = 0x0D05
-var GL_FLOAT$6 = 0x1406 // 5126
+var GL_FLOAT$5 = 0x1406 // 5126
 
-var read = function wrapReadPixels (
+function wrapReadPixels (
   gl,
   framebufferState,
   reglPoll,
@@ -4914,7 +4256,7 @@ var read = function wrapReadPixels (
     var type
     if (framebufferState.next === null) {
       
-      type = GL_UNSIGNED_BYTE$6
+      type = GL_UNSIGNED_BYTE$5
     } else {
       
       type = framebufferState.next.colorAttachments[0].texture._texture.type
@@ -4932,7 +4274,7 @@ var read = function wrapReadPixels (
     var height = context.framebufferHeight
     var data = null
 
-    if (isTypedArray$8(input)) {
+    if (isTypedArray(input)) {
       data = input
     } else if (input) {
       
@@ -4947,9 +4289,9 @@ var read = function wrapReadPixels (
 
     // sanity check input.data
     if (data) {
-      if (type === GL_UNSIGNED_BYTE$6) {
+      if (type === GL_UNSIGNED_BYTE$5) {
         
-      } else if (type === GL_FLOAT$6) {
+      } else if (type === GL_FLOAT$5) {
         
       }
     }
@@ -4965,9 +4307,9 @@ var read = function wrapReadPixels (
 
     // Allocate data
     if (!data) {
-      if (type === GL_UNSIGNED_BYTE$6) {
+      if (type === GL_UNSIGNED_BYTE$5) {
         data = new Uint8Array(size)
-      } else if (type === GL_FLOAT$6) {
+      } else if (type === GL_FLOAT$5) {
         data = data || new Float32Array(size)
       }
     }
@@ -5006,8 +4348,6 @@ var read = function wrapReadPixels (
   return readPixels
 }
 
-var extend$7 = extend$2
-
 function slice (x) {
   return Array.prototype.slice.call(x)
 }
@@ -5016,7 +4356,7 @@ function join (x) {
   return slice(x).join('')
 }
 
-var codegen = function createEnvironment () {
+function createEnvironment () {
   // Unique variable id counter
   var varCounter = 0
 
@@ -5059,7 +4399,7 @@ var codegen = function createEnvironment () {
       return name
     }
 
-    return extend$7(push, {
+    return extend(push, {
       def: def,
       toString: function () {
         return join([
@@ -5081,7 +4421,7 @@ var codegen = function createEnvironment () {
       exit(object, prop, '=', entry.def(object, prop), ';')
     }
 
-    return extend$7(function () {
+    return extend(function () {
       entry.apply(entry, slice(arguments))
     }, {
       def: entry.def,
@@ -5106,7 +4446,7 @@ var codegen = function createEnvironment () {
     var thenToString = thenBlock.toString
     var elseToString = elseBlock.toString
 
-    return extend$7(thenBlock, {
+    return extend(thenBlock, {
       then: function () {
         thenBlock.apply(thenBlock, slice(arguments))
         return this
@@ -5148,7 +4488,7 @@ var codegen = function createEnvironment () {
     var body = scope()
     var bodyToString = body.toString
 
-    var result = procedures[name] = extend$7(body, {
+    var result = procedures[name] = extend(body, {
       arg: arg,
       toString: function () {
         return join([
@@ -5189,20 +4529,10 @@ var codegen = function createEnvironment () {
   }
 }
 
-var createEnvironment$1 = codegen
-var loop$3 = loop$1
-var isTypedArray$9 = isTypedArray$1
-var isNDArray = isNdarray
-var isArrayLike$3 = isArrayLike$1
-var dynamic$4 = dynamic$1
-
-var primTypes$1 = require$$1$1
-var glTypes = require$$0$4
-
 // "cute" names for vector components
 var CUTE_COMPONENTS = 'xyzw'.split('')
 
-var GL_UNSIGNED_BYTE$7 = 5121
+var GL_UNSIGNED_BYTE$6 = 5121
 
 var ATTRIB_STATE_POINTER = 1
 var ATTRIB_STATE_CONSTANT = 2
@@ -5288,11 +4618,11 @@ var GL_POLYGON_OFFSET_FILL = 0x8037
 var GL_SAMPLE_ALPHA_TO_COVERAGE = 0x809E
 var GL_SAMPLE_COVERAGE = 0x80A0
 
-var GL_FLOAT$7 = 5126
+var GL_FLOAT$6 = 5126
 var GL_FLOAT_VEC2 = 35664
 var GL_FLOAT_VEC3 = 35665
 var GL_FLOAT_VEC4 = 35666
-var GL_INT$3 = 5124
+var GL_INT$2 = 5124
 var GL_INT_VEC2 = 35667
 var GL_INT_VEC3 = 35668
 var GL_INT_VEC4 = 35669
@@ -5383,8 +4713,8 @@ var orientationType = {
 
 function isBufferArgs (x) {
   return Array.isArray(x) ||
-    isTypedArray$9(x) ||
-    isNDArray(x)
+    isTypedArray(x) ||
+    isNDArrayLike(x)
 }
 
 // Make sure viewport is processed first
@@ -5441,7 +4771,7 @@ function createDynamicDecl (dyn, append) {
 
 var SCOPE_DECL = new Declaration(false, false, false, function () {})
 
-var core = function reglCore (
+function reglCore (
   gl,
   stringStore,
   extensions,
@@ -5591,7 +4921,7 @@ var core = function reglCore (
   }
 
   var sharedConstants = {
-    primTypes: primTypes$1,
+    primTypes: primTypes,
     compareFuncs: compareFuncs,
     blendFuncs: blendFuncs,
     blendEquations: blendEquations,
@@ -5604,11 +4934,11 @@ var core = function reglCore (
 
   if (extDrawBuffers) {
     sharedConstants.backBuffer = [GL_BACK]
-    sharedConstants.drawBuffer = loop$3(limits.maxDrawbuffers, function (i) {
+    sharedConstants.drawBuffer = loop(limits.maxDrawbuffers, function (i) {
       if (i === 0) {
         return [0]
       }
-      return loop$3(i, function (j) {
+      return loop(i, function (j) {
         return GL_COLOR_ATTACHMENT0$1 + j
       })
     })
@@ -5616,7 +4946,7 @@ var core = function reglCore (
 
   var drawCallCounter = 0
   function createREGLEnvironment () {
-    var env = createEnvironment$1()
+    var env = createEnvironment()
     var link = env.link
     var global = env.global
     env.id = drawCallCounter++
@@ -6048,7 +5378,7 @@ var core = function reglCore (
         var primitive = staticOptions[S_PRIMITIVE]
         
         return createStaticDecl(function (env, scope) {
-          return primTypes$1[primitive]
+          return primTypes[primitive]
         })
       } else if (S_PRIMITIVE in dynamicOptions) {
         var dynPrimitive = dynamicOptions[S_PRIMITIVE]
@@ -6351,13 +5681,13 @@ var core = function reglCore (
           return parseParam(
             function (value) {
               
-              return loop$3(4, function (i) {
+              return loop(4, function (i) {
                 return +value[i]
               })
             },
             function (env, scope, value) {
               
-              return loop$3(4, function (i) {
+              return loop(4, function (i) {
                 return scope.def('+', value, '[', i, ']')
               })
             })
@@ -6510,7 +5840,7 @@ var core = function reglCore (
             },
             function (env, scope, value) {
               
-              return loop$3(4, function (i) {
+              return loop(4, function (i) {
                 return '!!' + value + '[' + i + ']'
               })
             })
@@ -6567,10 +5897,10 @@ var core = function reglCore (
         } else {
           
         }
-      } else if (isArrayLike$3(value)) {
+      } else if (isArrayLike(value)) {
         result = createStaticDecl(function (env) {
           var ITEM = env.global.def('[',
-            loop$3(value.length, function (i) {
+            loop(value.length, function (i) {
               
               return value[i]
             }), ']')
@@ -6935,7 +6265,7 @@ var core = function reglCore (
       if (param in NEXT_VARS) {
         NEXT = NEXT_VARS[param]
         CURRENT = CURRENT_VARS[param]
-        var parts = loop$3(currentState[param].length, function (i) {
+        var parts = loop(currentState[param].length, function (i) {
           return block.def(NEXT, '[', i, ']')
         })
         block(env.cond(parts.map(function (p, i) {
@@ -6994,7 +6324,7 @@ var core = function reglCore (
             .else(GL, '.disable(', flag, ');'))
         }
         scope(CURRENT_STATE, '.', param, '=', variable, ';')
-      } else if (isArrayLike$3(variable)) {
+      } else if (isArrayLike(variable)) {
         var CURRENT = CURRENT_VARS[param]
         scope(
           GL, '.', GL_VARIABLES[param], '(', variable, ');',
@@ -7281,7 +6611,7 @@ var core = function reglCore (
               LOCATION, ',false,', MAT_VALUE, ');')
           } else {
             switch (type) {
-              case GL_FLOAT$7:
+              case GL_FLOAT$6:
                 
                 infix = '1f'
                 break
@@ -7301,7 +6631,7 @@ var core = function reglCore (
                 
                 infix = '1i'
                 break
-              case GL_INT$3:
+              case GL_INT$2:
                 
                 infix = '1i'
                 break
@@ -7331,7 +6661,7 @@ var core = function reglCore (
                 break
             }
             scope(GL, '.uniform', infix, '(', LOCATION, ',',
-              isArrayLike$3(value) ? Array.prototype.slice.call(value) : value,
+              isArrayLike(value) ? Array.prototype.slice.call(value) : value,
               ');')
           }
           continue
@@ -7369,7 +6699,7 @@ var core = function reglCore (
           scope.exit(TEX, '.unbind();')
           continue
 
-        case GL_INT$3:
+        case GL_INT$2:
         case GL_BOOL:
           infix = '1i'
           break
@@ -7392,7 +6722,7 @@ var core = function reglCore (
           unroll = 4
           break
 
-        case GL_FLOAT$7:
+        case GL_FLOAT$6:
           infix = '1f'
           break
 
@@ -7430,11 +6760,11 @@ var core = function reglCore (
         var STORAGE = env.global.def('new Float32Array(', matSize, ')')
         scope(
           'false,(Array.isArray(', VALUE, ')||', VALUE, ' instanceof Float32Array)?', VALUE, ':(',
-          loop$3(matSize, function (i) {
+          loop(matSize, function (i) {
             return STORAGE + '[' + i + ']=' + VALUE + '[' + i + ']'
           }), ',', STORAGE, ')')
       } else if (unroll > 1) {
-        scope(loop$3(unroll, function (i) {
+        scope(loop(unroll, function (i) {
           return VALUE + '[' + i + ']'
         }))
       } else {
@@ -7531,7 +6861,7 @@ var core = function reglCore (
           PRIMITIVE,
           COUNT,
           ELEMENT_TYPE,
-          OFFSET + '<<((' + ELEMENT_TYPE + '-' + GL_UNSIGNED_BYTE$7 + ')>>1)',
+          OFFSET + '<<((' + ELEMENT_TYPE + '-' + GL_UNSIGNED_BYTE$6 + ')>>1)',
           INSTANCES
         ], ');')
       }
@@ -7562,7 +6892,7 @@ var core = function reglCore (
           PRIMITIVE,
           COUNT,
           ELEMENT_TYPE,
-          OFFSET + '<<((' + ELEMENT_TYPE + '-' + GL_UNSIGNED_BYTE$7 + ')>>1)'
+          OFFSET + '<<((' + ELEMENT_TYPE + '-' + GL_UNSIGNED_BYTE$6 + ')>>1)'
         ] + ');')
       }
 
@@ -7868,7 +7198,7 @@ var core = function reglCore (
     sortState(Object.keys(args.state)).forEach(function (name) {
       var defn = args.state[name]
       var value = defn.append(env, scope)
-      if (isArrayLike$3(value)) {
+      if (isArrayLike(value)) {
         value.forEach(function (v, i) {
           scope.set(env.next[name], '[' + i + ']', v)
         })
@@ -7921,12 +7251,12 @@ var core = function reglCore (
   }
 
   function isDynamicObject (object) {
-    if (typeof object !== 'object' || isArrayLike$3(object)) {
+    if (typeof object !== 'object' || isArrayLike(object)) {
       return
     }
     var props = Object.keys(object)
     for (var i = 0; i < props.length; ++i) {
-      if (dynamic$4.isDynamic(object[props[i]])) {
+      if (isDynamic(object[props[i]])) {
         return true
       }
     }
@@ -7947,9 +7277,9 @@ var core = function reglCore (
     var objectRef = env.global.def('{}')
     keys.forEach(function (key) {
       var value = object[key]
-      if (dynamic$4.isDynamic(value)) {
+      if (isDynamic(value)) {
         if (typeof value === 'function') {
-          value = object[key] = dynamic$4.unbox(value)
+          value = object[key] = unbox(value)
         }
         var deps = createDynamicDecl(value, null)
         thisDep = thisDep || deps.thisDep
@@ -7980,7 +7310,7 @@ var core = function reglCore (
     function appendBlock (env, block) {
       keys.forEach(function (key) {
         var value = object[key]
-        if (!dynamic$4.isDynamic(value)) {
+        if (!isDynamic(value)) {
           return
         }
         var ref = env.invoke(block, value)
@@ -7988,7 +7318,7 @@ var core = function reglCore (
       })
     }
 
-    options.dynamic[name] = new dynamic$4.DynamicVariable(DYN_THUNK, {
+    options.dynamic[name] = new DynamicVariable(DYN_THUNK, {
       thisDep: thisDep,
       contextDep: contextDep,
       propDep: propDep,
@@ -8112,19 +7442,19 @@ var core = function reglCore (
         var NEXT, CURRENT
         var block = env.block()
         block(GL, '.', func, '(')
-        if (isArrayLike$3(init)) {
+        if (isArrayLike(init)) {
           var n = init.length
           NEXT = env.global.def(NEXT_STATE, '.', name)
           CURRENT = env.global.def(CURRENT_STATE, '.', name)
           block(
-            loop$3(n, function (i) {
+            loop(n, function (i) {
               return NEXT + '[' + i + ']'
             }), ');',
-            loop$3(n, function (i) {
+            loop(n, function (i) {
               return CURRENT + '[' + i + ']=' + NEXT + '[' + i + '];'
             }).join(''))
           poll(
-            'if(', loop$3(n, function (i) {
+            'if(', loop(n, function (i) {
               return NEXT + '[' + i + ']!==' + CURRENT + '[' + i + ']'
             }).join('||'), '){',
             block,
@@ -8149,7 +7479,7 @@ var core = function reglCore (
   }
 }
 
-var stats = function stats () {
+function stats () {
   return {
     bufferCount: 0,
     elementsCount: 0,
@@ -8167,7 +7497,7 @@ var GL_QUERY_RESULT_EXT = 0x8866
 var GL_QUERY_RESULT_AVAILABLE_EXT = 0x8867
 var GL_TIME_ELAPSED_EXT = 0x88BF
 
-var timer = function (gl, extensions) {
+function timer (gl, extensions) {
   var extTimer = extensions.ext_disjoint_timer_query
 
   if (!extTimer) {
@@ -8302,26 +7632,6 @@ var timer = function (gl, extensions) {
   }
 }
 
-var extend = extend$2
-var dynamic = dynamic$1
-var raf = raf$1
-var clock = clock$1
-var createStringStore$1 = strings
-var initWebGL = webgl
-var wrapExtensions = extension
-var wrapLimits = limits
-var wrapBuffers = buffer
-var wrapElements = elements
-var wrapTextures = texture
-var wrapRenderbuffers = renderbuffer
-var wrapFramebuffers = framebuffer
-var wrapAttributes = attribute
-var wrapShaders = shader
-var wrapRead = read
-var createCore = core
-var createStats = stats
-var createTimer = timer
-
 var GL_COLOR_BUFFER_BIT = 16384
 var GL_DEPTH_BUFFER_BIT = 256
 var GL_STENCIL_BUFFER_BIT = 1024
@@ -8344,8 +7654,8 @@ function find (haystack, needle) {
   return -1
 }
 
-var regl = function wrapREGL (args) {
-  var config = initWebGL(args)
+function wrapREGL (args) {
+  var config = parseArgs(args)
   if (!config) {
     return null
   }
@@ -8354,15 +7664,15 @@ var regl = function wrapREGL (args) {
   var glAttributes = gl.getContextAttributes()
   var contextLost = gl.isContextLost()
 
-  var extensionState = wrapExtensions(gl, config)
+  var extensionState = createExtensionCache(gl, config)
   if (!extensionState) {
     return null
   }
 
-  var stringStore = createStringStore$1()
-  var stats$$1 = createStats()
+  var stringStore = createStringStore()
+  var stats$$1 = stats()
   var extensions = extensionState.extensions
-  var timer$$1 = createTimer(gl, extensions)
+  var timer$$1 = timer(gl, extensions)
 
   var START_TIME = clock()
   var WIDTH = gl.drawingBufferWidth
@@ -8388,33 +7698,33 @@ var regl = function wrapREGL (args) {
     instances: -1
   }
 
-  var limits$$1 = wrapLimits(gl, extensions)
-  var bufferState = wrapBuffers(gl, stats$$1, config)
-  var elementState = wrapElements(gl, extensions, bufferState, stats$$1)
-  var attributeState = wrapAttributes(
+  var limits$$1 = limits(gl, extensions)
+  var bufferState = wrapBufferState(gl, stats$$1, config)
+  var elementState = wrapElementsState(gl, extensions, bufferState, stats$$1)
+  var attributeState = wrapAttributeState(
     gl,
     extensions,
     limits$$1,
     bufferState,
     stringStore)
-  var shaderState = wrapShaders(gl, stringStore, stats$$1, config)
-  var textureState = wrapTextures(
+  var shaderState = wrapShaderState(gl, stringStore, stats$$1, config)
+  var textureState = createTextureSet(
     gl,
     extensions,
     limits$$1,
-    function () { core$$1.procs.poll() },
+    function () { core.procs.poll() },
     contextState,
     stats$$1,
     config)
   var renderbufferState = wrapRenderbuffers(gl, extensions, limits$$1, stats$$1, config)
-  var framebufferState = wrapFramebuffers(
+  var framebufferState = wrapFBOState(
     gl,
     extensions,
     limits$$1,
     textureState,
     renderbufferState,
     stats$$1)
-  var core$$1 = createCore(
+  var core = reglCore(
     gl,
     stringStore,
     extensions,
@@ -8430,14 +7740,14 @@ var regl = function wrapREGL (args) {
     contextState,
     timer$$1,
     config)
-  var readPixels = wrapRead(
+  var readPixels = wrapReadPixels(
     gl,
     framebufferState,
-    core$$1.procs.poll,
+    core.procs.poll,
     contextState,
     glAttributes, extensions)
 
-  var nextState = core$$1.next
+  var nextState = core.next
   var canvas = gl.canvas
 
   var rafCallbacks = []
@@ -8456,7 +7766,7 @@ var regl = function wrapREGL (args) {
     }
 
     // schedule next animation frame
-    activeRAF = raf.next(handleRAF)
+    activeRAF = raf$1.next(handleRAF)
 
     // poll for changes
     poll()
@@ -8480,13 +7790,13 @@ var regl = function wrapREGL (args) {
 
   function startRAF () {
     if (!activeRAF && rafCallbacks.length > 0) {
-      activeRAF = raf.next(handleRAF)
+      activeRAF = raf$1.next(handleRAF)
     }
   }
 
   function stopRAF () {
     if (activeRAF) {
-      raf.cancel(handleRAF)
+      raf$1.cancel(handleRAF)
       activeRAF = null
     }
   }
@@ -8525,7 +7835,7 @@ var regl = function wrapREGL (args) {
     }
 
     // refresh state
-    core$$1.procs.refresh()
+    core.procs.refresh()
 
     // restart RAF
     startRAF()
@@ -8606,8 +7916,8 @@ var regl = function wrapREGL (args) {
       var dynamicItems = {}
       Object.keys(object).forEach(function (option) {
         var value = object[option]
-        if (dynamic.isDynamic(value)) {
-          dynamicItems[option] = dynamic.unbox(value, option)
+        if (isDynamic(value)) {
+          dynamicItems[option] = unbox(value, option)
         } else {
           staticItems[option] = value
         }
@@ -8630,7 +7940,7 @@ var regl = function wrapREGL (args) {
       count: 0
     }
 
-    var compiled = core$$1.compile(opts, attributes, uniforms, context, stats$$1)
+    var compiled = core.compile(opts, attributes, uniforms, context, stats$$1)
 
     var draw = compiled.draw
     var batch = compiled.batch
@@ -8686,12 +7996,12 @@ var regl = function wrapREGL (args) {
   }
 
   var setFBO = framebufferState.setFBO = compileProcedure({
-    framebuffer: dynamic.define.call(null, DYN_PROP, 'framebuffer')
+    framebuffer: defineDynamic.call(null, DYN_PROP, 'framebuffer')
   })
 
   function clearImpl (_, options) {
     var clearFlags = 0
-    core$$1.procs.poll()
+    core.procs.poll()
 
     var c = options.color
     if (c) {
@@ -8778,12 +8088,12 @@ var regl = function wrapREGL (args) {
     contextState.tick += 1
     contextState.time = now()
     pollViewport()
-    core$$1.procs.poll()
+    core.procs.poll()
   }
 
   function refresh () {
     pollViewport()
-    core$$1.procs.refresh()
+    core.procs.refresh()
     if (timer$$1) {
       timer$$1.update()
     }
@@ -8834,9 +8144,9 @@ var regl = function wrapREGL (args) {
     clear: clear,
 
     // Short cuts for dynamic variables
-    prop: dynamic.define.bind(null, DYN_PROP),
-    context: dynamic.define.bind(null, DYN_CONTEXT),
-    this: dynamic.define.bind(null, DYN_STATE),
+    prop: defineDynamic.bind(null, DYN_PROP),
+    context: defineDynamic.bind(null, DYN_CONTEXT),
+    this: defineDynamic.bind(null, DYN_STATE),
 
     // executes an empty draw command
     draw: compileProcedure({}),
@@ -8896,6 +8206,6 @@ var regl = function wrapREGL (args) {
   return regl
 }
 
-return regl;
+return wrapREGL;
 
 })));

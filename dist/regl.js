@@ -4,7 +4,7 @@
 	(global.createREGL = factory());
 }(this, (function () { 'use strict';
 
-var arraytypes =  {
+var arrayTypes =  {
 	"[object Int8Array]": 5120,
 	"[object Int16Array]": 5122,
 	"[object Int32Array]": 5124,
@@ -17,18 +17,11 @@ var arraytypes =  {
 	"[object ArrayBuffer]": 5121
 };
 
-var arraytypes$1 = Object.freeze({
-	default: arraytypes
-});
-
-var require$$0 = ( arraytypes$1 && arraytypes$1['default'] ) || arraytypes$1;
-
-var dtypes = require$$0
-var isTypedArray$1 = function (x) {
-  return Object.prototype.toString.call(x) in dtypes
+var isTypedArray = function (x) {
+  return Object.prototype.toString.call(x) in arrayTypes
 }
 
-var extend$2 = function (base, opts) {
+function extend (base, opts) {
   var keys = Object.keys(opts)
   for (var i = 0; i < keys.length; ++i) {
     base[keys[i]] = opts[keys[i]]
@@ -42,9 +35,6 @@ var extend$2 = function (base, opts) {
 // a browserify transform for optimized/minified bundles.
 //
 /* globals btoa */
-var isTypedArray = isTypedArray$1
-var extend$1 = extend$2
-
 // only used for extracting shader names.  if btoa not present, then errors
 // will be slightly crappier
 function decodeB64 (str) {
@@ -60,7 +50,7 @@ function raise (message) {
   throw error
 }
 
-function check$1 (pred, message) {
+function check (pred, message) {
   if (!pred) {
     raise(message)
   }
@@ -335,7 +325,7 @@ function checkShaderError (gl, shader, source, type, command) {
       }
     })
 
-    check$1.raise('Error compiling ' + typeName + ' shader, ' + files[0].name)
+    check.raise('Error compiling ' + typeName + ' shader, ' + files[0].name)
   }
 }
 
@@ -355,7 +345,7 @@ function checkLinkError (gl, program, fragShader, vertShader, command) {
     } else {
       console.log(header + '\n' + errLog)
     }
-    check$1.raise(header)
+    check.raise(header)
   }
 }
 
@@ -508,19 +498,19 @@ function checkTexture2D (info, mipData, limits) {
   var c = mipData.channels
 
   // Check texture shape
-  check$1(w > 0 && w <= limits.maxTextureSize &&
+  check(w > 0 && w <= limits.maxTextureSize &&
         h > 0 && h <= limits.maxTextureSize,
         'invalid texture shape')
 
   // check wrap mode
   if (info.wrapS !== GL_CLAMP_TO_EDGE || info.wrapT !== GL_CLAMP_TO_EDGE) {
-    check$1(isPow2(w) && isPow2(h),
+    check(isPow2(w) && isPow2(h),
       'incompatible wrap mode for texture, both width and height must be power of 2')
   }
 
   if (mipData.mipmask === 1) {
     if (w !== 1 && h !== 1) {
-      check$1(
+      check(
         info.minFilter !== GL_NEAREST_MIPMAP_NEAREST &&
         info.minFilter !== GL_NEAREST_MIPMAP_LINEAR &&
         info.minFilter !== GL_LINEAR_MIPMAP_NEAREST &&
@@ -529,18 +519,18 @@ function checkTexture2D (info, mipData, limits) {
     }
   } else {
     // texture must be power of 2
-    check$1(isPow2(w) && isPow2(h),
+    check(isPow2(w) && isPow2(h),
       'texture must be a square power of 2 to support mipmapping')
-    check$1(mipData.mipmask === (w << 1) - 1,
+    check(mipData.mipmask === (w << 1) - 1,
       'missing or incomplete mipmap data')
   }
 
   if (mipData.type === GL_FLOAT) {
     if (limits.extensions.indexOf('oes_texture_float_linear') < 0) {
-      check$1(info.minFilter === GL_NEAREST && info.magFilter === GL_NEAREST,
+      check(info.minFilter === GL_NEAREST && info.magFilter === GL_NEAREST,
         'filter not supported, must enable oes_texture_float_linear')
     }
-    check$1(!info.genMipmaps,
+    check(!info.genMipmaps,
       'mipmap generation not supported with float textures')
   }
 
@@ -550,16 +540,16 @@ function checkTexture2D (info, mipData, limits) {
     if (mipimages[i]) {
       var mw = w >> i
       var mh = h >> i
-      check$1(mipData.mipmask & (1 << i), 'missing mipmap data')
+      check(mipData.mipmask & (1 << i), 'missing mipmap data')
 
       var img = mipimages[i]
 
-      check$1(
+      check(
         img.width === mw &&
         img.height === mh,
         'invalid shape for mip images')
 
-      check$1(
+      check(
         img.format === mipData.format &&
         img.internalformat === mipData.internalformat &&
         img.type === mipData.type,
@@ -568,7 +558,7 @@ function checkTexture2D (info, mipData, limits) {
       if (img.compressed) {
         // TODO: check size for compressed images
       } else if (img.data) {
-        check$1(img.data.byteLength === mw * mh *
+        check(img.data.byteLength === mw * mh *
           Math.max(pixelSize(img.type, c), img.unpackAlignment),
           'invalid data for image, buffer size is inconsistent with image format')
       } else if (img.element) {
@@ -577,12 +567,12 @@ function checkTexture2D (info, mipData, limits) {
         // TODO: check compatible format and type
       }
     } else if (!info.genMipmaps) {
-      check$1((mipData.mipmask & (1 << i)) === 0, 'extra mipmap data')
+      check((mipData.mipmask & (1 << i)) === 0, 'extra mipmap data')
     }
   }
 
   if (mipData.compressed) {
-    check$1(!info.genMipmaps,
+    check(!info.genMipmaps,
       'mipmap generation for compressed images not supported')
   }
 }
@@ -593,26 +583,26 @@ function checkTextureCube (texture, info, faces, limits) {
   var c = texture.channels
 
   // Check texture shape
-  check$1(
+  check(
     w > 0 && w <= limits.maxTextureSize && h > 0 && h <= limits.maxTextureSize,
     'invalid texture shape')
-  check$1(
+  check(
     w === h,
     'cube map must be square')
-  check$1(
+  check(
     info.wrapS === GL_CLAMP_TO_EDGE && info.wrapT === GL_CLAMP_TO_EDGE,
     'wrap mode not supported by cube map')
 
   for (var i = 0; i < faces.length; ++i) {
     var face = faces[i]
-    check$1(
+    check(
       face.width === w && face.height === h,
       'inconsistent cube map face shape')
 
     if (info.genMipmaps) {
-      check$1(!face.compressed,
+      check(!face.compressed,
         'can not generate mipmap for compressed textures')
-      check$1(face.mipmask === 1,
+      check(face.mipmask === 1,
         'can not specify mipmaps and generate mipmaps')
     } else {
       // TODO: check mip and filter mode
@@ -624,12 +614,12 @@ function checkTextureCube (texture, info, faces, limits) {
       if (img) {
         var mw = w >> j
         var mh = h >> j
-        check$1(face.mipmask & (1 << j), 'missing mipmap data')
-        check$1(
+        check(face.mipmask & (1 << j), 'missing mipmap data')
+        check(
           img.width === mw &&
           img.height === mh,
           'invalid shape for mip images')
-        check$1(
+        check(
           img.format === texture.format &&
           img.internalformat === texture.internalformat &&
           img.type === texture.type,
@@ -638,7 +628,7 @@ function checkTextureCube (texture, info, faces, limits) {
         if (img.compressed) {
           // TODO: check size for compressed images
         } else if (img.data) {
-          check$1(img.data.byteLength === mw * mh *
+          check(img.data.byteLength === mw * mh *
             Math.max(pixelSize(img.type, c), img.unpackAlignment),
             'invalid data for image, buffer size is inconsistent with image format')
         } else if (img.element) {
@@ -651,7 +641,7 @@ function checkTextureCube (texture, info, faces, limits) {
   }
 }
 
-var check_1 = extend$1(check$1, {
+var check$1 = extend(check, {
   optional: checkOptional,
   raise: raise,
   commandRaise: commandRaise,
@@ -744,42 +734,32 @@ function unbox (x, path) {
   return x
 }
 
-var dynamic$1 = {
-  DynamicVariable: DynamicVariable,
-  define: defineDynamic,
-  isDynamic: isDynamic,
-  unbox: unbox,
-  accessor: toAccessorString
-}
+let raf
 
-function createCommonjsModule(fn, module) {
-	return module = { exports: {} }, fn(module, module.exports), module.exports;
-}
-
-var raf$1 = createCommonjsModule(function (module) {
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
     typeof cancelAnimationFrame === 'function') {
-  module.exports = {
+  raf = {
     next: function (x) { return requestAnimationFrame(x) },
     cancel: function (x) { return cancelAnimationFrame(x) }
   }
 } else {
-  module.exports = {
+  raf = {
     next: function (cb) {
       return setTimeout(cb, 16)
     },
     cancel: clearTimeout
   }
 }
-});
+
+var raf$1 = raf
 
 /* globals performance */
-var clock$1 = (typeof performance !== 'undefined' && performance.now)
+var clock = (typeof performance !== 'undefined' && performance.now)
   ? function () { return performance.now() }
   : function () { return +(new Date()) }
 
-var strings = function createStringStore () {
+function createStringStore () {
   var stringIds = {'': 0}
   var stringValues = ['']
   return {
@@ -800,12 +780,9 @@ var strings = function createStringStore () {
 }
 
 // Context and canvas creation helper functions
-var check$2 = check_1
-var extend$4 = extend$2
-
 function createCanvas (element, onDone, pixelRatio) {
   var canvas = document.createElement('canvas')
-  extend$4(canvas.style, {
+  extend(canvas.style, {
     border: 0,
     margin: 0,
     padding: 0,
@@ -816,7 +793,7 @@ function createCanvas (element, onDone, pixelRatio) {
 
   if (element === document.body) {
     canvas.style.position = 'absolute'
-    extend$4(element.style, {
+    extend(element.style, {
       margin: 0,
       padding: 0
     })
@@ -832,7 +809,7 @@ function createCanvas (element, onDone, pixelRatio) {
     }
     canvas.width = pixelRatio * w
     canvas.height = pixelRatio * h
-    extend$4(canvas.style, {
+    extend(canvas.style, {
       width: w + 'px',
       height: h + 'px'
     })
@@ -887,19 +864,19 @@ function parseExtensions (input) {
   if (typeof input === 'string') {
     return input.split()
   }
-  check$2(Array.isArray(input), 'invalid extension array')
+  check$1(Array.isArray(input), 'invalid extension array')
   return input
 }
 
 function getElement (desc) {
   if (typeof desc === 'string') {
-    check$2(typeof document !== 'undefined', 'not supported outside of DOM')
+    check$1(typeof document !== 'undefined', 'not supported outside of DOM')
     return document.querySelector(desc)
   }
   return desc
 }
 
-var webgl = function parseArgs (args_) {
+function parseArgs (args_) {
   var args = args_ || {}
   var element, container, canvas, gl
   var contextAttributes = {}
@@ -909,16 +886,16 @@ var webgl = function parseArgs (args_) {
   var profile = false
   var onDone = function (err) {
     if (err) {
-      check$2.raise(err)
+      check$1.raise(err)
     }
   }
   var onDestroy = function () {}
   if (typeof args === 'string') {
-    check$2(
+    check$1(
       typeof document !== 'undefined',
       'selector queries only supported in DOM enviroments')
     element = document.querySelector(args)
-    check$2(element, 'invalid query string for element')
+    check$1(element, 'invalid query string for element')
   } else if (typeof args === 'object') {
     if (isHTMLElement(args)) {
       element = args
@@ -926,7 +903,7 @@ var webgl = function parseArgs (args_) {
       gl = args
       canvas = gl.canvas
     } else {
-      check$2.constructor(args)
+      check$1.constructor(args)
       if ('gl' in args) {
         gl = args.gl
       } else if ('canvas' in args) {
@@ -936,7 +913,7 @@ var webgl = function parseArgs (args_) {
       }
       if ('attributes' in args) {
         contextAttributes = args.attributes
-        check$2.type(contextAttributes, 'object', 'invalid context attributes')
+        check$1.type(contextAttributes, 'object', 'invalid context attributes')
       }
       if ('extensions' in args) {
         extensions = parseExtensions(args.extensions)
@@ -945,7 +922,7 @@ var webgl = function parseArgs (args_) {
         optionalExtensions = parseExtensions(args.optionalExtensions)
       }
       if ('onDone' in args) {
-        check$2.type(
+        check$1.type(
           args.onDone, 'function',
           'invalid or missing onDone callback')
         onDone = args.onDone
@@ -955,11 +932,11 @@ var webgl = function parseArgs (args_) {
       }
       if ('pixelRatio' in args) {
         pixelRatio = +args.pixelRatio
-        check$2(pixelRatio > 0, 'invalid pixel ratio')
+        check$1(pixelRatio > 0, 'invalid pixel ratio')
       }
     }
   } else {
-    check$2.raise('invalid arguments to regl')
+    check$1.raise('invalid arguments to regl')
   }
 
   if (element) {
@@ -972,7 +949,7 @@ var webgl = function parseArgs (args_) {
 
   if (!gl) {
     if (!canvas) {
-      check$2(
+      check$1(
         typeof document !== 'undefined',
         'must manually specify webgl context outside of DOM environments')
       var result = createCanvas(container || document.body, onDone, pixelRatio)
@@ -1004,13 +981,11 @@ var webgl = function parseArgs (args_) {
   }
 }
 
-var check$3 = check_1
-
-var extension = function createExtensionCache (gl, config) {
+function createExtensionCache (gl, config) {
   var extensions = {}
 
   function tryLoadExtension (name_) {
-    check$3.type(name_, 'string', 'extension name must be string')
+    check$1.type(name_, 'string', 'extension name must be string')
     var name = name_.toLowerCase()
     var ext
     try {
@@ -1075,7 +1050,7 @@ var GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT = 0x84FF
 var GL_MAX_COLOR_ATTACHMENTS_WEBGL = 0x8CDF
 var GL_MAX_DRAW_BUFFERS_WEBGL = 0x8824
 
-var limits = function (gl, extensions) {
+function limits (gl, extensions) {
   var maxAnisotropic = 1
   if (extensions.ext_texture_filter_anisotropic) {
     maxAnisotropic = gl.getParameter(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT)
@@ -1135,9 +1110,7 @@ var limits = function (gl, extensions) {
   }
 }
 
-var isTypedArray$4 = isTypedArray$1
-
-var isNdarray = function isNDArrayLike (obj) {
+function isNDArrayLike (obj) {
   return (
     !!obj &&
     typeof obj === 'object' &&
@@ -1146,22 +1119,20 @@ var isNdarray = function isNDArrayLike (obj) {
     typeof obj.offset === 'number' &&
     obj.shape.length === obj.stride.length &&
     (Array.isArray(obj.data) ||
-      isTypedArray$4(obj.data)))
+      isTypedArray(obj.data)))
 }
 
-var values$1 = function (obj) {
+var values = function (obj) {
   return Object.keys(obj).map(function (key) { return obj[key] })
 }
 
-var loop$1 = function loop$1 (n, f) {
+function loop (n, f) {
   var result = Array(n)
   for (var i = 0; i < n; ++i) {
     result[i] = f(i)
   }
   return result
 }
-
-var loop = loop$1
 
 var GL_BYTE$1 = 5120
 var GL_UNSIGNED_BYTE$2 = 5121
@@ -1247,20 +1218,6 @@ function freeType (array) {
   free(array.buffer)
 }
 
-var pool$1 = {
-  alloc: alloc,
-  free: free,
-  allocType: allocType,
-  freeType: freeType
-}
-
-var pool$3 = pool$1
-
-var flatten = {
-  shape: arrayShape$1,
-  flatten: flattenArray
-}
-
 function flatten1D (array, nx, out) {
   for (var i = 0; i < nx; ++i) {
     out[i] = array[i]
@@ -1321,7 +1278,7 @@ function flattenArray (array, shape, type, out_) {
   } else {
     sz = 0
   }
-  var out = out_ || pool$3.allocType(type, sz)
+  var out = out_ || allocType(type, sz)
   switch (shape.length) {
     case 0:
       break
@@ -1356,7 +1313,7 @@ var uint16 = 5123;
 var uint32 = 5125;
 var float = 5126;
 var float32 = 5126;
-var dtypes$1 = {
+var glTypes = {
 	int8: int8,
 	int16: int16,
 	int32: int32,
@@ -1367,49 +1324,16 @@ var dtypes$1 = {
 	float32: float32
 };
 
-var dtypes$2 = Object.freeze({
-	int8: int8,
-	int16: int16,
-	int32: int32,
-	uint8: uint8,
-	uint16: uint16,
-	uint32: uint32,
-	float: float,
-	float32: float32,
-	default: dtypes$1
-});
-
-var dynamic$3 = 35048;
+var dynamic = 35048;
 var stream = 35040;
-var usage = {
-	dynamic: dynamic$3,
+var usageTypes = {
+	dynamic: dynamic,
 	stream: stream,
 	"static": 35044
 };
 
-var usage$1 = Object.freeze({
-	dynamic: dynamic$3,
-	stream: stream,
-	default: usage
-});
-
-var require$$0$4 = ( dtypes$2 && dtypes$2['default'] ) || dtypes$2;
-
-var require$$0$5 = ( usage$1 && usage$1['default'] ) || usage$1;
-
-var check$4 = check_1
-var isTypedArray$3 = isTypedArray$1
-var isNDArrayLike$1 = isNdarray
-var values = values$1
-var pool = pool$1
-var flattenUtil = flatten
-
-var arrayFlatten = flattenUtil.flatten
-var arrayShape = flattenUtil.shape
-
-var arrayTypes = require$$0
-var bufferTypes = require$$0$4
-var usageTypes = require$$0$5
+var arrayFlatten = flattenArray
+var arrayShape = arrayShape$1
 
 var GL_STATIC_DRAW = 0x88E4
 var GL_STREAM_DRAW = 0x88E0
@@ -1446,7 +1370,7 @@ function transpose (
   }
 }
 
-var buffer = function wrapBufferState (gl, stats, config) {
+function wrapBufferState (gl, stats, config) {
   var bufferCount = 0
   var bufferSet = {}
 
@@ -1486,8 +1410,8 @@ var buffer = function wrapBufferState (gl, stats, config) {
     return buffer
   }
 
-  function destroyStream (stream) {
-    streamPool.push(stream)
+  function destroyStream (stream$$1) {
+    streamPool.push(stream$$1)
   }
 
   function initBufferFromTypedArray (buffer, data, usage) {
@@ -1496,37 +1420,37 @@ var buffer = function wrapBufferState (gl, stats, config) {
   }
 
   function initBufferFromData (buffer, data, usage, dtype, dimension, persist) {
-    var shape
+    var shape$$1
     buffer.usage = usage
     if (Array.isArray(data)) {
       buffer.dtype = dtype || GL_FLOAT$1
       if (data.length > 0) {
         var flatData
         if (Array.isArray(data[0])) {
-          shape = arrayShape(data)
+          shape$$1 = arrayShape(data)
           var dim = 1
-          for (var i = 1; i < shape.length; ++i) {
-            dim *= shape[i]
+          for (var i = 1; i < shape$$1.length; ++i) {
+            dim *= shape$$1[i]
           }
           buffer.dimension = dim
-          flatData = arrayFlatten(data, shape, buffer.dtype)
+          flatData = arrayFlatten(data, shape$$1, buffer.dtype)
           initBufferFromTypedArray(buffer, flatData, usage)
           if (persist) {
             buffer.persistentData = flatData
           } else {
-            pool.freeType(flatData)
+            freeType(flatData)
           }
         } else if (typeof data[0] === 'number') {
           buffer.dimension = dimension
-          var typedData = pool.allocType(buffer.dtype, data.length)
+          var typedData = allocType(buffer.dtype, data.length)
           copyArray(typedData, data)
           initBufferFromTypedArray(buffer, typedData, usage)
           if (persist) {
             buffer.persistentData = typedData
           } else {
-            pool.freeType(typedData)
+            freeType(typedData)
           }
-        } else if (isTypedArray$3(data[0])) {
+        } else if (isTypedArray(data[0])) {
           buffer.dimension = data[0].length
           buffer.dtype = dtype || typedArrayCode(data[0]) || GL_FLOAT$1
           flatData = arrayFlatten(
@@ -1537,21 +1461,21 @@ var buffer = function wrapBufferState (gl, stats, config) {
           if (persist) {
             buffer.persistentData = flatData
           } else {
-            pool.freeType(flatData)
+            freeType(flatData)
           }
         } else {
-          check$4.raise('invalid buffer data')
+          check$1.raise('invalid buffer data')
         }
       }
-    } else if (isTypedArray$3(data)) {
+    } else if (isTypedArray(data)) {
       buffer.dtype = dtype || typedArrayCode(data)
       buffer.dimension = dimension
       initBufferFromTypedArray(buffer, data, usage)
       if (persist) {
         buffer.persistentData = new Uint8Array(new Uint8Array(data.buffer))
       }
-    } else if (isNDArrayLike$1(data)) {
-      shape = data.shape
+    } else if (isNDArrayLike(data)) {
+      shape$$1 = data.shape
       var stride = data.stride
       var offset = data.offset
 
@@ -1559,24 +1483,24 @@ var buffer = function wrapBufferState (gl, stats, config) {
       var shapeY = 0
       var strideX = 0
       var strideY = 0
-      if (shape.length === 1) {
-        shapeX = shape[0]
+      if (shape$$1.length === 1) {
+        shapeX = shape$$1[0]
         shapeY = 1
         strideX = stride[0]
         strideY = 0
-      } else if (shape.length === 2) {
-        shapeX = shape[0]
-        shapeY = shape[1]
+      } else if (shape$$1.length === 2) {
+        shapeX = shape$$1[0]
+        shapeY = shape$$1[1]
         strideX = stride[0]
         strideY = stride[1]
       } else {
-        check$4.raise('invalid shape')
+        check$1.raise('invalid shape')
       }
 
       buffer.dtype = dtype || typedArrayCode(data.data) || GL_FLOAT$1
       buffer.dimension = shapeY
 
-      var transposeData = pool.allocType(buffer.dtype, shapeX * shapeY)
+      var transposeData = allocType(buffer.dtype, shapeX * shapeY)
       transpose(transposeData,
         data.data,
         shapeX, shapeY,
@@ -1586,10 +1510,10 @@ var buffer = function wrapBufferState (gl, stats, config) {
       if (persist) {
         buffer.persistentData = transposeData
       } else {
-        pool.freeType(transposeData)
+        freeType(transposeData)
       }
     } else {
-      check$4.raise('invalid buffer data')
+      check$1.raise('invalid buffer data')
     }
   }
 
@@ -1597,7 +1521,7 @@ var buffer = function wrapBufferState (gl, stats, config) {
     stats.bufferCount--
 
     var handle = buffer.buffer
-    check$4(handle, 'buffer must not be deleted already')
+    check$1(handle, 'buffer must not be deleted already')
     gl.deleteBuffer(handle)
     buffer.buffer = null
     delete bufferSet[buffer.id]
@@ -1616,43 +1540,43 @@ var buffer = function wrapBufferState (gl, stats, config) {
       var dtype = 0
       var dimension = 1
       if (Array.isArray(options) ||
-          isTypedArray$3(options) ||
-          isNDArrayLike$1(options)) {
+          isTypedArray(options) ||
+          isNDArrayLike(options)) {
         data = options
       } else if (typeof options === 'number') {
         byteLength = options | 0
       } else if (options) {
-        check$4.type(
+        check$1.type(
           options, 'object',
           'buffer arguments must be an object, a number or an array')
 
         if ('data' in options) {
-          check$4(
+          check$1(
             data === null ||
             Array.isArray(data) ||
-            isTypedArray$3(data) ||
-            isNDArrayLike$1(data),
+            isTypedArray(data) ||
+            isNDArrayLike(data),
             'invalid data for buffer')
           data = options.data
         }
 
         if ('usage' in options) {
-          check$4.parameter(options.usage, usageTypes, 'invalid buffer usage')
+          check$1.parameter(options.usage, usageTypes, 'invalid buffer usage')
           usage = usageTypes[options.usage]
         }
 
         if ('type' in options) {
-          check$4.parameter(options.type, bufferTypes, 'invalid buffer type')
-          dtype = bufferTypes[options.type]
+          check$1.parameter(options.type, glTypes, 'invalid buffer type')
+          dtype = glTypes[options.type]
         }
 
         if ('dimension' in options) {
-          check$4.type(options.dimension, 'number', 'invalid dimension')
+          check$1.type(options.dimension, 'number', 'invalid dimension')
           dimension = options.dimension | 0
         }
 
         if ('length' in options) {
-          check$4.nni(byteLength, 'buffer length must be a nonnegative integer')
+          check$1.nni(byteLength, 'buffer length must be a nonnegative integer')
           byteLength = options.length | 0
         }
       }
@@ -1676,7 +1600,7 @@ var buffer = function wrapBufferState (gl, stats, config) {
     }
 
     function setSubData (data, offset) {
-      check$4(offset + data.byteLength <= buffer.byteLength,
+      check$1(offset + data.byteLength <= buffer.byteLength,
         'invalid buffer subdata call, buffer is too small. ' + ' Can\'t write data of size ' + data.byteLength + ' starting from offset ' + offset + ' to a buffer of size ' + buffer.byteLength)
 
       gl.bufferSubData(buffer.type, offset, data)
@@ -1684,61 +1608,61 @@ var buffer = function wrapBufferState (gl, stats, config) {
 
     function subdata (data, offset_) {
       var offset = (offset_ || 0) | 0
-      var shape
+      var shape$$1
       buffer.bind()
       if (Array.isArray(data)) {
         if (data.length > 0) {
           if (typeof data[0] === 'number') {
-            var converted = pool.allocType(buffer.dtype, data.length)
+            var converted = allocType(buffer.dtype, data.length)
             copyArray(converted, data)
             setSubData(converted, offset)
-            pool.freeType(converted)
-          } else if (Array.isArray(data[0]) || isTypedArray$3(data[0])) {
-            shape = arrayShape(data)
-            var flatData = arrayFlatten(data, shape, buffer.dtype)
+            freeType(converted)
+          } else if (Array.isArray(data[0]) || isTypedArray(data[0])) {
+            shape$$1 = arrayShape(data)
+            var flatData = arrayFlatten(data, shape$$1, buffer.dtype)
             setSubData(flatData, offset)
-            pool.freeType(flatData)
+            freeType(flatData)
           } else {
-            check$4.raise('invalid buffer data')
+            check$1.raise('invalid buffer data')
           }
         }
-      } else if (isTypedArray$3(data)) {
+      } else if (isTypedArray(data)) {
         setSubData(data, offset)
-      } else if (isNDArrayLike$1(data)) {
-        shape = data.shape
+      } else if (isNDArrayLike(data)) {
+        shape$$1 = data.shape
         var stride = data.stride
 
         var shapeX = 0
         var shapeY = 0
         var strideX = 0
         var strideY = 0
-        if (shape.length === 1) {
-          shapeX = shape[0]
+        if (shape$$1.length === 1) {
+          shapeX = shape$$1[0]
           shapeY = 1
           strideX = stride[0]
           strideY = 0
-        } else if (shape.length === 2) {
-          shapeX = shape[0]
-          shapeY = shape[1]
+        } else if (shape$$1.length === 2) {
+          shapeX = shape$$1[0]
+          shapeY = shape$$1[1]
           strideX = stride[0]
           strideY = stride[1]
         } else {
-          check$4.raise('invalid shape')
+          check$1.raise('invalid shape')
         }
         var dtype = Array.isArray(data.data)
           ? buffer.dtype
           : typedArrayCode(data.data)
 
-        var transposeData = pool.allocType(dtype, shapeX * shapeY)
+        var transposeData = allocType(dtype, shapeX * shapeY)
         transpose(transposeData,
           data.data,
           shapeX, shapeY,
           strideX, strideY,
           data.offset)
         setSubData(transposeData, offset)
-        pool.freeType(transposeData)
+        freeType(transposeData)
       } else {
-        check$4.raise('invalid data for buffer subdata')
+        check$1.raise('invalid data for buffer subdata')
       }
       return reglBuffer
     }
@@ -1808,7 +1732,7 @@ var lines = 1;
 var line = 1;
 var triangles = 4;
 var triangle = 4;
-var primitives = {
+var primTypes = {
 	points: points,
 	point: point,
 	lines: lines,
@@ -1820,26 +1744,6 @@ var primitives = {
 	"triangle strip": 5,
 	"triangle fan": 6
 };
-
-var primitives$1 = Object.freeze({
-	points: points,
-	point: point,
-	lines: lines,
-	line: line,
-	triangles: triangles,
-	triangle: triangle,
-	default: primitives
-});
-
-var require$$1$1 = ( primitives$1 && primitives$1['default'] ) || primitives$1;
-
-var check$5 = check_1
-var isTypedArray$5 = isTypedArray$1
-var isNDArrayLike$2 = isNdarray
-var values$3 = values$1
-
-var primTypes = require$$1$1
-var usageTypes$1 = require$$0$5
 
 var GL_POINTS = 0
 var GL_LINES = 1
@@ -1857,7 +1761,7 @@ var GL_ELEMENT_ARRAY_BUFFER = 34963
 var GL_STREAM_DRAW$1 = 0x88E0
 var GL_STATIC_DRAW$1 = 0x88E4
 
-var elements = function wrapElementsState (gl, extensions, bufferState, stats) {
+function wrapElementsState (gl, extensions, bufferState, stats) {
   var elementSet = {}
   var elementCount = 0
 
@@ -1914,8 +1818,8 @@ var elements = function wrapElementsState (gl, extensions, bufferState, stats) {
     if (data) {
       var predictedType = type
       if (!type && (
-          !isTypedArray$5(data) ||
-         (isNDArrayLike$2(data) && !isTypedArray$5(data.data)))) {
+          !isTypedArray(data) ||
+         (isNDArrayLike(data) && !isTypedArray(data.data)))) {
         predictedType = extensions.oes_element_index_uint
           ? GL_UNSIGNED_INT$2
           : GL_UNSIGNED_SHORT$2
@@ -1953,14 +1857,14 @@ var elements = function wrapElementsState (gl, extensions, bufferState, stats) {
           break
 
         default:
-          check$5.raise('unsupported type for element array')
+          check$1.raise('unsupported type for element array')
       }
       elements.buffer.dtype = dtype
     }
     elements.type = dtype
 
     // Check oes_element_index_uint extension
-    check$5(
+    check$1(
       dtype !== GL_UNSIGNED_INT$2 ||
       !!extensions.oes_element_index_uint,
       '32 bit element buffers not supported, enable oes_element_index_uint first')
@@ -1992,7 +1896,7 @@ var elements = function wrapElementsState (gl, extensions, bufferState, stats) {
   function destroyElements (elements) {
     stats.elementsCount--
 
-    check$5(elements.buffer !== null, 'must not double destroy elements')
+    check$1(elements.buffer !== null, 'must not double destroy elements')
     delete elementSet[elements.id]
     elements.buffer.destroy()
     elements.buffer = null
@@ -2022,41 +1926,41 @@ var elements = function wrapElementsState (gl, extensions, bufferState, stats) {
         var byteLength = 0
         var dtype = 0
         if (Array.isArray(options) ||
-            isTypedArray$5(options) ||
-            isNDArrayLike$2(options)) {
+            isTypedArray(options) ||
+            isNDArrayLike(options)) {
           data = options
         } else {
-          check$5.type(options, 'object', 'invalid arguments for elements')
+          check$1.type(options, 'object', 'invalid arguments for elements')
           if ('data' in options) {
             data = options.data
-            check$5(
+            check$1(
                 Array.isArray(data) ||
-                isTypedArray$5(data) ||
-                isNDArrayLike$2(data),
+                isTypedArray(data) ||
+                isNDArrayLike(data),
                 'invalid data for element buffer')
           }
           if ('usage' in options) {
-            check$5.parameter(
+            check$1.parameter(
               options.usage,
-              usageTypes$1,
+              usageTypes,
               'invalid element buffer usage')
-            usage = usageTypes$1[options.usage]
+            usage = usageTypes[options.usage]
           }
           if ('primitive' in options) {
-            check$5.parameter(
+            check$1.parameter(
               options.primitive,
               primTypes,
               'invalid element buffer primitive')
             primType = primTypes[options.primitive]
           }
           if ('count' in options) {
-            check$5(
+            check$1(
               typeof options.count === 'number' && options.count >= 0,
               'invalid vertex count for elements')
             vertCount = options.count | 0
           }
           if ('type' in options) {
-            check$5.parameter(
+            check$1.parameter(
               options.type,
               elementTypes,
               'invalid buffer type')
@@ -2113,20 +2017,18 @@ var elements = function wrapElementsState (gl, extensions, bufferState, stats) {
       return null
     },
     clear: function () {
-      values$3(elementSet).forEach(destroyElements)
+      values(elementSet).forEach(destroyElements)
     }
   }
 }
-
-var pool$5 = pool$1
 
 var FLOAT = new Float32Array(1)
 var INT = new Uint32Array(FLOAT.buffer)
 
 var GL_UNSIGNED_SHORT$4 = 5123
 
-var toHalfFloat = function convertToHalfFloat (array) {
-  var ushorts = pool$5.allocType(GL_UNSIGNED_SHORT$4, array.length)
+function convertToHalfFloat (array) {
+  var ushorts = allocType(GL_UNSIGNED_SHORT$4, array.length)
 
   for (var i = 0; i < array.length; ++i) {
     if (isNaN(array[i])) {
@@ -2163,23 +2065,9 @@ var toHalfFloat = function convertToHalfFloat (array) {
   return ushorts
 }
 
-var isTypedArray$7 = isTypedArray$1
-var isArrayLike$1 = function isArrayLike$1 (s) {
-  return Array.isArray(s) || isTypedArray$7(s)
+function isArrayLike (s) {
+  return Array.isArray(s) || isTypedArray(s)
 }
-
-var check$6 = check_1
-var extend$5 = extend$2
-var values$4 = values$1
-var isTypedArray$6 = isTypedArray$1
-var isNDArrayLike$3 = isNdarray
-var pool$4 = pool$1
-var convertToHalfFloat$1 = toHalfFloat
-var isArrayLike = isArrayLike$1
-var flattenUtils = flatten
-
-var dtypes$3 = require$$0
-var arrayTypes$1 = require$$0
 
 var GL_COMPRESSED_TEXTURE_FORMATS = 0x86A3
 
@@ -2299,7 +2187,7 @@ var CONTEXT2D_CLASS = objectName('CanvasRenderingContext2D')
 var IMAGE_CLASS = objectName('HTMLImageElement')
 var VIDEO_CLASS = objectName('HTMLVideoElement')
 
-var PIXEL_CLASSES = Object.keys(dtypes$3).concat([
+var PIXEL_CLASSES = Object.keys(arrayTypes).concat([
   CANVAS_CLASS,
   CONTEXT2D_CLASS,
   IMAGE_CLASS,
@@ -2387,11 +2275,11 @@ function isPixelData (object) {
   return (
     isNumericArray(object) ||
     isRectArray(object) ||
-    isNDArrayLike$3(object))
+    isNDArrayLike(object))
 }
 
 function typedArrayCode$1 (data) {
-  return arrayTypes$1[Object.prototype.toString.call(data)] | 0
+  return arrayTypes[Object.prototype.toString.call(data)] | 0
 }
 
 function convertData (result, data) {
@@ -2401,22 +2289,22 @@ function convertData (result, data) {
     case GL_UNSIGNED_SHORT$3:
     case GL_UNSIGNED_INT$3:
     case GL_FLOAT$3:
-      var converted = pool$4.allocType(result.type, n)
+      var converted = allocType(result.type, n)
       converted.set(data)
       result.data = converted
       break
 
     case GL_HALF_FLOAT_OES$1:
-      result.data = convertToHalfFloat$1(data)
+      result.data = convertToHalfFloat(data)
       break
 
     default:
-      check$6.raise('unsupported texture type, must specify a typed array')
+      check$1.raise('unsupported texture type, must specify a typed array')
   }
 }
 
 function preConvert (image, n) {
-  return pool$4.allocType(
+  return allocType(
     image.type === GL_HALF_FLOAT_OES$1
       ? GL_FLOAT$3
       : image.type, n)
@@ -2424,8 +2312,8 @@ function preConvert (image, n) {
 
 function postConvert (image, data) {
   if (image.type === GL_HALF_FLOAT_OES$1) {
-    image.data = convertToHalfFloat$1(data)
-    pool$4.freeType(data)
+    image.data = convertToHalfFloat(data)
+    freeType(data)
   } else {
     image.data = data
   }
@@ -2480,7 +2368,7 @@ function getTextureSize (format, type, width, height, isMipmap, isCube) {
   }
 }
 
-var texture = function createTextureSet (
+function createTextureSet (
   gl, extensions, limits, reglPoll, contextState, stats, config) {
   // -------------------------------------------------------
   // Initialize constants and parameter tables here
@@ -2503,7 +2391,7 @@ var texture = function createTextureSet (
     'linear': GL_LINEAR
   }
 
-  var minFilters = extend$5({
+  var minFilters = extend({
     'mipmap': GL_LINEAR_MIPMAP_LINEAR$1,
     'nearest mipmap nearest': GL_NEAREST_MIPMAP_NEAREST$1,
     'linear mipmap nearest': GL_LINEAR_MIPMAP_NEAREST$1,
@@ -2550,12 +2438,12 @@ var texture = function createTextureSet (
   }
 
   if (extensions.webgl_depth_texture) {
-    extend$5(textureFormats, {
+    extend(textureFormats, {
       'depth': GL_DEPTH_COMPONENT,
       'depth stencil': GL_DEPTH_STENCIL
     })
 
-    extend$5(textureTypes, {
+    extend(textureTypes, {
       'uint16': GL_UNSIGNED_SHORT$3,
       'uint32': GL_UNSIGNED_INT$3,
       'depth stencil': GL_UNSIGNED_INT_24_8_WEBGL$1
@@ -2563,7 +2451,7 @@ var texture = function createTextureSet (
   }
 
   if (extensions.webgl_compressed_texture_s3tc) {
-    extend$5(compressedTextureFormats, {
+    extend(compressedTextureFormats, {
       'rgb s3tc dxt1': GL_COMPRESSED_RGB_S3TC_DXT1_EXT,
       'rgba s3tc dxt1': GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
       'rgba s3tc dxt3': GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,
@@ -2572,7 +2460,7 @@ var texture = function createTextureSet (
   }
 
   if (extensions.webgl_compressed_texture_atc) {
-    extend$5(compressedTextureFormats, {
+    extend(compressedTextureFormats, {
       'rgb atc': GL_COMPRESSED_RGB_ATC_WEBGL,
       'rgba atc explicit alpha': GL_COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL,
       'rgba atc interpolated alpha': GL_COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL
@@ -2580,7 +2468,7 @@ var texture = function createTextureSet (
   }
 
   if (extensions.webgl_compressed_texture_pvrtc) {
-    extend$5(compressedTextureFormats, {
+    extend(compressedTextureFormats, {
       'rgb pvrtc 4bppv1': GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG,
       'rgb pvrtc 2bppv1': GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG,
       'rgba pvrtc 4bppv1': GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG,
@@ -2699,41 +2587,41 @@ var texture = function createTextureSet (
     }
 
     if ('premultiplyAlpha' in options) {
-      check$6.type(options.premultiplyAlpha, 'boolean',
+      check$1.type(options.premultiplyAlpha, 'boolean',
         'invalid premultiplyAlpha')
       flags.premultiplyAlpha = options.premultiplyAlpha
     }
 
     if ('flipY' in options) {
-      check$6.type(options.flipY, 'boolean',
+      check$1.type(options.flipY, 'boolean',
         'invalid texture flip')
       flags.flipY = options.flipY
     }
 
     if ('alignment' in options) {
-      check$6.oneOf(options.alignment, [1, 2, 4, 8],
+      check$1.oneOf(options.alignment, [1, 2, 4, 8],
         'invalid texture unpack alignment')
       flags.unpackAlignment = options.alignment
     }
 
     if ('colorSpace' in options) {
-      check$6.parameter(options.colorSpace, colorSpace,
+      check$1.parameter(options.colorSpace, colorSpace,
         'invalid colorSpace')
       flags.colorSpace = colorSpace[options.colorSpace]
     }
 
     if ('type' in options) {
       var type = options.type
-      check$6(extensions.oes_texture_float ||
+      check$1(extensions.oes_texture_float ||
         !(type === 'float' || type === 'float32'),
         'you must enable the OES_texture_float extension in order to use floating point textures.')
-      check$6(extensions.oes_texture_half_float ||
+      check$1(extensions.oes_texture_half_float ||
         !(type === 'half float' || type === 'float16'),
         'you must enable the OES_texture_half_float extension in order to use 16-bit floating point textures.')
-      check$6(extensions.webgl_depth_texture ||
+      check$1(extensions.webgl_depth_texture ||
         !(type === 'uint16' || type === 'uint32' || type === 'depth stencil'),
         'you must enable the WEBGL_depth_texture extension in order to use depth/stencil textures.')
-      check$6.parameter(type, textureTypes,
+      check$1.parameter(type, textureTypes,
         'invalid texture type')
       flags.type = textureTypes[type]
     }
@@ -2743,33 +2631,33 @@ var texture = function createTextureSet (
     var c = flags.channels
     var hasChannels = false
     if ('shape' in options) {
-      check$6(Array.isArray(options.shape) && options.shape.length >= 2,
+      check$1(Array.isArray(options.shape) && options.shape.length >= 2,
         'shape must be an array')
       w = options.shape[0]
       h = options.shape[1]
       if (options.shape.length === 3) {
         c = options.shape[2]
-        check$6(c > 0 && c <= 4, 'invalid number of channels')
+        check$1(c > 0 && c <= 4, 'invalid number of channels')
         hasChannels = true
       }
-      check$6(w >= 0 && w <= limits.maxTextureSize, 'invalid width')
-      check$6(h >= 0 && h <= limits.maxTextureSize, 'invalid height')
+      check$1(w >= 0 && w <= limits.maxTextureSize, 'invalid width')
+      check$1(h >= 0 && h <= limits.maxTextureSize, 'invalid height')
     } else {
       if ('radius' in options) {
         w = h = options.radius
-        check$6(w >= 0 && w <= limits.maxTextureSize, 'invalid radius')
+        check$1(w >= 0 && w <= limits.maxTextureSize, 'invalid radius')
       }
       if ('width' in options) {
         w = options.width
-        check$6(w >= 0 && w <= limits.maxTextureSize, 'invalid width')
+        check$1(w >= 0 && w <= limits.maxTextureSize, 'invalid width')
       }
       if ('height' in options) {
         h = options.height
-        check$6(h >= 0 && h <= limits.maxTextureSize, 'invalid height')
+        check$1(h >= 0 && h <= limits.maxTextureSize, 'invalid height')
       }
       if ('channels' in options) {
         c = options.channels
-        check$6(c > 0 && c <= 4, 'invalid number of channels')
+        check$1(c > 0 && c <= 4, 'invalid number of channels')
         hasChannels = true
       }
     }
@@ -2780,10 +2668,10 @@ var texture = function createTextureSet (
     var hasFormat = false
     if ('format' in options) {
       var formatStr = options.format
-      check$6(extensions.webgl_depth_texture ||
+      check$1(extensions.webgl_depth_texture ||
         !(formatStr === 'depth' || formatStr === 'depth stencil'),
         'you must enable the WEBGL_depth_texture extension in order to use depth/stencil textures.')
-      check$6.parameter(formatStr, textureFormats,
+      check$1.parameter(formatStr, textureFormats,
         'invalid texture format')
       var internalformat = flags.internalformat = textureFormats[formatStr]
       flags.format = colorFormats[internalformat]
@@ -2806,7 +2694,7 @@ var texture = function createTextureSet (
         flags.format = flags.internalformat = CHANNELS_FORMAT[flags.channels]
       }
     } else if (hasFormat && hasChannels) {
-      check$6(
+      check$1(
         flags.channels === FORMAT_CHANNELS[flags.format],
         'number of channels inconsistent with specified format')
     }
@@ -2844,7 +2732,7 @@ var texture = function createTextureSet (
     if (isPixelData(options)) {
       data = options
     } else if (options) {
-      check$6.type(options, 'object', 'invalid pixel data type')
+      check$1.type(options, 'object', 'invalid pixel data type')
       parseFlags(image, options)
       if ('x' in options) {
         image.xOffset = options.x | 0
@@ -2857,19 +2745,19 @@ var texture = function createTextureSet (
       }
     }
 
-    check$6(
+    check$1(
       !image.compressed ||
       data instanceof Uint8Array,
       'compressed texture data must be stored in a uint8array')
 
     if (options.copy) {
-      check$6(!data, 'can not specify copy and data field for the same texture')
+      check$1(!data, 'can not specify copy and data field for the same texture')
       var viewW = contextState.viewportWidth
       var viewH = contextState.viewportHeight
       image.width = image.width || (viewW - image.xOffset)
       image.height = image.height || (viewH - image.yOffset)
       image.needsCopy = true
-      check$6(image.xOffset >= 0 && image.xOffset < viewW &&
+      check$1(image.xOffset >= 0 && image.xOffset < viewW &&
             image.yOffset >= 0 && image.yOffset < viewH &&
             image.width > 0 && image.width <= viewW &&
             image.height > 0 && image.height <= viewH,
@@ -2878,7 +2766,7 @@ var texture = function createTextureSet (
       image.width = image.width || 1
       image.height = image.height || 1
       image.channels = image.channels || 4
-    } else if (isTypedArray$6(data)) {
+    } else if (isTypedArray(data)) {
       image.channels = image.channels || 4
       image.data = data
       if (!('type' in options) && image.type === GL_UNSIGNED_BYTE$4) {
@@ -2889,24 +2777,24 @@ var texture = function createTextureSet (
       convertData(image, data)
       image.alignment = 1
       image.needsFree = true
-    } else if (isNDArrayLike$3(data)) {
+    } else if (isNDArrayLike(data)) {
       var array = data.data
       if (!Array.isArray(array) && image.type === GL_UNSIGNED_BYTE$4) {
         image.type = typedArrayCode$1(array)
       }
-      var shape = data.shape
+      var shape$$1 = data.shape
       var stride = data.stride
       var shapeX, shapeY, shapeC, strideX, strideY, strideC
-      if (shape.length === 3) {
-        shapeC = shape[2]
+      if (shape$$1.length === 3) {
+        shapeC = shape$$1[2]
         strideC = stride[2]
       } else {
-        check$6(shape.length === 2, 'invalid ndarray pixel data, must be 2 or 3D')
+        check$1(shape$$1.length === 2, 'invalid ndarray pixel data, must be 2 or 3D')
         shapeC = 1
         strideC = 1
       }
-      shapeX = shape[0]
-      shapeY = shape[1]
+      shapeX = shape$$1[0]
+      shapeY = shape$$1[1]
       strideX = stride[0]
       strideY = stride[1]
       image.alignment = 1
@@ -2944,13 +2832,13 @@ var texture = function createTextureSet (
       } else {
         c = c || 1
       }
-      var arrayShape = flattenUtils.shape(data)
+      var arrayShape = arrayShape$1(data)
       var n = 1
       for (var dd = 0; dd < arrayShape.length; ++dd) {
         n *= arrayShape[dd]
       }
       var allocData = preConvert(image, n)
-      flattenUtils.flatten(data, arrayShape, '', allocData)
+      flattenArray(data, arrayShape, '', allocData)
       postConvert(image, allocData)
       image.alignment = 1
       image.width = w
@@ -2961,10 +2849,10 @@ var texture = function createTextureSet (
     }
 
     if (image.type === GL_FLOAT$3) {
-      check$6(limits.extensions.indexOf('oes_texture_float') >= 0,
+      check$1(limits.extensions.indexOf('oes_texture_float') >= 0,
         'oes_texture_float extension not enabled')
     } else if (image.type === GL_HALF_FLOAT_OES$1) {
-      check$6(limits.extensions.indexOf('oes_texture_half_float') >= 0,
+      check$1(limits.extensions.indexOf('oes_texture_half_float') >= 0,
         'oes_texture_half_float extension not enabled')
     }
 
@@ -3032,7 +2920,7 @@ var texture = function createTextureSet (
 
   function freeImage (image) {
     if (image.needsFree) {
-      pool$4.freeType(image.data)
+      freeType(image.data)
     }
     TexImage.call(image)
     imagePool.push(image)
@@ -3100,7 +2988,7 @@ var texture = function createTextureSet (
         (mipmap.internalformat === GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ||
         (mipmap.internalformat === GL_COMPRESSED_RGBA_S3TC_DXT3_EXT) ||
         (mipmap.internalformat === GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)) {
-      check$6(mipmap.width % 4 === 0 &&
+      check$1(mipmap.width % 4 === 0 &&
             mipmap.height % 4 === 0,
             'for compressed texture formats, mipmap level 0 must have width and height that are a multiple of 4')
     }
@@ -3158,7 +3046,7 @@ var texture = function createTextureSet (
   function parseTexInfo (info, options) {
     if ('min' in options) {
       var minFilter = options.min
-      check$6.parameter(minFilter, minFilters)
+      check$1.parameter(minFilter, minFilters)
       info.minFilter = minFilters[minFilter]
       if (MIPMAP_FILTERS.indexOf(info.minFilter) >= 0) {
         info.genMipmaps = true
@@ -3167,7 +3055,7 @@ var texture = function createTextureSet (
 
     if ('mag' in options) {
       var magFilter = options.mag
-      check$6.parameter(magFilter, magFilters)
+      check$1.parameter(magFilter, magFilters)
       info.magFilter = magFilters[magFilter]
     }
 
@@ -3176,23 +3064,23 @@ var texture = function createTextureSet (
     if ('wrap' in options) {
       var wrap = options.wrap
       if (typeof wrap === 'string') {
-        check$6.parameter(wrap, wrapModes)
+        check$1.parameter(wrap, wrapModes)
         wrapS = wrapT = wrapModes[wrap]
       } else if (Array.isArray(wrap)) {
-        check$6.parameter(wrap[0], wrapModes)
-        check$6.parameter(wrap[1], wrapModes)
+        check$1.parameter(wrap[0], wrapModes)
+        check$1.parameter(wrap[1], wrapModes)
         wrapS = wrapModes[wrap[0]]
         wrapT = wrapModes[wrap[1]]
       }
     } else {
       if ('wrapS' in options) {
         var optWrapS = options.wrapS
-        check$6.parameter(optWrapS, wrapModes)
+        check$1.parameter(optWrapS, wrapModes)
         wrapS = wrapModes[optWrapS]
       }
       if ('wrapT' in options) {
         var optWrapT = options.wrapT
-        check$6.parameter(optWrapT, wrapModes)
+        check$1.parameter(optWrapT, wrapModes)
         wrapT = wrapModes[optWrapT]
       }
     }
@@ -3201,7 +3089,7 @@ var texture = function createTextureSet (
 
     if ('anisotropic' in options) {
       var anisotropic = options.anisotropic
-      check$6(typeof anisotropic === 'number' &&
+      check$1(typeof anisotropic === 'number' &&
          anisotropic >= 1 && anisotropic <= limits.maxAnisotropic,
         'aniso samples must be between 1 and ')
       info.anisotropic = options.anisotropic
@@ -3211,7 +3099,7 @@ var texture = function createTextureSet (
       var hasMipMap = false
       switch (typeof options.mipmap) {
         case 'string':
-          check$6.parameter(options.mipmap, mipmapHint,
+          check$1.parameter(options.mipmap, mipmapHint,
             'invalid mipmap hint')
           info.mipmapHint = mipmapHint[options.mipmap]
           info.genMipmaps = true
@@ -3223,13 +3111,13 @@ var texture = function createTextureSet (
           break
 
         case 'object':
-          check$6(Array.isArray(options.mipmap), 'invalid mipmap type')
+          check$1(Array.isArray(options.mipmap), 'invalid mipmap type')
           info.genMipmaps = false
           hasMipMap = true
           break
 
         default:
-          check$6.raise('invalid mipmap type')
+          check$1.raise('invalid mipmap type')
       }
       if (hasMipMap && !('min' in options)) {
         info.minFilter = GL_NEAREST_MIPMAP_NEAREST$1
@@ -3299,7 +3187,7 @@ var texture = function createTextureSet (
 
   function destroy (texture) {
     var handle = texture.texture
-    check$6(handle, 'must not double destroy texture')
+    check$1(handle, 'must not double destroy texture')
     var unit = texture.unit
     var target = texture.target
     if (unit >= 0) {
@@ -3316,7 +3204,7 @@ var texture = function createTextureSet (
     stats.textureCount--
   }
 
-  extend$5(REGLTexture.prototype, {
+  extend(REGLTexture.prototype, {
     bind: function () {
       var texture = this
       texture.bindCount += 1
@@ -3335,7 +3223,7 @@ var texture = function createTextureSet (
           break
         }
         if (unit >= numTexUnits) {
-          check$6.raise('insufficient number of texture units')
+          check$1.raise('insufficient number of texture units')
         }
         if (config.profile && stats.maxTextureUnits < (unit + 1)) {
           stats.maxTextureUnits = unit + 1 // +1, since the units are zero-based
@@ -3375,7 +3263,7 @@ var texture = function createTextureSet (
           parseMipMapFromShape(mipData, a | 0, a | 0)
         }
       } else if (a) {
-        check$6.type(a, 'object', 'invalid arguments to regl.texture')
+        check$1.type(a, 'object', 'invalid arguments to regl.texture')
         parseTexInfo(texInfo, a)
         parseMipMapFromObject(mipData, a)
       } else {
@@ -3390,7 +3278,7 @@ var texture = function createTextureSet (
 
       copyFlags(texture, mipData)
 
-      check$6.texture2D(texInfo, mipData, limits)
+      check$1.texture2D(texInfo, mipData, limits)
       texture.internalformat = mipData.internalformat
 
       reglTexture2D.width = mipData.width
@@ -3425,7 +3313,7 @@ var texture = function createTextureSet (
     }
 
     function subimage (image, x_, y_, level_) {
-      check$6(!!image, 'must specify image data')
+      check$1(!!image, 'must specify image data')
 
       var x = x_ | 0
       var y = y_ | 0
@@ -3439,20 +3327,20 @@ var texture = function createTextureSet (
       imageData.width = imageData.width || ((texture.width >> level) - x)
       imageData.height = imageData.height || ((texture.height >> level) - y)
 
-      check$6(
+      check$1(
         texture.type === imageData.type &&
         texture.format === imageData.format &&
         texture.internalformat === imageData.internalformat,
         'incompatible format for texture.subimage')
-      check$6(
+      check$1(
         x >= 0 && y >= 0 &&
         x + imageData.width <= texture.width &&
         y + imageData.height <= texture.height,
         'texture.subimage write out of bounds')
-      check$6(
+      check$1(
         texture.mipmask & (1 << level),
         'missing mipmap data')
-      check$6(
+      check$1(
         imageData.data || imageData.element || imageData.needsCopy,
         'missing image data')
 
@@ -3553,10 +3441,10 @@ var texture = function createTextureSet (
           parseFlags(texture, a0)
           if ('faces' in a0) {
             var face_input = a0.faces
-            check$6(Array.isArray(face_input) && face_input.length === 6,
+            check$1(Array.isArray(face_input) && face_input.length === 6,
               'cube faces must be a length 6 array')
             for (i = 0; i < 6; ++i) {
-              check$6(typeof face_input[i] === 'object' && !!face_input[i],
+              check$1(typeof face_input[i] === 'object' && !!face_input[i],
                 'invalid input for cube map face')
               copyFlags(faces[i], texture)
               parseMipMapFromObject(faces[i], face_input[i])
@@ -3568,7 +3456,7 @@ var texture = function createTextureSet (
           }
         }
       } else {
-        check$6.raise('invalid arguments to cube map')
+        check$1.raise('invalid arguments to cube map')
       }
 
       copyFlags(texture, faces[0])
@@ -3578,7 +3466,7 @@ var texture = function createTextureSet (
         texture.mipmask = faces[0].mipmask
       }
 
-      check$6.textureCube(texture, texInfo, faces, limits)
+      check$1.textureCube(texture, texInfo, faces, limits)
       texture.internalformat = faces[0].internalformat
 
       reglTextureCube.width = faces[0].width
@@ -3618,8 +3506,8 @@ var texture = function createTextureSet (
     }
 
     function subimage (face, image, x_, y_, level_) {
-      check$6(!!image, 'must specify image data')
-      check$6(typeof face === 'number' && face === (face | 0) &&
+      check$1(!!image, 'must specify image data')
+      check$1(typeof face === 'number' && face === (face | 0) &&
         face >= 0 && face < 6, 'invalid face')
 
       var x = x_ | 0
@@ -3634,20 +3522,20 @@ var texture = function createTextureSet (
       imageData.width = imageData.width || ((texture.width >> level) - x)
       imageData.height = imageData.height || ((texture.height >> level) - y)
 
-      check$6(
+      check$1(
         texture.type === imageData.type &&
         texture.format === imageData.format &&
         texture.internalformat === imageData.internalformat,
         'incompatible format for texture.subimage')
-      check$6(
+      check$1(
         x >= 0 && y >= 0 &&
         x + imageData.width <= texture.width &&
         y + imageData.height <= texture.height,
         'texture.subimage write out of bounds')
-      check$6(
+      check$1(
         texture.mipmask & (1 << level),
         'missing mipmap data')
-      check$6(
+      check$1(
         imageData.data || imageData.element || imageData.needsCopy,
         'missing image data')
 
@@ -3722,7 +3610,7 @@ var texture = function createTextureSet (
       gl.bindTexture(GL_TEXTURE_2D, null)
       textureUnits[i] = null
     }
-    values$4(textureSet).forEach(destroy)
+    values(textureSet).forEach(destroy)
 
     stats.cubeCount = 0
     stats.textureCount = 0
@@ -3739,7 +3627,7 @@ var texture = function createTextureSet (
   }
 
   function restoreTextures () {
-    values$4(textureSet).forEach(function (texture) {
+    values(textureSet).forEach(function (texture) {
       texture.texture = gl.createTexture()
       gl.bindTexture(texture.target, texture.texture)
       for (var i = 0; i < 32; ++i) {
@@ -3785,9 +3673,6 @@ var texture = function createTextureSet (
   }
 }
 
-var check$7 = check_1
-var values$5 = values$1
-
 var GL_RENDERBUFFER = 0x8D41
 
 var GL_RGBA4$1 = 0x8056
@@ -3823,7 +3708,7 @@ function getRenderbufferSize (format, width, height) {
   return FORMAT_SIZES[format] * width * height
 }
 
-var renderbuffer = function (gl, extensions, limits, stats, config) {
+var wrapRenderbuffers = function (gl, extensions, limits, stats, config) {
   var formatTypes = {
     'rgba4': GL_RGBA4$1,
     'rgb565': GL_RGB565$1,
@@ -3878,7 +3763,7 @@ var renderbuffer = function (gl, extensions, limits, stats, config) {
 
   function destroy (rb) {
     var handle = rb.renderbuffer
-    check$7(handle, 'must not double destroy renderbuffer')
+    check$1(handle, 'must not double destroy renderbuffer')
     gl.bindRenderbuffer(GL_RENDERBUFFER, null)
     gl.deleteRenderbuffer(handle)
     rb.renderbuffer = null
@@ -3901,7 +3786,7 @@ var renderbuffer = function (gl, extensions, limits, stats, config) {
         var options = a
         if ('shape' in options) {
           var shape = options.shape
-          check$7(Array.isArray(shape) && shape.length >= 2,
+          check$1(Array.isArray(shape) && shape.length >= 2,
             'invalid renderbuffer shape')
           w = shape[0] | 0
           h = shape[1] | 0
@@ -3917,7 +3802,7 @@ var renderbuffer = function (gl, extensions, limits, stats, config) {
           }
         }
         if ('format' in options) {
-          check$7.parameter(options.format, formatTypes,
+          check$1.parameter(options.format, formatTypes,
             'invalid renderbuffer format')
           format = formatTypes[options.format]
         }
@@ -3931,11 +3816,11 @@ var renderbuffer = function (gl, extensions, limits, stats, config) {
       } else if (!a) {
         w = h = 1
       } else {
-        check$7.raise('invalid arguments to renderbuffer constructor')
+        check$1.raise('invalid arguments to renderbuffer constructor')
       }
 
       // check shape
-      check$7(
+      check$1(
         w > 0 && h > 0 &&
         w <= limits.maxRenderbufferSize && h <= limits.maxRenderbufferSize,
         'invalid renderbuffer size')
@@ -3970,7 +3855,7 @@ var renderbuffer = function (gl, extensions, limits, stats, config) {
       }
 
       // check shape
-      check$7(
+      check$1(
         w > 0 && h > 0 &&
         w <= limits.maxRenderbufferSize && h <= limits.maxRenderbufferSize,
         'invalid renderbuffer size')
@@ -4016,7 +3901,7 @@ var renderbuffer = function (gl, extensions, limits, stats, config) {
   }
 
   function restoreRenderbuffers () {
-    values$5(renderbufferSet).forEach(function (rb) {
+    values(renderbufferSet).forEach(function (rb) {
       rb.renderbuffer = gl.createRenderbuffer()
       gl.bindRenderbuffer(GL_RENDERBUFFER, rb.renderbuffer)
       gl.renderbufferStorage(GL_RENDERBUFFER, rb.format, rb.width, rb.height)
@@ -4027,15 +3912,11 @@ var renderbuffer = function (gl, extensions, limits, stats, config) {
   return {
     create: createRenderbuffer,
     clear: function () {
-      values$5(renderbufferSet).forEach(destroy)
+      values(renderbufferSet).forEach(destroy)
     },
     restore: restoreRenderbuffers
   }
 }
-
-var check$8 = check_1
-var values$6 = values$1
-var extend$6 = extend$2
 
 // We store these constants so that the minifier can inline them
 var GL_FRAMEBUFFER = 0x8D40
@@ -4110,7 +3991,7 @@ statusCode[GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS] = 'incomplete dimensions'
 statusCode[GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT] = 'incomplete, missing attachment'
 statusCode[GL_FRAMEBUFFER_UNSUPPORTED] = 'unsupported'
 
-var framebuffer = function wrapFBOState (
+function wrapFBOState (
   gl,
   extensions,
   limits,
@@ -4184,12 +4065,12 @@ var framebuffer = function wrapFBOState (
       var texture = attachment.texture._texture
       var tw = Math.max(1, texture.width)
       var th = Math.max(1, texture.height)
-      check$8(tw === width && th === height,
+      check$1(tw === width && th === height,
         'inconsistent width/height for supplied texture')
       texture.refCount += 1
     } else {
       var renderbuffer = attachment.renderbuffer._renderbuffer
-      check$8(
+      check$1(
         renderbuffer.width === width && renderbuffer.height === height,
         'inconsistent width/height for renderbuffer')
       renderbuffer.refCount += 1
@@ -4228,15 +4109,15 @@ var framebuffer = function wrapFBOState (
       }
     }
 
-    check$8.type(data, 'function', 'invalid attachment data')
+    check$1.type(data, 'function', 'invalid attachment data')
 
     var type = data._reglType
     if (type === 'texture2d') {
       texture = data
-      check$8(target === GL_TEXTURE_2D$1)
+      check$1(target === GL_TEXTURE_2D$1)
     } else if (type === 'textureCube') {
       texture = data
-      check$8(
+      check$1(
         target >= GL_TEXTURE_CUBE_MAP_POSITIVE_X$1 &&
         target < GL_TEXTURE_CUBE_MAP_POSITIVE_X$1 + 6,
         'invalid cube map target')
@@ -4244,7 +4125,7 @@ var framebuffer = function wrapFBOState (
       renderbuffer = data
       target = GL_RENDERBUFFER$1
     } else {
-      check$8.raise('invalid regl object for attachment')
+      check$1.raise('invalid regl object for attachment')
     }
 
     return new FramebufferAttachment(target, texture, renderbuffer)
@@ -4316,7 +4197,7 @@ var framebuffer = function wrapFBOState (
 
   function destroy (framebuffer) {
     var handle = framebuffer.framebuffer
-    check$8(handle, 'must not double destroy framebuffer')
+    check$1(handle, 'must not double destroy framebuffer')
     gl.deleteFramebuffer(handle)
     framebuffer.framebuffer = null
     stats.framebufferCount--
@@ -4366,7 +4247,7 @@ var framebuffer = function wrapFBOState (
     // Check status code
     var status = gl.checkFramebufferStatus(GL_FRAMEBUFFER)
     if (status !== GL_FRAMEBUFFER_COMPLETE) {
-      check$8.raise('framebuffer configuration not supported, status = ' +
+      check$1.raise('framebuffer configuration not supported, status = ' +
         statusCode[status])
     }
 
@@ -4385,7 +4266,7 @@ var framebuffer = function wrapFBOState (
     function reglFramebuffer (a, b) {
       var i
 
-      check$8(framebufferState.next !== framebuffer,
+      check$1(framebufferState.next !== framebuffer,
         'can not update framebuffer which is currently in use')
 
       var extDrawBuffers = extensions.webgl_draw_buffers
@@ -4413,12 +4294,12 @@ var framebuffer = function wrapFBOState (
       } else if (!a) {
         width = height = 1
       } else {
-        check$8.type(a, 'object', 'invalid arguments for framebuffer')
+        check$1.type(a, 'object', 'invalid arguments for framebuffer')
         var options = a
 
         if ('shape' in options) {
           var shape = options.shape
-          check$8(Array.isArray(shape) && shape.length >= 2,
+          check$1(Array.isArray(shape) && shape.length >= 2,
             'invalid shape for framebuffer')
           width = shape[0]
           height = shape[1]
@@ -4440,7 +4321,7 @@ var framebuffer = function wrapFBOState (
             options.color ||
             options.colors
           if (Array.isArray(colorBuffer)) {
-            check$8(
+            check$1(
               colorBuffer.length === 1 || extDrawBuffers,
               'multiple render targets not supported')
           }
@@ -4449,7 +4330,7 @@ var framebuffer = function wrapFBOState (
         if (!colorBuffer) {
           if ('colorCount' in options) {
             colorCount = options.colorCount | 0
-            check$8(colorCount > 0, 'invalid color buffer count')
+            check$1(colorCount > 0, 'invalid color buffer count')
           }
 
           if ('colorTexture' in options) {
@@ -4461,23 +4342,23 @@ var framebuffer = function wrapFBOState (
             colorType = options.colorType
             if (!colorTexture) {
               if (colorType === 'half float' || colorType === 'float16') {
-                check$8(extensions.ext_color_buffer_half_float,
+                check$1(extensions.ext_color_buffer_half_float,
                   'you must enable EXT_color_buffer_half_float to use 16-bit render buffers')
                 colorFormat = 'rgba16f'
               } else if (colorType === 'float' || colorType === 'float32') {
-                check$8(extensions.webgl_color_buffer_float,
+                check$1(extensions.webgl_color_buffer_float,
                   'you must enable WEBGL_color_buffer_float in order to use 32-bit floating point renderbuffers')
                 colorFormat = 'rgba32f'
               }
             } else {
-              check$8(extensions.oes_texture_float ||
+              check$1(extensions.oes_texture_float ||
                 !(colorType === 'float' || colorType === 'float32'),
                 'you must enable OES_texture_float in order to use floating point framebuffer objects')
-              check$8(extensions.oes_texture_half_float ||
+              check$1(extensions.oes_texture_half_float ||
                 !(colorType === 'half float' || colorType === 'float16'),
                 'you must enable OES_texture_half_float in order to use 16-bit floating point framebuffer objects')
             }
-            check$8.oneOf(colorType, colorTypes, 'invalid color type')
+            check$1.oneOf(colorType, colorTypes, 'invalid color type')
           }
 
           if ('colorFormat' in options) {
@@ -4488,11 +4369,11 @@ var framebuffer = function wrapFBOState (
               colorTexture = false
             } else {
               if (colorTexture) {
-                check$8.oneOf(
+                check$1.oneOf(
                   options.colorFormat, colorTextureFormats,
                   'invalid color format for texture')
               } else {
-                check$8.oneOf(
+                check$1.oneOf(
                   options.colorFormat, colorRenderbufferFormats,
                   'invalid color format for renderbuffer')
               }
@@ -4503,7 +4384,7 @@ var framebuffer = function wrapFBOState (
         if ('depthTexture' in options || 'depthStencilTexture' in options) {
           depthStencilTexture = !!(options.depthTexture ||
             options.depthStencilTexture)
-          check$8(!depthStencilTexture || extensions.webgl_depth_texture,
+          check$1(!depthStencilTexture || extensions.webgl_depth_texture,
             'webgl_depth_texture extension not supported')
         }
 
@@ -4559,9 +4440,9 @@ var framebuffer = function wrapFBOState (
         }
       }
 
-      check$8(extensions.webgl_draw_buffers || colorAttachments.length <= 1,
+      check$1(extensions.webgl_draw_buffers || colorAttachments.length <= 1,
         'you must enable the WEBGL_draw_buffers extension in order to use multiple color buffers.')
-      check$8(colorAttachments.length <= limits.maxColorAttachments,
+      check$1(colorAttachments.length <= limits.maxColorAttachments,
         'too many color attachments, not supported')
 
       width = width || colorAttachments[0].width
@@ -4600,7 +4481,7 @@ var framebuffer = function wrapFBOState (
           'depth stencil')
       }
 
-      check$8(
+      check$1(
         (!!depthBuffer) + (!!stencilBuffer) + (!!depthStencilBuffer) <= 1,
         'invalid framebuffer configuration, can specify exactly one depth/stencil attachment')
 
@@ -4608,7 +4489,7 @@ var framebuffer = function wrapFBOState (
 
       for (i = 0; i < colorAttachments.length; ++i) {
         incRefAndCheckShape(colorAttachments[i], width, height)
-        check$8(!colorAttachments[i] ||
+        check$1(!colorAttachments[i] ||
           (colorAttachments[i].texture &&
             colorTextureFormatEnums.indexOf(colorAttachments[i].texture._texture.format) >= 0) ||
           (colorAttachments[i].renderbuffer &&
@@ -4626,25 +4507,25 @@ var framebuffer = function wrapFBOState (
             // We need to make sure that all color attachments have the same number of bitplanes
             // (that is, the same numer of bits per pixel)
             // This is required by the GLES2.0 standard. See the beginning of Chapter 4 in that document.
-            check$8(commonColorAttachmentSize === colorAttachmentSize,
+            check$1(commonColorAttachmentSize === colorAttachmentSize,
                   'all color attachments much have the same number of bits per pixel.')
           }
         }
       }
       incRefAndCheckShape(depthAttachment, width, height)
-      check$8(!depthAttachment ||
+      check$1(!depthAttachment ||
         (depthAttachment.texture &&
           depthAttachment.texture._texture.format === GL_DEPTH_COMPONENT$1) ||
         (depthAttachment.renderbuffer &&
           depthAttachment.renderbuffer._renderbuffer.format === GL_DEPTH_COMPONENT16$1),
         'invalid depth attachment for framebuffer object')
       incRefAndCheckShape(stencilAttachment, width, height)
-      check$8(!stencilAttachment ||
+      check$1(!stencilAttachment ||
         (stencilAttachment.renderbuffer &&
           stencilAttachment.renderbuffer._renderbuffer.format === GL_STENCIL_INDEX8$1),
         'invalid stencil attachment for framebuffer object')
       incRefAndCheckShape(depthStencilAttachment, width, height)
-      check$8(!depthStencilAttachment ||
+      check$1(!depthStencilAttachment ||
         (depthStencilAttachment.texture &&
           depthStencilAttachment.texture._texture.format === GL_DEPTH_STENCIL$2) ||
         (depthStencilAttachment.renderbuffer &&
@@ -4676,7 +4557,7 @@ var framebuffer = function wrapFBOState (
     }
 
     function resize (w_, h_) {
-      check$8(framebufferState.next !== framebuffer,
+      check$1(framebufferState.next !== framebuffer,
         'can not resize a framebuffer which is currently in use')
 
       var w = w_ | 0
@@ -4704,7 +4585,7 @@ var framebuffer = function wrapFBOState (
 
     reglFramebuffer(a0, a1)
 
-    return extend$6(reglFramebuffer, {
+    return extend(reglFramebuffer, {
       resize: resize,
       _reglType: 'framebuffer',
       _framebuffer: framebuffer,
@@ -4726,7 +4607,7 @@ var framebuffer = function wrapFBOState (
     function reglFramebufferCube (a) {
       var i
 
-      check$8(faces.indexOf(framebufferState.next) < 0,
+      check$1(faces.indexOf(framebufferState.next) < 0,
         'can not update framebuffer which is currently in use')
 
       var extDrawBuffers = extensions.webgl_draw_buffers
@@ -4747,15 +4628,15 @@ var framebuffer = function wrapFBOState (
       } else if (!a) {
         radius = 1
       } else {
-        check$8.type(a, 'object', 'invalid arguments for framebuffer')
+        check$1.type(a, 'object', 'invalid arguments for framebuffer')
         var options = a
 
         if ('shape' in options) {
           var shape = options.shape
-          check$8(
+          check$1(
             Array.isArray(shape) && shape.length >= 2,
             'invalid shape for framebuffer')
-          check$8(
+          check$1(
             shape[0] === shape[1],
             'cube framebuffer must be square')
           radius = shape[0]
@@ -4766,7 +4647,7 @@ var framebuffer = function wrapFBOState (
           if ('width' in options) {
             radius = options.width | 0
             if ('height' in options) {
-              check$8(options.height === radius, 'must be square')
+              check$1(options.height === radius, 'must be square')
             }
           } else if ('height' in options) {
             radius = options.height | 0
@@ -4779,7 +4660,7 @@ var framebuffer = function wrapFBOState (
             options.color ||
             options.colors
           if (Array.isArray(colorBuffer)) {
-            check$8(
+            check$1(
               colorBuffer.length === 1 || extDrawBuffers,
               'multiple render targets not supported')
           }
@@ -4788,11 +4669,11 @@ var framebuffer = function wrapFBOState (
         if (!colorBuffer) {
           if ('colorCount' in options) {
             colorCount = options.colorCount | 0
-            check$8(colorCount > 0, 'invalid color buffer count')
+            check$1(colorCount > 0, 'invalid color buffer count')
           }
 
           if ('colorType' in options) {
-            check$8.oneOf(
+            check$1.oneOf(
               options.colorType, colorTypes,
               'invalid color type')
             colorType = options.colorType
@@ -4800,7 +4681,7 @@ var framebuffer = function wrapFBOState (
 
           if ('colorFormat' in options) {
             colorFormat = options.colorFormat
-            check$8.oneOf(
+            check$1.oneOf(
               options.colorFormat, colorTextureFormats,
               'invalid color format for texture')
           }
@@ -4845,11 +4726,11 @@ var framebuffer = function wrapFBOState (
       params.color = Array(colorCubes.length)
       for (i = 0; i < colorCubes.length; ++i) {
         var cube = colorCubes[i]
-        check$8(
+        check$1(
           typeof cube === 'function' && cube._reglType === 'textureCube',
           'invalid cube map')
         radius = radius || cube.width
-        check$8(
+        check$1(
           cube.width === radius && cube.height === radius,
           'invalid cube map shape')
         params.color[i] = {
@@ -4875,7 +4756,7 @@ var framebuffer = function wrapFBOState (
         }
       }
 
-      return extend$6(reglFramebufferCube, {
+      return extend(reglFramebufferCube, {
         width: radius,
         height: radius,
         color: colorCubes
@@ -4885,7 +4766,7 @@ var framebuffer = function wrapFBOState (
     function resize (radius_) {
       var i
       var radius = radius_ | 0
-      check$8(radius > 0 && radius <= limits.maxCubeMapSize,
+      check$1(radius > 0 && radius <= limits.maxCubeMapSize,
         'invalid radius for cube fbo')
 
       if (radius === reglFramebufferCube.width) {
@@ -4908,7 +4789,7 @@ var framebuffer = function wrapFBOState (
 
     reglFramebufferCube(options)
 
-    return extend$6(reglFramebufferCube, {
+    return extend(reglFramebufferCube, {
       faces: faces,
       resize: resize,
       _reglType: 'framebufferCube',
@@ -4921,13 +4802,13 @@ var framebuffer = function wrapFBOState (
   }
 
   function restoreFramebuffers () {
-    values$6(framebufferSet).forEach(function (fb) {
+    values(framebufferSet).forEach(function (fb) {
       fb.framebuffer = gl.createFramebuffer()
       updateFramebuffer(fb)
     })
   }
 
-  return extend$6(framebufferState, {
+  return extend(framebufferState, {
     getFramebuffer: function (object) {
       if (typeof object === 'function' && object._reglType === 'framebuffer') {
         var fbo = object._framebuffer
@@ -4940,7 +4821,7 @@ var framebuffer = function wrapFBOState (
     create: createFBO,
     createCube: createCubeFBO,
     clear: function () {
-      values$6(framebufferSet).forEach(destroy)
+      values(framebufferSet).forEach(destroy)
     },
     restore: restoreFramebuffers
   })
@@ -4965,7 +4846,7 @@ function AttributeRecord () {
   this.divisor = 0
 }
 
-var attribute = function wrapAttributeState (
+function wrapAttributeState (
   gl,
   extensions,
   limits,
@@ -4984,16 +4865,13 @@ var attribute = function wrapAttributeState (
   }
 }
 
-var check$9 = check_1
-var values$7 = values$1
-
 var GL_FRAGMENT_SHADER = 35632
 var GL_VERTEX_SHADER = 35633
 
 var GL_ACTIVE_UNIFORMS = 0x8B86
 var GL_ACTIVE_ATTRIBUTES = 0x8B89
 
-var shader = function wrapShaderState (gl, stringStore, stats, config) {
+function wrapShaderState (gl, stringStore, stats, config) {
   // ===================================================
   // glsl compilation and linking
   // ===================================================
@@ -5026,7 +4904,7 @@ var shader = function wrapShaderState (gl, stringStore, stats, config) {
       shader = gl.createShader(type)
       gl.shaderSource(shader, source)
       gl.compileShader(shader)
-      check$9.shaderError(gl, shader, source, type, command)
+      check$1.shaderError(gl, shader, source, type, command)
       cache[id] = shader
     }
 
@@ -5070,7 +4948,7 @@ var shader = function wrapShaderState (gl, stringStore, stats, config) {
     gl.attachShader(program, fragShader)
     gl.attachShader(program, vertShader)
     gl.linkProgram(program)
-    check$9.linkError(
+    check$1.linkError(
       gl,
       program,
       stringStore.str(desc.fragId),
@@ -5161,9 +5039,9 @@ var shader = function wrapShaderState (gl, stringStore, stats, config) {
   return {
     clear: function () {
       var deleteShader = gl.deleteShader.bind(gl)
-      values$7(fragShaders).forEach(deleteShader)
+      values(fragShaders).forEach(deleteShader)
       fragShaders = {}
-      values$7(vertShaders).forEach(deleteShader)
+      values(vertShaders).forEach(deleteShader)
       vertShaders = {}
 
       programList.forEach(function (desc) {
@@ -5176,8 +5054,8 @@ var shader = function wrapShaderState (gl, stringStore, stats, config) {
     },
 
     program: function (vertId, fragId, command) {
-      check$9.command(vertId >= 0, 'missing vertex shader', command)
-      check$9.command(fragId >= 0, 'missing fragment shader', command)
+      check$1.command(vertId >= 0, 'missing vertex shader', command)
+      check$1.command(fragId >= 0, 'missing fragment shader', command)
 
       var cache = programCache[fragId]
       if (!cache) {
@@ -5204,15 +5082,12 @@ var shader = function wrapShaderState (gl, stringStore, stats, config) {
   }
 }
 
-var check$10 = check_1
-var isTypedArray$8 = isTypedArray$1
-
 var GL_RGBA$2 = 6408
 var GL_UNSIGNED_BYTE$6 = 5121
 var GL_PACK_ALIGNMENT = 0x0D05
 var GL_FLOAT$6 = 0x1406 // 5126
 
-var read = function wrapReadPixels (
+function wrapReadPixels (
   gl,
   framebufferState,
   reglPoll,
@@ -5222,22 +5097,22 @@ var read = function wrapReadPixels (
   function readPixelsImpl (input) {
     var type
     if (framebufferState.next === null) {
-      check$10(
+      check$1(
         glAttributes.preserveDrawingBuffer,
         'you must create a webgl context with "preserveDrawingBuffer":true in order to read pixels from the drawing buffer')
       type = GL_UNSIGNED_BYTE$6
     } else {
-      check$10(
+      check$1(
         framebufferState.next.colorAttachments[0].texture !== null,
           'You cannot read from a renderbuffer')
       type = framebufferState.next.colorAttachments[0].texture._texture.type
 
       if (extensions.oes_texture_float) {
-        check$10(
+        check$1(
           type === GL_UNSIGNED_BYTE$6 || type === GL_FLOAT$6,
           'Reading from a framebuffer is only allowed for the types \'uint8\' and \'float\'')
       } else {
-        check$10(
+        check$1(
           type === GL_UNSIGNED_BYTE$6,
           'Reading from a framebuffer is only allowed for the type \'uint8\'')
       }
@@ -5249,16 +5124,16 @@ var read = function wrapReadPixels (
     var height = context.framebufferHeight
     var data = null
 
-    if (isTypedArray$8(input)) {
+    if (isTypedArray(input)) {
       data = input
     } else if (input) {
-      check$10.type(input, 'object', 'invalid arguments to regl.read()')
+      check$1.type(input, 'object', 'invalid arguments to regl.read()')
       x = input.x | 0
       y = input.y | 0
-      check$10(
+      check$1(
         x >= 0 && x < context.framebufferWidth,
         'invalid x offset for regl.read')
-      check$10(
+      check$1(
         y >= 0 && y < context.framebufferHeight,
         'invalid y offset for regl.read')
       width = (input.width || (context.framebufferWidth - x)) | 0
@@ -5269,20 +5144,20 @@ var read = function wrapReadPixels (
     // sanity check input.data
     if (data) {
       if (type === GL_UNSIGNED_BYTE$6) {
-        check$10(
+        check$1(
           data instanceof Uint8Array,
           'buffer must be \'Uint8Array\' when reading from a framebuffer of type \'uint8\'')
       } else if (type === GL_FLOAT$6) {
-        check$10(
+        check$1(
           data instanceof Float32Array,
           'buffer must be \'Float32Array\' when reading from a framebuffer of type \'float\'')
       }
     }
 
-    check$10(
+    check$1(
       width > 0 && width + x <= context.framebufferWidth,
       'invalid width for read pixels')
-    check$10(
+    check$1(
       height > 0 && height + y <= context.framebufferHeight,
       'invalid height for read pixels')
 
@@ -5302,8 +5177,8 @@ var read = function wrapReadPixels (
     }
 
     // Type check
-    check$10.isTypedArray(data, 'data buffer for regl.read() must be a typedarray')
-    check$10(data.byteLength >= size, 'data buffer for regl.read() too small')
+    check$1.isTypedArray(data, 'data buffer for regl.read() must be a typedarray')
+    check$1(data.byteLength >= size, 'data buffer for regl.read() too small')
 
     // Run read pixels
     gl.pixelStorei(GL_PACK_ALIGNMENT, 4)
@@ -5335,8 +5210,6 @@ var read = function wrapReadPixels (
   return readPixels
 }
 
-var extend$7 = extend$2
-
 function slice (x) {
   return Array.prototype.slice.call(x)
 }
@@ -5345,7 +5218,7 @@ function join (x) {
   return slice(x).join('')
 }
 
-var codegen = function createEnvironment () {
+function createEnvironment () {
   // Unique variable id counter
   var varCounter = 0
 
@@ -5388,7 +5261,7 @@ var codegen = function createEnvironment () {
       return name
     }
 
-    return extend$7(push, {
+    return extend(push, {
       def: def,
       toString: function () {
         return join([
@@ -5410,7 +5283,7 @@ var codegen = function createEnvironment () {
       exit(object, prop, '=', entry.def(object, prop), ';')
     }
 
-    return extend$7(function () {
+    return extend(function () {
       entry.apply(entry, slice(arguments))
     }, {
       def: entry.def,
@@ -5435,7 +5308,7 @@ var codegen = function createEnvironment () {
     var thenToString = thenBlock.toString
     var elseToString = elseBlock.toString
 
-    return extend$7(thenBlock, {
+    return extend(thenBlock, {
       then: function () {
         thenBlock.apply(thenBlock, slice(arguments))
         return this
@@ -5477,7 +5350,7 @@ var codegen = function createEnvironment () {
     var body = scope()
     var bodyToString = body.toString
 
-    var result = procedures[name] = extend$7(body, {
+    var result = procedures[name] = extend(body, {
       arg: arg,
       toString: function () {
         return join([
@@ -5517,17 +5390,6 @@ var codegen = function createEnvironment () {
     compile: compile
   }
 }
-
-var check$11 = check_1
-var createEnvironment$1 = codegen
-var loop$3 = loop$1
-var isTypedArray$9 = isTypedArray$1
-var isNDArray = isNdarray
-var isArrayLike$3 = isArrayLike$1
-var dynamic$4 = dynamic$1
-
-var primTypes$1 = require$$1$1
-var glTypes = require$$0$4
 
 // "cute" names for vector components
 var CUTE_COMPONENTS = 'xyzw'.split('')
@@ -5738,8 +5600,8 @@ var orientationType = {
 
 function isBufferArgs (x) {
   return Array.isArray(x) ||
-    isTypedArray$9(x) ||
-    isNDArray(x)
+    isTypedArray(x) ||
+    isNDArrayLike(x)
 }
 
 // Make sure viewport is processed first
@@ -5796,7 +5658,7 @@ function createDynamicDecl (dyn, append) {
 
 var SCOPE_DECL = new Declaration(false, false, false, function () {})
 
-var core = function reglCore (
+function reglCore (
   gl,
   stringStore,
   extensions,
@@ -5946,7 +5808,7 @@ var core = function reglCore (
   }
 
   var sharedConstants = {
-    primTypes: primTypes$1,
+    primTypes: primTypes,
     compareFuncs: compareFuncs,
     blendFuncs: blendFuncs,
     blendEquations: blendEquations,
@@ -5955,17 +5817,17 @@ var core = function reglCore (
     orientationType: orientationType
   }
 
-  check$11.optional(function () {
-    sharedState.isArrayLike = isArrayLike$3
+  check$1.optional(function () {
+    sharedState.isArrayLike = isArrayLike
   })
 
   if (extDrawBuffers) {
     sharedConstants.backBuffer = [GL_BACK]
-    sharedConstants.drawBuffer = loop$3(limits.maxDrawbuffers, function (i) {
+    sharedConstants.drawBuffer = loop(limits.maxDrawbuffers, function (i) {
       if (i === 0) {
         return [0]
       }
-      return loop$3(i, function (j) {
+      return loop(i, function (j) {
         return GL_COLOR_ATTACHMENT0$1 + j
       })
     })
@@ -5973,7 +5835,7 @@ var core = function reglCore (
 
   var drawCallCounter = 0
   function createREGLEnvironment () {
-    var env = createEnvironment$1()
+    var env = createEnvironment()
     var link = env.link
     var global = env.global
     env.id = drawCallCounter++
@@ -5990,9 +5852,9 @@ var core = function reglCore (
     })
 
     // Inject runtime assertion stuff for debug builds
-    check$11.optional(function () {
-      env.CHECK = link(check$11)
-      env.commandStr = check$11.guessCommand()
+    check$1.optional(function () {
+      env.CHECK = link(check$1)
+      env.commandStr = check$1.guessCommand()
       env.command = link(env.commandStr)
       env.assert = function (block, pred, message) {
         block(
@@ -6098,7 +5960,7 @@ var core = function reglCore (
       var framebuffer = staticOptions[S_FRAMEBUFFER]
       if (framebuffer) {
         framebuffer = framebufferState.getFramebuffer(framebuffer)
-        check$11.command(framebuffer, 'invalid framebuffer object')
+        check$1.command(framebuffer, 'invalid framebuffer object')
         return createStaticDecl(function (env, block) {
           var FRAMEBUFFER = env.link(framebuffer)
           var shared = env.shared
@@ -6145,7 +6007,7 @@ var core = function reglCore (
         var FRAMEBUFFER = scope.def(
           FRAMEBUFFER_STATE, '.getFramebuffer(', FRAMEBUFFER_FUNC, ')')
 
-        check$11.optional(function () {
+        check$1.optional(function () {
           env.assert(scope,
             '!' + FRAMEBUFFER_FUNC + '||' + FRAMEBUFFER,
             'invalid framebuffer object')
@@ -6181,7 +6043,7 @@ var core = function reglCore (
     function parseBox (param) {
       if (param in staticOptions) {
         var box = staticOptions[param]
-        check$11.commandType(box, 'object', 'invalid ' + param, env.commandStr)
+        check$1.commandType(box, 'object', 'invalid ' + param, env.commandStr)
 
         var isStatic = true
         var x = box.x | 0
@@ -6189,13 +6051,13 @@ var core = function reglCore (
         var w, h
         if ('width' in box) {
           w = box.width | 0
-          check$11.command(w >= 0, 'invalid ' + param, env.commandStr)
+          check$1.command(w >= 0, 'invalid ' + param, env.commandStr)
         } else {
           isStatic = false
         }
         if ('height' in box) {
           h = box.height | 0
-          check$11.command(h >= 0, 'invalid ' + param, env.commandStr)
+          check$1.command(h >= 0, 'invalid ' + param, env.commandStr)
         } else {
           isStatic = false
         }
@@ -6221,7 +6083,7 @@ var core = function reglCore (
         var result = createDynamicDecl(dynBox, function (env, scope) {
           var BOX = env.invoke(scope, dynBox)
 
-          check$11.optional(function () {
+          check$1.optional(function () {
             env.assert(scope,
               BOX + '&&typeof ' + BOX + '==="object"',
               'invalid ' + param)
@@ -6237,7 +6099,7 @@ var core = function reglCore (
             '"height" in ', BOX, '?', BOX, '.height|0:',
             '(', CONTEXT, '.', S_FRAMEBUFFER_HEIGHT, '-', BOX_Y, ')')
 
-          check$11.optional(function () {
+          check$1.optional(function () {
             env.assert(scope,
               BOX_W + '>=0&&' +
               BOX_H + '>=0',
@@ -6305,8 +6167,8 @@ var core = function reglCore (
     function parseShader (name) {
       if (name in staticOptions) {
         var id = stringStore.id(staticOptions[name])
-        check$11.optional(function () {
-          shaderState.shader(shaderType[name], id, check$11.guessCommand())
+        check$1.optional(function () {
+          shaderState.shader(shaderType[name], id, check$1.guessCommand())
         })
         var result = createStaticDecl(function () {
           return id
@@ -6318,7 +6180,7 @@ var core = function reglCore (
         return createDynamicDecl(dyn, function (env, scope) {
           var str = env.invoke(scope, dyn)
           var id = scope.def(env.shared.strings, '.id(', str, ')')
-          check$11.optional(function () {
+          check$1.optional(function () {
             scope(
               env.shared.shader, '.shader(',
               shaderType[name], ',',
@@ -6361,7 +6223,7 @@ var core = function reglCore (
             vertId = scope.def(SHADER_STATE, '.', S_VERT)
           }
           var progDef = SHADER_STATE + '.program(' + vertId + ',' + fragId
-          check$11.optional(function () {
+          check$1.optional(function () {
             progDef += ',' + env.command
           })
           return scope.def(progDef + ')')
@@ -6387,7 +6249,7 @@ var core = function reglCore (
           elements = elementState.getElements(elementState.create(elements, true))
         } else if (elements) {
           elements = elementState.getElements(elements)
-          check$11.command(elements, 'invalid elements', env.commandStr)
+          check$1.command(elements, 'invalid elements', env.commandStr)
         }
         var result = createStaticDecl(function (env, scope) {
           if (elements) {
@@ -6416,7 +6278,7 @@ var core = function reglCore (
             .then(elements, '=', ELEMENT_STATE, '.createStream(', elementDefn, ');')
             .else(elements, '=', ELEMENT_STATE, '.getElements(', elementDefn, ');')
 
-          check$11.optional(function () {
+          check$1.optional(function () {
             env.assert(ifte.else,
               '!' + elementDefn + '||' + elements,
               'invalid elements')
@@ -6441,19 +6303,19 @@ var core = function reglCore (
     function parsePrimitive () {
       if (S_PRIMITIVE in staticOptions) {
         var primitive = staticOptions[S_PRIMITIVE]
-        check$11.commandParameter(primitive, primTypes$1, 'invalid primitve', env.commandStr)
+        check$1.commandParameter(primitive, primTypes, 'invalid primitve', env.commandStr)
         return createStaticDecl(function (env, scope) {
-          return primTypes$1[primitive]
+          return primTypes[primitive]
         })
       } else if (S_PRIMITIVE in dynamicOptions) {
         var dynPrimitive = dynamicOptions[S_PRIMITIVE]
         return createDynamicDecl(dynPrimitive, function (env, scope) {
           var PRIM_TYPES = env.constants.primTypes
           var prim = env.invoke(scope, dynPrimitive)
-          check$11.optional(function () {
+          check$1.optional(function () {
             env.assert(scope,
               prim + ' in ' + PRIM_TYPES,
-              'invalid primitive, must be one of ' + Object.keys(primTypes$1))
+              'invalid primitive, must be one of ' + Object.keys(primTypes))
           })
           return scope.def(PRIM_TYPES, '[', prim, ']')
         })
@@ -6485,7 +6347,7 @@ var core = function reglCore (
     function parseParam (param, isOffset) {
       if (param in staticOptions) {
         var value = staticOptions[param] | 0
-        check$11.command(!isOffset || value >= 0, 'invalid ' + param, env.commandStr)
+        check$1.command(!isOffset || value >= 0, 'invalid ' + param, env.commandStr)
         return createStaticDecl(function (env, scope) {
           if (isOffset) {
             env.OFFSET = value
@@ -6498,7 +6360,7 @@ var core = function reglCore (
           var result = env.invoke(scope, dynValue)
           if (isOffset) {
             env.OFFSET = result
-            check$11.optional(function () {
+            check$1.optional(function () {
               env.assert(scope,
                 result + '>=0',
                 'invalid ' + param)
@@ -6520,7 +6382,7 @@ var core = function reglCore (
     function parseVertCount () {
       if (S_COUNT in staticOptions) {
         var count = staticOptions[S_COUNT] | 0
-        check$11.command(
+        check$1.command(
           typeof count === 'number' && count >= 0, 'invalid vertex count', env.commandStr)
         return createStaticDecl(function () {
           return count
@@ -6529,7 +6391,7 @@ var core = function reglCore (
         var dynCount = dynamicOptions[S_COUNT]
         return createDynamicDecl(dynCount, function (env, scope) {
           var result = env.invoke(scope, dynCount)
-          check$11.optional(function () {
+          check$1.optional(function () {
             env.assert(scope,
               'typeof ' + result + '==="number"&&' +
               result + '>=0&&' +
@@ -6550,7 +6412,7 @@ var core = function reglCore (
                   var result = scope.def(
                     env.ELEMENTS, '.vertCount-', env.OFFSET)
 
-                  check$11.optional(function () {
+                  check$1.optional(function () {
                     env.assert(scope,
                       result + '>=0',
                       'invalid vertex offset/element buffer too small')
@@ -6567,7 +6429,7 @@ var core = function reglCore (
             var result = createStaticDecl(function () {
               return -1
             })
-            check$11.optional(function () {
+            check$1.optional(function () {
               result.MISSING = true
             })
             return result
@@ -6585,7 +6447,7 @@ var core = function reglCore (
               }
               return scope.def(elements, '?', elements, '.vertCount:-1')
             })
-          check$11.optional(function () {
+          check$1.optional(function () {
             variable.DYNAMIC = true
           })
           return variable
@@ -6639,11 +6501,11 @@ var core = function reglCore (
         case S_DEPTH_MASK:
           return parseParam(
             function (value) {
-              check$11.commandType(value, 'boolean', prop, env.commandStr)
+              check$1.commandType(value, 'boolean', prop, env.commandStr)
               return value
             },
             function (env, scope, value) {
-              check$11.optional(function () {
+              check$1.optional(function () {
                 env.assert(scope,
                   'typeof ' + value + '==="boolean"',
                   'invalid flag ' + prop, env.commandStr)
@@ -6654,12 +6516,12 @@ var core = function reglCore (
         case S_DEPTH_FUNC:
           return parseParam(
             function (value) {
-              check$11.commandParameter(value, compareFuncs, 'invalid ' + prop, env.commandStr)
+              check$1.commandParameter(value, compareFuncs, 'invalid ' + prop, env.commandStr)
               return compareFuncs[value]
             },
             function (env, scope, value) {
               var COMPARE_FUNCS = env.constants.compareFuncs
-              check$11.optional(function () {
+              check$1.optional(function () {
                 env.assert(scope,
                   value + ' in ' + COMPARE_FUNCS,
                   'invalid ' + prop + ', must be one of ' + Object.keys(compareFuncs))
@@ -6670,8 +6532,8 @@ var core = function reglCore (
         case S_DEPTH_RANGE:
           return parseParam(
             function (value) {
-              check$11.command(
-                isArrayLike$3(value) &&
+              check$1.command(
+                isArrayLike(value) &&
                 value.length === 2 &&
                 typeof value[0] === 'number' &&
                 typeof value[1] === 'number' &&
@@ -6681,7 +6543,7 @@ var core = function reglCore (
               return value
             },
             function (env, scope, value) {
-              check$11.optional(function () {
+              check$1.optional(function () {
                 env.assert(scope,
                   env.shared.isArrayLike + '(' + value + ')&&' +
                   value + '.length===2&&' +
@@ -6699,17 +6561,17 @@ var core = function reglCore (
         case S_BLEND_FUNC:
           return parseParam(
             function (value) {
-              check$11.commandType(value, 'object', 'blend.func', env.commandStr)
+              check$1.commandType(value, 'object', 'blend.func', env.commandStr)
               var srcRGB = ('srcRGB' in value ? value.srcRGB : value.src)
               var srcAlpha = ('srcAlpha' in value ? value.srcAlpha : value.src)
               var dstRGB = ('dstRGB' in value ? value.dstRGB : value.dst)
               var dstAlpha = ('dstAlpha' in value ? value.dstAlpha : value.dst)
-              check$11.commandParameter(srcRGB, blendFuncs, param + '.srcRGB', env.commandStr)
-              check$11.commandParameter(srcAlpha, blendFuncs, param + '.srcAlpha', env.commandStr)
-              check$11.commandParameter(dstRGB, blendFuncs, param + '.dstRGB', env.commandStr)
-              check$11.commandParameter(dstAlpha, blendFuncs, param + '.dstAlpha', env.commandStr)
+              check$1.commandParameter(srcRGB, blendFuncs, param + '.srcRGB', env.commandStr)
+              check$1.commandParameter(srcAlpha, blendFuncs, param + '.srcAlpha', env.commandStr)
+              check$1.commandParameter(dstRGB, blendFuncs, param + '.dstRGB', env.commandStr)
+              check$1.commandParameter(dstAlpha, blendFuncs, param + '.dstAlpha', env.commandStr)
 
-              check$11.command(
+              check$1.command(
                 (invalidBlendCombinations.indexOf(srcRGB + ', ' + dstRGB) === -1),
                 'unallowed blending combination (srcRGB, dstRGB) = (' + srcRGB + ', ' + dstRGB + ')', env.commandStr)
 
@@ -6723,7 +6585,7 @@ var core = function reglCore (
             function (env, scope, value) {
               var BLEND_FUNCS = env.constants.blendFuncs
 
-              check$11.optional(function () {
+              check$1.optional(function () {
                 env.assert(scope,
                   value + '&&typeof ' + value + '==="object"',
                   'invalid blend func, must be an object')
@@ -6735,7 +6597,7 @@ var core = function reglCore (
                   '?', value, '.', prefix, suffix,
                   ':', value, '.', prefix)
 
-                check$11.optional(function () {
+                check$1.optional(function () {
                   env.assert(scope,
                     func + ' in ' + BLEND_FUNCS,
                     'invalid ' + prop + '.' + prefix + suffix + ', must be one of ' + Object.keys(blendFuncs))
@@ -6747,7 +6609,7 @@ var core = function reglCore (
               var srcRGB = read('src', 'RGB')
               var dstRGB = read('dst', 'RGB')
 
-              check$11.optional(function () {
+              check$1.optional(function () {
                 var INVALID_BLEND_COMBINATIONS = env.constants.invalidBlendCombinations
 
                 env.assert(scope,
@@ -6769,22 +6631,22 @@ var core = function reglCore (
           return parseParam(
             function (value) {
               if (typeof value === 'string') {
-                check$11.commandParameter(value, blendEquations, 'invalid ' + prop, env.commandStr)
+                check$1.commandParameter(value, blendEquations, 'invalid ' + prop, env.commandStr)
                 return [
                   blendEquations[value],
                   blendEquations[value]
                 ]
               } else if (typeof value === 'object') {
-                check$11.commandParameter(
+                check$1.commandParameter(
                   value.rgb, blendEquations, prop + '.rgb', env.commandStr)
-                check$11.commandParameter(
+                check$1.commandParameter(
                   value.alpha, blendEquations, prop + '.alpha', env.commandStr)
                 return [
                   blendEquations[value.rgb],
                   blendEquations[value.alpha]
                 ]
               } else {
-                check$11.commandRaise('invalid blend.equation', env.commandStr)
+                check$1.commandRaise('invalid blend.equation', env.commandStr)
               }
             },
             function (env, scope, value) {
@@ -6795,7 +6657,7 @@ var core = function reglCore (
 
               var ifte = env.cond('typeof ', value, '==="string"')
 
-              check$11.optional(function () {
+              check$1.optional(function () {
                 function checkProp (block, name, value) {
                   env.assert(block,
                     value + ' in ' + BLEND_EQUATIONS,
@@ -6824,22 +6686,22 @@ var core = function reglCore (
         case S_BLEND_COLOR:
           return parseParam(
             function (value) {
-              check$11.command(
-                isArrayLike$3(value) &&
+              check$1.command(
+                isArrayLike(value) &&
                 value.length === 4,
                 'blend.color must be a 4d array', env.commandStr)
-              return loop$3(4, function (i) {
+              return loop(4, function (i) {
                 return +value[i]
               })
             },
             function (env, scope, value) {
-              check$11.optional(function () {
+              check$1.optional(function () {
                 env.assert(scope,
                   env.shared.isArrayLike + '(' + value + ')&&' +
                   value + '.length===4',
                   'blend.color must be a 4d array')
               })
-              return loop$3(4, function (i) {
+              return loop(4, function (i) {
                 return scope.def('+', value, '[', i, ']')
               })
             })
@@ -6847,11 +6709,11 @@ var core = function reglCore (
         case S_STENCIL_MASK:
           return parseParam(
             function (value) {
-              check$11.commandType(value, 'number', param, env.commandStr)
+              check$1.commandType(value, 'number', param, env.commandStr)
               return value | 0
             },
             function (env, scope, value) {
-              check$11.optional(function () {
+              check$1.optional(function () {
                 env.assert(scope,
                   'typeof ' + value + '==="number"',
                   'invalid stencil.mask')
@@ -6862,13 +6724,13 @@ var core = function reglCore (
         case S_STENCIL_FUNC:
           return parseParam(
             function (value) {
-              check$11.commandType(value, 'object', param, env.commandStr)
+              check$1.commandType(value, 'object', param, env.commandStr)
               var cmp = value.cmp || 'keep'
               var ref = value.ref || 0
               var mask = 'mask' in value ? value.mask : -1
-              check$11.commandParameter(cmp, compareFuncs, prop + '.cmp', env.commandStr)
-              check$11.commandType(ref, 'number', prop + '.ref', env.commandStr)
-              check$11.commandType(mask, 'number', prop + '.mask', env.commandStr)
+              check$1.commandParameter(cmp, compareFuncs, prop + '.cmp', env.commandStr)
+              check$1.commandType(ref, 'number', prop + '.ref', env.commandStr)
+              check$1.commandType(mask, 'number', prop + '.mask', env.commandStr)
               return [
                 compareFuncs[cmp],
                 ref,
@@ -6877,7 +6739,7 @@ var core = function reglCore (
             },
             function (env, scope, value) {
               var COMPARE_FUNCS = env.constants.compareFuncs
-              check$11.optional(function () {
+              check$1.optional(function () {
                 function assert () {
                   env.assert(scope,
                     Array.prototype.join.call(arguments, ''),
@@ -6902,13 +6764,13 @@ var core = function reglCore (
         case S_STENCIL_OPBACK:
           return parseParam(
             function (value) {
-              check$11.commandType(value, 'object', param, env.commandStr)
+              check$1.commandType(value, 'object', param, env.commandStr)
               var fail = value.fail || 'keep'
               var zfail = value.zfail || 'keep'
               var zpass = value.zpass || 'keep'
-              check$11.commandParameter(fail, stencilOps, prop + '.fail', env.commandStr)
-              check$11.commandParameter(zfail, stencilOps, prop + '.zfail', env.commandStr)
-              check$11.commandParameter(zpass, stencilOps, prop + '.zpass', env.commandStr)
+              check$1.commandParameter(fail, stencilOps, prop + '.fail', env.commandStr)
+              check$1.commandParameter(zfail, stencilOps, prop + '.zfail', env.commandStr)
+              check$1.commandParameter(zpass, stencilOps, prop + '.zpass', env.commandStr)
               return [
                 prop === S_STENCIL_OPBACK ? GL_BACK : GL_FRONT,
                 stencilOps[fail],
@@ -6919,14 +6781,14 @@ var core = function reglCore (
             function (env, scope, value) {
               var STENCIL_OPS = env.constants.stencilOps
 
-              check$11.optional(function () {
+              check$1.optional(function () {
                 env.assert(scope,
                   value + '&&typeof ' + value + '==="object"',
                   'invalid ' + prop)
               })
 
               function read (name) {
-                check$11.optional(function () {
+                check$1.optional(function () {
                   env.assert(scope,
                     '!("' + name + '" in ' + value + ')||' +
                     '(' + value + '.' + name + ' in ' + STENCIL_OPS + ')',
@@ -6950,15 +6812,15 @@ var core = function reglCore (
         case S_POLYGON_OFFSET_OFFSET:
           return parseParam(
             function (value) {
-              check$11.commandType(value, 'object', param, env.commandStr)
+              check$1.commandType(value, 'object', param, env.commandStr)
               var factor = value.factor | 0
               var units = value.units | 0
-              check$11.commandType(factor, 'number', param + '.factor', env.commandStr)
-              check$11.commandType(units, 'number', param + '.units', env.commandStr)
+              check$1.commandType(factor, 'number', param + '.factor', env.commandStr)
+              check$1.commandType(units, 'number', param + '.units', env.commandStr)
               return [factor, units]
             },
             function (env, scope, value) {
-              check$11.optional(function () {
+              check$1.optional(function () {
                 env.assert(scope,
                   value + '&&typeof ' + value + '==="object"',
                   'invalid ' + prop)
@@ -6979,11 +6841,11 @@ var core = function reglCore (
               } else if (value === 'back') {
                 face = GL_BACK
               }
-              check$11.command(!!face, param, env.commandStr)
+              check$1.command(!!face, param, env.commandStr)
               return face
             },
             function (env, scope, value) {
-              check$11.optional(function () {
+              check$1.optional(function () {
                 env.assert(scope,
                   value + '==="front"||' +
                   value + '==="back"',
@@ -6995,7 +6857,7 @@ var core = function reglCore (
         case S_LINE_WIDTH:
           return parseParam(
             function (value) {
-              check$11.command(
+              check$1.command(
                 typeof value === 'number' &&
                 value >= limits.lineWidthDims[0] &&
                 value <= limits.lineWidthDims[1],
@@ -7004,7 +6866,7 @@ var core = function reglCore (
               return value
             },
             function (env, scope, value) {
-              check$11.optional(function () {
+              check$1.optional(function () {
                 env.assert(scope,
                   'typeof ' + value + '==="number"&&' +
                   value + '>=' + limits.lineWidthDims[0] + '&&' +
@@ -7018,11 +6880,11 @@ var core = function reglCore (
         case S_FRONT_FACE:
           return parseParam(
             function (value) {
-              check$11.commandParameter(value, orientationType, param, env.commandStr)
+              check$1.commandParameter(value, orientationType, param, env.commandStr)
               return orientationType[value]
             },
             function (env, scope, value) {
-              check$11.optional(function () {
+              check$1.optional(function () {
                 env.assert(scope,
                   value + '==="cw"||' +
                   value + '==="ccw"',
@@ -7034,19 +6896,19 @@ var core = function reglCore (
         case S_COLOR_MASK:
           return parseParam(
             function (value) {
-              check$11.command(
-                isArrayLike$3(value) && value.length === 4,
+              check$1.command(
+                isArrayLike(value) && value.length === 4,
                 'color.mask must be length 4 array', env.commandStr)
               return value.map(function (v) { return !!v })
             },
             function (env, scope, value) {
-              check$11.optional(function () {
+              check$1.optional(function () {
                 env.assert(scope,
                   env.shared.isArrayLike + '(' + value + ')&&' +
                   value + '.length===4',
                   'invalid color.mask')
               })
-              return loop$3(4, function (i) {
+              return loop(4, function (i) {
                 return '!!' + value + '[' + i + ']'
               })
             })
@@ -7054,17 +6916,17 @@ var core = function reglCore (
         case S_SAMPLE_COVERAGE:
           return parseParam(
             function (value) {
-              check$11.command(typeof value === 'object' && value, param, env.commandStr)
+              check$1.command(typeof value === 'object' && value, param, env.commandStr)
               var sampleValue = 'value' in value ? value.value : 1
               var sampleInvert = !!value.invert
-              check$11.command(
+              check$1.command(
                 typeof sampleValue === 'number' &&
                 sampleValue >= 0 && sampleValue <= 1,
                 'sample.coverage.value must be a number between 0 and 1', env.commandStr)
               return [sampleValue, sampleInvert]
             },
             function (env, scope, value) {
-              check$11.optional(function () {
+              check$1.optional(function () {
                 env.assert(scope,
                   value + '&&typeof ' + value + '==="object"',
                   'invalid sample.coverage')
@@ -7103,19 +6965,19 @@ var core = function reglCore (
           })
         } else if (reglType === 'framebuffer' ||
                    reglType === 'framebufferCube') {
-          check$11.command(value.color.length > 0,
+          check$1.command(value.color.length > 0,
             'missing color attachment for framebuffer sent to uniform "' + name + '"', env.commandStr)
           result = createStaticDecl(function (env) {
             return env.link(value.color[0])
           })
         } else {
-          check$11.commandRaise('invalid data for uniform "' + name + '"', env.commandStr)
+          check$1.commandRaise('invalid data for uniform "' + name + '"', env.commandStr)
         }
-      } else if (isArrayLike$3(value)) {
+      } else if (isArrayLike(value)) {
         result = createStaticDecl(function (env) {
           var ITEM = env.global.def('[',
-            loop$3(value.length, function (i) {
-              check$11.command(
+            loop(value.length, function (i) {
+              check$1.command(
                 typeof value[i] === 'number' ||
                 typeof value[i] === 'boolean',
                 'invalid uniform ' + name, env.commandStr)
@@ -7124,7 +6986,7 @@ var core = function reglCore (
           return ITEM
         })
       } else {
-        check$11.commandRaise('invalid or missing data for uniform "' + name + '"', env.commandStr)
+        check$1.commandRaise('invalid or missing data for uniform "' + name + '"', env.commandStr)
       }
       result.value = value
       UNIFORMS[name] = result
@@ -7163,7 +7025,7 @@ var core = function reglCore (
           record.buffer = buffer
           record.type = 0
         } else {
-          check$11.command(typeof value === 'object' && value,
+          check$1.command(typeof value === 'object' && value,
             'invalid data for attribute ' + attribute, env.commandStr)
           if (value.constant) {
             var constant = value.constant
@@ -7172,8 +7034,8 @@ var core = function reglCore (
             if (typeof constant === 'number') {
               record.x = constant
             } else {
-              check$11.command(
-                isArrayLike$3(constant) &&
+              check$1.command(
+                isArrayLike(constant) &&
                 constant.length > 0 &&
                 constant.length <= 4,
                 'invalid constant for attribute ' + attribute, env.commandStr)
@@ -7190,25 +7052,25 @@ var core = function reglCore (
             } else {
               buffer = bufferState.getBuffer(value.buffer)
             }
-            check$11.command(!!buffer, 'missing buffer for attribute "' + attribute + '"', env.commandStr)
+            check$1.command(!!buffer, 'missing buffer for attribute "' + attribute + '"', env.commandStr)
 
             var offset = value.offset | 0
-            check$11.command(offset >= 0,
+            check$1.command(offset >= 0,
               'invalid offset for attribute "' + attribute + '"', env.commandStr)
 
             var stride = value.stride | 0
-            check$11.command(stride >= 0 && stride < 256,
+            check$1.command(stride >= 0 && stride < 256,
               'invalid stride for attribute "' + attribute + '", must be integer betweeen [0, 255]', env.commandStr)
 
             var size = value.size | 0
-            check$11.command(!('size' in value) || (size > 0 && size <= 4),
+            check$1.command(!('size' in value) || (size > 0 && size <= 4),
               'invalid size for attribute "' + attribute + '", must be 1,2,3,4', env.commandStr)
 
             var normalized = !!value.normalized
 
             var type = 0
             if ('type' in value) {
-              check$11.commandParameter(
+              check$1.commandParameter(
                 value.type, glTypes,
                 'invalid type for attribute ' + attribute, env.commandStr)
               type = glTypes[value.type]
@@ -7216,13 +7078,13 @@ var core = function reglCore (
 
             var divisor = value.divisor | 0
             if ('divisor' in value) {
-              check$11.command(divisor === 0 || extInstancing,
+              check$1.command(divisor === 0 || extInstancing,
                 'cannot specify divisor for attribute "' + attribute + '", instancing not supported', env.commandStr)
-              check$11.command(divisor >= 0,
+              check$1.command(divisor >= 0,
                 'invalid divisor for attribute "' + attribute + '"', env.commandStr)
             }
 
-            check$11.optional(function () {
+            check$1.optional(function () {
               var command = env.commandStr
 
               var VALID_KEYS = [
@@ -7236,7 +7098,7 @@ var core = function reglCore (
               ]
 
               Object.keys(value).forEach(function (prop) {
-                check$11.command(
+                check$1.command(
                   VALID_KEYS.indexOf(prop) >= 0,
                   'unknown parameter "' + prop + '" for attribute pointer "' + attribute + '" (valid parameters are ' + VALID_KEYS + ')',
                   command)
@@ -7287,7 +7149,7 @@ var core = function reglCore (
         var BUFFER_STATE = shared.buffer
 
         // Perform validation on attribute
-        check$11.optional(function () {
+        check$1.optional(function () {
           env.assert(block,
             VALUE + '&&(typeof ' + VALUE + '==="object"||typeof ' +
             VALUE + '==="function")&&(' +
@@ -7399,7 +7261,7 @@ var core = function reglCore (
     var staticOptions = options.static
     var dynamicOptions = options.dynamic
 
-    check$11.optional(function () {
+    check$1.optional(function () {
       var KEY_NAMES = [
         S_FRAMEBUFFER,
         S_VERT,
@@ -7414,7 +7276,7 @@ var core = function reglCore (
 
       function checkKeys (dict) {
         Object.keys(dict).forEach(function (key) {
-          check$11.command(
+          check$1.command(
             KEY_NAMES.indexOf(key) >= 0,
             'unknown parameter "' + key + '"',
             env.commandStr)
@@ -7549,7 +7411,7 @@ var core = function reglCore (
       if (param in NEXT_VARS) {
         NEXT = NEXT_VARS[param]
         CURRENT = CURRENT_VARS[param]
-        var parts = loop$3(currentState[param].length, function (i) {
+        var parts = loop(currentState[param].length, function (i) {
           return block.def(NEXT, '[', i, ']')
         })
         block(env.cond(parts.map(function (p, i) {
@@ -7608,7 +7470,7 @@ var core = function reglCore (
             .else(GL, '.disable(', flag, ');'))
         }
         scope(CURRENT_STATE, '.', param, '=', variable, ';')
-      } else if (isArrayLike$3(variable)) {
+      } else if (isArrayLike(variable)) {
         var CURRENT = CURRENT_VARS[param]
         scope(
           GL, '.', GL_VARIABLES[param], '(', variable, ');',
@@ -7840,7 +7702,7 @@ var core = function reglCore (
           return
         }
         var scopeAttrib = env.scopeAttrib(name)
-        check$11.optional(function () {
+        check$1.optional(function () {
           env.assert(scope,
             scopeAttrib + '.state',
             'missing attribute ' + name)
@@ -7875,11 +7737,11 @@ var core = function reglCore (
         }
         if (isStatic(arg)) {
           var value = arg.value
-          check$11.command(
+          check$1.command(
             value !== null && typeof value !== 'undefined',
             'missing uniform "' + name + '"', env.commandStr)
           if (type === GL_SAMPLER_2D || type === GL_SAMPLER_CUBE) {
-            check$11.command(
+            check$1.command(
               typeof value === 'function' &&
               ((type === GL_SAMPLER_2D &&
                 (value._reglType === 'texture2d' ||
@@ -7895,10 +7757,10 @@ var core = function reglCore (
             type === GL_FLOAT_MAT2 ||
             type === GL_FLOAT_MAT3 ||
             type === GL_FLOAT_MAT4) {
-            check$11.optional(function () {
-              check$11.command(isArrayLike$3(value),
+            check$1.optional(function () {
+              check$1.command(isArrayLike(value),
                 'invalid matrix for uniform ' + name, env.commandStr)
-              check$11.command(
+              check$1.command(
                 (type === GL_FLOAT_MAT2 && value.length === 4) ||
                 (type === GL_FLOAT_MAT3 && value.length === 9) ||
                 (type === GL_FLOAT_MAT4 && value.length === 16),
@@ -7918,74 +7780,74 @@ var core = function reglCore (
           } else {
             switch (type) {
               case GL_FLOAT$7:
-                check$11.commandType(value, 'number', 'uniform ' + name, env.commandStr)
+                check$1.commandType(value, 'number', 'uniform ' + name, env.commandStr)
                 infix = '1f'
                 break
               case GL_FLOAT_VEC2:
-                check$11.command(
-                  isArrayLike$3(value) && value.length === 2,
+                check$1.command(
+                  isArrayLike(value) && value.length === 2,
                   'uniform ' + name, env.commandStr)
                 infix = '2f'
                 break
               case GL_FLOAT_VEC3:
-                check$11.command(
-                  isArrayLike$3(value) && value.length === 3,
+                check$1.command(
+                  isArrayLike(value) && value.length === 3,
                   'uniform ' + name, env.commandStr)
                 infix = '3f'
                 break
               case GL_FLOAT_VEC4:
-                check$11.command(
-                  isArrayLike$3(value) && value.length === 4,
+                check$1.command(
+                  isArrayLike(value) && value.length === 4,
                   'uniform ' + name, env.commandStr)
                 infix = '4f'
                 break
               case GL_BOOL:
-                check$11.commandType(value, 'boolean', 'uniform ' + name, env.commandStr)
+                check$1.commandType(value, 'boolean', 'uniform ' + name, env.commandStr)
                 infix = '1i'
                 break
               case GL_INT$3:
-                check$11.commandType(value, 'number', 'uniform ' + name, env.commandStr)
+                check$1.commandType(value, 'number', 'uniform ' + name, env.commandStr)
                 infix = '1i'
                 break
               case GL_BOOL_VEC2:
-                check$11.command(
-                  isArrayLike$3(value) && value.length === 2,
+                check$1.command(
+                  isArrayLike(value) && value.length === 2,
                   'uniform ' + name, env.commandStr)
                 infix = '2i'
                 break
               case GL_INT_VEC2:
-                check$11.command(
-                  isArrayLike$3(value) && value.length === 2,
+                check$1.command(
+                  isArrayLike(value) && value.length === 2,
                   'uniform ' + name, env.commandStr)
                 infix = '2i'
                 break
               case GL_BOOL_VEC3:
-                check$11.command(
-                  isArrayLike$3(value) && value.length === 3,
+                check$1.command(
+                  isArrayLike(value) && value.length === 3,
                   'uniform ' + name, env.commandStr)
                 infix = '3i'
                 break
               case GL_INT_VEC3:
-                check$11.command(
-                  isArrayLike$3(value) && value.length === 3,
+                check$1.command(
+                  isArrayLike(value) && value.length === 3,
                   'uniform ' + name, env.commandStr)
                 infix = '3i'
                 break
               case GL_BOOL_VEC4:
-                check$11.command(
-                  isArrayLike$3(value) && value.length === 4,
+                check$1.command(
+                  isArrayLike(value) && value.length === 4,
                   'uniform ' + name, env.commandStr)
                 infix = '4i'
                 break
               case GL_INT_VEC4:
-                check$11.command(
-                  isArrayLike$3(value) && value.length === 4,
+                check$1.command(
+                  isArrayLike(value) && value.length === 4,
                   'uniform ' + name, env.commandStr)
                 infix = '4i'
                 break
             }
             scope(GL, '.uniform', infix, '(', LOCATION, ',',
-              isArrayLike$3(value) ? Array.prototype.slice.call(value) : value,
+              isArrayLike(value) ? Array.prototype.slice.call(value) : value,
               ');')
           }
           continue
@@ -8012,7 +7874,7 @@ var core = function reglCore (
       }
 
       // perform type validation
-      check$11.optional(function () {
+      check$1.optional(function () {
         function check (pred, message) {
           env.assert(scope, pred,
             'bad data or missing for uniform "' + name + '".  ' + message)
@@ -8163,11 +8025,11 @@ var core = function reglCore (
         var STORAGE = env.global.def('new Float32Array(', matSize, ')')
         scope(
           'false,(Array.isArray(', VALUE, ')||', VALUE, ' instanceof Float32Array)?', VALUE, ':(',
-          loop$3(matSize, function (i) {
+          loop(matSize, function (i) {
             return STORAGE + '[' + i + ']=' + VALUE + '[' + i + ']'
           }), ',', STORAGE, ')')
       } else if (unroll > 1) {
-        scope(loop$3(unroll, function (i) {
+        scope(loop(unroll, function (i) {
           return VALUE + '[' + i + ']'
         }))
       } else {
@@ -8213,7 +8075,7 @@ var core = function reglCore (
           scope = inner
         }
         COUNT = defn.append(env, scope)
-        check$11.optional(function () {
+        check$1.optional(function () {
           if (defn.MISSING) {
             env.assert(outer, 'false', 'missing vertex count')
           }
@@ -8223,7 +8085,7 @@ var core = function reglCore (
         })
       } else {
         COUNT = scope.def(DRAW_STATE, '.', S_COUNT)
-        check$11.optional(function () {
+        check$1.optional(function () {
           env.assert(scope, COUNT + '>=0', 'missing vertex count')
         })
       }
@@ -8345,7 +8207,7 @@ var core = function reglCore (
   function createBody (emitBody, parentEnv, args, program, count) {
     var env = createREGLEnvironment()
     var scope = env.proc('body', count)
-    check$11.optional(function () {
+    check$1.optional(function () {
       env.commandStr = parentEnv.commandStr
       env.command = env.link(parentEnv.commandStr)
     })
@@ -8613,7 +8475,7 @@ var core = function reglCore (
     sortState(Object.keys(args.state)).forEach(function (name) {
       var defn = args.state[name]
       var value = defn.append(env, scope)
-      if (isArrayLike$3(value)) {
+      if (isArrayLike(value)) {
         value.forEach(function (v, i) {
           scope.set(env.next[name], '[' + i + ']', v)
         })
@@ -8666,12 +8528,12 @@ var core = function reglCore (
   }
 
   function isDynamicObject (object) {
-    if (typeof object !== 'object' || isArrayLike$3(object)) {
+    if (typeof object !== 'object' || isArrayLike(object)) {
       return
     }
     var props = Object.keys(object)
     for (var i = 0; i < props.length; ++i) {
-      if (dynamic$4.isDynamic(object[props[i]])) {
+      if (isDynamic(object[props[i]])) {
         return true
       }
     }
@@ -8692,9 +8554,9 @@ var core = function reglCore (
     var objectRef = env.global.def('{}')
     keys.forEach(function (key) {
       var value = object[key]
-      if (dynamic$4.isDynamic(value)) {
+      if (isDynamic(value)) {
         if (typeof value === 'function') {
-          value = object[key] = dynamic$4.unbox(value)
+          value = object[key] = unbox(value)
         }
         var deps = createDynamicDecl(value, null)
         thisDep = thisDep || deps.thisDep
@@ -8725,7 +8587,7 @@ var core = function reglCore (
     function appendBlock (env, block) {
       keys.forEach(function (key) {
         var value = object[key]
-        if (!dynamic$4.isDynamic(value)) {
+        if (!isDynamic(value)) {
           return
         }
         var ref = env.invoke(block, value)
@@ -8733,7 +8595,7 @@ var core = function reglCore (
       })
     }
 
-    options.dynamic[name] = new dynamic$4.DynamicVariable(DYN_THUNK, {
+    options.dynamic[name] = new DynamicVariable(DYN_THUNK, {
       thisDep: thisDep,
       contextDep: contextDep,
       propDep: propDep,
@@ -8857,19 +8719,19 @@ var core = function reglCore (
         var NEXT, CURRENT
         var block = env.block()
         block(GL, '.', func, '(')
-        if (isArrayLike$3(init)) {
+        if (isArrayLike(init)) {
           var n = init.length
           NEXT = env.global.def(NEXT_STATE, '.', name)
           CURRENT = env.global.def(CURRENT_STATE, '.', name)
           block(
-            loop$3(n, function (i) {
+            loop(n, function (i) {
               return NEXT + '[' + i + ']'
             }), ');',
-            loop$3(n, function (i) {
+            loop(n, function (i) {
               return CURRENT + '[' + i + ']=' + NEXT + '[' + i + '];'
             }).join(''))
           poll(
-            'if(', loop$3(n, function (i) {
+            'if(', loop(n, function (i) {
               return NEXT + '[' + i + ']!==' + CURRENT + '[' + i + ']'
             }).join('||'), '){',
             block,
@@ -8894,7 +8756,7 @@ var core = function reglCore (
   }
 }
 
-var stats = function stats () {
+function stats () {
   return {
     bufferCount: 0,
     elementsCount: 0,
@@ -8912,7 +8774,7 @@ var GL_QUERY_RESULT_EXT = 0x8866
 var GL_QUERY_RESULT_AVAILABLE_EXT = 0x8867
 var GL_TIME_ELAPSED_EXT = 0x88BF
 
-var timer = function (gl, extensions) {
+function timer (gl, extensions) {
   var extTimer = extensions.ext_disjoint_timer_query
 
   if (!extTimer) {
@@ -9047,27 +8909,6 @@ var timer = function (gl, extensions) {
   }
 }
 
-var check = check_1
-var extend = extend$2
-var dynamic = dynamic$1
-var raf = raf$1
-var clock = clock$1
-var createStringStore$1 = strings
-var initWebGL = webgl
-var wrapExtensions = extension
-var wrapLimits = limits
-var wrapBuffers = buffer
-var wrapElements = elements
-var wrapTextures = texture
-var wrapRenderbuffers = renderbuffer
-var wrapFramebuffers = framebuffer
-var wrapAttributes = attribute
-var wrapShaders = shader
-var wrapRead = read
-var createCore = core
-var createStats = stats
-var createTimer = timer
-
 var GL_COLOR_BUFFER_BIT = 16384
 var GL_DEPTH_BUFFER_BIT = 256
 var GL_STENCIL_BUFFER_BIT = 1024
@@ -9090,8 +8931,8 @@ function find (haystack, needle) {
   return -1
 }
 
-var regl = function wrapREGL (args) {
-  var config = initWebGL(args)
+function wrapREGL (args) {
+  var config = parseArgs(args)
   if (!config) {
     return null
   }
@@ -9100,15 +8941,15 @@ var regl = function wrapREGL (args) {
   var glAttributes = gl.getContextAttributes()
   var contextLost = gl.isContextLost()
 
-  var extensionState = wrapExtensions(gl, config)
+  var extensionState = createExtensionCache(gl, config)
   if (!extensionState) {
     return null
   }
 
-  var stringStore = createStringStore$1()
-  var stats$$1 = createStats()
+  var stringStore = createStringStore()
+  var stats$$1 = stats()
   var extensions = extensionState.extensions
-  var timer$$1 = createTimer(gl, extensions)
+  var timer$$1 = timer(gl, extensions)
 
   var START_TIME = clock()
   var WIDTH = gl.drawingBufferWidth
@@ -9134,33 +8975,33 @@ var regl = function wrapREGL (args) {
     instances: -1
   }
 
-  var limits$$1 = wrapLimits(gl, extensions)
-  var bufferState = wrapBuffers(gl, stats$$1, config)
-  var elementState = wrapElements(gl, extensions, bufferState, stats$$1)
-  var attributeState = wrapAttributes(
+  var limits$$1 = limits(gl, extensions)
+  var bufferState = wrapBufferState(gl, stats$$1, config)
+  var elementState = wrapElementsState(gl, extensions, bufferState, stats$$1)
+  var attributeState = wrapAttributeState(
     gl,
     extensions,
     limits$$1,
     bufferState,
     stringStore)
-  var shaderState = wrapShaders(gl, stringStore, stats$$1, config)
-  var textureState = wrapTextures(
+  var shaderState = wrapShaderState(gl, stringStore, stats$$1, config)
+  var textureState = createTextureSet(
     gl,
     extensions,
     limits$$1,
-    function () { core$$1.procs.poll() },
+    function () { core.procs.poll() },
     contextState,
     stats$$1,
     config)
   var renderbufferState = wrapRenderbuffers(gl, extensions, limits$$1, stats$$1, config)
-  var framebufferState = wrapFramebuffers(
+  var framebufferState = wrapFBOState(
     gl,
     extensions,
     limits$$1,
     textureState,
     renderbufferState,
     stats$$1)
-  var core$$1 = createCore(
+  var core = reglCore(
     gl,
     stringStore,
     extensions,
@@ -9176,14 +9017,14 @@ var regl = function wrapREGL (args) {
     contextState,
     timer$$1,
     config)
-  var readPixels = wrapRead(
+  var readPixels = wrapReadPixels(
     gl,
     framebufferState,
-    core$$1.procs.poll,
+    core.procs.poll,
     contextState,
     glAttributes, extensions)
 
-  var nextState = core$$1.next
+  var nextState = core.next
   var canvas = gl.canvas
 
   var rafCallbacks = []
@@ -9202,7 +9043,7 @@ var regl = function wrapREGL (args) {
     }
 
     // schedule next animation frame
-    activeRAF = raf.next(handleRAF)
+    activeRAF = raf$1.next(handleRAF)
 
     // poll for changes
     poll()
@@ -9226,13 +9067,13 @@ var regl = function wrapREGL (args) {
 
   function startRAF () {
     if (!activeRAF && rafCallbacks.length > 0) {
-      activeRAF = raf.next(handleRAF)
+      activeRAF = raf$1.next(handleRAF)
     }
   }
 
   function stopRAF () {
     if (activeRAF) {
-      raf.cancel(handleRAF)
+      raf$1.cancel(handleRAF)
       activeRAF = null
     }
   }
@@ -9271,7 +9112,7 @@ var regl = function wrapREGL (args) {
     }
 
     // refresh state
-    core$$1.procs.refresh()
+    core.procs.refresh()
 
     // restart RAF
     startRAF()
@@ -9313,8 +9154,8 @@ var regl = function wrapREGL (args) {
   }
 
   function compileProcedure (options) {
-    check(!!options, 'invalid args to regl({...})')
-    check.type(options, 'object', 'invalid args to regl({...})')
+    check$1(!!options, 'invalid args to regl({...})')
+    check$1.type(options, 'object', 'invalid args to regl({...})')
 
     function flattenNestedOptions (options) {
       var result = extend({}, options)
@@ -9352,8 +9193,8 @@ var regl = function wrapREGL (args) {
       var dynamicItems = {}
       Object.keys(object).forEach(function (option) {
         var value = object[option]
-        if (dynamic.isDynamic(value)) {
-          dynamicItems[option] = dynamic.unbox(value, option)
+        if (isDynamic(value)) {
+          dynamicItems[option] = unbox(value, option)
         } else {
           staticItems[option] = value
         }
@@ -9376,7 +9217,7 @@ var regl = function wrapREGL (args) {
       count: 0
     }
 
-    var compiled = core$$1.compile(opts, attributes, uniforms, context, stats$$1)
+    var compiled = core.compile(opts, attributes, uniforms, context, stats$$1)
 
     var draw = compiled.draw
     var batch = compiled.batch
@@ -9395,7 +9236,7 @@ var regl = function wrapREGL (args) {
     function REGLCommand (args, body) {
       var i
       if (contextLost) {
-        check.raise('context lost')
+        check$1.raise('context lost')
       }
       if (typeof args === 'function') {
         return scope.call(this, null, args, 0)
@@ -9432,12 +9273,12 @@ var regl = function wrapREGL (args) {
   }
 
   var setFBO = framebufferState.setFBO = compileProcedure({
-    framebuffer: dynamic.define.call(null, DYN_PROP, 'framebuffer')
+    framebuffer: defineDynamic.call(null, DYN_PROP, 'framebuffer')
   })
 
   function clearImpl (_, options) {
     var clearFlags = 0
-    core$$1.procs.poll()
+    core.procs.poll()
 
     var c = options.color
     if (c) {
@@ -9453,12 +9294,12 @@ var regl = function wrapREGL (args) {
       clearFlags |= GL_STENCIL_BUFFER_BIT
     }
 
-    check(!!clearFlags, 'called regl.clear with no buffer specified')
+    check$1(!!clearFlags, 'called regl.clear with no buffer specified')
     gl.clear(clearFlags)
   }
 
   function clear (options) {
-    check(
+    check$1(
       typeof options === 'object' && options,
       'regl.clear() takes an object as input')
     if ('framebuffer' in options) {
@@ -9478,7 +9319,7 @@ var regl = function wrapREGL (args) {
   }
 
   function frame (cb) {
-    check.type(cb, 'function', 'regl.frame() callback must be a function')
+    check$1.type(cb, 'function', 'regl.frame() callback must be a function')
     rafCallbacks.push(cb)
 
     function cancel () {
@@ -9486,7 +9327,7 @@ var regl = function wrapREGL (args) {
       // what if a user calls frame twice with the same callback...
       //
       var i = find(rafCallbacks, cb)
-      check(i >= 0, 'cannot cancel a frame twice')
+      check$1(i >= 0, 'cannot cancel a frame twice')
       function pendingCancel () {
         var index = find(rafCallbacks, pendingCancel)
         rafCallbacks[index] = rafCallbacks[rafCallbacks.length - 1]
@@ -9526,12 +9367,12 @@ var regl = function wrapREGL (args) {
     contextState.tick += 1
     contextState.time = now()
     pollViewport()
-    core$$1.procs.poll()
+    core.procs.poll()
   }
 
   function refresh () {
     pollViewport()
-    core$$1.procs.refresh()
+    core.procs.refresh()
     if (timer$$1) {
       timer$$1.update()
     }
@@ -9544,7 +9385,7 @@ var regl = function wrapREGL (args) {
   refresh()
 
   function addListener (event, callback) {
-    check.type(callback, 'function', 'listener callback must be a function')
+    check$1.type(callback, 'function', 'listener callback must be a function')
 
     var callbacks
     switch (event) {
@@ -9560,7 +9401,7 @@ var regl = function wrapREGL (args) {
         callbacks = destroyCallbacks
         break
       default:
-        check.raise('invalid event, must be one of frame,lost,restore,destroy')
+        check$1.raise('invalid event, must be one of frame,lost,restore,destroy')
     }
 
     callbacks.push(callback)
@@ -9582,9 +9423,9 @@ var regl = function wrapREGL (args) {
     clear: clear,
 
     // Short cuts for dynamic variables
-    prop: dynamic.define.bind(null, DYN_PROP),
-    context: dynamic.define.bind(null, DYN_CONTEXT),
-    this: dynamic.define.bind(null, DYN_STATE),
+    prop: defineDynamic.bind(null, DYN_PROP),
+    context: defineDynamic.bind(null, DYN_CONTEXT),
+    this: defineDynamic.bind(null, DYN_STATE),
 
     // executes an empty draw command
     draw: compileProcedure({}),
@@ -9644,6 +9485,6 @@ var regl = function wrapREGL (args) {
   return regl
 }
 
-return regl;
+return wrapREGL;
 
 })));
