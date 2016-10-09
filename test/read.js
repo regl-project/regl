@@ -1,5 +1,5 @@
 var createContext = require('./util/create-context')
-var createREGL = require('../../regl')
+var createREGL = require('../dist/regl')
 var tape = require('tape')
 
 tape('read pixels', function (t) {
@@ -29,7 +29,13 @@ tape('read pixels', function (t) {
 
   function throws (name, args) {
     t.throws(function () {
-      regl.read.apply(regl, args)
+      try {
+        regl.read.apply(regl, args)
+      } catch (err) {
+        process.stdout.write('>>> ' + err.message + '\n')
+        process.stdout.write(err.stack + '\n')
+        throw err
+      }
     }, /\(regl\)/, name)
   }
 

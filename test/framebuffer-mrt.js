@@ -1,5 +1,5 @@
 var createContext = require('./util/create-context')
-var createREGL = require('../../regl')
+var createREGL = require('../dist/regl')
 var tape = require('tape')
 
 tape('framebuffer - multiple draw buffers', function (t) {
