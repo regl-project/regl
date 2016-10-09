@@ -81,7 +81,7 @@ function unbox (x, path) {
   return x
 }
 
-let raf
+var raf
 
 /* globals requestAnimationFrame, cancelAnimationFrame */
 if (typeof requestAnimationFrame === 'function' &&
