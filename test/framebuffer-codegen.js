@@ -1,5 +1,5 @@
 var createContext = require('./util/create-context')
-var createREGL = require('../../regl')
+var createREGL = require('../dist/regl')
 var extend = require('../lib/util/extend').default
 var tape = require('tape')
 
