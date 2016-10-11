@@ -1696,7 +1696,7 @@ A data source from an image can be one of the following types:
 | `data`             | Input data (see below)                                                                                                                                           |             |
 | `mipmap`           | See below for a description                                                                                                                                      | `false`     |
 | `flipY`            | Flips textures vertically when uploading                                                                                                                         | `false`     |
-| `alignment`        | Sets unpack alignment per pixel                                                                                                                                  | `1`         |
+| `alignment`        | Sets unpack alignment per row                                                                                                                                  | `1`         |
 | `premultiplyAlpha` | Premultiply alpha when unpacking                                                                                                                                 | `false`     |
 | `colorSpace`       | Sets colorspace conversion                                                                                                                                       | `'none'`    |
 | `data`             | Image data for the texture                                                                                                                                       | `null`      |
