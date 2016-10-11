@@ -515,9 +515,9 @@ tape('texture 2d', function (t) {
     regl.texture({
       shape: [2, 2, 1],
       flipY: true,
-      alignment: 2,
+      alignment: 4,
       colorSpace: 'none',
-      data: new Uint8Array([1, 0, 2, 0, 3, 0, 4, 0])
+      data: new Uint8Array([1, 2, 0, 0, 3, 4, 0, 0])
     }),
     {
       width: 2,
@@ -535,7 +535,7 @@ tape('texture 2d', function (t) {
     regl.texture({
       shape: [4, 4, 1],
       flipY: true,
-      alignment: 2,
+      alignment: 4,
       mipmap: [
         {
           alignment: 1,
@@ -549,7 +549,7 @@ tape('texture 2d', function (t) {
         {
           flipY: false,
           colorSpace: 'none',
-          data: new Uint8Array([1, 0, 2, 0, 3, 0, 4, 0])
+          data: new Uint8Array([1, 2, 0, 0, 3, 4, 0, 0])
         },
         {
           alignment: 1,
