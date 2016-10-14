@@ -9488,3 +9488,4 @@ function wrapREGL (args) {
 return wrapREGL;
 
 })));
+//# sourceMappingURL=regl.js.map
