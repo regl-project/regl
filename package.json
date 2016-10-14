@@ -2,7 +2,7 @@
   "name": "regl",
   "version": "1.2.1",
   "description": "regl is a fast functional WebGL framework.",
-  "main": "dist/regl.unchecked.js",
+  "main": "dist/regl.js",
   "files": [
     "regl.js",
     "lib/*",
@@ -16,7 +16,9 @@
   "directories": {
     "example": "example"
   },
-  "browser": "dist/regl.js",
+  "browserify": {
+    "transform": "./browserify/transform"
+  },
   "dependencies": {},
   "devDependencies": {
     "angle-normals": "^1.0.0",
