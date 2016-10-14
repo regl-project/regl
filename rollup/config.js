@@ -7,5 +7,6 @@ module.exports = {
   moduleName: 'createREGL',
   plugins: [
     json()
-  ]
+  ],
+  sourceMap: true
 }
