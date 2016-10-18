@@ -7,6 +7,7 @@
 
 const regl = require('../regl')()
 const mat4 = require('gl-mat4')
+const vec3 = require('gl-vec3')
 const bunny = require('bunny')
 const teapot = require('conway-hart')('I')
 const normals = require('angle-normals')
@@ -22,6 +23,15 @@ const BUNNY_TINT = [1.0, 0.8, 0.9]
 const bunnyFBO = regl.framebufferCube(CUBE_MAP_SIZE)
 const teapotFBO = regl.framebufferCube(CUBE_MAP_SIZE)
 
+const CUBEMAP_SIDES = [
+  { eye: [0, 0, 0], target: [1, 0, 0], up: [0, -1, 0] },
+  { eye: [0, 0, 0], target: [-1, 0, 0], up: [0, -1, 0] },
+  { eye: [0, 0, 0], target: [0, 1, 0], up: [0, 0, 1] },
+  { eye: [0, 0, 0], target: [0, -1, 0], up: [0, 0, -1] },
+  { eye: [0, 0, 0], target: [0, 0, 1], up: [0, -1, 0] },
+  { eye: [0, 0, 0], target: [0, 0, -1], up: [0, -1, 0] }
+]
+
 const setupCubeFace = regl({
   framebuffer: function (context, props, batchId) {
     return this.cubeFBO.faces[batchId]
@@ -31,47 +41,9 @@ const setupCubeFace = regl({
     projection: regl.this('projection'),
     view: function (context, props, batchId) {
       const view = this.view
-      for (let i = 0; i < 16; ++i) {
-        view[i] = 0
-      }
-      switch (batchId) {
-        case 0: // +x
-          view[2] = 1
-          view[5] = 1
-          view[8] = 1
-          break
-        case 1: // -x
-          view[2] = -1
-          view[5] = 1
-          view[8] = -1
-          break
-        case 2: // +y
-          view[0] = -1
-          view[6] = 1
-          view[9] = -1
-          break
-        case 3: // -y
-          view[0] = 1
-          view[6] = -1
-          view[9] = 1
-          break
-        case 4: // +z
-          view[0] = -1
-          view[5] = 1
-          view[10] = 1
-          break
-        case 5: // -z
-          view[0] = 1
-          view[5] = 1
-          view[10] = -1
-          break
-      }
-      view[15] = 1
-      mat4.translate(view, view, [
-        -this.center[0],
-        -this.center[1],
-        -this.center[2]
-      ])
+      const side = CUBEMAP_SIDES[batchId]
+      const target = vec3.add([0, 0, 0], this.center, side.target)
+      mat4.lookAt(view, this.center, target, side.up)
       return view
     },
     eye: regl.this('center')
@@ -151,7 +123,7 @@ const drawBunny = regl({
   varying vec3 eyeDir, fragNormal;
 
   void main () {
-    vec4 env = textureCube(envMap, reflect(eyeDir, fragNormal));
+    vec4 env = textureCube(envMap, reflect(-eyeDir, fragNormal));
     gl_FragColor = vec4(env.rgb * tint, 1);
   }`,
 
