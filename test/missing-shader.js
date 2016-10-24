@@ -1,6 +1,6 @@
 var tape = require('tape')
 var createContext = require('./util/create-context')
-var createREGL = require('../dist/regl')
+var createREGL = require('../regl')
 
 tape('missing shader', function (t) {
   var gl = createContext(1, 1)

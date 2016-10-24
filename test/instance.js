@@ -1,6 +1,6 @@
 
 var createContext = require('./util/create-context')
-var createREGL = require('../dist/regl')
+var createREGL = require('../../regl')
 var tape = require('tape')
 
 tape('instance', function (t) {

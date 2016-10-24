@@ -1,5 +1,5 @@
 var tape = require('tape')
-var createREGL = require('../dist/regl')
+var createREGL = require('../regl')
 var createContext = require('./util/create-context')
 
 tape('dynamic viewport bug', function (t) {
