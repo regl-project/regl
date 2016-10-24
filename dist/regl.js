@@ -745,10 +745,10 @@ var dynamic = {
 /* globals requestAnimationFrame, cancelAnimationFrame */
 var raf = {
   next: typeof requestAnimationFrame === 'function'
-    ? requestAnimationFrame
+    ? function (cb) { return requestAnimationFrame(cb) }
     : function (cb) { return setTimeout(cb, 16) },
   cancel: typeof cancelAnimationFrame === 'function'
-    ? cancelAnimationFrame
+    ? function (raf) { return cancelAnimationFrame(raf) }
     : clearTimeout
 };
 
