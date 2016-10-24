@@ -1,5 +1,3 @@
-require('reify')
-
 require('../flatten')
 require('../context-loss')
 require('../constructor')

@@ -1,8 +1,8 @@
-var config = require('./config.js')
-var removeCheck = require('./plugins/remove-check.js')
+var config = require('./config')
+var removeCheck = require('./plugins/remove-check')
 
 config.dest = 'dist/regl.unchecked.js'
-config.plugins.push(removeCheck())
 config.sourceMap = false
+config.plugins.push(removeCheck())
 
-export default config
+module.exports = config

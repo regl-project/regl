@@ -1,8 +1,7 @@
-var path = require('path')
 var ClosureCompiler = require('google-closure-compiler').compiler
 
-var UNCHECKED_FILE = path.join(__dirname, '../dist/regl.unchecked.js')
-var OUTPUT_FILE = path.join(__dirname, '../dist/regl.min.js')
+var UNCHECKED_FILE = process.argv[2]
+var OUTPUT_FILE = process.argv[3]
 
 var closureCompiler = new ClosureCompiler({
   js: UNCHECKED_FILE,

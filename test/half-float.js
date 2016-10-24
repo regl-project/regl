@@ -1,5 +1,5 @@
 var tape = require('tape')
-var convertToHalfFloat = require('../lib/util/to-half-float').default
+var convertToHalfFloat = require('../lib/util/to-half-float')
 
 tape('convertToHalfFloat', function (t) {
   var input = [

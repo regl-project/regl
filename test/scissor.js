@@ -1,6 +1,6 @@
-var extend = require('../lib/util/extend').default
+var extend = require('../lib/util/extend')
 var createContext = require('./util/create-context')
-var createREGL = require('../dist/regl')
+var createREGL = require('../regl')
 var tape = require('tape')
 
 tape('scissor', function (t) {

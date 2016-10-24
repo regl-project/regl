@@ -1,5 +1,5 @@
 var createContext = require('./util/create-context')
-var createREGL = require('../dist/regl')
+var createREGL = require('../../regl')
 var tape = require('tape')
 
 var GL_TEXTURE_CUBE_MAP_POSITIVE_X = 0x8515
