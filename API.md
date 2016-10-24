@@ -2279,7 +2279,7 @@ For convenience it is possible to bind a framebuffer directly.  This is a short 
 ```javascript
 var framebuffer = regl.framebuffer(5)
 
-framebuffer.bind(function () {
+framebuffer.use(function () {
   // now we can draw to the framebuffer
 })
 
