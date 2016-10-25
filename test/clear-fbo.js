@@ -35,7 +35,7 @@ tape('clear fbo', function (t) {
       framebuffer: fbo
     }), [0, 255, 0, 255], 'fbo ok')
 
-    fbo.bind(function () {
+    fbo.use(function () {
       regl.clear({
         color: [0, 0, 1, 1]
       })
