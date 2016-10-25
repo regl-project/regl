@@ -20,8 +20,11 @@
   "browserify": {
     "transform": "./browserify/transform"
   },
-  "dependencies": {},
+  "dependencies": {
+  },
   "devDependencies": {
+    "browserify": "^13.1.1",
+    "es2020": "^1.1.9",
     "angle-normals": "^1.0.0",
     "baboon-image": "^2.0.0",
     "bl": "^1.1.2",
