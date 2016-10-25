@@ -1,7 +1,6 @@
 var fs = require('fs')
 var glob = require('glob')
 var browserify = require('browserify')
-var removeCheck = require('./remove-check')
 var ncp = require('ncp')
 var mkdirp = require('mkdirp')
 var es2020 = require('es2020')
@@ -356,7 +355,7 @@ mkdirp('www/gallery', function (err) {
         debug: true
       })
       b.add(file)
-      b.transform(removeCheck)
+      b.transform(require('../browserify/transform'))
       b.transform(es2020)
       b.bundle(function (err, bundle) {
         if (err) {
