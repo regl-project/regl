@@ -2,7 +2,7 @@
 
 ## Next
 
-* Add `framebuffer.bind()` method for quickly setting up framebuffer objects
+* Add `framebuffer.use()` method for quickly setting up framebuffer objects
 * `regl.clear` and `regl.read` now accept a framebuffer as a parameter
 
 ## 1.2.1

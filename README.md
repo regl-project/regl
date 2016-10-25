@@ -72,7 +72,7 @@
 
 To define a command you specify a mixture of static and dynamic data for the object. Once this is done, `regl` takes this description and then compiles it into optimized JavaScript code.  For example, here is a simple `regl` program to draw a triangle:
 
-```JavaScript
+```js
 // Calling the regl module with no arguments creates a full screen canvas and
 // WebGL context, and then uses this context to initialize a new REGL instance
 const regl = require('regl')()
