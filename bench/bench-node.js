@@ -1,0 +1,2 @@
+require('reify')
+require('./bench')

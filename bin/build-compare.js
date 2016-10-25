@@ -2,11 +2,14 @@ var fs = require('fs')
 var os = require('os')
 var path = require('path')
 var glob = require('glob')
-var browserify = require('browserify')
-var removeCheck = require('./remove-check')
+var rollup = require('rollup')
+var commonjs = require('rollup-plugin-commonjs')
+var nodeResolve = require('rollup-plugin-node-resolve')
+var json = require('rollup-plugin-json')
+var buble = require('rollup-plugin-buble')
+var removeCheck = require('../rollup/plugins/remove-check')
 var ncp = require('ncp')
 var mkdirp = require('mkdirp')
-var es2020 = require('es2020')
 var ClosureCompiler = require('google-closure-compiler').compiler
 
 var ROOT_DIR = 'compare'
@@ -83,45 +86,47 @@ function handleCase (name, www, root, onComplete) {
   })
 
   function handleJS (name, sourcePath, htmlPath, needsTransform) {
-    var b = browserify({
-      debug: false
-    })
-    b.add(sourcePath)
-    if (needsTransform) {
-      b.transform(removeCheck)
-      b.transform(es2020)
-    }
-    b.bundle(function (err, bundle) {
-      if (err) {
-        throw err
-      }
-      // run minification
-      var bundlePath = path.join(TMP_DIR, name + '.bundle.js')
-      var minPath = path.join(TMP_DIR, name + '.bundle.min.js')
-      fs.writeFile(bundlePath, bundle, function (err) {
-        if (err) {
-          throw err
-        }
+    var bundlePath = path.join(TMP_DIR, name + '.bundle.js')
+    var minPath = path.join(TMP_DIR, name + '.bundle.min.js')
 
-        console.log('running closure compiler', bundlePath, '->', minPath)
+    rollup.rollup({
+      entry: sourcePath,
+      plugins: [
+        nodeResolve(),
+        json(),
+        commonjs(),
+        removeCheck(),
+        buble()
+      ]
+    }).then(function (bundle) {
+      console.log(`writing to ${bundlePath}`)
+      return bundle.write({
+        format: 'iife',
+        moduleName: 'bundle',
+        dest: bundlePath
+      })
+    }).then(function () {
+      var closureCompiler = new ClosureCompiler({
+        js: bundlePath,
+        compilation_level: 'SIMPLE',
+        js_output_file: minPath
+      })
 
-        var closureCompiler = new ClosureCompiler({
-          js: bundlePath,
-          compilation_level: 'SIMPLE',
-          js_output_file: minPath
-        })
-
-        closureCompiler.run(function (exitCode, stdOut, stdErr) {
-          fs.readFile(minPath, function (err, data) {
-            if (err) {
-              throw err
-            }
-            writePage(name, htmlPath, data.toString(), function () {
-              appendCase(name, sourcePath, htmlPath)
-            })
+      closureCompiler.run(function (exitCode, stdOut, stdErr) {
+        fs.readFile(minPath, function (err, data) {
+          if (err) {
+            throw err
+          }
+          writePage(name, htmlPath, data.toString(), function () {
+            appendCase(name, sourcePath, htmlPath)
           })
         })
       })
+    })
+    .catch(function (err) {
+      console.error(err.message)
+      console.error(err.stack)
+      process.exit(1)
     })
   }
 
