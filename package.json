@@ -1,6 +1,6 @@
 {
   "name": "regl",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "regl is a fast functional WebGL framework.",
   "main": "dist/regl.js",
   "files": [
@@ -20,8 +20,7 @@
   "browserify": {
     "transform": "./browserify/transform"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "browserify": "^13.1.1",
     "es2020": "^1.1.9",
