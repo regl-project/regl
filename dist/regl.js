@@ -558,8 +558,10 @@ function checkTexture2D (info, mipData, limits) {
       if (img.compressed) {
         // TODO: check size for compressed images
       } else if (img.data) {
-        check(img.data.byteLength === mw * mh *
-          Math.max(pixelSize(img.type, c), img.unpackAlignment),
+        // check(img.data.byteLength === mw * mh *
+        // Math.max(pixelSize(img.type, c), img.unpackAlignment),
+        var rowSize = Math.ceil(pixelSize(img.type, c) * mw / img.unpackAlignment) * img.unpackAlignment;
+        check(img.data.byteLength === rowSize * mh,
           'invalid data for image, buffer size is inconsistent with image format');
       } else if (img.element) {
         // TODO: check element can be loaded
@@ -4603,7 +4605,7 @@ function wrapFBOState (
         destroy(framebuffer);
         decFBORefs(framebuffer);
       },
-      bind: function (block) {
+      use: function (block) {
         framebufferState.setFBO({
           framebuffer: reglFramebuffer
         }, block);

@@ -3782,7 +3782,7 @@ function wrapFBOState (
         destroy(framebuffer);
         decFBORefs(framebuffer);
       },
-      bind: function (block) {
+      use: function (block) {
         framebufferState.setFBO({
           framebuffer: reglFramebuffer
         }, block);
