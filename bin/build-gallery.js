@@ -1,13 +1,10 @@
 var fs = require('fs')
 var glob = require('glob')
-var rollup = require('rollup')
-var commonjs = require('rollup-plugin-commonjs')
-var nodeResolve = require('rollup-plugin-node-resolve')
-var json = require('rollup-plugin-json')
-var buble = require('rollup-plugin-buble')
-var removeCheck = require('../rollup/plugins/remove-check')
+var browserify = require('browserify')
+var removeCheck = require('./remove-check')
 var ncp = require('ncp')
 var mkdirp = require('mkdirp')
+var es2020 = require('es2020')
 var ClosureCompiler = require('google-closure-compiler').compiler
 
 function pageName (file) {
@@ -354,82 +351,57 @@ mkdirp('www/gallery', function (err) {
     if (err) {
       throw err
     }
-    files.reduce(function (promise, file) {
-      return promise.then(function () {
-        return rollup.rollup({
-          entry: file,
-          plugins: [
-            nodeResolve(),
-            json(),
-            commonjs(),
-            removeCheck(),
-            buble()
-          ]
-        })
-        .then(function (bundle) {
-          var code = bundle.generate({
-            format: 'iife',
-            moduleName: 'bundle'
-          })
-          console.log('bundled', file)
-          minifyAndGenPage(file, code)
-        })
-        .catch(function (err) {
-          console.error(err.message)
-          console.error(err.stack)
-          process.exit(1)
-        })
+    files.forEach(function (file) {
+      var b = browserify({
+        debug: true
       })
-    }, Promise.resolve())
-    .then(function () {
-      generateGallery(files)
+      b.add(file)
+      b.transform(removeCheck)
+      b.transform(es2020)
+      b.bundle(function (err, bundle) {
+        if (err) {
+          throw err
+        }
+        console.log('bundled', file)
+        minifyAndGenPage(file, bundle)
+      })
     })
+    generateGallery(files)
   })
 })
 
 function minifyAndGenPage (file, bundle) {
-  return new Promise(function (resolve, reject) {
-    var jsFile = jsName(file)
-    var minFile = jsFile.replace('.js', '.min.js')
+  var jsFile = jsName(file)
+  var minFile = jsFile.replace('.js', '.min.js')
 
-    fs.writeFile(jsFile, bundle, function (err) {
-      if (err) {
-        reject(err)
-        return
-      }
+  fs.writeFile(jsFile, bundle, function (err) {
+    if (err) {
+      throw err
+    }
 
-      console.log('minify ', jsFile, ' -> ', minFile)
+    console.log('minify ', jsFile, ' -> ', minFile)
 
-      var closureCompiler = new ClosureCompiler({
-        js: jsFile,
-        compilation_level: 'SIMPLE',
-        js_output_file: minFile
-      })
+    var closureCompiler = new ClosureCompiler({
+      js: jsFile,
+      compilation_level: 'SIMPLE',
+      js_output_file: minFile
+    })
 
-      closureCompiler.run(function (exitCode, stdOut, stdErr) {
-        fs.readFile(minFile, function (err, data) {
-          if (err) {
-            reject(err)
-            return
-          }
-          console.log('minified ', minFile)
-          console.log('stdout: ', stdOut)
-          console.log('stderr: ', stdErr)
-          writePage(file, data, function (err) {
-            if (err) {
-              reject(err)
-              return
-            }
-            console.log('wrote page', pageName(file))
-            resolve()
-          })
-        })
+    closureCompiler.run(function (exitCode, stdOut, stdErr) {
+      fs.readFile(minFile, function (err, data) {
+        if (err) {
+          throw err
+        }
+        console.log('minified ', minFile)
+        console.log('stdout: ', stdOut)
+        console.log('stderr: ', stdErr)
+        writePage(file, data)
       })
     })
   })
 }
 
-function writePage (file, bundle, cb) {
+function writePage (file, bundle) {
   fs.writeFile(pageName(file),
     `<!DOCTYPE html>
       <html>
@@ -444,5 +416,10 @@ function writePage (file, bundle, cb) {
         </script>
         </body>
       </html>`,
-    cb)
+    function (err) {
+      if (err) {
+        throw err
+      }
+      console.log('wrote page', pageName(file))
+    })
 }
