@@ -1815,7 +1815,7 @@ So it can be used as an alternative to `format`.
 | `'none'`    | `gl.NONE`                  |
 | `'browser'` | `gl.BROWSER_DEFAULT_WEBGL` |
 
--   `unpackAlignment` sets the pixel unpack alignment and must be one of `[1, 2, 4, 8]`
+-   `alignment` sets the pixel unpack alignment and must be one of `[1, 2, 4, 8]`
 
 **Relevant WebGL APIs**
 
