@@ -126,25 +126,20 @@ p a:hover {
 function generateGallery (files) {
   var i
   var s
-  var html = `<!DOCTYPE html>
-    <html>
-      <head>
-        <title>regl gallery</title>
-        <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
-        <meta charset=utf-8>
-        <style>` +
-        stylesheet +
-`       </style>
-      </head>
-    <body>`
-
-  html += '<div id="container">'
-
-  html += '<h1>regl Example Gallery</h1>'
-
-  html += '<h2>Filter Tags</h2>'
-
-
+  var html = `
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <title>regl gallery</title>
+      <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
+      <meta charset=utf-8>
+      <style>${stylesheet}</style>
+    </head>
+  <body>
+    <div id="container">
+      <h1>regl Example Gallery</h1>
+      <h2>Filter Tags</h2>
+  `
 
   var exListStr = '' // <ul> containing the example list.
   exListStr += '<ul id="exList">'
@@ -337,23 +332,31 @@ function generateGallery (files) {
 }
 
 mkdirp('www/gallery', function (err) {
-  if (err) {
-    return
-  }
+  if (err) { return console.error(err) }
+
   ncp('example/assets', 'www/gallery/assets', function (err) {
-    console.log(err)
+    if (err) { return console.error(err) }
   })
+
   ncp('example/img', 'www/gallery/img', function (err) {
-    console.log(err)
+    if (err) { return console.error(err) }
   })
+
   glob('example/*.js', {}, function (err, files) {
-    if (err) {
-      throw err
-    }
-    files.forEach(function (file) {
-      var b = browserify({
-        debug: true
-      })
+    if (err) { throw err }
+
+    files.forEach(function (file, _, i) {
+      var currentFileStats = fs.statSync(file)
+      var targetFile = jsName(file).replace('.js', '.min.js')
+      var targetFileStats = fs.existsSync(targetFile) && fs.statSync(targetFile)
+
+      // skip files that haven't changed
+      if (targetFileStats && currentFileStats.mtime <= targetFileStats.mtime) {
+        return
+      }
+
+      var b = browserify({ debug: true })
+      console.log('bundling', file)
       b.add(file)
       b.transform(require('../browserify/transform'))
       b.transform(es2020)
