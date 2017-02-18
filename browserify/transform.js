@@ -7,6 +7,8 @@ var fs = require('fs')
 
 var REGL_PATH = path.normalize(path.join(__dirname,
   '../regl.js'))
+var REGL_MAIN_PATH = path.normalize(path.join(__dirname,'../',
+  require('../package.json').main))
 var UNCHECKED = fs.readFileSync(path.join(__dirname,
   '../dist/regl.min.js')).toString()
 
@@ -25,8 +27,9 @@ ReplaceREGL.prototype._flush = function (cb) {
 }
 
 module.exports = function (file, options) {
+  var nfile = path.normalize(file)
   if ((options._flags && options._flags.debug) ||
-    path.normalize(file) !== REGL_PATH) {
+    (nfile !== REGL_PATH && nfile !== REGL_MAIN_PATH)) {
     return new PassThrough()
   }
   return new ReplaceREGL()
