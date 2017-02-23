@@ -634,6 +634,7 @@ var command = regl({
   uniform vec4 someUniform;
   uniform int anotherUniform;
   uniform SomeStruct nested;
+  uniform vec4 colors[2];
 
   void main() {
     gl_Position = vec4(1, 0, 0, 1);
@@ -642,7 +643,9 @@ var command = regl({
   uniforms: {
     someUniform: [1, 0, 0, 1],
     anotherUniform: regl.prop('myProp'),
-    'nested.value': 5.3
+    'nested.value': 5.3,
+    'colors[0]': [0, 1, 0, 1],
+    'colors[1]': [0, 0, 1, 1]
   },
 
   // ...
@@ -1647,7 +1650,10 @@ var mipmapTexture = regl.texture({
 // From an image element
 var image = new Image()
 image.src = 'http://mydomain.com/myimage.png'
-var imageTexture = regl.texture(image)
+image.onload = function () {
+  var imageTexture = regl.texture(image)
+}
+
 
 // From a canvas
 var canvas = document.createElement(canvas)
