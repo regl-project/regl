@@ -1650,7 +1650,10 @@ var mipmapTexture = regl.texture({
 // From an image element
 var image = new Image()
 image.src = 'http://mydomain.com/myimage.png'
-var imageTexture = regl.texture(image)
+image.onload = function () {
+  var imageTexture = regl.texture(image)
+}
+
 
 // From a canvas
 var canvas = document.createElement(canvas)
