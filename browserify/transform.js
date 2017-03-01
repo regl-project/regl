@@ -7,7 +7,7 @@ var fs = require('fs')
 
 var REGL_PATH = path.normalize(path.join(__dirname,
   '../regl.js'))
-var REGL_MAIN_PATH = path.normalize(path.join(__dirname,'../',
+var REGL_MAIN_PATH = path.normalize(path.join(__dirname, '../',
   require('../package.json').main))
 var UNCHECKED = fs.readFileSync(path.join(__dirname,
   '../dist/regl.min.js')).toString()
