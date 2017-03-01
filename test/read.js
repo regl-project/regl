@@ -123,7 +123,8 @@ tape('read pixels', function (t) {
   var badTestCases = []
   badTestCases.push('rgba4')
   badTestCases.push('rgb565')
-  badTestCases.push('rgb5 a1')
+  // In Chrome creating rgb5 a1 type renderbuffers no longer works
+  //  badTestCases.push('rgb5 a1')
   if (regl.hasExtension('ext_srgb')) {
     badTestCases.push('srgba')
   }
