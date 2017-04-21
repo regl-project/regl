@@ -305,7 +305,7 @@ command(props)
 
 #### Batch rendering
 
-A command can also run multiple times by passing a non-negative integer or an array as the first argument.  The `batchId` is initially `0` and incremented for each iteration,
+A command can also run multiple times by passing a non-negative integer or an array as the first argument. The `batchId` is initially `0` and incremented for each iteration,
 
 ```javascript
 // Runs the command `count`-times
@@ -314,6 +314,8 @@ command(count)
 // Runs the command once for each props
 command([props0, props1, props2, ..., propsn])
 ```
+
+In batch mode the command can be a little smarter regarding binding shaders/performing some checks. The command can then figure out which props are constant, which are dynamic, and then only apply the changes on each dynamic prop. This offers a small performance boost. 
 
 #### Scoped commands
 
