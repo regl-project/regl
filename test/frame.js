@@ -51,3 +51,82 @@ tape('raf cancel', function (t) {
     t.end()
   }
 })
+
+tape('frame is called even if frame function throws', function (t) {
+  function done (regl, gl, t) {
+    regl.destroy()
+    t.equals(gl.getError(), 0, 'error ok')
+    createContext.destroy(gl)
+    t.end()
+  }
+
+  if (typeof document !== 'undefined') {
+    var gl = createContext(5, 5)
+    var regl = createREGL(gl)
+
+    var frameCalledMax = 3
+    var frameCalled = 0
+    var cancelCalled = 0
+
+    function decorateCancel(frame) {
+      var oldCancel = frame.cancel
+      var newCancel = function() {
+        cancelCalled++
+        oldCancel.call(this)
+      }
+      frame.cancel = newCancel
+      return frame
+    }
+
+    function do1() {
+      frameCalled = 0
+      cancelCalled = 0
+      console.log('frame is called even if frame function throws')
+
+      var frame = regl.frame(function (context) {
+        if(frameCalled === 0) decorateCancel(frame)
+        if (frameCalled >= frameCalledMax) {
+          t.ok(frameCalled > 1, 'regl.frame called more then once despite an error occurred: ' + frameCalled + '.')
+          t.equals(cancelCalled, 0, 'regl.frame do not call frame.cancel')
+          t.equals(gl.getError(), 0, 'error ok')
+          frame.cancel()
+          return do2()
+        } else {
+          frameCalled++
+          throw 'Foo'
+        }
+      })
+    }
+
+    function do2() {
+      frameCalled = 0
+      cancelCalled = 0
+      console.log('frameSafe is stopped if frame function throws')
+
+      var frame = regl.frameSafe(function (context) {
+        if(frameCalled === 0) decorateCancel(frame)
+        if (frameCalled >= frameCalledMax) {
+          t.ok(false, 'regl.frameSafe should be stopped if frame function throws')
+          return
+        }
+        frameCalled++
+        throw 'Foo2'
+      })
+      setTimeout(function assertResult() {
+        t.ok(frameCalled === 1, 'regl.frameSafe calls only once if frame function throws '+ frameCalled)
+        t.equals(cancelCalled, 1, 'regl.frameSafe should call frame.cancel if frame function throws')
+        t.equals(gl.getError(), 0, 'error ok')
+
+        frame.cancel()
+        frame.destroy()
+        done(regl, gl, t)
+      }, 100)
+    }
+
+    do1()
+
+  } else {
+    // this test is only for the browser
+    t.end()
+  }
+})

@@ -456,6 +456,19 @@ module.exports = function wrapREGL (args) {
     }
   }
 
+  function frameSafe(frameFunc) {
+    // as proposed here: https://github.com/regl-project/regl/issues/386
+    var loop = frame(function () {
+      try {
+        frameFunc.apply(undefined, arguments)
+      } catch (err) {
+        loop.cancel()
+        throw err
+      }
+    })
+    return loop
+  }
+
   // poll viewport
   function pollViewport () {
     var viewport = nextState.viewport
@@ -558,6 +571,7 @@ module.exports = function wrapREGL (args) {
 
     // Frame rendering
     frame: frame,
+    frameSafe: frameSafe,
     on: addListener,
 
     // System limits

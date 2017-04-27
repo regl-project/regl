@@ -2506,6 +2506,8 @@ tick.cancel()
 
 It is possible to manage framecallbacks manually, however before any loop it is essential to call `regl.poll()` which updates all timers and viewports.
 
+There is also a convenience function `regl.frameSafe` that wraps `regl.frame` inside a `try/catch` block to prevent browser console to be flooded by error message and calls `frame.cancel` whenever the loop function throws (but not `regl.destroy`).
+
 * * *
 
 ### Extensions
