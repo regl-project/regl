@@ -15,6 +15,7 @@ var wrapFramebuffers = require('./lib/framebuffer')
 var wrapAttributes = require('./lib/attribute')
 var wrapShaders = require('./lib/shader')
 var wrapRead = require('./lib/read')
+var wrapVao = require('./lib/vao')
 var createCore = require('./lib/core')
 var createStats = require('./lib/stats')
 var createTimer = require('./lib/timer')
@@ -86,6 +87,7 @@ module.exports = function wrapREGL (args) {
   }
 
   var limits = wrapLimits(gl, extensions)
+  var vaoState = wrapVao(gl, extensions, stats, config)
   var bufferState = wrapBuffers(gl, stats, config)
   var elementState = wrapElements(gl, extensions, bufferState, stats)
   var attributeState = wrapAttributes(
@@ -116,6 +118,7 @@ module.exports = function wrapREGL (args) {
     stringStore,
     extensions,
     limits,
+    vaoState,
     bufferState,
     elementState,
     textureState,
@@ -253,6 +256,7 @@ module.exports = function wrapREGL (args) {
     textureState.clear()
     elementState.clear()
     bufferState.clear()
+    vaoState.clear()
 
     if (timer) {
       timer.clear()

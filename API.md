@@ -716,6 +716,8 @@ Each attribute can have any of the following optional properties,
 -   If the arguments to `regl.buffer` are passed, then a buffer is constructed
 -   If an array is passed to an attribute, then the vertex attribute is set to a constant
 -   `divisor` is only supported if the `ANGLE_instanced_arrays` extension is available
+-   Vertex Array Objects (VAO) are created per command if attributes are
+    given
 
 **Related WebGL APIs**
 
@@ -724,6 +726,9 @@ Each attribute can have any of the following optional properties,
 -   [`gl.getAttribLocation`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGetAttribLocation.xml)
 -   [`gl.vertexAttibDivisor`](https://www.opengl.org/sdk/docs/man4/html/glVertexAttribDivisor.xhtml)
 -   [`gl.enableVertexAttribArray`, `gl.disableVertexAttribArray`](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glDisableVertexAttribArray.xml)
+-   [`gl.createVertexArray`](https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glCreateVertexArrays.xhtml)
+-   [`gl.bindVertexArray`](https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindVertexArray.xhtml)
+-   [`gl.deleteVertexArray`](https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glDeleteVertexArrays.xhtml)
 
 * * *
 

@@ -4333,7 +4333,6 @@ function wrapReadPixels (
     gl.readPixels(x, y, width, height, GL_RGBA$2,
                   type,
                   data);
-
     return data
   }
 
@@ -4356,6 +4355,87 @@ function wrapReadPixels (
   }
 
   return readPixels
+}
+
+function wrapVAOState (gl, extensions, stats, config) {
+  var extension = extensions.oes_vertex_array_object;
+  var hasSupport = Boolean(extension);
+  var currentVao = null;
+  var vaoCount = 0;
+  var vaoSet = {};
+
+  return {
+    hasSupport: hasSupport,
+    create: createVAO,
+    clear: clearVAOs,
+  }
+
+  //
+  // Creates and returns a new `REGLVAO' instance after adding
+  // it to the internal object set. If successful, the `stats.vaoCount'
+  // is incremented. Upon destruction of this instance, the
+  // `stats.vaoCount' is decremented. A `REGLVAO' instance has a unique
+  // ID and a reference to the underyling vertex array object handle
+  // created with `gl.createVertexArray()' or the extensions equivalent.
+  //
+  function createVAO () {
+    var vao = new REGLVAO(gl);
+    vaoSet[vao.id] = vao;
+    stats.vaoCount = vaoCount;
+    return vao
+  }
+
+  //
+  // Destroys all `REGLVAO' instances in the internal object set.
+  // by calling `gl.deleteVertexArray()' or the extensions equivalent.
+  //
+  function clearVAOs () {
+    values(vaoSet).forEach(function (vao) {
+      if (vao && typeof vao.destroy === 'function') {
+        vao.destroy();
+      }
+    });
+  }
+
+  //
+  // Encapsualtes a vertex array object handle and provides methods
+  // for binding, unbinding, and destroying a vertex array object.
+  //
+  function REGLVAO (gl) {
+    this.id = -1;
+    this.handle = null;
+
+    if (extension) {
+      this.handle = extension.createVertexArrayOES();
+      if (this.handle) {
+        this.id = vaoCount++;
+      }
+    }
+
+    this.bind = function () {
+      if (extension && this.handle && currentVao !== this) {
+        extension.bindVertexArrayOES(this.handle);
+        currentVao = this;
+      }
+    };
+
+    this.unbind = function () {
+      if (extension && currentVao) {
+        extension.bindVertexArrayOES(null);
+        currentVao = null;
+      }
+    };
+
+    this.destroy = function () {
+      if (extension && this.handle) {
+        extension.deleteVertexArrayOES(this.handle);
+        vaoCount = Math.max(0, vaoCount - 1);
+        stats.vaoCount = vaoCount;
+        this.id = -1;
+        this.handle = null;
+      }
+    };
+  }
 }
 
 function slice (x) {
@@ -4786,6 +4866,7 @@ function reglCore (
   stringStore,
   extensions,
   limits,
+  vaoState,
   bufferState,
   elementState,
   textureState,
@@ -4919,6 +5000,7 @@ function reglCore (
     current: currentState,
     draw: drawState,
     elements: elementState,
+    vao: vaoState,
     buffer: bufferState,
     shader: shaderState,
     attributes: attributeState.state,
@@ -6180,6 +6262,13 @@ function reglCore (
     result.uniforms = parseUniforms(uniforms, env);
     result.attributes = parseAttributes(attributes, env);
     result.context = parseContext(context, env);
+
+    // create VAO if given and supported
+    if (Object.keys(result.attributes).length) {
+      if (vaoState.hasSupport) {
+        result.vao = vaoState.create();
+      }
+    }
     return result
   }
 
@@ -6438,6 +6527,7 @@ function reglCore (
 
   function emitAttributes (env, scope, args, attributes, filter) {
     var shared = env.shared;
+    var VAO = attributes.length && vaoState.hasSupport ? env.link(args.vao) : null;
 
     function typeLength (x) {
       switch (x) {
@@ -6550,6 +6640,10 @@ function reglCore (
         emitConstant();
         scope('}');
       }
+    }
+
+    if (VAO) {
+      scope('if(', VAO, '){', VAO, '.bind(); }');
     }
 
     attributes.forEach(function (attribute) {
@@ -7374,6 +7468,7 @@ function reglCore (
   return {
     next: nextState,
     current: currentState,
+    compile: compileCommand,
     procs: (function () {
       var env = createREGLEnvironment();
       var poll = env.proc('poll');
@@ -7484,14 +7579,14 @@ function reglCore (
       });
 
       return env.compile()
-    })(),
-    compile: compileCommand
+    })()
   }
 }
 
 function stats () {
   return {
     bufferCount: 0,
+    vaoCount: 0,
     elementsCount: 0,
     framebufferCount: 0,
     shaderCount: 0,
@@ -7709,6 +7804,7 @@ function wrapREGL (args) {
   };
 
   var limits = wrapLimits(gl, extensions);
+  var vaoState = wrapVAOState(gl, extensions, stats$$1, config);
   var bufferState = wrapBufferState(gl, stats$$1, config);
   var elementState = wrapElementsState(gl, extensions, bufferState, stats$$1);
   var attributeState = wrapAttributeState(
@@ -7739,6 +7835,7 @@ function wrapREGL (args) {
     stringStore,
     extensions,
     limits,
+    vaoState,
     bufferState,
     elementState,
     textureState,
@@ -7876,6 +7973,7 @@ function wrapREGL (args) {
     textureState.clear();
     elementState.clear();
     bufferState.clear();
+    vaoState.clear();
 
     if (timer) {
       timer.clear();
