@@ -4360,14 +4360,19 @@ function wrapReadPixels (
 function wrapVAOState (gl, extensions, stats, config) {
   var extension = extensions.oes_vertex_array_object;
   var hasSupport = Boolean(extension);
-  var currentVao = null;
+  var sharedVAO = null;
   var vaoCount = 0;
   var vaoSet = {};
 
   return {
+    getShared: getSharedVAO,
     hasSupport: hasSupport,
     create: createVAO,
     clear: clearVAOs,
+  }
+
+  function getSharedVAO() {
+    return sharedVAO
   }
 
   //
@@ -4382,6 +4387,7 @@ function wrapVAOState (gl, extensions, stats, config) {
     var vao = new REGLVAO(gl);
     vaoSet[vao.id] = vao;
     stats.vaoCount = vaoCount;
+    sharedVAO = vao;
     return vao
   }
 
@@ -4413,16 +4419,14 @@ function wrapVAOState (gl, extensions, stats, config) {
     }
 
     this.bind = function () {
-      if (extension && this.handle && currentVao !== this) {
+      if (extension && this.handle) {
         extension.bindVertexArrayOES(this.handle);
-        currentVao = this;
       }
     };
 
     this.unbind = function () {
-      if (extension && currentVao) {
+      if (extension) {
         extension.bindVertexArrayOES(null);
-        currentVao = null;
       }
     };
 
@@ -6263,10 +6267,9 @@ function reglCore (
     result.attributes = parseAttributes(attributes, env);
     result.context = parseContext(context, env);
 
-    // create VAO if given and supported
-    if (Object.keys(result.attributes).length) {
-      if (vaoState.hasSupport) {
-        result.vao = vaoState.create();
+    if (Object.keys(attributes).length) {
+      if (!vaoState.getShared() && vaoState.hasSupport) {
+        vaoState.create();
       }
     }
     return result
@@ -6527,7 +6530,7 @@ function reglCore (
 
   function emitAttributes (env, scope, args, attributes, filter) {
     var shared = env.shared;
-    var VAO = attributes.length && vaoState.hasSupport ? env.link(args.vao) : null;
+    var VAO = shared.vao;
 
     function typeLength (x) {
       switch (x) {
@@ -6643,7 +6646,7 @@ function reglCore (
     }
 
     if (VAO) {
-      scope('if(', VAO, '){', VAO, '.bind(); }');
+      scope('if(',VAO,'&&',VAO,'.getShared()){',VAO,'.getShared().bind(); }');
     }
 
     attributes.forEach(function (attribute) {
@@ -6882,6 +6885,7 @@ function reglCore (
     var shared = env.shared;
     var GL = shared.gl;
     var DRAW_STATE = shared.draw;
+    var VAO = shared.vao;
 
     var drawOptions = args.draw;
 
@@ -7019,6 +7023,10 @@ function reglCore (
       }
     }
 
+    if (VAO) {
+      outer('if(',VAO,'&&',VAO,'.getShared()){',VAO,'.getShared().bind(); }');
+    }
+
     if (extInstancing && (typeof INSTANCES !== 'number' || INSTANCES >= 0)) {
       if (typeof INSTANCES === 'string') {
         inner('if(', INSTANCES, '>0){');
@@ -7031,6 +7039,10 @@ function reglCore (
       }
     } else {
       emitRegular();
+    }
+
+    if (VAO) {
+      outer('if(',VAO,'&&',VAO,'.getShared()){',VAO,'.getShared().unbind(); }');
     }
   }
 
