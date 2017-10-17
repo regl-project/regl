@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+  <head>
+    <title>threejs cube</title>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r79/three.min.js"></script>
+    <script type="text/javascript">
+    var scene;
+    var camera;
+    var renderer;
+    var mesh;
+    var tick;
+
+    function start() {
+      init();
+      drawShape();
+      render();
+    }
+
+    function drawShape() {
+      var geo = new THREE.CubeGeometry(1.0, 1.0, 1.0);
+
+      var texture = THREE.ImageUtils.loadTexture('assets/peppers.png');
+      var mats = [];
+      for (var i = 0; i < 6; i++) {
+        mats.push(new THREE.MeshBasicMaterial({map: texture}));
+      }
+      var mat = new THREE.MeshFaceMaterial(mats);
+
+      mesh = new THREE.Mesh(geo, mat);
+
+      scene.add(mesh);
+
+      tick = 0;
+    }
+
+    function init() {
+      scene = new THREE.Scene();
+
+      var canvas = document.getElementById('glcanvas');
+      renderer = new THREE.WebGLRenderer({canvas: canvas});
+      renderer.setPixelRatio( window.devicePixelRatio );
+      renderer.setSize( window.innerWidth, window.innerHeight );
+
+      camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 100 );
+    }
+
+    function rotateCube() {
+      tick += 1
+      var t = tick * 0.01
+
+      camera.position.set(5 * Math.cos(t), 2.5 * Math.sin(t), 5 * Math.sin(t))
+      camera.up = new THREE.Vector3(0, 1, 0)
+      camera.lookAt(new THREE.Vector3(0, 0, 0))
+    }
+
+    function render() {
+      requestAnimationFrame(render);
+      rotateCube();
+      renderer.render(scene, camera);
+    }
+
+    </script>
+  </head>
+  <body onload="start()">
+    <canvas id="glcanvas" width="640" height="480">
+      Your browser doesn't appear to support the <code>&lt;canvas&gt;</code> element.
+    </canvas>
+  </body>
+</html>

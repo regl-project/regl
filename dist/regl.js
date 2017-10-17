@@ -4,7 +4,7 @@
 	(global.createREGL = factory());
 }(this, (function () { 'use strict';
 
-var arrayTypes =  {
+var arrayTypes = {
 	"[object Int8Array]": 5120,
 	"[object Int16Array]": 5122,
 	"[object Int32Array]": 5124,
@@ -821,6 +821,23 @@ function createCanvas (element, onDone, pixelRatio) {
     window.removeEventListener('resize', resize);
     element.removeChild(canvas);
   }
+
+  // Add the cursor position data within canvas
+  canvas.cursorX = 0;
+  canvas.cursorY = 0;
+  function getMousePos (canvas, evt) {
+    var rect = canvas.getBoundingClientRect();
+    return {
+      x: 2 * ( (evt.clientX - rect.left) / canvas.width ) - 1,
+      y: -( 2 * ( (evt.clientY - rect.top) / canvas.height ) - 1 )
+    }
+  }
+
+  document.addEventListener('mousemove', function (evt) {
+    var mousePos = getMousePos(canvas, evt);
+    canvas.cursorX = mousePos.x;
+    canvas.cursorY = mousePos.y;
+  }, false);
 
   resize();
 
@@ -6873,7 +6890,7 @@ function reglCore (
                 typeof value === 'number' &&
                 value >= limits.lineWidthDims[0] &&
                 value <= limits.lineWidthDims[1],
-                'invalid line width, must positive number between ' +
+                'invalid line width, must be a positive number between ' +
                 limits.lineWidthDims[0] + ' and ' + limits.lineWidthDims[1], env.commandStr);
               return value
             },
@@ -8976,7 +8993,9 @@ function wrapREGL (args) {
     framebufferHeight: HEIGHT,
     drawingBufferWidth: WIDTH,
     drawingBufferHeight: HEIGHT,
-    pixelRatio: config.pixelRatio
+    pixelRatio: config.pixelRatio,
+    cursorX: 0,
+    cursorY: 0
   };
   var uniformState = {};
   var drawState = {
@@ -9378,6 +9397,8 @@ function wrapREGL (args) {
   function poll () {
     contextState.tick += 1;
     contextState.time = now();
+    contextState.cursorX = gl.canvas ? gl.canvas.cursorX : 0;
+    contextState.cursorY = gl.canvas ? gl.canvas.cursorY : 0;
     pollViewport();
     core.procs.poll();
   }

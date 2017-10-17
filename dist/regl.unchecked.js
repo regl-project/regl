@@ -168,6 +168,23 @@ function createCanvas (element, onDone, pixelRatio) {
     element.removeChild(canvas);
   }
 
+  // Add the cursor position data within canvas
+  canvas.cursorX = 0;
+  canvas.cursorY = 0;
+  function getMousePos (canvas, evt) {
+    var rect = canvas.getBoundingClientRect();
+    return {
+      x: 2 * ( (evt.clientX - rect.left) / canvas.width ) - 1,
+      y: -( 2 * ( (evt.clientY - rect.top) / canvas.height ) - 1 )
+    }
+  }
+
+  document.addEventListener('mousemove', function (evt) {
+    var mousePos = getMousePos(canvas, evt);
+    canvas.cursorX = mousePos.x;
+    canvas.cursorY = mousePos.y;
+  }, false);
+
   resize();
 
   return {
@@ -7697,7 +7714,9 @@ function wrapREGL (args) {
     framebufferHeight: HEIGHT,
     drawingBufferWidth: WIDTH,
     drawingBufferHeight: HEIGHT,
-    pixelRatio: config.pixelRatio
+    pixelRatio: config.pixelRatio,
+    cursorX: 0,
+    cursorY: 0
   };
   var uniformState = {};
   var drawState = {
@@ -8097,6 +8116,8 @@ function wrapREGL (args) {
   function poll () {
     contextState.tick += 1;
     contextState.time = now();
+    contextState.cursorX = gl.canvas ? gl.canvas.cursorX : 0;
+    contextState.cursorY = gl.canvas ? gl.canvas.cursorY : 0;
     pollViewport();
     core.procs.poll();
   }

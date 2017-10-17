@@ -74,7 +74,9 @@ module.exports = function wrapREGL (args) {
     framebufferHeight: HEIGHT,
     drawingBufferWidth: WIDTH,
     drawingBufferHeight: HEIGHT,
-    pixelRatio: config.pixelRatio
+    pixelRatio: config.pixelRatio,
+    cursorX: 0,
+    cursorY: 0
   }
   var uniformState = {}
   var drawState = {
@@ -476,6 +478,8 @@ module.exports = function wrapREGL (args) {
   function poll () {
     contextState.tick += 1
     contextState.time = now()
+    contextState.cursorX = gl.canvas ? gl.canvas.cursorX : 0
+    contextState.cursorY = gl.canvas ? gl.canvas.cursorY : 0
     pollViewport()
     core.procs.poll()
   }
