@@ -2579,7 +2579,7 @@ function createTextureSet (
     this.premultiplyAlpha = false;
     this.flipY = false;
     this.unpackAlignment = 1;
-    this.colorSpace = 0;
+    this.colorSpace = GL_BROWSER_DEFAULT_WEBGL;
 
     // shape info
     this.width = 0;
