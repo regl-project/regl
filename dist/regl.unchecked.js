@@ -450,21 +450,18 @@ var wrapLimits = function (gl, extensions) {
   }
 };
 
-var arrayTypes = {
-	"[object Int8Array]": 5120,
-	"[object Int16Array]": 5122,
-	"[object Int32Array]": 5124,
-	"[object Uint8Array]": 5121,
-	"[object Uint8ClampedArray]": 5121,
-	"[object Uint16Array]": 5123,
-	"[object Uint32Array]": 5125,
-	"[object Float32Array]": 5126,
-	"[object Float64Array]": 5121,
-	"[object ArrayBuffer]": 5121
-};
-
 var isTypedArray = function (x) {
-  return Object.prototype.toString.call(x) in arrayTypes
+  return (
+    x instanceof Uint8Array ||
+    x instanceof Uint16Array ||
+    x instanceof Uint32Array ||
+    x instanceof Int8Array ||
+    x instanceof Int16Array ||
+    x instanceof Int32Array ||
+    x instanceof Float32Array ||
+    x instanceof Float64Array ||
+    x instanceof Uint8ClampedArray
+  )
 };
 
 function isNDArrayLike (obj) {
@@ -673,6 +670,19 @@ function arrayShape$1 (array_) {
   }
   return shape
 }
+
+var arrayTypes = {
+	"[object Int8Array]": 5120,
+	"[object Int16Array]": 5122,
+	"[object Int32Array]": 5124,
+	"[object Uint8Array]": 5121,
+	"[object Uint8ClampedArray]": 5121,
+	"[object Uint16Array]": 5123,
+	"[object Uint32Array]": 5125,
+	"[object Float32Array]": 5126,
+	"[object Float64Array]": 5121,
+	"[object ArrayBuffer]": 5121
+};
 
 var int8 = 5120;
 var int16 = 5122;
@@ -971,7 +981,9 @@ function wrapBufferState (gl, stats, config) {
       var offset = (offset_ || 0) | 0;
       var shape;
       buffer.bind();
-      if (Array.isArray(data)) {
+      if (isTypedArray(data)) {
+        setSubData(data, offset);
+      } else if (Array.isArray(data)) {
         if (data.length > 0) {
           if (typeof data[0] === 'number') {
             var converted = pool.allocType(buffer.dtype, data.length);
@@ -987,8 +999,6 @@ function wrapBufferState (gl, stats, config) {
             
           }
         }
-      } else if (isTypedArray(data)) {
-        setSubData(data, offset);
       } else if (isNDArrayLike(data)) {
         shape = data.shape;
         var stride = data.stride;
@@ -3118,6 +3128,8 @@ var wrapRenderbuffers = function (gl, extensions, limits, stats, config) {
       gl.bindRenderbuffer(GL_RENDERBUFFER, renderbuffer.renderbuffer);
       gl.renderbufferStorage(GL_RENDERBUFFER, format, w, h);
 
+      
+
       if (config.profile) {
         renderbuffer.stats.size = getRenderbufferSize(renderbuffer.format, renderbuffer.width, renderbuffer.height);
       }
@@ -3142,6 +3154,8 @@ var wrapRenderbuffers = function (gl, extensions, limits, stats, config) {
 
       gl.bindRenderbuffer(GL_RENDERBUFFER, renderbuffer.renderbuffer);
       gl.renderbufferStorage(GL_RENDERBUFFER, renderbuffer.format, w, h);
+
+      
 
       // also, recompute size.
       if (config.profile) {
