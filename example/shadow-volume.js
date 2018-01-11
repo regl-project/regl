@@ -9,7 +9,7 @@
   </p>
 
   <p> You can read more about shadow volumes <a href="http://www.gamasutra.com/view/feature/131351/the_mechanics_of_robust_stencil_.php?print=1">here</a> and
-  <a href="http://http.developer.nvidia.com/GPUGems/gpugems_ch09.html">here</a>
+  <a href="https://developer.nvidia.com/gpugems/GPUGems/gpugems_ch09.html">here</a>
 
 */
 
