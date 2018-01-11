@@ -53,6 +53,50 @@ tape('attribute constants', function (t) {
     '4-typed': new Float32Array([1, 0, 0, 1])
   }
 
+  var propDesc = extend({}, baseDesc)
+  propDesc.attributes = extend(propDesc.attributes, {
+    color: {
+      constant: regl.prop('color')
+    }
+  })
+  var propCommand = regl(propDesc)
+
+  var propDynShaderDesc = extend({
+    frag: function (context, props) {
+      return frag
+    }
+  }, baseDesc)
+  propDynShaderDesc.attributes = extend(propDynShaderDesc.attributes, {
+    color: {
+      constant: regl.prop('color')
+    }
+  })
+  var propDynShaderCommand = regl(propDynShaderDesc)
+
+  var propAttrDesc = extend({}, baseDesc)
+  propAttrDesc.attributes = extend(propAttrDesc.attributes, {
+    color: function (_, props) {
+      return {
+        constant: props.color
+      }
+    }
+  })
+  var propAttrCommand = regl(propAttrDesc)
+
+  var propAttrDynDesc = extend({
+    frag: function (context, props) {
+      return frag
+    }
+  }, baseDesc)
+  propAttrDynDesc.attributes = extend(propAttrDynDesc.attributes, {
+    color: function (_, props) {
+      return {
+        constant: props.color
+      }
+    }
+  })
+  var propAttrDynCommand = regl(propAttrDynDesc)
+
   var commands = {
     'static': function (color) {
       var desc = extend({}, baseDesc)
@@ -79,27 +123,11 @@ tape('attribute constants', function (t) {
     },
 
     'prop': function (color) {
-      var desc = extend({}, baseDesc)
-      desc.attributes = extend(desc.attributes, {
-        color: {
-          constant: regl.prop('color')
-        }
-      })
-      return regl(desc)
+      return propCommand
     },
 
     'prop - dyn shader': function (color) {
-      var desc = extend({
-        frag: function (context, props) {
-          return frag
-        }
-      }, baseDesc)
-      desc.attributes = extend(desc.attributes, {
-        color: {
-          constant: regl.prop('color')
-        }
-      })
-      return regl(desc)
+      return propDynShaderCommand
     },
 
     'context': function (color) {
@@ -129,6 +157,45 @@ tape('attribute constants', function (t) {
         color: {
           constant: regl.context('color')
         }
+      })
+      return regl(desc)
+    },
+
+    'prop-attr': function (color) {
+      return propAttrCommand
+    },
+
+    'prop-attr - dyn shader': function (color) {
+      return propAttrDynCommand
+    },
+
+    'context-attr': function (color) {
+      var desc = extend({
+        context: {
+          color: {
+            constant: color
+          }
+        }
+      }, baseDesc)
+      desc.attributes = extend(desc.attributes, {
+        color: regl.context('color')
+      })
+      return regl(desc)
+    },
+
+    'context-attr - dyn shader': function (color) {
+      var desc = extend({
+        context: {
+          color: {
+            constant: color
+          }
+        },
+        frag: function () {
+          return frag
+        }
+      }, baseDesc)
+      desc.attributes = extend(desc.attributes, {
+        color: regl.context('color')
       })
       return regl(desc)
     }
@@ -183,6 +250,17 @@ tape('attribute constants', function (t) {
         })
         caseCode(command, color)
         t.ok(checkPixels(color), caseName + ',' + commandName + ' ' + count)
+        if (commandName.indexOf('prop') >= 0 && Array.isArray(color)) {
+          for (var i = 0; i < color.length; ++i) {
+            var scratchColor = color.slice()
+            scratchColor[i] = color[i] ^ 1;
+            regl.clear({
+              color: [0, 0, 0, 0]
+            })
+            caseCode(command, scratchColor)
+            t.ok(checkPixels(scratchColor), caseName + ',' + commandName + ' ' + count)  
+          }
+        }
       })
     })
   })
