@@ -51,7 +51,7 @@ tape('attribute constants', function (t) {
     '2-typed': new Float32Array([1, 1]),
     '3-typed': new Float32Array([1, 0, 1]),
     '4-typed': new Float32Array([1, 0, 0, 1]),
-    'zero': 0,
+    'zero': 0
   }
 
   var commands = {
@@ -164,7 +164,7 @@ tape('attribute constants', function (t) {
         if (pixels[4 * i + 1] !== 0 ||
             pixels[4 * i + 2] !== 0 ||
             pixels[4 * i + 3] !== 0) {
-            return false
+          return false
         }
       } else {
         for (var j = 0; j < color.length; ++j) {
@@ -172,7 +172,7 @@ tape('attribute constants', function (t) {
             return false
           }
         }
-        for (var j = color.length; j < 4; ++j) {
+        for (j = color.length; j < 4; ++j) {
           if (pixels[4 * i + j] !== 0) {
             return false
           }
