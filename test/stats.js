@@ -382,7 +382,6 @@ tape('test regl.stats', function (t) {
       t.equals(stats.getTotalTextureSize(), totalSize, 'stats.getTotalTextureSize() at testCase ' + i)
     })
 
-    
     // now destroy all textures, one after one.
     Object.keys(textures).forEach(function (key, i) {
       tex = textures[key]
@@ -579,7 +578,6 @@ tape('test regl.stats', function (t) {
 
     regl.destroy()
     */
-
 
     //
     // test stats.getMaxUniformsCount()

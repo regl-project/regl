@@ -50,7 +50,8 @@ tape('attribute constants', function (t) {
     '1-typed': new Float32Array([1]),
     '2-typed': new Float32Array([1, 1]),
     '3-typed': new Float32Array([1, 0, 1]),
-    '4-typed': new Float32Array([1, 0, 0, 1])
+    '4-typed': new Float32Array([1, 0, 0, 1]),
+    'zero': 0
   }
 
   var commands = {
@@ -160,9 +161,19 @@ tape('attribute constants', function (t) {
         if (pixels[4 * i] !== color * 255) {
           return false
         }
+        if (pixels[4 * i + 1] !== 0 ||
+            pixels[4 * i + 2] !== 0 ||
+            pixels[4 * i + 3] !== 0) {
+          return false
+        }
       } else {
         for (var j = 0; j < color.length; ++j) {
           if (pixels[4 * i + j] !== color[j] * 255) {
+            return false
+          }
+        }
+        for (j = color.length; j < 4; ++j) {
+          if (pixels[4 * i + j] !== 0) {
             return false
           }
         }
@@ -179,7 +190,7 @@ tape('attribute constants', function (t) {
       Object.keys(cases).forEach(function (caseName) {
         var caseCode = cases[caseName]
         regl.clear({
-          color: [0, 0, 0, 0]
+          color: [1, 1, 1, 1]
         })
         caseCode(command, color)
         t.ok(checkPixels(color), caseName + ',' + commandName + ' ' + count)
