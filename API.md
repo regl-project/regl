@@ -497,7 +497,25 @@ setupCamera({
 
 #### Props
 
-The most common way to pass data into regl is via props.  The props for a render command are declared
+The most common way to pass data into regl is via props.  The props for a render command are passed as an argument when the command is called.  If the props are an array, then the command is executed in batch mode, once for each prop in order.  Otherwise, if the props are an object, then the command is executed once with the props as an input. Any dynamic variable in the command may access the props as the second argument.  For example:
+
+```javascript
+const setupUniform = regl({
+  // ...
+
+  uniforms: {
+    foo: function (context, props) {
+      return props.foo
+    },
+
+    bar: regl.prop('bar')
+    // this is equivalent to:
+    //
+    //    function (context, props) { return props.bar }
+    //
+  }
+})
+```
 
 #### `this`
 
