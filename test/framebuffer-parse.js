@@ -385,28 +385,6 @@ tape('framebuffer parsing', function (t) {
 
   checkProperties(
     regl.framebuffer({
-      width: 10,
-      height: 10,
-      colorFormat: 'rgb5 a1',
-      depth: true,
-      stencil: true
-    }),
-    {
-      width: 10,
-      height: 10,
-      color: [{
-        target: gl.RENDERBUFFER,
-        format: gl.RGB5_A1
-      }],
-      depthStencil: {
-        target: gl.RENDERBUFFER,
-        format: gl.DEPTH_STENCIL
-      }
-    },
-    'color renderbuffer')
-
-  checkProperties(
-    regl.framebuffer({
       shape: [10, 10],
       colorTexture: false,
       depth: true,
@@ -488,8 +466,8 @@ tape('framebuffer parsing', function (t) {
   var testCases = [
     {tex: true, colorFormat: 'rgba', colorType: 'uint8', expectedFormat: gl.RGBA, expectedType: gl.UNSIGNED_BYTE},
     {tex: false, colorFormat: 'rgba4', expectedFormat: gl.RGBA4},
-    {tex: false, colorFormat: 'rgb565', expectedFormat: gl.RGB565},
-    {tex: false, colorFormat: 'rgb5 a1', expectedFormat: gl.RGB5_A1}
+    {tex: false, colorFormat: 'rgb565', expectedFormat: gl.RGB565}
+//    {tex: false, colorFormat: 'rgb5 a1', expectedFormat: gl.RGB5_A1}
   ]
 
   // these test cases should fail.
