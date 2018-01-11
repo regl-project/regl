@@ -136,11 +136,11 @@ tape('read pixels', function (t) {
         height: H
       })
       regl({framebuffer: fbo})(function () {
-        regl.read();
+        regl.read()
       })
     } catch (e) {
       t.pass('attempt to read from renderbuffer of type ' + testCase, [{}])
-      return;
+      return
     }
     t.fail('attempt to read from renderbuffer of type ' + testCase, [{}])
   })
