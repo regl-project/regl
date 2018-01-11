@@ -129,14 +129,20 @@ tape('read pixels', function (t) {
   }
 
   badTestCases.forEach(function (testCase, i) {
-    fbo = regl.framebuffer({
-      colorFormat: testCase,
-      width: W,
-      height: H
-    })
-    regl({framebuffer: fbo})(function () {
-      throws('attempt to read from renderbuffer of type ' + testCase, [{}])
-    })
+    try {
+      fbo = regl.framebuffer({
+        colorFormat: testCase,
+        width: W,
+        height: H
+      })
+      regl({framebuffer: fbo})(function () {
+        regl.read();
+      })
+    } catch (e) {
+      t.pass('attempt to read from renderbuffer of type ' + testCase, [{}])
+      return;
+    }
+    t.fail('attempt to read from renderbuffer of type ' + testCase, [{}])
   })
 
   regl.destroy()

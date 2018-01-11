@@ -150,6 +150,7 @@ tape('renderbuffer parsing', function (t) {
     })
   }
 
+  /*
   if (regl.hasExtension('ext_color_buffer_half_float')) {
     var ext = gl.getExtension('ext_color_buffer_half_float')
     checkProperties('rgba16f', regl.renderbuffer({
@@ -169,7 +170,9 @@ tape('renderbuffer parsing', function (t) {
       format: ext.RGB16F_EXT
     })
   }
+  */
 
+  /*
   if (regl.hasExtension('webgl_color_buffer_float')) {
     checkProperties('rgba16f', regl.renderbuffer({
       radius: 1,
@@ -180,6 +183,7 @@ tape('renderbuffer parsing', function (t) {
       format: gl.getExtension('webgl_color_buffer_float').RGBA32F_EXT
     })
   }
+  */
 
   function checkFormat (args) {
     args.shape = [1, 1]
@@ -199,14 +203,18 @@ tape('renderbuffer parsing', function (t) {
     checkFormat({format: 'srgba'})
   }
 
+  /*
   if (regl.hasExtension('webgl_color_buffer_float')) {
     checkFormat({format: 'rgba32f'})
   }
+  */
 
+  /*
   if (regl.hasExtension('ext_color_buffer_half_float')) {
     checkFormat({format: 'rgba16f'})
     checkFormat({format: 'rgb16f'})
   }
+  */
 
   regl.destroy()
   t.equals(gl.getError(), 0, 'error ok')
