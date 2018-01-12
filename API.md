@@ -940,7 +940,7 @@ var command = regl({
 | ---------- | ----------------------------------- | --------------------------------------------- |
 | `enable`   | Toggles `gl.enable(gl.BLEND)`       | `false`                                       |
 | `equation` | Sets `gl.blendEquation` (see table) | `'add'`                                       |
-| `func`     | Sets `gl.blendFunc` (see table)     | `{src:'src alpha',dst:'one minus src alpha'}` |
+| `func`     | Sets `gl.blendFunc` (see table)     | `{src:'one',dst:'one'}` |
 | `color`    | Sets `gl.blendColor`                | `[0, 0, 0, 0]`                                |
 
 **Notes**
