@@ -1,3 +1,4 @@
+require('../destroy-bound-buffer')
 require('../flatten')
 require('../context-loss')
 require('../constructor')
