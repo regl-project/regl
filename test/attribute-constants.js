@@ -264,12 +264,12 @@ tape('attribute constants', function (t) {
         if (commandName.indexOf('prop') >= 0 && Array.isArray(color)) {
           for (var i = 0; i < color.length; ++i) {
             var scratchColor = color.slice()
-            scratchColor[i] = color[i] ^ 1;
+            scratchColor[i] = color[i] ^ 1
             regl.clear({
               color: [0, 0, 0, 0]
             })
             caseCode(command, scratchColor)
-            t.ok(checkPixels(scratchColor), caseName + ',' + commandName + ' ' + count)  
+            t.ok(checkPixels(scratchColor), caseName + ',' + commandName + ' ' + count)
           }
         }
       })
