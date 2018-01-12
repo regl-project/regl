@@ -1392,7 +1392,7 @@ function transpose (
   }
 }
 
-function wrapBufferState (gl, stats, config) {
+function wrapBufferState (gl, stats, config, attributeState) {
   var bufferCount = 0;
   var bufferSet = {};
 
@@ -1541,6 +1541,14 @@ function wrapBufferState (gl, stats, config) {
 
   function destroy (buffer) {
     stats.bufferCount--;
+
+    for (var i = 0; i < attributeState.state.length; ++i) {
+      var record = attributeState.state[i];
+      if (record.buffer === buffer) {
+        gl.disableVertexAttribArray(i);
+        record.buffer = null;
+      }
+    }
 
     var handle = buffer.buffer;
     check$1(handle, 'buffer must not be deleted already');
@@ -3861,7 +3869,7 @@ var wrapRenderbuffers = function (gl, extensions, limits, stats, config) {
       gl.renderbufferStorage(GL_RENDERBUFFER, format, w, h);
 
       check$1(
-        gl.getError() == 0,
+        gl.getError() === 0,
         'invalid render buffer format');
 
       if (config.profile) {
@@ -3893,7 +3901,7 @@ var wrapRenderbuffers = function (gl, extensions, limits, stats, config) {
       gl.renderbufferStorage(GL_RENDERBUFFER, renderbuffer.format, w, h);
 
       check$1(
-        gl.getError() == 0,
+        gl.getError() === 0,
         'invalid render buffer format');
 
       // also, recompute size.
@@ -4880,7 +4888,6 @@ function wrapAttributeState (
   gl,
   extensions,
   limits,
-  bufferState,
   stringStore) {
   var NUM_ATTRIBUTES = limits.maxAttributes;
   var attributeBindings = new Array(NUM_ATTRIBUTES);
@@ -7057,7 +7064,7 @@ function reglCore (
         } else {
           check$1.command(typeof value === 'object' && value,
             'invalid data for attribute ' + attribute, env.commandStr);
-          if (value.constant) {
+          if ('constant' in value) {
             var constant = value.constant;
             record.buffer = 'null';
             record.state = ATTRIB_STATE_CONSTANT;
@@ -9006,14 +9013,17 @@ function wrapREGL (args) {
   };
 
   var limits = wrapLimits(gl, extensions);
-  var bufferState = wrapBufferState(gl, stats$$1, config);
   var elementState = wrapElementsState(gl, extensions, bufferState, stats$$1);
   var attributeState = wrapAttributeState(
     gl,
     extensions,
     limits,
-    bufferState,
     stringStore);
+  var bufferState = wrapBufferState(
+    gl,
+    stats$$1,
+    config,
+    attributeState);
   var shaderState = wrapShaderState(gl, stringStore, stats$$1, config);
   var textureState = createTextureSet(
     gl,
