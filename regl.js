@@ -86,14 +86,17 @@ module.exports = function wrapREGL (args) {
   }
 
   var limits = wrapLimits(gl, extensions)
-  var bufferState = wrapBuffers(gl, stats, config)
   var elementState = wrapElements(gl, extensions, bufferState, stats)
   var attributeState = wrapAttributes(
     gl,
     extensions,
     limits,
-    bufferState,
     stringStore)
+  var bufferState = wrapBuffers(
+    gl,
+    stats,
+    config,
+    attributeState)
   var shaderState = wrapShaders(gl, stringStore, stats, config)
   var textureState = wrapTextures(
     gl,
