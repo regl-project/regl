@@ -5,6 +5,7 @@
   "main": "dist/regl.js",
   "files": [
     "regl.js",
+    "regl.d.ts",
     "lib/*",
     "dist/*",
     "browserify/*",
