@@ -847,34 +847,36 @@ declare namespace REGL {
     textureFormats: TextureFormatType[];
   }
 
-  // TODO Revise the types of `REGL.Stats`
   interface Stats {
     /** The number of array buffers currently allocated */
-    bufferCount?: number;
+    bufferCount: number;
     /** The number of element buffers currently allocated */
-    elementsCount?: number;
+    elementsCount: number;
     /** The number of framebuffers currently allocated */
-    framebufferCount?: number;
+    framebufferCount: number;
     /** The number of shaders currently allocated */
-    shaderCount?: number;
+    shaderCount: number;
     /** The number of textures currently allocated */
-    textureCount?: number;
+    textureCount: number;
     /** The number of cube maps currently allocated */
-    cubeCount?: number;
+    cubeCount: number;
     /** The number of renderbuffers currently allocated */
-    renderbufferCount?: number;
-    /** The total amount of memory allocated for textures and cube maps */
-    getTotalTextureSize(): number;
-    /** The total amount of memory allocated for array buffers and element buffers */
-    getTotalBufferSize(): number;
-    /** The total amount of memory allocated for renderbuffers */
-    getTotalRenderbufferSize(): number;
-    /** The maximum number of uniforms in any shader */
-    getMaxUniformsCount(): number;
-    /** The maximum number of attributes in any shader */
-    getMaxAttributesCount(): number;
+    renderbufferCount: number;
     /** The maximum number of texture units used */
     maxTextureUnits: number;
+
+    // The following functions are only available if regl is initialized with option `profile: true`
+
+    /** The total amount of memory allocated for textures and cube maps */
+    getTotalTextureSize?: () => number;
+    /** The total amount of memory allocated for array buffers and element buffers */
+    getTotalBufferSize?: () => number;
+    /** The total amount of memory allocated for renderbuffers */
+    getTotalRenderbufferSize?: () => number;
+    /** The maximum number of uniforms in any shader */
+    getMaxUniformsCount?: () => number;
+    /** The maximum number of attributes in any shader */
+    getMaxAttributesCount?: () => number;
   }
 
   interface CommandStats {
