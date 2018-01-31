@@ -2627,12 +2627,12 @@ regl exposes info about the WebGL context limits and capabilities via the `regl.
 | `textureCount`               | The number of textures currently allocated                                 |
 | `cubeCount`                  | The number of cube maps currently allocated                                |
 | `renderbufferCount`          | The number of renderbuffers currently allocated                            |
+| `maxTextureUnits`            | The maximum number of texture units used                                   |
 | `getTotalTextureSize()`      | The total amount of memory allocated for textures and cube maps            |
 | `getTotalBufferSize()`       | The total amount of memory allocated for array buffers and element buffers |
 | `getTotalRenderbufferSize()` | The total amount of memory allocated for renderbuffers                     |
 | `getMaxUniformsCount()`      | The maximum number of uniforms in any shader                               |
 | `getMaxAttributesCount()`    | The maximum number of attributes in any shader                             |
-| `maxTextureUnits()`          | The maximum number of texture units used                                   |
 
 * * *
 
