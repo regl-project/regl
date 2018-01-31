@@ -260,7 +260,7 @@ var regl = require('regl')(require('gl')(256, 256))
 
 ### Error messages and debug mode
 
-By default if you compile `regl` with browserify then all error messages and checks are removed.  This is done in order to reduce the size of the final bundle and to improve run time performance.  
+By default if you compile `regl` with browserify then all error messages and checks are removed.  This is done in order to reduce the size of the final bundle and to improve run time performance.
 
 **If you want error messages and are using browserify make sure that you compile using `--debug`**.  Not only will this insert debug messages but it will also give you source maps which make finding errors easier.
 
@@ -327,7 +327,7 @@ command(count)
 command([props0, props1, props2, ..., propsn])
 ```
 
-In batch mode the command can be a little smarter regarding binding shaders/performing some checks. The command can then figure out which props are constant, which are dynamic, and then only apply the changes on each dynamic prop. This offers a small performance boost. 
+In batch mode the command can be a little smarter regarding binding shaders/performing some checks. The command can then figure out which props are constant, which are dynamic, and then only apply the changes on each dynamic prop. This offers a small performance boost.
 
 #### Scoped commands
 
@@ -1417,8 +1417,8 @@ var positionBuffer = regl.buffer([
 
 | Data type          | Description          |
 | ------------------ | ---------------------|
-| `'uint8'`          | `gl.UNSIGNED_BYTE`   |  
-| `'int8'`           | `gl.BYTE`            |  
+| `'uint8'`          | `gl.UNSIGNED_BYTE`   |
+| `'int8'`           | `gl.BYTE`            |
 | `'uint16'`         | `gl.UNSIGNED_SHORT`  |
 | `'int16'`          | `gl.SHORT`           |
 | `'uint32'`         | `gl.UNSIGNED_INT`    |
