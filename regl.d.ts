@@ -66,7 +66,6 @@ declare namespace REGL {
    */
   export interface Regl {
     readonly attributes: WebGLContextAttributes;
-    readonly contextLost: boolean;
     readonly _gl: WebGLRenderingContext;
     readonly limits: REGL.Limits;
     readonly stats: REGL.Stats;
