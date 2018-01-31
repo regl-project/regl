@@ -844,6 +844,8 @@ declare namespace REGL {
     vendor?: string;
     /** gl.VERSION */
     version?: string;
+    /** A list of all supported texture formats */
+    textureFormats: TextureFormatType[];
   }
 
   // TODO Revise the types of `REGL.Stats`

@@ -2606,6 +2606,7 @@ regl exposes info about the WebGL context limits and capabilities via the `regl.
 | `renderer`                | `gl.RENDERER`                                                       |
 | `vendor`                  | `gl.VENDOR`                                                         |
 | `version`                 | `gl.VERSION`                                                        |
+| `textureFormats`          | A list of all supported texture formats                             |
 
 **Relevant WebGL APIs**
 
