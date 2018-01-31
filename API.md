@@ -241,8 +241,8 @@ var regl = require('regl')(require('gl')(256, 256))
 | Options              | Meaning                                                                                                                                                                       |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `gl`                 | A reference to a WebGL rendering context. (Default created from canvas)                                                                                                       |
-| `canvas`             | A reference to an HTML canvas element. (Default created and appending to container)                                                                                           |
-| `container`          | A container element which regl inserts a canvas into. (Default `document.body`)                                                                                               |
+| `canvas`             | A reference to an HTML canvas element. (Default created and appended to container)                                                                                           |
+| `container`          | A container element into which regl inserts a canvas. (Default `document.body`)                                                                                               |
 | `attributes`         | The [context creation attributes](https://www.khronos.org/registry/webgl/specs/1.0/#WEBGLCONTEXTATTRIBUTES) passed to the WebGL context constructor.  See below for defaults. |
 | `pixelRatio`         | A multiplier which is used to scale the canvas size relative to the container.  (Default `window.devicePixelRatio`)                                                           |
 | `extensions`         | A list of extensions that must be supported by WebGL context. Default `[]`                                                                                                    |
