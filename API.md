@@ -7,6 +7,7 @@
     -   [Quick start](#quick-start)
 
         -   [As a fullscreen canvas](#as-a-fullscreen-canvas)
+        -   [From a query selector](#from-a-selector-string)
         -   [From a container div](#from-a-container-div)
         -   [From a canvas](#from-a-canvas)
         -   [From a WebGL context](#from-a-webgl-context)
@@ -172,6 +173,17 @@ var regl = require('regl')()
 ```
 
 This canvas will dynamically resize whenever the window changes shape.  For most quick demos this is an easy way to get started using `regl`.
+
+#### From a selector string
+
+If the first argument is a CSS selector string, `regl` will attempt to find and use the corresponding DOM element. This may be:
+1) an existing HTMLCanvasElement
+2) an element that contains a canvas
+3) an element in which you'd like `regl` to create a canvas
+
+```javascript
+var regl = require('regl')('#my-canvas');
+```
 
 #### From a container div
 

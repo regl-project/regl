@@ -25,6 +25,10 @@ declare function REGL(): REGL.Regl;
 
 /**
  * Creates a WebGL rendering context using an element selected by `selector`.
+ * This may be:
+ * 1) an existing HTMLCanvasElement
+ * 2) an element that contains a canvas
+ * 3) an element in which you'd like `regl` to create a canvas
  *
  * @param selector an argument to `document.querySelector`
  */
