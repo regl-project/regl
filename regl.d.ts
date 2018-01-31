@@ -795,55 +795,55 @@ declare namespace REGL {
   // TODO Revise the types of `REGL.Limits` fields
   interface Limits {
     /** An array of bits depths for the red, green, blue and alpha channels */
-    colorBits?: [number, number, number, number];
+    colorBits: [number, number, number, number];
     /** Bit depth of drawing buffer */
-    depthBits?: number;
+    depthBits: number;
     /** Bit depth of stencil buffer */
-    stencilBits?: number;
+    stencilBits: number;
     /** gl.SUBPIXEL_BITS */
-    subpixelBits?: any;
+    subpixelBits: any;
     /** A list of all supported extensions */
-    extensions?: string[];
+    extensions: string[];
     /** Maximum number of anisotropic filtering samples */
-    maxAnisotropic?: number;
+    maxAnisotropic: number;
     /** Maximum number of draw buffers */
-    maxDrawbuffers?: number;
+    maxDrawbuffers: number;
     /** Maximum number of color attachments */
-    maxColorAttachments?: number;
+    maxColorAttachments: number;
     /** gl.ALIASED_POINT_SIZE_RANGE */
-    pointSizeDims?: any;
+    pointSizeDims: any;
     /** gl.ALIASED_LINE_WIDTH_RANGE */
-    lineWidthDims?: any;
+    lineWidthDims: any;
     /** gl.MAX_VIEWPORT_DIMS */
-    maxViewportDims?: any;
+    maxViewportDims: any;
     /** gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS */
-    maxCombinedTextureUnits?: any;
+    maxCombinedTextureUnits: any;
     /** gl.MAX_CUBE_MAP_TEXTURE_SIZE */
-    maxCubeMapSize?: any;
+    maxCubeMapSize: any;
     /** gl.MAX_RENDERBUFFER_SIZE */
-    maxRenderbufferSize?: any;
+    maxRenderbufferSize: any;
     /** gl.MAX_TEXTURE_IMAGE_UNITS */
-    maxTextureUnits?: any;
+    maxTextureUnits: any;
     /** gl.MAX_TEXTURE_SIZE */
-    maxTextureSize?: any;
+    maxTextureSize: any;
     /** gl.MAX_VERTEX_ATTRIBS */
-    maxAttributes?: any;
+    maxAttributes: any;
     /** gl.MAX_VERTEX_UNIFORM_VECTORS */
-    maxVertexUniforms?: any;
+    maxVertexUniforms: any;
     /** gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS */
-    maxVertexTextureUnits?: any;
+    maxVertexTextureUnits: any;
     /** gl.MAX_VARYING_VECTORS */
-    maxVaryingVectors?: any;
+    maxVaryingVectors: any;
     /** gl.MAX_FRAGMENT_UNIFORM_VECTORS */
-    maxFragmentUniforms?: any;
+    maxFragmentUniforms: any;
     /** gl.SHADING_LANGUAGE_VERSION */
-    glsl?: string;
+    glsl: string;
     /** gl.RENDERER */
-    renderer?: string;
+    renderer: string;
     /** gl.VENDOR */
-    vendor?: string;
+    vendor: string;
     /** gl.VERSION */
-    version?: string;
+    version: string;
     /** A list of all supported texture formats */
     textureFormats: TextureFormatType[];
   }
