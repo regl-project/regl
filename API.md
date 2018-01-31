@@ -2634,6 +2634,10 @@ regl exposes info about the WebGL context limits and capabilities via the `regl.
 | `getMaxUniformsCount()`      | The maximum number of uniforms in any shader                               |
 | `getMaxAttributesCount()`    | The maximum number of attributes in any shader                             |
 
+**Notes**
+-   The functions `getTotalTextureSize`, `getTotalBufferSize`, `getTotalRenderbufferSize`, `getMaxUniformsCount`, and `getMaxAttributesCount` are only available if `regl` is initialized with the option `profile: true`.
+
+
 * * *
 
 ### Clocks and timers
