@@ -792,7 +792,6 @@ declare namespace REGL {
     resize(radius: number): void;
   }
 
-  // TODO Revise the types of `REGL.Limits` fields
   interface Limits {
     /** An array of bits depths for the red, green, blue and alpha channels */
     colorBits: [number, number, number, number];
@@ -801,7 +800,7 @@ declare namespace REGL {
     /** Bit depth of stencil buffer */
     stencilBits: number;
     /** gl.SUBPIXEL_BITS */
-    subpixelBits: any;
+    subpixelBits: number;
     /** A list of all supported extensions */
     extensions: string[];
     /** Maximum number of anisotropic filtering samples */
@@ -811,31 +810,31 @@ declare namespace REGL {
     /** Maximum number of color attachments */
     maxColorAttachments: number;
     /** gl.ALIASED_POINT_SIZE_RANGE */
-    pointSizeDims: any;
+    pointSizeDims: Float32Array;
     /** gl.ALIASED_LINE_WIDTH_RANGE */
-    lineWidthDims: any;
+    lineWidthDims: Float32Array;
     /** gl.MAX_VIEWPORT_DIMS */
-    maxViewportDims: any;
+    maxViewportDims: Int32Array;
     /** gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS */
-    maxCombinedTextureUnits: any;
+    maxCombinedTextureUnits: number;
     /** gl.MAX_CUBE_MAP_TEXTURE_SIZE */
-    maxCubeMapSize: any;
+    maxCubeMapSize: number;
     /** gl.MAX_RENDERBUFFER_SIZE */
-    maxRenderbufferSize: any;
+    maxRenderbufferSize: number;
     /** gl.MAX_TEXTURE_IMAGE_UNITS */
-    maxTextureUnits: any;
+    maxTextureUnits: number;
     /** gl.MAX_TEXTURE_SIZE */
-    maxTextureSize: any;
+    maxTextureSize: number;
     /** gl.MAX_VERTEX_ATTRIBS */
-    maxAttributes: any;
+    maxAttributes: number;
     /** gl.MAX_VERTEX_UNIFORM_VECTORS */
-    maxVertexUniforms: any;
+    maxVertexUniforms: number;
     /** gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS */
-    maxVertexTextureUnits: any;
+    maxVertexTextureUnits: number;
     /** gl.MAX_VARYING_VECTORS */
-    maxVaryingVectors: any;
+    maxVaryingVectors: number;
     /** gl.MAX_FRAGMENT_UNIFORM_VECTORS */
-    maxFragmentUniforms: any;
+    maxFragmentUniforms: number;
     /** gl.SHADING_LANGUAGE_VERSION */
     glsl: string;
     /** gl.RENDERER */
