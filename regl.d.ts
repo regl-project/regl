@@ -200,13 +200,13 @@ declare namespace REGL {
   }
 
   interface InitializationOptions {
-    /** A container element which regl inserts a canvas into. (Default document.body) */
-    container?: string | HTMLElement;
-    /** A reference to an HTML canvas element. (Default created and appending to container)*/
-    canvas?: string | HTMLCanvasElement;
     /** A reference to a WebGL rendering context. (Default created from canvas) */
     gl?: WebGLRenderingContext;
-    /** The context creation attributes passed to the WebGL context constructor */
+    /** An HTML canvas element or a selector string to find this element. (Default created and appended to container)*/
+    canvas?: string | HTMLCanvasElement;
+    /** A container element into which regl inserts a canvas or a selector string to find this element. (Default document.body) */
+    container?: string | HTMLElement;
+    /** The context creation attributes passed to the WebGL context constructor. */
     attributes?: WebGLContextAttributes;
     /** A multiplier which is used to scale the canvas size relative to the container. (Default window.devicePixelRatio) */
     pixelRatio?: number;
