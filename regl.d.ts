@@ -29,17 +29,17 @@ declare function REGL(): REGL.Regl;
  */
 declare function REGL(selector: string): REGL.Regl;
 /**
- * Creates a WebGL rendering context using a `<canvas>` element.
- *
- * @param canvas HTML canvas element
- */
-declare function REGL(canvas: HTMLCanvasElement): REGL.Regl;
-/**
  * Creates a canvas element and a WebGL rendering context in a given container element.
  *
  * @param container an HTML element
  */
 declare function REGL(container: HTMLElement): REGL.Regl;
+/**
+ * Creates a WebGL rendering context using a `<canvas>` element.
+ *
+ * @param canvas HTML canvas element
+ */
+declare function REGL(canvas: HTMLCanvasElement): REGL.Regl;
 /**
  * Wraps an existing WebGL rendering context.
  *
