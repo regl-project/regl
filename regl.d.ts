@@ -98,9 +98,9 @@ declare namespace REGL {
 
     /* Dynamic variable binding */
 
-    prop(name: string): REGL.DynamicVariable;
-    context(name: string): REGL.DynamicVariable;
-    this(name: string): REGL.DynamicVariable;
+    prop(name: string): REGL.DynamicPropVariable;
+    context(name: string): REGL.DynamicContextVariable;
+    this(name: string): REGL.DynamicStateVariable;
 
     /* Drawing */
 
@@ -240,13 +240,23 @@ declare namespace REGL {
     cancel(): void;
   }
 
-  type DynamicVariable = {
-    // This type is supposed to be opaque.
-    "Dynamic Variable": void;
+  interface DynamicVariable {
+    /** This type is supposed to be opaque. Properties are listed only because TS casts _anything_ to `DynamicVariable`. */
+    readonly id: number;
+    readonly type: number;
+    readonly data: string;
+  }
 
-    // Properties are listed only because TS casts _anything_ to `DynamicVariable`.
-    // readonly id: number;
-    // readonly type: T;
+  interface DynamicPropVariable extends REGL.DynamicVariable {
+    readonly type: 1;
+  }
+
+  interface DynamicContextVariable extends REGL.DynamicVariable {
+    readonly type: 2;
+  }
+
+  interface DynamicStateVariable extends REGL.DynamicVariable {
+    readonly type: 3;
   }
 
   type DynamicVariableFn = (context: REGL.Context, props: REGL.Props, batchId: number) => PropType;
