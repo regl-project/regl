@@ -76,7 +76,11 @@ declare namespace REGL {
      */
     (state: REGL.State): REGL.Command;
 
-    /** Clears selected buffers to specified values. */
+    /**
+     * Clears selected buffers to specified values.
+     * If an option is not present, then the corresponding buffer is not cleared.
+     * Relevant WebGL API: `gl.clear`
+     */
     clear(options: REGL.ClearOptions): void;
 
     /* Reading pixels */
@@ -269,13 +273,25 @@ declare namespace REGL {
   type DynamicVariableFn = (context: REGL.Context, props: REGL.Props, batchId: number) => PropType;
 
   interface ClearOptions {
-    /** Specify the red, green, blue, and alpha values used when the color buffers are cleared. The initial values are all `0.0`. */
+    /**
+     * RGBA values (range 0-1) to use when the color buffer is cleared. Initial value: [0, 0, 0, 0].
+     * Relevant WebGL API: `gl.clearColor`
+     */
     color?: [number, number, number, number];
-    /** Specifies the depth value used when the depth buffer is cleared. The initial value is `1.0`. */
+    /**
+     * Depth value (range 0-1) to use when the depth buffer is cleared. Initial value: 1.
+     * Relevant WebGL API: `gl.clearDepth`
+     */
     depth?: number;
-    /** Specifies the index used when the stencil buffer is cleared. The initial value is `0`. */
+    /**
+     * The index used when the stencil buffer is cleared. Initial value: 0.
+     * Relevant WebGL API: `gl.clearStencil`
+     */
     stencil?: number;
-    /** Sets the target framebuffer to clear (if unspecified, uses the current framebuffer object). */
+    /**
+     * Sets the target framebuffer to clear (if unspecified, uses the current framebuffer object).
+     * Relevant WebGL API: `gl.bindFrameBuffer`
+     */
     framebuffer?: REGL.Framebuffer | null;
   }
 
