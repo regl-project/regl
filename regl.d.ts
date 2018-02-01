@@ -867,19 +867,6 @@ declare namespace REGL {
     subimage(face: REGL.TextureCubeFaceIndexType, data: TextureImageData, x?: number, y?: number, level?: number);
   }
 
-  interface RenderbufferOptions {
-    /** Sets the internal format of the render buffer (Default `'rgba4'`) */
-    format?: REGL.RenderbufferFormat;
-    /** Sets the width of the render buffer in pixels. (Default `1`) */
-    width?: number;
-    /** Sets the height of the render buffer in pixels. (Default `1`) */
-    height?: number;
-    /** Alias for `[width, height]`. (Default `[1, 1]`) */
-    shape?: [number, number];
-    /** Simultaneously sets width and height. (Default `1`) */
-    radius?: number;
-  }
-
   interface Renderbuffer extends Resource {
     readonly stats: {
         /** Size of the renderbuffer in bytes. */
@@ -900,7 +887,60 @@ declare namespace REGL {
     resize(width: number, height: number): void;
   }
 
-  type Framebuffer2DAttachment = REGL.Texture2D | REGL.Renderbuffer;
+  interface RenderbufferOptions {
+    /** Sets the internal format of the render buffer (Default `'rgba4'`) */
+    format?: REGL.RenderbufferFormat;
+    /** Sets the width of the render buffer in pixels. (Default `1`) */
+    width?: number;
+    /** Sets the height of the render buffer in pixels. (Default `1`) */
+    height?: number;
+    /** Alias for `[width, height]`. (Default `[1, 1]`) */
+    shape?: [number, number];
+    /** Simultaneously sets width and height. (Default `1`) */
+    radius?: number;
+  }
+
+  type RenderbufferFormat =
+    RenderbufferColorFormat |
+    "depth" |
+    "stencil" |
+    "depth stencil";
+
+  type RenderbufferColorFormat =
+    /* `gl.RGBA4` */
+    "rgba4" |
+    /* `gl.RGB565` */
+    "rgb565" |
+    /* `gl.RGB5_A1` */
+    "rgb5 a1" |
+    /* `gl.RGB16F`, requires EXT_color_buffer_half_float */
+    "rgb16f" |
+    /* `gl.RGBA16F`, requires EXT_color_buffer_half_float */
+    "rgba16f" |
+    /* `gl.RGBA32F`, requires WEBGL_color_buffer_float */
+    "rgba32f" |
+    /* `gl.SRGB8_ALPHA8`, requires EXT_sRGB */
+    "srgba";
+
+  interface Framebuffer extends Resource {
+    /* Reinitializes the Framebuffer in place using dimensions: 1 x 1. */
+    (): void;
+    /* Reinitializes the Framebuffer in place using dimensions: `radius` x `radius`. */
+    (radius: number): void;
+    /* Reinitializes the Framebuffer in place using dimensions: `width` x `height`. */
+    (width: number, height: number): void;
+    /* Reinitializes the Framebuffer in place using creation `options`. */
+    (options: FramebufferOptions): void;
+
+    /* Framebuffer binding */
+
+    /* Binds a framebuffer directly. This is a short cut for creating a command which sets the framebuffer. */
+    use(body: CommandBodyFn): void;
+
+    /* Resizes the Framebuffer and all its attachments. */
+    resize(radius: number): void;
+    resize(width: number, height: number): void;
+  }
 
   interface FramebufferOptions {
     /* NB: `shape`, `radius`, and `width`/`height` are alternative (and mutually exclusive) means for setting the size of the framebuffer. */
@@ -934,24 +974,18 @@ declare namespace REGL {
     depthTexture?: boolean;
   }
 
-  interface Framebuffer extends Resource {
-    /* Reinitializes the Framebuffer in place using dimensions: 1 x 1. */
+  type Framebuffer2DAttachment = REGL.Texture2D | REGL.Renderbuffer;
+
+  interface FramebufferCube extends Resource {
+    /* Reinitializes the FramebufferCube in place using face dimensions 1 x 1. */
     (): void;
-    /* Reinitializes the Framebuffer in place using dimensions: `radius` x `radius`. */
+    /* Reinitializes the FramebufferCube in place using face dimensions `radius` x `radius`. */
     (radius: number): void;
-    /* Reinitializes the Framebuffer in place using dimensions: `width` x `height`. */
-    (width: number, height: number): void;
-    /* Reinitializes the Framebuffer in place using creation `options`. */
-    (options: FramebufferOptions): void;
+    /* Reinitializes the FramebufferCube in place using creation `options`. */
+    (options: FramebufferCubeOptions): void;
 
-    /* Framebuffer binding */
-
-    /* Binds a framebuffer directly. This is a short cut for creating a command which sets the framebuffer. */
-    use(body: CommandBodyFn): void;
-
-    /* Resizes the Framebuffer and all its attachments. */
+    /* Resizes the FramebufferCube and all its attachments. */
     resize(radius: number): void;
-    resize(width: number, height: number): void;
   }
 
   interface FramebufferCubeOptions {
@@ -986,17 +1020,13 @@ declare namespace REGL {
   /* `gl.RGBA` */
   type FramebufferTextureColorFormat = "rgba";
 
-  interface FramebufferCube extends Resource {
-    /* Reinitializes the FramebufferCube in place using face dimensions 1 x 1. */
-    (): void;
-    /* Reinitializes the FramebufferCube in place using face dimensions `radius` x `radius`. */
-    (radius: number): void;
-    /* Reinitializes the FramebufferCube in place using creation `options`. */
-    (options: FramebufferCubeOptions): void;
-
-    /* Resizes the FramebufferCube and all its attachments. */
-    resize(radius: number): void;
-  }
+  type FramebufferColorDataType =
+    /* `gl.UNSIGNED_BYTE` */
+    "uint8" |
+    /* `ext.HALF_FLOAT_OES` (16-bit float), requires OES_texture_half_float */
+    "half float" |
+    /* `gl.FLOAT` (32-bit float), requires OES_texture_float */
+    "float";
 
   interface Limits {
     /** An array of bits depths for the red, green, blue and alpha channels */
@@ -1225,36 +1255,6 @@ declare namespace REGL {
   type TextureUnpackAlignmentType = 1 | 2 | 4 | 8;
 
   type TextureCubeFaceIndexType = 0 | 1 | 2 | 3 | 4 | 5;
-
-  type RenderbufferFormat =
-    RenderbufferColorFormat |
-    "depth" |
-    "stencil" |
-    "depth stencil";
-
-  type RenderbufferColorFormat =
-    /* `gl.RGBA4` */
-    "rgba4" |
-    /* `gl.RGB565` */
-    "rgb565" |
-    /* `gl.RGB5_A1` */
-    "rgb5 a1" |
-    /* `gl.RGB16F`, requires EXT_color_buffer_half_float */
-    "rgb16f" |
-    /* `gl.RGBA16F`, requires EXT_color_buffer_half_float */
-    "rgba16f" |
-    /* `gl.RGBA32F`, requires WEBGL_color_buffer_float */
-    "rgba32f" |
-    /* `gl.SRGB8_ALPHA8`, requires EXT_sRGB */
-    "srgba";
-
-  type FramebufferColorDataType =
-    /* `gl.UNSIGNED_BYTE` */
-    "uint8" |
-    /* `ext.HALF_FLOAT_OES` (16-bit float), requires OES_texture_half_float */
-    "half float" |
-    /* `gl.FLOAT` (32-bit float), requires OES_texture_float */
-    "float";
 
   type Props = {
     [name: string]: PropType;
