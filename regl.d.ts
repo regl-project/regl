@@ -869,7 +869,7 @@ declare namespace REGL {
 
   interface RenderbufferOptions {
     /** Sets the internal format of the render buffer (Default `'rgba4'`) */
-    format?: REGL.RenderbufferFormatType;
+    format?: REGL.RenderbufferFormat;
     /** Sets the width of the render buffer in pixels. (Default `1`) */
     width?: number;
     /** Sets the height of the render buffer in pixels. (Default `1`) */
@@ -900,26 +900,37 @@ declare namespace REGL {
     resize(width: number, height: number): void;
   }
 
+  type Framebuffer2DAttachment = REGL.Texture2D | REGL.Renderbuffer;
+
   interface FramebufferOptions {
-    // Sets the width of the framebuffer	gl.drawingBufferWidth
+    /* NB: `shape`, `radius`, and `width`/`height` are alternative (and mutually exclusive) means for setting the size of the framebuffer. */
+    /* Sets the dimensions [width, height] for the framebuffer. */
+    shape?: [number, number];
+    /* Sets the dimensions `radius` x `radius` for the framebuffer. */
+    radius?: number;
+    /* Sets the width of the framebuffer. Default: `gl.drawingBufferWidth` */
     width?: number;
-    // Sets the height of the framebuffer	gl.drawingBufferHeight
+    /* Sets the height of the framebuffer. Default: `gl.drawingBufferHeight` */
     height?: number;
-    // An optional array of either textures renderbuffers for the color attachment.
-    color?: any; // TODO What is the valid type of `FramebufferOptions.color`?
-    // If boolean, then toggles the depth attachment. Otherwise if a renderbuffer/texture sets the depth attachment.	true
-    depth?: boolean | REGL.Renderbuffer | REGL.Texture; // TODO Is it `REGL.Texture2D` only?
-    // If boolean, then toggles the stencil attachment. Otherwise if a renderbuffer sets the stencil attachment.	true
-    stencil?: boolean | REGL.Renderbuffer; // TODO Does it support `REGL.Texture`?
-    // If boolean, then toggles both the depth and stencil attachment. Otherwise if a renderbuffer/texture sets the combined depth/stencil attachment.	true
-    depthStencil?: boolean | REGL.Renderbuffer | REGL.Texture; // TODO Is it `REGL.Texture2D` only?
-    // Sets the format of the color buffer. Ignored if color	'rgba'
-    colorFormat?: REGL.FramebufferColorFormatType;
-    // Sets the type of the color buffer if it is a texture	'uint8'
+
+    /* NB: If neither `color` nor `colors` is specified, color attachments are created automatically. */
+    /* A texture or renderbuffer for the color attachment. */
+    color?: REGL.Framebuffer2DAttachment;
+    /* An array of textures or renderbuffers for the color attachments. */
+    colors?: REGL.Framebuffer2DAttachment[];
+    /* Sets the format of the color buffer. Ignored if `color` is specified. Default: 'rgba' */
+    colorFormat?: REGL.FramebufferTextureColorFormat | REGL.RenderbufferColorFormat;
+    /* Sets the type of the color buffer if it is a texture. Default: 'uint8' */
     colorType?: REGL.FramebufferColorDataType;
-    // Sets the number of color buffers. Values > 1 require WEBGL_draw_buffers	1
+    /* Sets the number of color buffers. Values > 1 require WEBGL_draw_buffers. Default: 1 */
     colorCount?: number;
-    // Toggles whether depth/stencil attachments should be in texture. Requires WEBGL_depth_texture	false
+    /* If boolean, toggles the depth attachment. If a renderbuffer or texture, sets the depth attachment. Default: true */
+    depth?: boolean | REGL.Framebuffer2DAttachment;
+    /* If boolean, toggles the stencil attachments. If a renderbuffer or texture, sets the stencil attachment.  Default: true */
+    stencil?: boolean | REGL.Framebuffer2DAttachment;
+    /* If boolean, toggles both the depth and stencil attachments. If a renderbuffer or texture, sets the combined depth/stencil attachment. Default: true */
+    depthStencil?: boolean | REGL.Framebuffer2DAttachment;
+    /* Toggles whether depth/stencil attachments should be in texture. Requires WEBGL_depth_texture. Default: false */
     depthTexture?: boolean;
   }
 
@@ -944,23 +955,36 @@ declare namespace REGL {
   }
 
   interface FramebufferCubeOptions {
-    /** The size of the cube buffer. */
+    /* NB: `shape`, `radius`, and `width`/`height` are alternative (and mutually exclusive) means for setting the size of the cube. */
+    /* Sets the dimensions [width, height] for each face of the cube. Width must equal height. */
+    shape?: [number, number];
+    /* Sets the dimensions `radius` x `radius` for each face of the cube. */
     radius?: number;
-    /** The color buffer attachment. */
+    /* Sets the width dimension for each face of the cube. Must equal `height`. */
+    width?: number;
+    /* Sets the height dimension for each face of the cube. Must equal `width`. */
+    height?: number;
+
+    /* A TextureCube for the color attachment. */
     color?: REGL.TextureCube;
-    /** Format of color buffer to create. */
-    colorFormat?: "rgba"; // TODO Color formats for `FramebufferCube` other that `rgba`?
-    /** Type of color buffer. */
-    colorType?: FramebufferColorDataType;
-    /** Number of color attachments. */
+    /* An array of TextureCubes for the color attachments. */
+    colors?: REGL.TextureCube[];
+    /* Sets the format of the color buffer. */
+    colorFormat?: REGL.FramebufferTextureColorFormat;
+    /* Sets the type of the color buffer. */
+    colorType?: REGL.FramebufferColorDataType;
+    /* Sets the number of color buffers. Values > 1 require WEBGL_draw_buffers. Default: 1 */
     colorCount?: number;
-    /** Depth buffer attachment. */
-    depth?: boolean; // TODO REGL.TextureCube ?
-    /** Stencil buffer attachment. */
-    stencil?: boolean; // TODO REGL.TextureCube ?
-    /** Depth-stencil attachment. */
-    depthStencil?: boolean; // TODO REGL.TextureCube ?
+    /* If boolean, toggles the depth attachment. If texture, sets the depth attachment. Default: true */
+    depth?: boolean | REGL.TextureCube;
+    /* If boolean, toggles the stencil attachment. If texture, sets the stencil attachment. Default: true */
+    stencil?: boolean | REGL.TextureCube;
+    /* If boolean, toggles both the depth and stencil attachments. If texture, sets the combined depth/stencil attachment. Default: true */
+    depthStencil?: boolean | REGL.TextureCube;
   }
+
+  /* `gl.RGBA` */
+  type FramebufferTextureColorFormat = "rgba";
 
   interface FramebufferCube extends Resource {
     /* Reinitializes the FramebufferCube in place using face dimensions 1 x 1. */
@@ -1202,31 +1226,34 @@ declare namespace REGL {
 
   type TextureCubeFaceIndexType = 0 | 1 | 2 | 3 | 4 | 5;
 
-  type RenderbufferFormatType =
-    "rgba4" |
-    "rgb565" |
-    "rgb5 a1" |
+  type RenderbufferFormat =
+    RenderbufferColorFormat |
     "depth" |
     "stencil" |
-    "depth stencil" |
-    "srgba" |
-    "rgba16f" |
-    "rgb16f" |
-    "rgba32f";
+    "depth stencil";
 
-  type FramebufferColorFormatType =
-    "rgba" |
+  type RenderbufferColorFormat =
+    /* `gl.RGBA4` */
     "rgba4" |
+    /* `gl.RGB565` */
     "rgb565" |
+    /* `gl.RGB5_A1` */
     "rgb5 a1" |
+    /* `gl.RGB16F`, requires EXT_color_buffer_half_float */
     "rgb16f" |
+    /* `gl.RGBA16F`, requires EXT_color_buffer_half_float */
     "rgba16f" |
+    /* `gl.RGBA32F`, requires WEBGL_color_buffer_float */
     "rgba32f" |
+    /* `gl.SRGB8_ALPHA8`, requires EXT_sRGB */
     "srgba";
 
   type FramebufferColorDataType =
+    /* `gl.UNSIGNED_BYTE` */
     "uint8" |
+    /* `ext.HALF_FLOAT_OES` (16-bit float), requires OES_texture_half_float */
     "half float" |
+    /* `gl.FLOAT` (32-bit float), requires OES_texture_float */
     "float";
 
   type Props = {
