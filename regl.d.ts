@@ -328,14 +328,24 @@ declare namespace REGL {
     frag?: string;
 
     /**
+     * Object mapping names of uniform variables to their values.
+     * To specify uniforms in GLSL structs use the fully qualified path with dot notation.
+     *  example: `'nested.value': 5.3`
+     * To specify uniforms in GLSL arrays use the fully qualified path with bracket notation.
+     *  example: `'colors[0]': [0, 1, 0, 1]`
+     *
      * Related WebGL APIs
      *
      * - gl.getUniformLocation
      * - gl.uniform
      */
-    uniforms?: REGL.Props;
+    uniforms?: {
+      [name: string]: REGL.Uniform;
+    };
 
     /**
+     * Object mapping names of attribute variables to their values.
+     *
      * Related WebGL APIs
      *
      * - gl.vertexAttribPointer
@@ -477,7 +487,45 @@ declare namespace REGL {
     viewport?: REGL.ViewportOptions;
   }
 
-  interface Attribute {
+  type PrimitiveType =
+    /** gl.POINTS */
+    "points" |
+    /** gl.LINES */
+    "lines" |
+    /** gl.LINE_STRIP */
+    "line strip" |
+    /** gl.LINE_LOOP */
+    "line loop" |
+    /** gl.TRIANGLES */
+    "triangles" |
+    /** gl.TRIANGLE_STRIP */
+    "triangle strip" |
+    /** gl.TRIANGLE_FAN */
+    "triangle fan";
+
+  type Uniform =
+    DynamicVariable |
+    DynamicVariableFn |
+    boolean |
+    number |
+    boolean[] |
+    number[] |
+    Float32Array |
+    Int32Array;
+
+  type Attribute =
+    DynamicVariable |
+    DynamicVariableFn |
+    ConstantAttribute |
+    AttributeConfig |
+    REGL.Buffer |
+    REGL.BufferData;
+
+  interface ConstantAttribute {
+    constant: number | number[];
+  }
+
+  interface AttributeConfig {
     /** A REGLBuffer wrapping the buffer object. (Default: null) */
     buffer?: REGL.Buffer;
     /** The offset of the vertexAttribPointer in bytes. (Default: 0) */
@@ -1040,15 +1088,6 @@ declare namespace REGL {
   type FaceWindingType =
     "cw" |
     "ccw";
-
-  type PrimitiveType =
-    "points" |
-    "lines" |
-    "line strip" |
-    "line loop" |
-    "triangles" |
-    "triangle strip" |
-    "triangle fan";
 
   // TODO Cover all possible things that could be used to create/update a texture
   // Possible candidates: HTMLImageElement, HTMLVideoElement, NDArray,
