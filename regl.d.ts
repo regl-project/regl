@@ -109,9 +109,16 @@ declare namespace REGL {
 
     /* Resource creation */
 
+    /** Creates an empty buffer of length `length`. */
     buffer(length: number): REGL.Buffer;
+    /** Creates a buffer with the provided `data`. */
+    buffer(data: REGL.BufferData): REGL.Buffer;
+    /** Creates a buffer using creation `options`. */
     buffer(options: REGL.BufferOptions): REGL.Buffer;
 
+    /* Creates an Elements object with the provided `data`. */
+    elements(data: REGL.ElementsData): REGL.Elements;
+    /* Creates an Elements object using creation `options`. */
     elements(options: REGL.ElementsOptions): REGL.Elements;
 
     /**
@@ -579,45 +586,126 @@ declare namespace REGL {
    * A *resource* is a handle to a GPU resident object, like a texture, FBO or buffer.
    */
   interface Resource {
+    /** relevant WebGL API: `gl.deleteBuffer` */
     destroy(): void;
   }
 
-  interface BufferOptions {
-    data?: REGL.BufferDataType | null;
-    length?: number;
-    usage?: REGL.BufferUsageHintType;
-    type?: REGL.BufferDataTypeType;
-  }
-
   interface Buffer extends Resource {
+    /**
+     * Wraps a WebGL array buffer object.
+     */
     readonly stats: {
-        /** The size of the buffer in bytes. */
-        size: number;
+      /** The size of the buffer in bytes. */
+      size: number;
     }
 
     /**
      * Reinitializes the buffer with the new content.
+     * Relevant WebGL API: `gl.bufferData`
      */
+    (data: REGL.BufferData): void;
     (options: REGL.BufferOptions): void;
 
-    subdata(data: REGL.BufferDataType, offset?: number): void;
+    /**
+     * Update a portion of the buffer, optionally starting at byte offset `offset`.
+     * Relevant WebGL API: `gl.bufferSubData`
+     */
+    subdata(data: REGL.BufferData, offset?: number): void;
+    subdata(options: REGL.BufferOptions, offset?: number): void;
+  }
+
+  interface BufferOptions {
+    /** The data for the vertex buffer. Default: null */
+    data?: REGL.BufferData | null;
+    /** If `data` is `null` or not present reserves space for the buffer. Default: 0 */
+    length?: number;
+    /** Sets array buffer usage hint. Default: 'static' */
+    usage?: REGL.BufferUsageHint;
+    /** Data type for vertex buffer. Default: 'uint8' */
+    type?: REGL.BufferDataType;
+  }
+
+  type BufferData =
+    number[] |
+    number[][] |
+    Uint8Array |
+    Int8Array |
+    Uint16Array |
+    Int16Array |
+    Uint32Array |
+    Int32Array |
+    Float32Array;
+
+  type BufferUsageHint =
+    /** gl.DRAW_STATIC */
+    "static" |
+    /** gl.DYNAMIC_DRAW */
+    "dynamic" |
+    /** gl.STREAM_DRAW */
+    "stream";
+
+  type BufferDataType =
+    /** gl.UNSIGNED_BYTE */
+    "uint8" |
+    /** gl.BYTE */
+    "int8" |
+    /** gl.UNSIGNED_SHORT */
+    "uint16" |
+    /** gl.SHORT */
+    "int16" |
+    /** gl.UNSIGNED_INT */
+    "uint32" |
+    /** gl.INT */
+    "int32" |
+    /** gl.FLOAT */
+    "float32" | "float";
+
+  interface Elements extends Resource {
+    /**
+     * Wraps a WebGL element array buffer object.
+     */
+
+    /**
+     * Reinitializes the element buffer with the new content.
+     * Relevant WebGL API: `gl.bufferData`
+     */
+    (data: ElementsData): void;
+    (options: ElementsOptions): void;
+
+    /**
+     * Update a portion of the element buffer, optionally starting at byte offset `offset`.
+     * Relevant WebGL API: `gl.bufferSubData`
+     */
+    subdata(data: ElementsData, offset?: number): void;
+    subdata(options: ElementsOptions, offset?: number): void;
   }
 
   interface ElementsOptions {
-    data?: REGL.BufferDataType;
-    usage?: REGL.BufferUsageHintType;
+    /** The data of the element buffer. (Default: null) */
+    data?: REGL.ElementsData | null;
+    /** Usage hint (see gl.bufferData). (Default: 'static') */
+    usage?: REGL.BufferUsageHint;
+    /** Length of the element buffer in bytes. (Default: 0, or inferred from `data`) */
     length?: number;
+    /** Default primitive type for element buffer. (Default: 0, or inferred from `data`) */
     primitive?: REGL.PrimitiveType;
-    type?: REGL.ElementsDataTypeType;
+    /** Data type for element buffer. (Default: 'uint8') */
+    type?: REGL.ElementsDataType;
+    /** Vertex count for element buffer. (Default: 0, or inferred from `data`) */
     count?: number;
   }
 
-  interface Elements extends Resource {
-    // TODO stats: { size: number } ???
-    (data: ElementsOptions): void;
+  type ElementsData =
+    number[] |
+    number[][] |
+    Uint8Array |
+    Uint16Array |
+    Uint32Array;
 
-    subdata(data: ElementsOptions, offset?: number): void;
-  }
+  type ElementsDataType =
+    "uint8" |
+    "uint16" |
+    "uint32";
 
   interface Texture2DOptions {
     /** Sets `width`, `height` and, optionally, `channels`. */
@@ -961,35 +1049,6 @@ declare namespace REGL {
     "triangles" |
     "triangle strip" |
     "triangle fan";
-
-  type BufferDataType =
-    (number | number[])[] |
-    Uint8Array |
-    Int8Array |
-    Uint16Array |
-    Int16Array |
-    Uint32Array |
-    Int32Array |
-    Float32Array; // | REGL.Buffer
-
-  type BufferUsageHintType =
-    "static" |
-    "dynamic" |
-    "stream";
-
-  type BufferDataTypeType =
-    "uint8" |
-    "int8" |
-    "uint16" |
-    "int16" |
-    "uint32" |
-    "int32" |
-    "float32" | "float";
-
-  type ElementsDataTypeType =
-    "uint8" |
-    "uint16" |
-    "uint32"; // | REGL.Elements
 
   // TODO Cover all possible things that could be used to create/update a texture
   // Possible candidates: HTMLImageElement, HTMLVideoElement, NDArray,
