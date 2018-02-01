@@ -145,8 +145,20 @@ declare namespace REGL {
 
     renderbuffer(options: REGL.RenderbufferOptions): REGL.Renderbuffer;
 
+    /* Creates a Framebuffer of dimensions 1 x 1. */
+    framebuffer(): REGL.Framebuffer;
+    /* Creates a Framebuffer of dimensions `radius` x `radius`. */
+    framebuffer(radius: number): REGL.Framebuffer;
+    /* Creates a Framebuffer of dimensions `width` x `height`. */
+    framebuffer(width: number, height: number): REGL.Framebuffer;
+    /* Creates a Framebuffer using creation `options`. */
     framebuffer(options: REGL.FramebufferOptions): REGL.Framebuffer;
 
+    /* Creates a FramebufferCube whose faces have dimensions 1 x 1. */
+    framebufferCube(): REGL.FramebufferCube;
+    /* Creates a FramebufferCube whose faces have dimensions `radius` x `radius`. */
+    framebufferCube(radius: number): REGL.FramebufferCube;
+    /* Creates a FramebufferCube using creation `options`. */
     framebufferCube(options: REGL.FramebufferCubeOptions): REGL.FramebufferCube;
 
     /* Events and listeners */
@@ -912,7 +924,13 @@ declare namespace REGL {
   }
 
   interface Framebuffer extends Resource {
-    // TODO check if FBO has `stats: { size: number; }` and other properties.
+    /* Reinitializes the Framebuffer in place using dimensions: 1 x 1. */
+    (): void;
+    /* Reinitializes the Framebuffer in place using dimensions: `radius` x `radius`. */
+    (radius: number): void;
+    /* Reinitializes the Framebuffer in place using dimensions: `width` x `height`. */
+    (width: number, height: number): void;
+    /* Reinitializes the Framebuffer in place using creation `options`. */
     (options: FramebufferOptions): void;
 
     /* Framebuffer binding */
@@ -948,6 +966,11 @@ declare namespace REGL {
   }
 
   interface FramebufferCube extends Resource {
+    /* Reinitializes the FramebufferCube in place using face dimensions 1 x 1. */
+    (): void;
+    /* Reinitializes the FramebufferCube in place using face dimensions `radius` x `radius`. */
+    (radius: number): void;
+    /* Reinitializes the FramebufferCube in place using creation `options`. */
     (options: FramebufferCubeOptions): void;
 
     // resize(): void;
