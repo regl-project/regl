@@ -146,13 +146,13 @@ declare namespace REGL {
     renderbuffer(options: REGL.RenderbufferOptions): REGL.Renderbuffer;
 
     /* Creates a Framebuffer of dimensions 1 x 1. */
-    framebuffer(): REGL.Framebuffer;
+    framebuffer(): REGL.Framebuffer2D;
     /* Creates a Framebuffer of dimensions `radius` x `radius`. */
-    framebuffer(radius: number): REGL.Framebuffer;
+    framebuffer(radius: number): REGL.Framebuffer2D;
     /* Creates a Framebuffer of dimensions `width` x `height`. */
-    framebuffer(width: number, height: number): REGL.Framebuffer;
+    framebuffer(width: number, height: number): REGL.Framebuffer2D;
     /* Creates a Framebuffer using creation `options`. */
-    framebuffer(options: REGL.FramebufferOptions): REGL.Framebuffer;
+    framebuffer(options: REGL.FramebufferOptions): REGL.Framebuffer2D;
 
     /* Creates a FramebufferCube whose faces have dimensions 1 x 1. */
     framebufferCube(): REGL.FramebufferCube;
@@ -922,7 +922,9 @@ declare namespace REGL {
     /* `gl.SRGB8_ALPHA8`, requires EXT_sRGB */
     "srgba";
 
-  interface Framebuffer extends Resource {
+  type Framebuffer = Framebuffer2D | FramebufferCube;
+
+  interface Framebuffer2D extends Resource {
     /* Reinitializes the Framebuffer in place using dimensions: 1 x 1. */
     (): void;
     /* Reinitializes the Framebuffer in place using dimensions: `radius` x `radius`. */
