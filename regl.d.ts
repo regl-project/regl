@@ -597,7 +597,6 @@ declare namespace REGL {
     face?: REGL.FaceOrientationType;
   }
 
-
   interface SamplingOptions {
     /** Toggles `gl.enable(gl.SAMPLE_COVERAGE)` */
     enable?: boolean;
