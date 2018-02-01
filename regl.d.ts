@@ -307,9 +307,9 @@ declare namespace REGL {
     framebuffer?: REGL.Framebuffer | null;
   }
 
-  interface ReadOptions<T> {
-    /** An optional ArrayBufferView which gets the result of reading the pixels. (Default: `null`) */
-    data?: T;
+  interface ReadOptions<T = Uint8Array> {
+    /** An optional TypedArray which gets the result of reading the pixels. (Default: `null`, i.e. return a new TypedArray) */
+    data?: T | null;
     /** The x-offset of the upper-left corner of the rectangle in pixels. (Default: `0`) */
     x?: number;
     /** The y-offset of the upper-left corner of the rectangle in pixels. (Default: `0`) */
