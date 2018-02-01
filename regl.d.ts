@@ -935,13 +935,10 @@ declare namespace REGL {
 
     /* Framebuffer binding */
 
-    /**
-     * For convenience it is possible to bind a framebuffer directly.
-     * This is a short cut for creating a command which sets the framebuffer.
-     */
+    /* Binds a framebuffer directly. This is a short cut for creating a command which sets the framebuffer. */
     use(body: CommandBodyFn): void;
 
-    // resize(): void;
+    /* Resizes the Framebuffer and all its attachments. */
     resize(radius: number): void;
     resize(width: number, height: number): void;
   }
@@ -973,7 +970,7 @@ declare namespace REGL {
     /* Reinitializes the FramebufferCube in place using creation `options`. */
     (options: FramebufferCubeOptions): void;
 
-    // resize(): void;
+    /* Resizes the FramebufferCube and all its attachments. */
     resize(radius: number): void;
   }
 
