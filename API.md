@@ -686,7 +686,8 @@ var command = regl({
 
 **Notes**
 
--   To specify uniforms in nested structs use the fully qualified path with dot notation
+-   To specify uniforms in GLSL structs use the fully qualified path with dot notation.
+-   To specify uniforms in GLSL arrays use the fully qualified path with bracket notation.
 -   Matrix uniforms are specified as flat length n^2 arrays without transposing
 
 **Related WebGL APIs**
