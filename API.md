@@ -2255,18 +2255,20 @@ var texFBO = regl.framebuffer({
 })
 ```
 
-| Property       | Description                                                                                                                                                            | Default                  |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| `width`        | Sets the width of the framebuffer                                                                                                                                      | `gl.drawingBufferWidth`  |
-| `height`       | Sets the height of the framebuffer                                                                                                                                     | `gl.drawingBufferHeight` |
-| `color`        | An optional array of either textures renderbuffers for the color attachment.                                                                                           |                          |
-| `depth`        | If boolean, then toggles the depth attachment.  Otherwise if a renderbuffer/texture sets the depth attachment.                                                         | `true`                   |
-| `stencil`      | If boolean, then toggles the stencil attachment.  Otherwise if a renderbuffer sets the stencil attachment.                                                             | `true`                   |
-| `depthStencil` | If boolean, then toggles both the depth and stencil attachment.  Otherwise if a renderbuffer/texture sets the combined depth/stencil attachment.                       | `true`                   |
-| `colorFormat`  | Sets the format of the color buffer.  Ignored if color                                                                                                                 | `'rgba'`                 |
-| `colorType`    | Sets the type of the color buffer if it is a texture                                                                                                                   | `'uint8'`                |
-| `colorCount`   | Sets the number of color buffers. Values > 1 require [WEBGL_draw_buffers](https://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/)                       | `1`                      |
-| `depthTexture` | Toggles whether depth/stencil attachments should be in texture. Requires [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) | `false`                  |
+| Property         | Description                                                                                                                                                            | Default                  |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `shape`          | Sets the dimensions [width, height] for the framebuffer.                                                                                                               |                          |
+| `radius`         | Sets the dimensions `radius` x `radius` for the framebuffer.                                                                                                           |                          |
+| `width`          | Sets the width of the framebuffer                                                                                                                                      | `gl.drawingBufferWidth`  |
+| `height`         | Sets the height of the framebuffer                                                                                                                                     | `gl.drawingBufferHeight` |
+| `color`/`colors` | A texture or renderbuffer (or an array of these) for the color attachment.                                                                                             |                          |
+| `depth`          | If boolean, toggles the depth attachment. If a renderbuffer or texture, sets the depth attachment.                                                                     | `true`                   |
+| `stencil`        | If boolean, toggles the stencil attachment. If a renderbuffer or texture, sets the stencil attachment.                                                                 | `true`                   |
+| `depthStencil`   | If boolean, toggles both the depth and stencil attachments.  If a renderbuffer or texture, sets the combined depth/stencil attachment.                                 | `true`                   |
+| `colorFormat`    | Sets the format of the color buffer.  Ignored if `color` is specified.                                                                                                 | `'rgba'`                 |
+| `colorType`      | Sets the type of the color buffer if it is a texture.                                                                                                                  | `'uint8'`                |
+| `colorCount`     | Sets the number of color buffers. Values > 1 require [WEBGL_draw_buffers](https://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/)                       | `1`                      |
+| `depthTexture`   | Toggles whether depth/stencil attachments should be in texture. Requires [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) | `false`                  |
 
 | Color format | Description       | Attachment   | Notes                                                                                                                     |
 | ------------ | ----------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------- |
@@ -2279,16 +2281,16 @@ var texFBO = regl.framebuffer({
 | `'rgba32f'`  | `gl.RGBA32F`      | Renderbuffer | only if [WEBGL_color_buffer_float](https://www.khronos.org/registry/webgl/extensions/WEBGL_color_buffer_float/) supported |
 | `'srgba'`    | `gl.SRGB8_ALPHA8` | Renderbuffer | only if [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) supported                                 |
 
-| Color type     | Description                                                                                                                |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `'uint8'`      | `gl.UNSIGNED_BYTE`                                                                                                         |
-| `'half float'` | 16 bit float, requires [OES_texture_half_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_half_float/) |
-| `'float'`      | 32 bit float, requires [OES_texture_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_float/)           |
+| Color type     | Description                                                                                                                                       |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'uint8'`      | `gl.UNSIGNED_BYTE`                                                                                                                                |
+| `'half float'` | `ext.HALF_FLOAT_OES` (16-bit float), requires [OES_texture_half_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_half_float/) |
+| `'float'`      | `gl.FLOAT` (32-bit float), requires [OES_texture_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_float/)                     |
 
 **Notes**
 
--   If `color` is not specified, then color attachments are created automatically
--   Instead of passing width/height, it is also possible to pass in `shape` to the framebuffer constructor.
+-   If neither `color` nor `colors` is specified, then color attachments are created automatically.
+-   `shape`, `radius`, and `width`/`height` are alternative (and mutually exclusive) means for setting the size of the framebuffer.
 
 **Relevant WebGL APIs**
 
@@ -2376,31 +2378,35 @@ var cubeAlt = regl.framebufferCube({
 })
 ```
 
-| Parameter      | Description                      |
-| -------------- | -------------------------------- |
-| `radius`       | The size of the cube buffer      |
-| `color`        | The color buffer attachment      |
-| `colorFormat`  | Format of color buffer to create |
-| `colorType`    | Type of color buffer             |
-| `colorCount`   | Number of color attachments      |
-| `depth`        | Depth buffer attachment          |
-| `stencil`      | Stencil buffer attachment        |
-| `depthStencil` | Depth-stencil attachment         |
+| Property         | Description                                                                                                                                                            | Default                  |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `shape`          | Sets the dimensions [width, height] for each face of the cube. Width must equal height.                                                                                |                          |
+| `radius`         | Sets the dimensions `radius` x `radius` for each face of the cube.                                                                                                     |                          |
+| `width`          | Sets the width dimension for each face of the cube. Must equal `height`.                                                                                               | `gl.drawingBufferWidth`  |
+| `height`         | Sets the height dimension for each face of the cube. Must equal `width`.                                                                                               | `gl.drawingBufferHeight` |
+| `color`/`colors` | A TextureCube or array of TextureCubes for the color attachment.                                                                                                       |                          |
+| `depth`          | If boolean, toggles the depth attachment. If texture, sets the depth attachment.                                                                                       | `true`                   |
+| `stencil`        | If boolean, toggles the stencil attachment. If texture, sets the stencil attachment.                                                                                   | `true`                   |
+| `depthStencil`   | If boolean, toggles both the depth and stencil attachments.  If texture, sets the combined depth/stencil attachment.                                                   | `true`                   |
+| `colorFormat`    | Sets the format of the color buffer.  Ignored if `color` is specified.                                                                                                 | `'rgba'`                 |
+| `colorType`      | Sets the type of the color buffer.                                                                                                                                     | `'uint8'`                |
+| `colorCount`     | Sets the number of color buffers. Values > 1 require [WEBGL_draw_buffers](https://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/)                       | `1`                      |
+| `depthTexture`   | Toggles whether depth/stencil attachments should be in texture. Requires [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) | `false`                  |
 
 | Color format | Description | Attachment |
 | ------------ | ----------- | ---------- |
 | `'rgba'`     | `gl.RGBA`   | Texture    |
 
-| Color type     | Description                                                                                                                |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `'uint8'`      | `gl.UNSIGNED_BYTE`                                                                                                         |
-| `'half float'` | 16 bit float, requires [OES_texture_half_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_half_float/) |
-| `'float'`      | 32 bit float, requires [OES_texture_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_float/)           |
+| Color type     | Description                                                                                                                                       |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'uint8'`      | `gl.UNSIGNED_BYTE`                                                                                                                                |
+| `'half float'` | `ext.HALF_FLOAT_OES` (16-bit float), requires [OES_texture_half_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_half_float/) |
+| `'float'`      | `gl.FLOAT` (32-bit float), requires [OES_texture_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_float/)                     |
 
 **Notes**
 
--   The specified depth/stencil/depth-stencil attachment will be reused
-    for all 6 cube faces.
+-   The specified depth/stencil/depth-stencil attachment will be reused for all 6 cube faces.
+-   `shape`, `radius`, and `width`/`height` are alternative (and mutually exclusive) means for setting the size of the framebuffer.
 
 #### Cube framebuffer update
 
