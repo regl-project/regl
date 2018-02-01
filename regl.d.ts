@@ -361,15 +361,15 @@ declare namespace REGL {
     /* Drawing */
 
     /**
-     * Sets the primitive type.
+     * Sets the primitive type. (Default: 'triangles', or inferred from `elements`)
      */
     primitive?: REGL.PrimitiveType;
     /**
-     * Number of vertices to draw.
+     * Number of vertices to draw. (Default: 0, or inferred from `elements`)
      */
     count?: number;
     /**
-     * Offset of primitives to draw.
+     * Offset of primitives to draw. (Default: 0, or inferred from `elements`)
      */
     offset?: number;
     /**
@@ -381,6 +381,7 @@ declare namespace REGL {
     /**
      * Element array buffer. (Default: `null`)
      *
+     * Elements must be either an instance of REGL.Elements or else the arguments to REGL.Elements.
      * If `elements` is specified while `primitive`, `count` and `offset` are not,
      * then these values may be inferred from the state of the element array buffer.
      */
@@ -536,7 +537,7 @@ declare namespace REGL {
     normalized?: boolean;
     /** The size of the vertex attribute. (Default: Inferred from shader) */
     size?: number;
-    /** Sets gl.vertexAttribDivisorANGLE. (Default: 0) */
+    /** Sets gl.vertexAttribDivisorANGLE. Only supported if the ANGLE_instanced_arrays extension is available. (Default: 0) */
     divisor?: number;
   }
 
