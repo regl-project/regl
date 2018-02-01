@@ -722,7 +722,7 @@ declare namespace REGL {
     wrapS?: REGL.TextureWrapModeType;
     wrapT?: REGL.TextureWrapModeType;
     aniso?: number;
-    type?: REGL.TextureDataTypeType;
+    type?: REGL.TextureDataType;
 
     mipmap?: REGL.TextureMipmapHintType;
     flipY?: boolean;
@@ -746,7 +746,7 @@ declare namespace REGL {
     /** Texture format. */
     readonly format: REGL.TextureFormatType;
     /** Texture data type. */
-    readonly type: REGL.TextureDataTypeType;
+    readonly type: REGL.TextureDataType;
     /** Texture magnification filter. */
     readonly mag: REGL.TextureMagFilterType;
     /** Texture minification filter. */
@@ -840,7 +840,7 @@ declare namespace REGL {
     // Sets the format of the color buffer. Ignored if color	'rgba'
     colorFormat?: REGL.FramebufferColorFormatType;
     // Sets the type of the color buffer if it is a texture	'uint8'
-    colorType?: REGL.FramebufferColorDataTypeType;
+    colorType?: REGL.FramebufferColorDataType;
     // Sets the number of color buffers. Values > 1 require WEBGL_draw_buffers	1
     colorCount?: number;
     // Toggles whether depth/stencil attachments should be in texture. Requires WEBGL_depth_texture	false
@@ -872,7 +872,7 @@ declare namespace REGL {
     /** Format of color buffer to create. */
     colorFormat?: "rgba"; // TODO Color formats for `FramebufferCube` other that `rgba`?
     /** Type of color buffer. */
-    colorType?: FramebufferColorDataTypeType;
+    colorType?: FramebufferColorDataType;
     /** Number of color attachments. */
     colorCount?: number;
     /** Depth buffer attachment. */
@@ -1089,7 +1089,7 @@ declare namespace REGL {
     "rgba pvrtc 2bppv1" |
     "rgb etc1";
 
-  type TextureDataTypeType =
+  type TextureDataType =
     "uint8" |
     "uint16" |
     "uint32" |
@@ -1149,7 +1149,7 @@ declare namespace REGL {
     "rgba32f" |
     "srgba";
 
-  type FramebufferColorDataTypeType =
+  type FramebufferColorDataType =
     "uint8" |
     "half float" |
     "float";
