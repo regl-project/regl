@@ -90,7 +90,7 @@ declare namespace REGL {
      * Creates a new REGL command. The resulting command, when executed,
      * will set a WebGL state machine to a specified `state`.
      */
-    (state: REGL.DrawConfig): REGL.DrawCommand;
+    (drawConfig: REGL.DrawConfig): REGL.DrawCommand;
 
     /**
      * Clears selected buffers to specified values.
