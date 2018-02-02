@@ -87,18 +87,21 @@ declare namespace REGL {
 
     /**
      * Read entire screen.
+     * NB: Reading into a Float32Array requires OES_texture_float.
      */
-    read(): Uint8Array | Float32Array;
+    read<T extends Uint8Array | Float32Array = Uint8Array>(): T;
 
     /**
-     * Read entire screen into an existing `ArrayBufferView`.
+     * Read entire screen into an existing TypedArray.
+     * NB: Reading into a Float32Array requires OES_texture_float.
      */
     read<T extends Uint8Array | Float32Array>(data: T): T;
 
     /**
      * Read a selected region of screen or framebuffer.
+     * NB: Reading into a Float32Array requires OES_texture_float.
      */
-    read<T extends Uint8Array | Float32Array>(options: REGL.ReadOptions<T>): T;
+    read<T extends Uint8Array | Float32Array = Uint8Array>(options: REGL.ReadOptions<T>): T;
 
     /**
      * Dynamic variable binding
