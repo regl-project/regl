@@ -183,14 +183,13 @@ declare namespace REGL {
      * so you should try to do all your rendering to the drawing buffer within
      * the frame callback.
      */
-    frame(callback: () => void): REGL.Cancel;
+    frame(callback: REGL.FrameCallback): REGL.Cancellable;
 
-    on(type: "frame", handler: () => void): REGL.Cancel;
-    on(type: "lost", handler: () => void): REGL.Cancel;
-    on(type: "restore", handler: () => void): REGL.Cancel;
-    on(type: "destroy", handler: () => void): REGL.Cancel;
-
-    /* Extensions */
+    /**
+     * Registers a handler function to be called when the associated `regl` event is fired.
+     */
+    on(type: 'frame', callback: REGL.FrameCallback): REGL.Cancellable
+    on(type: 'lost' | 'restore' | 'destroy', callback: () => void): REGL.Cancellable;
 
     /**
      * Test if an extension is present. Argument is case insensitive.
@@ -271,7 +270,7 @@ declare namespace REGL {
     readonly pixelRatio: number;
   }
 
-  interface Cancel {
+  interface Cancellable {
     cancel(): void;
   }
 
