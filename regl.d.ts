@@ -90,7 +90,15 @@ declare namespace REGL {
      * Creates a new REGL command. The resulting command, when executed,
      * will set a WebGL state machine to a specified `state`.
      */
-    (drawConfig: REGL.DrawConfig): REGL.DrawCommand;
+    <
+      ParentContext extends REGL.DefaultContext = REGL.DefaultContext,
+      OwnContext extends {} = {},
+      Props extends {} = {},
+      Uniforms extends {} = {},
+      Attributes extends {} = {}
+    >(
+      drawConfig: REGL.DrawConfig<ParentContext, OwnContext, Props, Uniforms, Attributes>,
+    ): REGL.DrawCommand<ParentContext & OwnContext, Props>;
 
     /**
      * Clears selected buffers to specified values.
@@ -128,11 +136,11 @@ declare namespace REGL {
      */
 
     /* Retrieve the property `name` passed when the draw command is executed. */
-    prop<P, K extends keyof P>(name: K): DynamicVariable<P[K]>;
+    prop<Props extends {}, Key extends keyof Props>(name: Key): DynamicVariable<Props[Key]>;
     /* Retrieve the context property `name` when the draw command is executed. */
-    context<C extends REGL.Context = REGL.Context, K extends keyof C>(name: K): DynamicVariable<C[K]>;
+    context<Context extends REGL.DefaultContext, K extends keyof Context>(name: K): DynamicVariable<Context[K]>;
     /* Retrieve the property `name` of the object in whose context the draw command is executing. */
-    this<T, K extends keyof T>(name: K): DynamicVariable<T[K]>;
+    this<This extends {}, Key extends keyof This>(name: Key): DynamicVariable<This[Key]>;
 
     /* Drawing */
 
@@ -268,7 +276,7 @@ declare namespace REGL {
     onDone?: (err: Error | null, regl?: Regl) => void;
   }
 
-  interface Context {
+  interface DefaultContext {
     /** The number of frames rendered */
     readonly tick: number;
     /** Total time elapsed since regl was initialized in seconds */
@@ -285,6 +293,14 @@ declare namespace REGL {
     readonly pixelRatio: number;
   }
 
+  type UserContext<
+    ParentContext extends REGL.DefaultContext,
+    OwnContext extends {},
+    Props extends {}
+  > = {
+    [Key in keyof OwnContext]: MaybeDynamic<OwnContext[Key], ParentContext, Props>;
+  };
+
   interface Cancellable {
     cancel(): void;
   }
@@ -292,12 +308,12 @@ declare namespace REGL {
   /**
    * A handler function invoked when `regl` fires the "frame" event. It is passed the default Context.
    */
-  type FrameCallback = (context: REGL.Context) => void;
+  type FrameCallback = (context: REGL.DefaultContext) => void;
 
-  interface DynamicVariable<ReturnType> {
+  interface DynamicVariable<Return> {
     /**
      * This type is supposed to be opaque. Properties are listed only because TS casts _anything_ to `DynamicVariable`.
-     * The type parameter `ReturnType`, though unused in the body of the interface, is useful as a
+     * The type parameter `Return`, though unused in the body of the interface, is useful as a
      * marker to ensure the correct type is rendered when the associated `DrawCommand` is invoked.
      */
     readonly id: number;
@@ -305,8 +321,17 @@ declare namespace REGL {
     readonly data: string;
   }
 
-  type DynamicVariableFn<R, C extends REGL.Context = REGL.Context, P extends {} = {}> =
-    (context: C, props: P, batchId: number) => R;
+  type DynamicVariableFn<
+    Return,
+    Context extends REGL.DefaultContext = REGL.DefaultContext,
+    Props extends {} = {}
+  > =
+    (context: Context, props: Props, batchId: number) => Return;
+
+  type MaybeDynamic<Type, Context extends REGL.DefaultContext, Props extends {}> =
+    Type |
+    DynamicVariable<Type> |
+    DynamicVariableFn<Type, Context, Props>;
 
   interface ClearOptions {
     /**
@@ -355,34 +380,37 @@ declare namespace REGL {
    * @param props         additional parameters of a draw call
    * @param batchId       index of a command in a batch call
    */
-  type CommandBodyFn<C extends REGL.Context = REGL.Context, P extends {} = {}> =
-    (context: C, props: P, batchId: number) => void;
+  type CommandBodyFn<
+    Context extends REGL.DefaultContext = REGL.DefaultContext,
+    Props extends {} = {}
+  > = (context: Context, props: Props, batchId: number) => void;
 
   /**
    * Draw commands are the fundamental abstraction in regl. A draw command wraps up all of the WebGL
    * state associated with a draw call (either drawArrays or drawElements) and packages it into a
    * single reusable function.
    */
-  interface DrawCommand {
+  interface DrawCommand<
+    Context extends REGL.DefaultContext = REGL.DefaultContext,
+    Props extends {} = {}
+  > {
     readonly stats: REGL.CommandStats;
 
     /** Run a command once. */
-    <C extends REGL.Context = REGL.Context, P extends {} = {}>(
-      body?: REGL.CommandBodyFn<C, P>,
-    ): void;
+    (body?: REGL.CommandBodyFn<Context, Props>): void;
     /** Run a command `count` times. */
-    <C extends REGL.Context = REGL.Context, P extends {} = {}>(
-      count: number,
-      body?: REGL.CommandBodyFn<C, P>,
-    ): void;
+    (count: number, body?: REGL.CommandBodyFn<Context, Props>): void;
     /** Run a command batch. */
-    <C extends REGL.Context = REGL.Context, P extends {} = {}>(
-      props: Partial<P> | Array<Partial<P>>,
-      body?: REGL.CommandBodyFn<C, P>,
-    ): void;
+    (props: Partial<Props> | Array<Partial<Props>>, body?: REGL.CommandBodyFn<Context, Props>): void;
   }
 
-  interface DrawConfig {
+  interface DrawConfig<
+    ParentContext extends REGL.DefaultContext = REGL.DefaultContext,
+    OwnContext extends {} = {},
+    Props extends {} = {},
+    Uniforms extends {} = {},
+    Attributes extends {} = {}
+  > {
 
     /* Shaders */
 
@@ -403,9 +431,7 @@ declare namespace REGL {
      * - gl.getUniformLocation
      * - gl.uniform
      */
-    uniforms?: {
-      [name: string]: REGL.Uniform;
-    };
+    uniforms?: REGL.MaybeDynamicUniforms<Uniforms, ParentContext & OwnContext, Props>,
 
     /**
      * Object mapping names of attribute variables to their values.
@@ -418,9 +444,7 @@ declare namespace REGL {
      * - gl.vertexAttibDivisor
      * - gl.enableVertexAttribArray, gl.disableVertexAttribArray
      */
-    attributes?: {
-      [name: string]: REGL.Attribute;
-    }
+    attributes?: REGL.MaybeDynamicAttributes<Attributes, ParentContext & OwnContext, Props>,
 
     /* Drawing */
 
@@ -569,8 +593,6 @@ declare namespace REGL {
     "triangle fan";
 
   type Uniform =
-    DynamicVariable<Uniform> |
-    DynamicVariableFn<Uniform> |
     boolean |
     number |
     boolean[] |
@@ -578,13 +600,35 @@ declare namespace REGL {
     Float32Array |
     Int32Array;
 
+  interface Uniforms {
+    [name: string]: Uniform;
+  }
+
+  type MaybeDynamicUniforms<
+    Uniforms extends REGL.Uniforms,
+    Context extends REGL.DefaultContext,
+    Props extends {}
+  > = {
+    [Key in keyof Uniforms]: MaybeDynamic<Uniforms[Key], Context, Props>;
+  }
+
   type Attribute =
-    DynamicVariable<Attribute> |
-    DynamicVariableFn<Attribute> |
     ConstantAttribute |
     AttributeConfig |
     REGL.Buffer |
     REGL.BufferData;
+
+  interface Attributes {
+    [name: string]: Attribute;
+  }
+
+  type MaybeDynamicAttributes<
+    Attributes extends REGL.Attributes,
+    Context extends REGL.DefaultContext,
+    Props extends {}
+  > = {
+    [Key in keyof Attributes]: MaybeDynamic<Attributes[Key], Context, Props>;
+  }
 
   interface ConstantAttribute {
     constant: number | number[];
@@ -973,7 +1017,10 @@ declare namespace REGL {
     /* Framebuffer binding */
 
     /* Binds a framebuffer directly. This is a short cut for creating a command which sets the framebuffer. */
-    use<C extends REGL.Context = REGL.Context, P extends {} = {}>(body: CommandBodyFn<C, P>): void;
+    use<
+      Context extends REGL.DefaultContext = REGL.DefaultContext,
+      Props extends {} = {}
+    >(body: CommandBodyFn<Context, Props>): void;
 
     /* Resizes the Framebuffer and all its attachments. */
     resize(radius: number): void;
