@@ -74,7 +74,7 @@ declare namespace REGL {
      * Creates a new REGL command. The resulting command, when executed,
      * will set a WebGL state machine to a specified `state`.
      */
-    (state: REGL.State): REGL.Command;
+    (state: REGL.DrawConfig): REGL.DrawCommand;
 
     /**
      * Clears selected buffers to specified values.
@@ -335,7 +335,7 @@ declare namespace REGL {
    * A *command* is a complete representation of the WebGL state required
    * to perform some draw call.
    */
-  interface Command {
+  interface DrawCommand {
     readonly stats: REGL.CommandStats;
 
     /** Run a command once. */
@@ -346,7 +346,7 @@ declare namespace REGL {
     (props: REGL.Props | REGL.Props[], body?: REGL.CommandBodyFn): void;
   }
 
-  interface State {
+  interface DrawConfig {
 
     /* Shaders */
 
