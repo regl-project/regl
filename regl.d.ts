@@ -100,11 +100,20 @@ declare namespace REGL {
      */
     read<T extends Uint8Array | Float32Array>(options: REGL.ReadOptions<T>): T;
 
-    /* Dynamic variable binding */
+    /**
+     * Dynamic variable binding
+     *
+     * `prop`, `context`, and `this` generate DynamicVariables, which can be used as values in a
+     * REGL.DrawConfig object. A DynamicVariable is an abstraction that will render a value only
+     * when the DrawCommand with which it's associated is invoked.
+     */
 
-    prop(name: string): REGL.DynamicPropVariable;
-    context(name: string): REGL.DynamicContextVariable;
-    this(name: string): REGL.DynamicStateVariable;
+    /* Retrieve the property `name` passed when the draw command is executed. */
+    prop<P, K extends keyof P>(name: K): DynamicVariable<P[K]>;
+    /* Retrieve the context property `name` when the draw command is executed. */
+    context<C extends REGL.Context = REGL.Context, K extends keyof C>(name: K): DynamicVariable<C[K]>;
+    /* Retrieve the property `name` of the object in whose context the draw command is executing. */
+    this<T, K extends keyof T>(name: K): DynamicVariable<T[K]>;
 
     /* Drawing */
 
@@ -263,26 +272,24 @@ declare namespace REGL {
     cancel(): void;
   }
 
-  interface DynamicVariable {
-    /** This type is supposed to be opaque. Properties are listed only because TS casts _anything_ to `DynamicVariable`. */
+  /**
+   * A handler function invoked when `regl` fires the "frame" event. It is passed the default Context.
+   */
+  type FrameCallback = (context: REGL.Context) => void;
+
+  interface DynamicVariable<ReturnType> {
+    /**
+     * This type is supposed to be opaque. Properties are listed only because TS casts _anything_ to `DynamicVariable`.
+     * The type parameter `ReturnType`, though unused in the body of the interface, is useful as a
+     * marker to ensure the correct type is rendered when the associated `DrawCommand` is invoked.
+     */
     readonly id: number;
     readonly type: number;
     readonly data: string;
   }
 
-  interface DynamicPropVariable extends REGL.DynamicVariable {
-    readonly type: 1;
-  }
-
-  interface DynamicContextVariable extends REGL.DynamicVariable {
-    readonly type: 2;
-  }
-
-  interface DynamicStateVariable extends REGL.DynamicVariable {
-    readonly type: 3;
-  }
-
-  type DynamicVariableFn = (context: REGL.Context, props: REGL.Props, batchId: number) => PropType;
+  type DynamicVariableFn<R, C extends REGL.Context = REGL.Context, P extends {} = {}> =
+    (context: C, props: P, batchId: number) => R;
 
   interface ClearOptions {
     /**
@@ -322,14 +329,13 @@ declare namespace REGL {
     framebuffer?: REGL.Framebuffer;
   }
 
-  interface CommandBodyFn {
-    /**
-     * @param context       REGL context
-     * @param props         additional parameters of a draw call
-     * @param batchId       index of a command in a batch call
-     */
-    (context: REGL.Context, props: REGL.Props, batchId: number): void;
-  }
+  /**
+   * @param context       REGL context
+   * @param props         additional parameters of a draw call
+   * @param batchId       index of a command in a batch call
+   */
+  type CommandBodyFn<C extends REGL.Context = REGL.Context, P extends {} = {}> =
+    (context: C, props: P, batchId: number) => void;
 
   /**
    * A *command* is a complete representation of the WebGL state required
@@ -339,11 +345,19 @@ declare namespace REGL {
     readonly stats: REGL.CommandStats;
 
     /** Run a command once. */
-    (body?: REGL.CommandBodyFn): void;
+    <C extends REGL.Context = REGL.Context, P extends {} = {}>(
+      body?: REGL.CommandBodyFn<C, P>,
+    ): void;
     /** Run a command `count` times. */
-    (count: number, body?: REGL.CommandBodyFn): void;
+    <C extends REGL.Context = REGL.Context, P extends {} = {}>(
+      count: number,
+      body?: REGL.CommandBodyFn<C, P>,
+    ): void;
     /** Run a command batch. */
-    (props: REGL.Props | REGL.Props[], body?: REGL.CommandBodyFn): void;
+    <C extends REGL.Context = REGL.Context, P extends {} = {}>(
+      props: Partial<P> | Array<Partial<P>>,
+      body?: REGL.CommandBodyFn<C, P>,
+    ): void;
   }
 
   interface DrawConfig {
@@ -533,8 +547,8 @@ declare namespace REGL {
     "triangle fan";
 
   type Uniform =
-    DynamicVariable |
-    DynamicVariableFn |
+    DynamicVariable<Uniform> |
+    DynamicVariableFn<Uniform> |
     boolean |
     number |
     boolean[] |
@@ -543,8 +557,8 @@ declare namespace REGL {
     Int32Array;
 
   type Attribute =
-    DynamicVariable |
-    DynamicVariableFn |
+    DynamicVariable<Attribute> |
+    DynamicVariableFn<Attribute> |
     ConstantAttribute |
     AttributeConfig |
     REGL.Buffer |
@@ -937,7 +951,7 @@ declare namespace REGL {
     /* Framebuffer binding */
 
     /* Binds a framebuffer directly. This is a short cut for creating a command which sets the framebuffer. */
-    use(body: CommandBodyFn): void;
+    use<C extends REGL.Context = REGL.Context, P extends {} = {}>(body: CommandBodyFn<C, P>): void;
 
     /* Resizes the Framebuffer and all its attachments. */
     resize(radius: number): void;
@@ -1257,23 +1271,6 @@ declare namespace REGL {
   type TextureUnpackAlignmentType = 1 | 2 | 4 | 8;
 
   type TextureCubeFaceIndexType = 0 | 1 | 2 | 3 | 4 | 5;
-
-  type Props = {
-    [name: string]: PropType;
-  }
-
-  type PropType =
-    boolean |
-    number |
-    REGL.DynamicVariable |
-    REGL.DynamicVariableFn |
-    REGL.PropArray |
-    REGL.Props;
-
-  // TypeScript doesn't allow directly specify recursive structures like
-  // type PropType = ... | PropType[];
-  // https://github.com/Microsoft/TypeScript/issues/3988
-  interface PropArray extends Array<PropType> { }
 
   /**
    * An N-dimensional array, as per `ndarray` module.
