@@ -62,12 +62,28 @@ declare function REGL(options: REGL.InitializationOptions): REGL.Regl;
 
 declare namespace REGL {
   /**
-   * Documentation for interface `Regl`.
+   * `Regl` represents the object/function returned from the `REGL` constructor. It exposes the
+   * entire public interface of the `regl` library.
    */
   export interface Regl {
+    /**
+     * The context creation attributes passed to the WebGL context constructor.
+     */
     readonly attributes: WebGLContextAttributes;
+    /**
+     * `regl` is designed in such a way that you should never have to directly access the underlying
+     * WebGL context. However, if you really absolutely need to do this for some reason (for example
+     * to interface with an external library), you can still get a reference to the WebGL context
+     * via the property `_gl`.
+     */
     readonly _gl: WebGLRenderingContext;
+    /**
+     * `regl` exposes info about the WebGL context limits and capabilities via the `limits` object.
+     */
     readonly limits: REGL.Limits;
+    /**
+     * `regl` tracks several metrics for performance monitoring. These can be read using the `stats` object.
+     */
     readonly stats: REGL.Stats;
 
     /**
@@ -120,7 +136,7 @@ declare namespace REGL {
 
     /* Drawing */
 
-    /** Executes an empty draw command */
+    /** Executes an empty draw command. */
     draw(): void;
 
     /* Resource creation */
@@ -206,29 +222,28 @@ declare namespace REGL {
      */
     hasExtension(name: string): boolean;
 
-    /* Poll viewport and timers */
-
     /**
      * Updates the values of internal times and recalculates the size of viewports.
      */
     poll(): void;
-
-    /* Current time */
 
     /**
      * Returns Total time elapsed since regl was initialized in seconds.
      */
     now(): number;
 
-    /* Destruction */
-
     /**
      * Destroys the gl context and releases all associated resources.
      */
     destroy(): void;
 
-    /* Refresh */
-
+    /**
+     * `regl` is designed in such a way that you should never have to directly access the underlying
+     * WebGL context. However, if you really absolutely need to do this for some reason (for example
+     * to interface with an external library), you can still get a reference to the WebGL context
+     * via the property `REGL._gl`. Note, though, that if you have changed the WebGL state, you must
+     * call `_refresh` to restore the `regl` state in order to prevent rendering errors.
+     */
     _refresh(): void;
   }
 
@@ -332,6 +347,10 @@ declare namespace REGL {
   }
 
   /**
+   * Commands can be nested using scoping. If a `DrawCommand` is passed a `CommandBodyFn`, then the
+   * `DrawCommand` is evaluated and its state variables are saved as the defaults for all
+   * `DrawCommand`s invoked within the `CommandBodyFn`.
+   *
    * @param context       REGL context
    * @param props         additional parameters of a draw call
    * @param batchId       index of a command in a batch call
@@ -340,8 +359,9 @@ declare namespace REGL {
     (context: C, props: P, batchId: number) => void;
 
   /**
-   * A *command* is a complete representation of the WebGL state required
-   * to perform some draw call.
+   * Draw commands are the fundamental abstraction in regl. A draw command wraps up all of the WebGL
+   * state associated with a draw call (either drawArrays or drawElements) and packages it into a
+   * single reusable function.
    */
   interface DrawCommand {
     readonly stats: REGL.CommandStats;
@@ -671,8 +691,8 @@ declare namespace REGL {
   }
 
   /*
-    * Resources
-    */
+   * Resources
+   */
 
   /**
    * A *resource* is a handle to a GPU resident object, like a texture, FBO or buffer.
