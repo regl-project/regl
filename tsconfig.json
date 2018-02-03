@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+      "lib": ["dom", "es6"],
+      "noImplicitAny": true,
+      "noImplicitThis": true,
+      "strictNullChecks": true,
+      "strictFunctionTypes": true,
+      "forceConsistentCasingInFileNames": true
+  }
+}
