@@ -485,10 +485,13 @@ declare namespace REGL {
      * then these values may be inferred from the state of the element array buffer.
      */
     elements?: REGL.Elements; // TODO number[],
+
     /* Render target */
 
     /**
-     * A framebuffer to be used as a target for drawing.
+     * A framebuffer to be used as a target for drawing. (Default: `null`)
+     * Passing null sets the framebuffer to the drawing buffer.
+     * Updating the render target will modify the viewport.
      *
      * Related WebGL APIs
      *
@@ -497,7 +500,11 @@ declare namespace REGL {
     framebuffer?: REGL.Framebuffer | null;
 
     /* Profiling */
-    /** If set, turns on profiling for this command. (Default: `false`) */
+
+    /**
+     * If set, turns on profiling for this command. (Default: `false`)
+     * Profiling stats can be accessed via the `stats` property of the `DrawCommand`.
+     */
     profile?: boolean;
 
     /* Depth buffer */
@@ -661,10 +668,14 @@ declare namespace REGL {
   }
 
   interface DepthTestOptions {
+    /* Toggles gl.enable(gl.DEPTH_TEST). Default: true */
     enable?: boolean;
+    /* Sets `gl.depthMask`. Default: true */
     mask?: boolean;
-    func?: REGL.ComparisonOperatorType;
+    /* Sets `gl.depthRange`. Default: [0, 1] */
     range?: [number, number];
+    /* Sets `gl.depthFunc`. Default: 'less' */
+    func?: REGL.ComparisonOperatorType;
   }
 
   interface BlendingOptions {
@@ -1214,11 +1225,17 @@ declare namespace REGL {
   interface CommandStats {
     /** The number of times the command has been called. */
     count: number;
-    /** The cumulative CPU time spent executing the command in milliseconds. */
+    /**
+     * The cumulative CPU time spent executing the command in milliseconds.
+     * `cpuTime` uses `performance.now` if available. Otherwise it falls back to `Date.now`.
+     */
     cpuTime: number;
     /**
-     * The cumulative GPU time spent executing the command in milliseconds
+     * The cumulative GPU time spent executing the command in milliseconds.
      * (requires the `EXT_disjoint_timer_query` extension).
+     * GPU timer queries update asynchronously. If you are not using `regl.frame()` to tick your
+     * application, then you should periodically call `regl.poll()` each frame to update the timer
+     * statistics.
      */
     gpuTime: number;
   }
