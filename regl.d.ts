@@ -678,6 +678,24 @@ declare namespace REGL {
     func?: REGL.ComparisonOperatorType;
   }
 
+  type ComparisonOperatorType =
+    /* `gl.NEVER` */
+    "never" |
+    /* `gl.ALWAYS` */
+    "always" |
+    /* `gl.LESS` */
+    "less" | "<" |
+    /* `gl.LEQUAL` */
+    "lequal" | "<=" |
+    /* `gl.GREATER` */
+    "greater" | ">" |
+    /* `gl.GEQUAL` */
+    "gequal" | ">=" |
+    /* `gl.EQUAL` */
+    "equal" | "=" |
+    /* `gl.NOTEQUAL` */
+    "notequal" | "!=";
+
   interface BlendingOptions {
     enable?: boolean;
     func?: {
@@ -692,6 +710,30 @@ declare namespace REGL {
     };
     color?: [number, number, number, number];
   }
+
+  type BlendingEquationType =
+    "add" |
+    "subtract" |
+    "reverse subtract" |
+    "min" |
+    "max";
+
+  type BlendingFunctionType =
+    "zero" | 0 |
+    "one" | 1 |
+    "src color" |
+    "one minus src color" |
+    "src alpha" |
+    "one minus src alpha" |
+    "dst color" |
+    "one minus dst color" |
+    "dst alpha" |
+    "one minus dst alpha" |
+    "constant color" |
+    "one minus constant color" |
+    "constant alpha" |
+    "one minus constant alpha" |
+    "src alpha saturate";
 
   interface StencilOptions {
     enable?: boolean;
@@ -714,6 +756,16 @@ declare namespace REGL {
     zpass: REGL.StencilOperationType;
   }
 
+  type StencilOperationType =
+    "zero" |
+    "keep" |
+    "replace" |
+    "invert" |
+    "increment" |
+    "decrement" |
+    "increment wrap" |
+    "decrement wrap";
+
   interface PolygonOffsetOptions {
     enable?: boolean;
     offset: {
@@ -726,6 +778,14 @@ declare namespace REGL {
     enable?: boolean;
     face?: REGL.FaceOrientationType;
   }
+
+  type FaceOrientationType =
+    "front" |
+    "back";
+
+  type FaceWindingType =
+    "cw" |
+    "ccw";
 
   interface SamplingOptions {
     /** Toggles `gl.enable(gl.SAMPLE_COVERAGE)` */
@@ -885,6 +945,98 @@ declare namespace REGL {
     "uint16" |
     "uint32";
 
+  interface Texture extends Resource {
+    readonly stats: {
+        /** Size of the texture, in bytes. */
+        size: number;
+    }
+
+    /** Width of texture. */
+    readonly width: number;
+    /** Height of texture. */
+    readonly height: number;
+    /** Texture format. */
+    readonly format: REGL.TextureFormatType;
+    /** Texture data type. */
+    readonly type: REGL.TextureDataType;
+    /** Texture magnification filter. */
+    readonly mag: REGL.TextureMagFilterType;
+    /** Texture minification filter. */
+    readonly min: REGL.TextureMinFilterType;
+    /** Texture wrap mode on S axis. */
+    readonly wrapS: REGL.TextureWrapModeType;
+    /** Texture wrap mode on T axis. */
+    readonly wrapT: REGL.TextureWrapModeType;
+  }
+
+  type TextureFormatType =
+    "alpha" |
+    "luminance" |
+    "luminance alpha" |
+    "rgb" |
+    "rgba" |
+    "rgba4" |
+    "rgb5 a1" |
+    "rgb565" |
+    "srgb" |
+    "srgba" |
+    "depth" |
+    "depth stencil" |
+    "rgb s3tc dxt1" |
+    "rgba s3tc dxt1" |
+    "rgba s3tc dxt3" |
+    "rgba s3tc dxt5" |
+    "rgb atc" |
+    "rgba atc explicit alpha" |
+    "rgba atc interpolated alpha" |
+    "rgb pvrtc 4bppv1" |
+    "rgb pvrtc 2bppv1" |
+    "rgba pvrtc 4bppv1" |
+    "rgba pvrtc 2bppv1" |
+    "rgb etc1";
+
+  type TextureDataType =
+    "uint8" |
+    "uint16" |
+    "uint32" |
+    "float" |
+    "half float";
+
+  type TextureMagFilterType =
+    "nearest" |
+    "linear";
+
+  type TextureMinFilterType =
+    "nearest" |
+    "linear" |
+    "linear mipmap linear" | "mipmap" |
+    "nearest mipmap linear" |
+    "linear mipmap nearest" |
+    "nearest mipmap nearest";
+
+  type TextureWrapModeType =
+    "repeat" |
+    "clamp" |
+    "mirror";
+
+  interface Texture2D extends Texture {
+    /** Reinitializes the texture. */
+    (data: Texture2DOptions): void;
+
+    /**
+     * Replaces the part of texture with new data.
+     *
+     * @param data      image data object, similar to arguments for the texture constructor
+     * @param x         horizontal offset of the image within the texture (Default: `0`)
+     * @param y         vertical offset of the image within the texture (Default: `0`)
+     * @param level     mipmap level of the texture to modify (Default: `0`)
+     */
+    subimage(data: Texture2DOptions, x?: number, y?: number, level?: number): void;
+
+    /** Resizes a texture. */
+    resize(width?: number, height?: number): void;
+  }
+
   interface Texture2DOptions {
     /** Sets `width`, `height` and, optionally, `channels`. */
     shape?: [number, number] | [number, number, REGL.TextureChannelsType];
@@ -911,56 +1063,17 @@ declare namespace REGL {
     channels?: REGL.TextureChannelsType;
   }
 
-  interface Texture extends Resource {
-    readonly stats: {
-        /** Size of the texture, in bytes. */
-        size: number;
-    }
+  type TextureMipmapHintType =
+    "don't care" | "dont care" |
+    "nice" |
+    "fast";
 
-    /** Width of texture. */
-    readonly width: number;
-    /** Height of texture. */
-    readonly height: number;
-    /** Texture format. */
-    readonly format: REGL.TextureFormatType;
-    /** Texture data type. */
-    readonly type: REGL.TextureDataType;
-    /** Texture magnification filter. */
-    readonly mag: REGL.TextureMagFilterType;
-    /** Texture minification filter. */
-    readonly min: REGL.TextureMinFilterType;
-    /** Texture wrap mode on S axis. */
-    readonly wrapS: REGL.TextureWrapModeType;
-    /** Texture wrap mode on T axis. */
-    readonly wrapT: REGL.TextureWrapModeType;
-  }
+  type TextureColorSpaceType =
+    "none" | "browser";
 
-  interface Texture2D extends Texture {
-    /** Reinitializes the texture. */
-    (data: Texture2DOptions): void;
+  type TextureChannelsType = 1 | 2 | 3 | 4;
 
-    /**
-     * Replaces the part of texture with new data.
-     *
-     * @param data      image data object, similar to arguments for the texture constructor
-     * @param x         horizontal offset of the image within the texture (Default: `0`)
-     * @param y         vertical offset of the image within the texture (Default: `0`)
-     * @param level     mipmap level of the texture to modify (Default: `0`)
-     */
-    subimage(data: Texture2DOptions, x?: number, y?: number, level?: number): void;
-
-    /** Resizes a texture. */
-    resize(width?: number, height?: number): void;
-  }
-
-  interface TextureCubeOptions {
-    radius?: number;
-    faces?: [
-        TextureImageData, TextureImageData,
-        TextureImageData, TextureImageData,
-        TextureImageData, TextureImageData
-    ];
-  }
+  type TextureUnpackAlignmentType = 1 | 2 | 4 | 8;
 
   interface TextureCube extends Texture {
     resize(): void;
@@ -973,6 +1086,17 @@ declare namespace REGL {
       y?: number,
       level?: number,
     ): void;
+  }
+
+  type TextureCubeFaceIndexType = 0 | 1 | 2 | 3 | 4 | 5;
+
+  interface TextureCubeOptions {
+    radius?: number;
+    faces?: [
+      TextureImageData, TextureImageData,
+      TextureImageData, TextureImageData,
+      TextureImageData, TextureImageData
+    ];
   }
 
   interface Renderbuffer extends Resource {
@@ -1246,58 +1370,6 @@ declare namespace REGL {
     gpuTime: number;
   }
 
-  type ComparisonOperatorType =
-    "never" |
-    "always" |
-    "less" | "<" |
-    "lequal" | "<=" |
-    "greater" | ">" |
-    "gequal" | ">=" |
-    "equal" | "=" |
-    "notequal" | "!=";
-
-  type BlendingEquationType =
-    "add" |
-    "subtract" |
-    "reverse subtract" |
-    "min" |
-    "max";
-
-  type BlendingFunctionType =
-    "zero" | 0 |
-    "one" | 1 |
-    "src color" |
-    "one minus src color" |
-    "src alpha" |
-    "one minus src alpha" |
-    "dst color" |
-    "one minus dst color" |
-    "dst alpha" |
-    "one minus dst alpha" |
-    "constant color" |
-    "one minus constant color" |
-    "constant alpha" |
-    "one minus constant alpha" |
-    "src alpha saturate";
-
-  type StencilOperationType =
-    "zero" |
-    "keep" |
-    "replace" |
-    "invert" |
-    "increment" |
-    "decrement" |
-    "increment wrap" |
-    "decrement wrap";
-
-  type FaceOrientationType =
-    "front" |
-    "back";
-
-  type FaceWindingType =
-    "cw" |
-    "ccw";
-
   // TODO Cover all possible things that could be used to create/update a texture
   // Possible candidates: HTMLImageElement, HTMLVideoElement, NDArray,
   // various typed arrays and (unflattened) JS arrays.
@@ -1310,70 +1382,6 @@ declare namespace REGL {
     CanvasRenderingContext2D |
     HTMLVideoElement |
     REGL.NDArray;
-
-  type TextureFormatType =
-    "alpha" |
-    "luminance" |
-    "luminance alpha" |
-    "rgb" |
-    "rgba" |
-    "rgba4" |
-    "rgb5 a1" |
-    "rgb565" |
-    "srgb" |
-    "srgba" |
-    "depth" |
-    "depth stencil" |
-    "rgb s3tc dxt1" |
-    "rgba s3tc dxt1" |
-    "rgba s3tc dxt3" |
-    "rgba s3tc dxt5" |
-    "rgb atc" |
-    "rgba atc explicit alpha" |
-    "rgba atc interpolated alpha" |
-    "rgb pvrtc 4bppv1" |
-    "rgb pvrtc 2bppv1" |
-    "rgba pvrtc 4bppv1" |
-    "rgba pvrtc 2bppv1" |
-    "rgb etc1";
-
-  type TextureDataType =
-    "uint8" |
-    "uint16" |
-    "uint32" |
-    "float" |
-    "half float";
-
-  type TextureMagFilterType =
-    "nearest" |
-    "linear";
-
-  type TextureMinFilterType =
-    "nearest" |
-    "linear" |
-    "linear mipmap linear" | "mipmap" |
-    "nearest mipmap linear" |
-    "linear mipmap nearest" |
-    "nearest mipmap nearest";
-
-  type TextureMipmapHintType =
-    "don't care" | "dont care" |
-    "nice" |
-    "fast";
-
-  type TextureColorSpaceType =
-    "none" | "browser";
-
-  type TextureWrapModeType =
-    "repeat" |
-    "clamp" |
-    "mirror";
-
-  type TextureChannelsType = 1 | 2 | 3 | 4;
-
-  type TextureUnpackAlignmentType = 1 | 2 | 4 | 8;
-
-  type TextureCubeFaceIndexType = 0 | 1 | 2 | 3 | 4 | 5;
 
   /**
    * An N-dimensional array, as per `ndarray` module.
