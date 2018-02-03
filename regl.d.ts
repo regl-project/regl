@@ -420,6 +420,17 @@ declare namespace REGL {
     frag?: string;
 
     /**
+     * Object mapping user-defined keys to user-defined values to be accessed via `DynamicVariable`s
+     * or `DynamicVariableFn`s elsewhere in the `DrawConfig` or in scoped `DrawCommand`s.
+     * Context variables in `regl` are computed before any other parameters and can also be passed
+     * from a scoped command to any sub-commands.
+     * Both `DynamicVariable`s and `DynamicVariableFn`s can be used as values in the context object,
+     * making it possible to define new context properties derived from existing context properties
+     * or from `props`.
+     */
+    context?: REGL.UserContext<ParentContext, OwnContext, Props>,
+
+    /**
      * Object mapping names of uniform variables to their values.
      * To specify uniforms in GLSL structs use the fully qualified path with dot notation.
      *  example: `'nested.value': 5.3`
