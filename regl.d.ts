@@ -966,7 +966,13 @@ declare namespace REGL {
     resize(): void;
     resize(radius: number): void;
 
-    subimage(face: REGL.TextureCubeFaceIndexType, data: TextureImageData, x?: number, y?: number, level?: number);
+    subimage(
+      face: REGL.TextureCubeFaceIndexType,
+      data: TextureImageData,
+      x?: number,
+      y?: number,
+      level?: number,
+    ): void;
   }
 
   interface Renderbuffer extends Resource {
