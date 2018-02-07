@@ -161,14 +161,15 @@ declare namespace REGL {
     /* Creates an Elements object using creation `options`. */
     elements(options: REGL.ElementsOptions): REGL.Elements;
 
-    /**
-     * Creates an empty texture with given dimensions.
-     *
-     * @param width     width of a texture, in pixels (Default: `1`)
-     * @param height    height of a texture, in pixels (Default: equal to `width`)
-     */
-    texture(width?: number, height?: number): REGL.Texture2D;
+    /* Creates a 2D Texture of dimensions 1 x 1. */
+    texture(): REGL.Texture2D;
+    /* Creates a 2D Texture of dimensions `radius` x `radius`. */
+    texture(radius: number): REGL.Texture2D;
+    /* Creates a 2D Texture of dimensions `width` x `height`. */
+    texture(width: number, height: number): REGL.Texture2D;
+    /* Creates a 2D Texture using the provided `data`. */
     texture(data: REGL.TextureImageData): REGL.Texture2D;
+    /* Creates a 2D Texture using creation `options`. */
     texture(options: REGL.Texture2DOptions): REGL.Texture2D;
 
     cube(radius?: number): REGL.TextureCube;
@@ -1062,8 +1063,16 @@ declare namespace REGL {
     "mirror";
 
   interface Texture2D extends Texture {
-    /** Reinitializes the texture. */
-    (data: Texture2DOptions): void;
+    /* Reinitializes the texture in place with dimensions 1 x 1. */
+    (): void;
+    /* Reinitializes the texture in place with dimensions `radius` x `radius`. */
+    (radius: number): void;
+    /* Reinitializes the texture in place with dimensions `width` x `height`. */
+    (width: number, height: number): void;
+    /* Reinitializes the texture in place using the provided `data`. */
+    (data: REGL.TextureImageData): void;
+    /* Reinitializes the texture in place using creation `options`. */
+    (options: REGL.Texture2DOptions): void;
 
     /**
      * Replaces the part of texture with new data.
@@ -1073,36 +1082,97 @@ declare namespace REGL {
      * @param y         vertical offset of the image within the texture (Default: `0`)
      * @param level     mipmap level of the texture to modify (Default: `0`)
      */
-    subimage(data: Texture2DOptions, x?: number, y?: number, level?: number): void;
+    /* Replaces the area at offset `x` (default: 0), `y` (default: 0), with `data`. */
+    subimage(data: REGL.TextureImageData, x?: number, y?: number, level?: number): void;
+    /* Replaces a subset of the image using creation `options`. */
+    subimage(options: Texture2DOptions): void;
 
-    /** Resizes a texture. */
-    resize(width?: number, height?: number): void;
+    /** Resizes the texture to `radius` x `radius`. */
+    resize(radius: number): void;
+    /** Resizes the texture to dimensions `width` x `height`. */
+    resize(width: number, height: number): void;
   }
 
   interface Texture2DOptions {
-    /** Sets `width`, `height` and, optionally, `channels`. */
+    /* Sets `width`, `height` and, optionally, `channels`. */
     shape?: [number, number] | [number, number, REGL.TextureChannelsType];
-    /** Sets equal `width` and `height`. */
+    /* Sets both width and height to the same value. */
     radius?: number;
+    /* Width of texture. Default: 0 */
     width?: number;
+    /* Height of texture. Default: 0 */
     height?: number;
+    /**
+     * Sets the number of color channels for the texture format.
+     * It can be used as an alternative to `format`.
+     * Default: null
+     */
+    channels?: REGL.TextureChannelsType | null;
+    /* Image data for the texture. Default: null */
+    data?: REGL.TextureImageData | null;
 
-    data?: REGL.TextureImageData;
-
+    /* Sets magnification filter. Default: 'nearest' */
     mag?: REGL.TextureMagFilterType;
+    /* Sets minification filter. Default: 'nearest' */
     min?: REGL.TextureMinFilterType;
+    /* Sets wrap mode for both axes, either to the same value, or independently, `[wrapS, wrapT]` */
+    wrap?: REGL.TextureWrapModeType | [REGL.TextureWrapModeType, REGL.TextureWrapModeType];
+    /* Sets wrap mode on S axis. Default: 'clamp' */
     wrapS?: REGL.TextureWrapModeType;
+    /* Sets wrap mode on T axis. Default: 'clamp' */
     wrapT?: REGL.TextureWrapModeType;
+    /* Sets number of anisotropic samples; requires `EXT_texture_filter_anisotropic`. Default: 0 */
     aniso?: number;
+    /* Determines the format of the texture and possibly also the type. Default: 'rgba' */
+    format?: REGL.TextureFormatType;
+    /**
+     * Texture type.
+     * In many cases type can be inferred from the format and other information in the texture.
+     * However, in some situations it may still be necessary to set it manually.
+     * Default: 'uint8'
+     */
     type?: REGL.TextureDataType;
 
-    mipmap?: REGL.TextureMipmapHintType;
+    /**
+     * If boolean, then it sets whether or not we should regenerate the mipmaps.
+     *
+     * If a string, it allows you to specify a hint to the mipmap generator.
+     * If a hint is specified, then also the mipmaps will be regenerated.
+     *
+     * Finally, mipmap can also be an array of arrays. In this case, every subarray will be one of
+     * the mipmaps, and you can thus use this option to manually specify the mipmaps of the image.
+     *
+     * Default: false
+     */
+    mipmap?: boolean | REGL.TextureMipmapHintType | number[][];
+    /* Flips textures vertically when uploading. Default: false */
     flipY?: boolean;
-    alignment?: number;
+    /* Sets unpack alignment per row. Default: 1 */
+    alignment?: REGL.TextureUnpackAlignmentType;
+    /* Premultiply alpha when unpacking. Default: false */
     premultiplyAlpha?: boolean;
+    /* Sets the WebGL color space flag for pixel unpacking. Default: 'none' */
     colorSpace?: REGL.TextureColorSpaceType;
-    unpackAlignment?: REGL.TextureUnpackAlignmentType;
-    channels?: REGL.TextureChannelsType;
+  }
+
+  type TextureImageData =
+    number[] |
+    number[][] |
+    ArrayBufferView |
+    REGL.NDArrayLike |
+    HTMLImageElement |
+    HTMLVideoElement |
+    HTMLCanvasElement |
+    CanvasRenderingContext2D;
+
+  /**
+   * An N-dimensional array, as per `scijs/ndarray`.
+   */
+  interface NDArrayLike {
+    shape: number[];
+    stride: number[];
+    offset: number;
+    data: number[] | ArrayBufferView;
   }
 
   type TextureMipmapHintType =
@@ -1425,33 +1495,5 @@ declare namespace REGL {
      * statistics.
      */
     gpuTime: number;
-  }
-
-  // TODO Cover all possible things that could be used to create/update a texture
-  // Possible candidates: HTMLImageElement, HTMLVideoElement, NDArray,
-  // various typed arrays and (unflattened) JS arrays.
-  type TextureImageData =
-    number[] |
-    number[][] |
-    ArrayBufferView |
-    HTMLImageElement |
-    HTMLCanvasElement |
-    CanvasRenderingContext2D |
-    HTMLVideoElement |
-    REGL.NDArray;
-
-  /**
-   * An N-dimensional array, as per `ndarray` module.
-   *
-   * More detailed typing does not belong here, so we assume
-   * anything with `shape`, `stride`, `offset` and `data` is ok.
-   *
-   * TODO Reuse typings from `ndarray` module
-   */
-  interface NDArray {
-    shape: any;
-    stride: any;
-    offset: any;
-    data: any;
   }
 }
