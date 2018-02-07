@@ -496,7 +496,7 @@ declare namespace REGL {
      * If `elements` is specified while `primitive`, `count` and `offset` are not,
      * then these values may be inferred from the state of the element array buffer.
      */
-    elements?: REGL.Elements; // TODO number[],
+    elements?: REGL.Elements | ElementsData | ElementsOptions | null;
 
     /* Render target */
 
