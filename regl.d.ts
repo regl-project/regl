@@ -947,7 +947,7 @@ declare namespace REGL {
 
   interface Texture extends Resource {
     readonly stats: {
-        /** Size of the texture, in bytes. */
+        /** Size of the texture in bytes. */
         size: number;
     }
 
@@ -970,53 +970,95 @@ declare namespace REGL {
   }
 
   type TextureFormatType =
+    /* `gl.ALPHA`; channels: 1; types: 'uint8', 'half float', 'float' */
     "alpha" |
+    /* `gl.LUMINANCE`; channels: 1; types: 'uint8', 'half float', 'float' */
     "luminance" |
+    /* `gl.LUMINANCE_ALPHA`; channels: 2; types: 'uint8', 'half float', 'float' */
     "luminance alpha" |
+    /* `gl.RGB`; channels: 3; types: 'uint8', 'half float', 'float' */
     "rgb" |
+    /* `gl.RGBA`; channels: 4; types: 'uint8', 'half float', 'float' */
     "rgba" |
+    /* `gl.RGBA4`; channels: 4; types: 'rgba4' */
     "rgba4" |
+    /* `gl.RGB5_A1`; channels: 4; types: 'rgba5 a1' */
     "rgb5 a1" |
+    /* `gl.RGB565`; channels: 3; types: 'rgb565' */
     "rgb565" |
+    /* `ext.SRGB`; channels: 3; types: 'uint8', 'half float', 'float' */
     "srgb" |
+    /* `ext.RGBA`; channels: 4; types: 'uint8', 'half float', 'float' */
     "srgba" |
+    /* `gl.DEPTH_COMPONENT`; channels: 1; types: 'uint16', 'uint32' */
     "depth" |
+    /* `gl.DEPTH_STENCIL`; channels: 2; 'depth stencil' */
     "depth stencil" |
+    /* `ext.COMPRESSED_RGB_S3TC_DXT1_EXT`; channels: 3; types: 'uint8' */
     "rgb s3tc dxt1" |
+    /* `ext.COMPRESSED_RGBA_S3TC_DXT1_EXT`; channels: 4; types: 'uint8' */
     "rgba s3tc dxt1" |
+    /* `ext.COMPRESSED_RGBA_S3TC_DXT3_EXT`; channels: 4; types: 'uint8' */
     "rgba s3tc dxt3" |
+    /* `ext.COMPRESSED_RGBA_S3TC_DXT5_EXT`; channels: 4; types: 'uint8' */
     "rgba s3tc dxt5" |
+    /* `ext.COMPRESSED_RGB_ATC_WEBGL`; channels: 3; types: 'uint8' */
     "rgb atc" |
+    /* `ext.COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL`; channels: 4; types: 'uint8' */
     "rgba atc explicit alpha" |
+    /* `ext.COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL`; channels: 4; types: 'uint8' */
     "rgba atc interpolated alpha" |
+    /* `ext.COMPRESSED_RGB_PVRTC_4BPPV1_IMG`; channels: 3; types: 'uint8' */
     "rgb pvrtc 4bppv1" |
+    /* `ext.COMPRESSED_RGB_PVRTC_2BPPV1_IMG`; channels: 3; types: 'uint8' */
     "rgb pvrtc 2bppv1" |
+    /* `ext.COMPRESSED_RGBA_PVRTC_4BPPV1_IMG`; channels: 4; types: 'uint8' */
     "rgba pvrtc 4bppv1" |
+    /* `ext.COMPRESSED_RGBA_PVRTC_2BPPV1_IMG`; channels: 4; types: 'uint8' */
     "rgba pvrtc 2bppv1" |
+    /* `ext.COMPRESSED_RGB_ETC1_WEBGL`; channels: 3; types: 'uint8' */
     "rgb etc1";
 
   type TextureDataType =
+    /* `gl.UNSIGNED_BYTE` */
     "uint8" |
+    /* `gl.UNSIGNED_SHORT` */
     "uint16" |
+    /* `gl.UNSIGNED_INT` */
     "uint32" |
-    "float" |
-    "half float";
+    /* `gl.FLOAT` */
+    "float" | "float32" |
+    /* `ext.HALF_FLOAT_OES` */
+    "half float" | "float16";
 
+  /* Related WebGL API: `gl.MAG_FILTER` */
   type TextureMagFilterType =
+    /* `gl.NEAREST` */
     "nearest" |
+    /* `gl.LINEAR` */
     "linear";
 
+  /* Related WebGL API: `gl.MIN_FILTER` */
   type TextureMinFilterType =
+    /* `gl.NEAREST` */
     "nearest" |
+    /* `gl.LINEAR` */
     "linear" |
+    /* `gl.LINEAR_MIPMAP_LINEAR` */
     "linear mipmap linear" | "mipmap" |
+    /* `gl.NEAREST_MIPMAP_LINEAR` */
     "nearest mipmap linear" |
+    /* `gl.LINEAR_MIPMAP_NEAREST` */
     "linear mipmap nearest" |
+    /* `gl.NEAREST_MIPMAP_NEAREST` */
     "nearest mipmap nearest";
 
   type TextureWrapModeType =
+    /* `gl.REPEAT` */
     "repeat" |
+    /* `gl.CLAMP_TO_EDGE` */
     "clamp" |
+    /* `gl.MIRRORED_REPEAT` */
     "mirror";
 
   interface Texture2D extends Texture {
@@ -1064,16 +1106,31 @@ declare namespace REGL {
   }
 
   type TextureMipmapHintType =
+    /* `gl.DONT_CARE` */
     "don't care" | "dont care" |
+    /* `gl.NICEST` */
     "nice" |
+    /* `gl.FASTEST` */
     "fast";
 
   type TextureColorSpaceType =
-    "none" | "browser";
+    /* `gl.NONE` */
+    "none" |
+    /* gl.BROWSER_DEFAULT_WEBGL` */
+    "browser";
 
   type TextureChannelsType = 1 | 2 | 3 | 4;
 
-  type TextureUnpackAlignmentType = 1 | 2 | 4 | 8;
+  /* Related WebGL API: `gl.pixelStorei` */
+  type TextureUnpackAlignmentType =
+    /* byte-alignment */
+    1 |
+    /* rows aligned to even-numbered bytes */
+    2 |
+    /* word-alignment */
+    4 |
+    /* rows start on double-word boundaries */
+    8;
 
   interface TextureCube extends Texture {
     resize(): void;
