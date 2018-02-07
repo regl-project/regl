@@ -709,42 +709,83 @@ declare namespace REGL {
     "notequal" | "!=";
 
   interface BlendingOptions {
+    /* Toggles `gl.enable(gl.BLEND)`. Default: false */
     enable?: boolean;
-    func?: {
-      srcRGB: BlendingFunctionType;
-      srcAlpha: BlendingFunctionType;
-      dstRGB: BlendingFunctionType;
-      dstAlpha: BlendingFunctionType;
-    };
-    equation?: {
-      rgb?: REGL.BlendingEquationType;
-      alpha?: string;
-    };
+    /**
+     * `equation` can be either a string or an object with the fields {rgb, alpha}.
+     * The former corresponds to `gl.blendEquation` and the latter to `gl.blendEquationSeparate`.
+     * Default: 'add'
+     */
+    equation?: REGL.BlendingEquation | REGL.BlendingEquationSeparate;
+    /**
+     * `func` can be an object with the fields {src, dst} or {srcRGB, srcAlpha, dstRGB, dstAlpha},
+     * with the former corresponding to gl.blendFunc and the latter to gl.blendFuncSeparate.
+     * Default: { src: 'src alpha', dst: 'one minus src alpha' }
+     */
+    func?: REGL.BlendingFunctionCombined | REGL.BlendingFunctionSeparate;
+    /* Sets `gl.blendColor` */
     color?: [number, number, number, number];
   }
 
-  type BlendingEquationType =
+  interface BlendingEquationSeparate {
+    rgb: REGL.BlendingEquation;
+    alpha: REGL.BlendingEquation;
+  }
+
+  type BlendingEquation =
+    /* `gl.FUNC_ADD` */
     "add" |
+    /* `gl.FUNC_SUBTRACT` */
     "subtract" |
+    /* `gl.FUNC_REVERSE_SUBTRACT` */
     "reverse subtract" |
+    /* `gl.MIN_EXT`, requires `EXT_blend_minmax` */
     "min" |
+    /* `gl.MAX_EXT`, requires `EXT_blend_minmax` */
     "max";
 
-  type BlendingFunctionType =
+  interface BlendingFunctionCombined {
+    src: REGL.BlendingFunction;
+    dst: REGL.BlendingFunction;
+  }
+
+  interface BlendingFunctionSeparate {
+    srcRGB: REGL.BlendingFunction;
+    srcAlpha: REGL.BlendingFunction;
+    dstRGB: REGL.BlendingFunction;
+    dstAlpha: REGL.BlendingFunction;
+  }
+
+  type BlendingFunction =
+    /* `gl.ZERO` */
     "zero" | 0 |
+    /* `gl.ONE` */
     "one" | 1 |
+    /* `gl.SRC_COLOR` */
     "src color" |
+    /* `gl.ONE_MINUS_SRC_COLOR` */
     "one minus src color" |
+    /* `gl.SRC_ALPHA` */
     "src alpha" |
+    /* `gl.ONE_MINUS_SRC_ALPHA` */
     "one minus src alpha" |
+    /* `gl.DST_COLOR` */
     "dst color" |
+    /* `gl.ONE_MINUS_DST_COLOR` */
     "one minus dst color" |
+    /* `gl.DST_ALPHA` */
     "dst alpha" |
+    /* `gl.ONE_MINUS_DST_ALPHA` */
     "one minus dst alpha" |
+    /* `gl.CONSTANT_COLOR` */
     "constant color" |
+    /* `gl.ONE_MINUS_CONSTANT_COLOR` */
     "one minus constant color" |
+    /* `gl.CONSTANT_ALPHA` */
     "constant alpha" |
+    /* `gl.ONE_MINUS_CONSTANT_ALPHA` */
     "one minus constant alpha" |
+    /* `gl.SRC_ALPHA_SATURATE` */
     "src alpha saturate";
 
   interface StencilOptions {
