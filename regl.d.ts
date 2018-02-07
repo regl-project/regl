@@ -603,7 +603,7 @@ declare namespace REGL {
     /**
      * - [gl.viewport](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glViewport.xml)
      */
-    viewport?: REGL.ViewportOptions;
+    viewport?: REGL.BoundingBox;
   }
 
   type PrimitiveType =
@@ -846,11 +846,15 @@ declare namespace REGL {
     "decrement wrap";
 
   interface PolygonOffsetOptions {
+    /* Toggles `gl.enable(gl.POLYGON_OFFSET_FILL)`. Default: false */
     enable?: boolean;
-    offset: {
-      factor: number;
-      units: number;
-    }
+    /* Sets `gl.polygonOffset`. Default: { factor: 0, units: 0 } */
+    offset?: REGL.PolygonOffset;
+  }
+
+  interface PolygonOffset {
+    factor: number;
+    units: number;
   }
 
   interface CullingOptions {
@@ -871,28 +875,31 @@ declare namespace REGL {
     enable?: boolean;
     /** Toggles `gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE)` */
     alpha?: boolean;
-    /** Sets `gl.sampleCoverage` */
-    coverage?: {
-      value: number;
-      invert: boolean;
-    }
+    /** Sets `gl.sampleCoverage`. Default: { value: 1, invert: false } */
+    coverage?: REGL.SampleCoverage;
+  }
+
+  interface SampleCoverage {
+    value: number;
+    invert: boolean;
   }
 
   interface ScissorOptions {
-    enable: boolean;
-    box: {
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-    }
+    /* Toggles gl.enable(gl.SCISSOR). Default: false */
+    enable?: boolean;
+    /* Sets `gl.SCISSOR`. Default: {} */
+    box?: REGL.BoundingBox;
   }
 
-  interface ViewportOptions {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
+  interface BoundingBox {
+    /* left coordinate of the box; Default: 0 */
+    x?: number;
+    /* top coordiante of the box; Default: 0 */
+    y?: number;
+    /* width of the box; Default: framebuffer width - `x` */
+    width?: number;
+    /* height of the box; Default: framebuffer height - `y` */
+    height?: number;
   }
 
   /*
