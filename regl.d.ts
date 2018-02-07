@@ -789,34 +789,60 @@ declare namespace REGL {
     "src alpha saturate";
 
   interface StencilOptions {
+    /* Toggles `gl.enable(gl.STENCIL_TEST)`. Default: false */
     enable?: boolean;
+    /* Sets `gl.stencilMask`. Default: -1 */
     mask?: number;
+    /* Sets `gl.stencilFunc`. Default: { cmp: 'always', ref: 0, mask: -1 } */
     func?: REGL.StencilFunction;
+    /**
+     * Sets `gl.stencilOpSeparate` for front face.
+     * Default: { fail: 'keep', zfail: 'keep', zpass: 'keep' }
+     */
     opFront?: REGL.StencilOperation;
+    /**
+     * Sets `gl.stencilOpSeparate` for back face.
+     * Default: { fail: 'keep', zfail: 'keep', zpass: 'keep' }
+     */
     opBack?: REGL.StencilOperation;
+    /* Sets opFront and opBack simultaneously (`gl.stencilOp`). */
     op?: REGL.StencilOperation;
   }
 
   interface StencilFunction {
+    /* comparison function */
     cmp: REGL.ComparisonOperatorType;
+    /* reference value */
     ref: number;
+    /* comparison mask */
     mask: number;
   }
 
   interface StencilOperation {
+    /* The stencil operation applied when the stencil test fails. */
     fail: REGL.StencilOperationType;
+    /* The stencil operation applied when the stencil test passes and the depth test fails. */
     zfail: REGL.StencilOperationType;
+    /* The stencil operation applied when when both stencil and depth tests pass. */
     zpass: REGL.StencilOperationType;
   }
 
   type StencilOperationType =
+    /* `gl.ZERO` */
     "zero" |
+    /* `gl.KEEP` */
     "keep" |
+    /* `gl.REPLACE` */
     "replace" |
+    /* `gl.INVERT` */
     "invert" |
+    /* `gl.INCR` */
     "increment" |
+    /* `gl.DECR` */
     "decrement" |
+    /* `gl.INCR_WRAP` */
     "increment wrap" |
+    /* `gl.DECR_WRAP` */
     "decrement wrap";
 
   interface PolygonOffsetOptions {
