@@ -567,41 +567,37 @@ declare namespace REGL {
 
     /* Front face */
 
+    /* Sets gl.frontFace. Default: 'ccw' */
     frontFace?: REGL.FaceWindingType;
 
     /* Dithering */
 
+    /* Toggles `gl.DITHER`. Default: false */
     dither?: boolean;
 
     /* Line width */
 
+    /* Sets `gl.lineWidth`. Default: 1 */
     lineWidth?: number;
 
     /* Color mask */
 
-    /**
-     * - [gl.colorMask](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glColorMask.xml)
-     */
+    /* Sets `gl.colorMask`. Default: [true, true, true, true] */
     colorMask?: [boolean, boolean, boolean, boolean];
 
     /* Sample coverage */
 
-    /**
-     * - [gl.sampleCoverage](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glSampleCoverage.xml)
-     */
     sample?: REGL.SamplingOptions;
 
     /* Scissor */
 
-    /**
-     * - [gl.scissor](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glScissor.xml)
-     */
     scissor?: REGL.ScissorOptions;
 
     /* Viewport */
 
     /**
-     * - [gl.viewport](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glViewport.xml)
+     * Sets `gl.viewport`. Default: {}
+     * Updating `viewport` will modify the context variables `viewportWidth` and `viewportHeight`.
      */
     viewport?: REGL.BoundingBox;
   }
@@ -680,7 +676,7 @@ declare namespace REGL {
   }
 
   interface DepthTestOptions {
-    /* Toggles gl.enable(gl.DEPTH_TEST). Default: true */
+    /* Toggles `gl.enable(gl.DEPTH_TEST)`. Default: true */
     enable?: boolean;
     /* Sets `gl.depthMask`. Default: true */
     mask?: boolean;
@@ -858,22 +854,28 @@ declare namespace REGL {
   }
 
   interface CullingOptions {
+    /* Toggles `gl.enable(gl.CULL_FACE)`. Default: false */
     enable?: boolean;
+    /* Sets `gl.cullFace`. Default: 'back' */
     face?: REGL.FaceOrientationType;
   }
 
   type FaceOrientationType =
+    /* `gl.FRONT` */
     "front" |
+    /* `gl.BACK` */
     "back";
 
   type FaceWindingType =
+    /* `gl.CW` */
     "cw" |
+    /* `gl.CCW` */
     "ccw";
 
   interface SamplingOptions {
-    /** Toggles `gl.enable(gl.SAMPLE_COVERAGE)` */
+    /** Toggles `gl.enable(gl.SAMPLE_COVERAGE)`. Default: false */
     enable?: boolean;
-    /** Toggles `gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE)` */
+    /** Toggles `gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE)`. Default: false */
     alpha?: boolean;
     /** Sets `gl.sampleCoverage`. Default: { value: 1, invert: false } */
     coverage?: REGL.SampleCoverage;
