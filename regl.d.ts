@@ -172,12 +172,23 @@ declare namespace REGL {
     /* Creates a 2D Texture using creation `options`. */
     texture(options: REGL.Texture2DOptions): REGL.Texture2D;
 
-    cube(radius?: number): REGL.TextureCube;
+    /* Creates a cube-map texture with faces of dimensions 1 x 1. */
+    cube(): REGL.TextureCube;
+    /* Creates a cube-map texture with faces of dimensions `radius` x `radius`. */
+    cube(radius: number): REGL.TextureCube;
+    /* Creates a cube-map texture using the provided image data for the six faces. */
     cube(
-      posX: REGL.TextureImageData, negX: REGL.TextureImageData,
-      posY: REGL.TextureImageData, negY: REGL.TextureImageData,
-      posZ: REGL.TextureImageData, negZ: REGL.TextureImageData
+      posXData: REGL.TextureImageData, negXData: REGL.TextureImageData,
+      posYData: REGL.TextureImageData, negYData: REGL.TextureImageData,
+      posZData: REGL.TextureImageData, negZData: REGL.TextureImageData
     ): REGL.TextureCube;
+    /* Creates a cube-map texture using the provided creation options for the six faces. */
+    cube(
+      posXOptions: REGL.Texture2DOptions, negXOptions: REGL.Texture2DOptions,
+      posYOptions: REGL.Texture2DOptions, negYOptions: REGL.Texture2DOptions,
+      posZOptions: REGL.Texture2DOptions, negZOptions: REGL.Texture2DOptions,
+    ): REGL.TextureCube;
+    /* Creates a cube-map texture using creation `options`. */
     cube(options: REGL.TextureCubeOptions): REGL.TextureCube;
 
     renderbuffer(options: REGL.RenderbufferOptions): REGL.Renderbuffer;
@@ -1203,23 +1214,63 @@ declare namespace REGL {
     8;
 
   interface TextureCube extends Texture {
-    resize(): void;
-    resize(radius: number): void;
+    /* Reinitializes the texture in place with faces of dimensions 1 x 1. */
+    (): void;
+    /* Reinitializes the texture in place with faces of dimensions `radius` x `radius`. */
+    (radius: number): void;
+    /* Reinitializes the texture in place using the provided image data for the six faces. */
+    (
+      posXData: REGL.TextureImageData, negXData: REGL.TextureImageData,
+      posYData: REGL.TextureImageData, negYData: REGL.TextureImageData,
+      posZData: REGL.TextureImageData, negZData: REGL.TextureImageData
+    ): void;
+    /* Reinitializes the texture in place using the provided creation options for the six faces. */
+    (
+      posXOptions: REGL.Texture2DOptions, negXOptions: REGL.Texture2DOptions,
+      posYOptions: REGL.Texture2DOptions, negYOptions: REGL.Texture2DOptions,
+      posZOptions: REGL.Texture2DOptions, negZOptions: REGL.Texture2DOptions,
+    ): void;
+    /* Reinitializes the texture in place using creation `options`. */
+    (options: REGL.TextureCubeOptions): void;
 
+    /**
+     * Replaces the part of texture with new data.
+     *
+     * @param face      index of the face to modify
+     * @param data      2D image data object to use for the replacement
+     * @param x         horizontal offset of the image within the face (Default: `0`)
+     * @param y         vertical offset of the image within the face (Default: `0`)
+     * @param level     mipmap level of the texture to modify (Default: `0`)
+     */
     subimage(
-      face: REGL.TextureCubeFaceIndexType,
+      face: REGL.TextureCubeFaceIndex,
       data: TextureImageData,
       x?: number,
       y?: number,
       level?: number,
     ): void;
+
+    /** Resizes the cube-map texture, setting the dimensions of each face to `radius` x `radius`. */
+    resize(radius: number): void;
   }
 
-  type TextureCubeFaceIndexType = 0 | 1 | 2 | 3 | 4 | 5;
+  type TextureCubeFaceIndex =
+    /* positive X face */
+    0 |
+    /* negative X face */
+    1 |
+    /* positive Y face */
+    2 |
+    /* negative Y face */
+    3 |
+    /* positive Z face */
+    4 |
+    /* negative Z face */
+    5;
 
-  interface TextureCubeOptions {
-    radius?: number;
-    faces?: [
+  interface TextureCubeOptions extends Texture2DOptions {
+    /* Uses the provided texture data for the six faces. */
+    faces: [
       TextureImageData, TextureImageData,
       TextureImageData, TextureImageData,
       TextureImageData, TextureImageData
