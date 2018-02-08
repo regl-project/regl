@@ -191,6 +191,13 @@ declare namespace REGL {
     /* Creates a cube-map texture using creation `options`. */
     cube(options: REGL.TextureCubeOptions): REGL.TextureCube;
 
+    /* Creates a Renderbuffer of dimensions 1 x 1. */
+    renderbuffer(): REGL.Renderbuffer;
+    /* Creates a Renderbuffer of dimensions `radius` x `radius`. */
+    renderbuffer(radius: number): REGL.Renderbuffer;
+    /* Creates a Renderbuffer of dimensions `width` x `height`. */
+    renderbuffer(width: number, height: number): REGL.Renderbuffer;
+    /* Creates a Renderbuffer using creation `options`. */
     renderbuffer(options: REGL.RenderbufferOptions): REGL.Renderbuffer;
 
     /* Creates a Framebuffer of dimensions 1 x 1. */
@@ -1366,30 +1373,41 @@ declare namespace REGL {
     /** Format of the renderbuffer. */
     readonly format: number;
 
-    (options: REGL.RenderbufferOptions): void;
+    /* Reinitializes the Renderbuffer in place using dimensions: 1 x 1. */
+    (): void;
+    /* Reinitializes the Renderbuffer in place using dimensions: `radius` x `radius`. */
+    (radius: number): void;
+    /* Reinitializes the Renderbuffer in place using dimensions: `width` x `height`. */
+    (width: number, height: number): void;
+    /* Reinitializes the Renderbuffer in place using creation `options`. */
+    (options: RenderbufferOptions): void;
 
-    // resize(): void; // TODO Check implementation if this signature is valid
-    // resize(radius: number): void; // TODO Check implementation if this signature is valid
+    /* Resizes the Renderbuffer. */
+    resize(radius: number): void;
     resize(width: number, height: number): void;
   }
 
   interface RenderbufferOptions {
-    /** Sets the internal format of the render buffer (Default `'rgba4'`) */
-    format?: REGL.RenderbufferFormat;
-    /** Sets the width of the render buffer in pixels. (Default `1`) */
-    width?: number;
-    /** Sets the height of the render buffer in pixels. (Default `1`) */
-    height?: number;
-    /** Alias for `[width, height]`. (Default `[1, 1]`) */
+    /* NB: `shape`, `radius`, and `width`/`height` are alternative (and mutually exclusive) means for setting the size of the renderbuffer. */
+    /* Sets the dimensions [width, height] for the renderbuffer. */
     shape?: [number, number];
-    /** Simultaneously sets width and height. (Default `1`) */
+    /* Sets the dimensions `radius` x `radius` for the renderbuffer. */
     radius?: number;
+    /* Sets the width of the renderbuffer. Default: `gl.drawingBufferWidth` */
+    width?: number;
+    /* Sets the height of the renderbuffer. Default: `gl.drawingBufferHeight` */
+    height?: number;
+    /** Sets the internal format of the render buffer. Default 'rgba4' */
+    format?: REGL.RenderbufferFormat;
   }
 
   type RenderbufferFormat =
     RenderbufferColorFormat |
+    /* `gl.DEPTH_COMPONENT16` */
     "depth" |
+    /* `gl.STENCIL_INDEX8` */
     "stencil" |
+    /* `gl.DEPTH_STENCIL` */
     "depth stencil";
 
   type RenderbufferColorFormat =
