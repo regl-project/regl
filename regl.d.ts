@@ -1359,7 +1359,7 @@ declare namespace REGL {
 
   interface TextureCubeOptions extends Texture2DOptions {
     /* Uses the provided texture data for the six faces. */
-    faces: [
+    faces?: [
       TextureImageData, TextureImageData,
       TextureImageData, TextureImageData,
       TextureImageData, TextureImageData
