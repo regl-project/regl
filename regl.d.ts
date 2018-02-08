@@ -919,7 +919,13 @@ declare namespace REGL {
    * A *resource* is a handle to a GPU resident object, like a texture, FBO or buffer.
    */
   interface Resource {
-    /** relevant WebGL API: `gl.deleteBuffer` */
+    /**
+     * relevant WebGL APIs:
+     * - `gl.deleteBuffer`
+     * - `gl.deleteTexture`
+     * - `gl.deleteRenderbuffer`
+     * - `gl.deleteFramebuffer`
+     */
     destroy(): void;
   }
 
