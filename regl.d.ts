@@ -434,9 +434,9 @@ declare namespace REGL {
     /* Shaders */
 
     /** Source code of vertex shader */
-    vert?: string;
+    vert?: MaybeDynamic<string, ParentContext & OwnContext, Props>;
     /** Source code of fragment shader */
-    frag?: string;
+    frag?: MaybeDynamic<string, ParentContext & OwnContext, Props>;
 
     /**
      * Object mapping user-defined keys to user-defined values to be accessed via `DynamicVariable`s
@@ -481,21 +481,21 @@ declare namespace REGL {
     /**
      * Sets the primitive type. (Default: 'triangles', or inferred from `elements`)
      */
-    primitive?: REGL.PrimitiveType;
+    primitive?: MaybeDynamic<REGL.PrimitiveType, ParentContext & OwnContext, Props>;
     /**
      * Number of vertices to draw. (Default: 0, or inferred from `elements`)
      */
-    count?: number;
+    count?: MaybeDynamic<number, ParentContext & OwnContext, Props>;
     /**
      * Offset of primitives to draw. (Default: 0, or inferred from `elements`)
      */
-    offset?: number;
+    offset?: MaybeDynamic<number, ParentContext & OwnContext, Props>;
     /**
      * Number of instances to draw. (Default: 0)
      *
      * Only applicable if the `ANGLE_instanced_arrays` extension is present.
      */
-    instances?: number;
+    instances?: MaybeDynamic<number, ParentContext & OwnContext, Props>;
     /**
      * Element array buffer. (Default: `null`)
      *
@@ -503,7 +503,11 @@ declare namespace REGL {
      * If `elements` is specified while `primitive`, `count` and `offset` are not,
      * then these values may be inferred from the state of the element array buffer.
      */
-    elements?: REGL.Elements | ElementsData | ElementsOptions | null;
+    elements?: MaybeDynamic<
+      REGL.Elements | ElementsData | ElementsOptions | null,
+      ParentContext & OwnContext,
+      Props
+    >;
 
     /* Render target */
 
@@ -516,7 +520,7 @@ declare namespace REGL {
      *
      * - [gl.bindFramebuffer](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBindFramebuffer.xml)
      */
-    framebuffer?: REGL.Framebuffer | null;
+    framebuffer?: MaybeDynamic<REGL.Framebuffer | null, ParentContext & OwnContext, Props>;
 
     /* Profiling */
 
@@ -524,7 +528,7 @@ declare namespace REGL {
      * If set, turns on profiling for this command. (Default: `false`)
      * Profiling stats can be accessed via the `stats` property of the `DrawCommand`.
      */
-    profile?: boolean;
+    profile?: MaybeDynamic<boolean, ParentContext & OwnContext, Props>;
 
     /* Depth buffer */
 
@@ -535,7 +539,7 @@ declare namespace REGL {
      * - gl.depthMask
      * - gl.depthRange
      */
-    depth?: REGL.DepthTestOptions;
+    depth?: MaybeDynamic<REGL.DepthTestOptions, ParentContext & OwnContext, Props>;
 
     /* Blending */
 
@@ -546,7 +550,7 @@ declare namespace REGL {
      * - gl.blendFuncSeparate
      * - gl.blendColor
      */
-    blend?: REGL.BlendingOptions;
+    blend?: MaybeDynamic<REGL.BlendingOptions, ParentContext & OwnContext, Props>;
 
     /* Stencil */
 
@@ -557,7 +561,7 @@ declare namespace REGL {
      * - gl.stencilMask
      * - gl.stencilOpSeparate
      */
-    stencil?: REGL.StencilOptions;
+    stencil?: MaybeDynamic<REGL.StencilOptions, ParentContext & OwnContext, Props>;
 
     /* Polygon offset */
 
@@ -566,39 +570,39 @@ declare namespace REGL {
      *
      * - gl.polygonOffset
      */
-    polygonOffset?: REGL.PolygonOffsetOptions;
+    polygonOffset?: MaybeDynamic<REGL.PolygonOffsetOptions, ParentContext & OwnContext, Props>;
 
     /* Culling */
 
-    cull?: REGL.CullingOptions;
+    cull?: MaybeDynamic<REGL.CullingOptions, ParentContext & OwnContext, Props>;
 
     /* Front face */
 
     /* Sets gl.frontFace. Default: 'ccw' */
-    frontFace?: REGL.FaceWindingType;
+    frontFace?: MaybeDynamic<REGL.FaceWindingType, ParentContext & OwnContext, Props>;
 
     /* Dithering */
 
     /* Toggles `gl.DITHER`. Default: false */
-    dither?: boolean;
+    dither?: MaybeDynamic<boolean, ParentContext & OwnContext, Props>;
 
     /* Line width */
 
     /* Sets `gl.lineWidth`. Default: 1 */
-    lineWidth?: number;
+    lineWidth?: MaybeDynamic<number, ParentContext & OwnContext, Props>;
 
     /* Color mask */
 
     /* Sets `gl.colorMask`. Default: [true, true, true, true] */
-    colorMask?: [boolean, boolean, boolean, boolean];
+    colorMask?: MaybeDynamic<[boolean, boolean, boolean, boolean], ParentContext & OwnContext, Props>;
 
     /* Sample coverage */
 
-    sample?: REGL.SamplingOptions;
+    sample?: MaybeDynamic<REGL.SamplingOptions, ParentContext & OwnContext, Props>;
 
     /* Scissor */
 
-    scissor?: REGL.ScissorOptions;
+    scissor?: MaybeDynamic<REGL.ScissorOptions, ParentContext & OwnContext, Props>;
 
     /* Viewport */
 
@@ -606,7 +610,7 @@ declare namespace REGL {
      * Sets `gl.viewport`. Default: {}
      * Updating `viewport` will modify the context variables `viewportWidth` and `viewportHeight`.
      */
-    viewport?: REGL.BoundingBox;
+    viewport?: MaybeDynamic<REGL.BoundingBox, ParentContext & OwnContext, Props>;
   }
 
   type PrimitiveType =
