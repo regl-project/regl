@@ -1269,6 +1269,7 @@ declare namespace REGL {
   type TextureImageData =
     number[] |
     number[][] |
+    number[][][] |
     ArrayBufferView |
     REGL.NDArrayLike |
     HTMLImageElement |
