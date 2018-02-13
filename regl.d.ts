@@ -935,7 +935,7 @@ declare namespace REGL {
     destroy(): void;
   }
 
-  interface Buffer extends Resource {
+  interface Buffer extends REGL.Resource {
     /**
      * Wraps a WebGL array buffer object.
      */
@@ -1005,7 +1005,7 @@ declare namespace REGL {
     /** gl.FLOAT */
     "float32" | "float";
 
-  interface Elements extends Resource {
+  interface Elements extends REGL.Resource {
     /**
      * Wraps a WebGL element array buffer object.
      */
@@ -1378,7 +1378,7 @@ declare namespace REGL {
     ];
   }
 
-  interface Renderbuffer extends Resource {
+  interface Renderbuffer extends REGL.Resource {
     readonly stats: {
         /** Size of the renderbuffer in bytes. */
         size: number;
@@ -1420,7 +1420,7 @@ declare namespace REGL {
   }
 
   type RenderbufferFormat =
-    RenderbufferColorFormat |
+    REGL.RenderbufferColorFormat |
     /* `gl.DEPTH_COMPONENT16` */
     "depth" |
     /* `gl.STENCIL_INDEX8` */
@@ -1444,9 +1444,9 @@ declare namespace REGL {
     /* `gl.SRGB8_ALPHA8`, requires EXT_sRGB */
     "srgba";
 
-  type Framebuffer = Framebuffer2D | FramebufferCube;
+  type Framebuffer = REGL.Framebuffer2D | REGL.FramebufferCube;
 
-  interface Framebuffer2D extends Resource {
+  interface Framebuffer2D extends REGL.Resource {
     /* Reinitializes the Framebuffer in place using dimensions: 1 x 1. */
     (): REGL.Framebuffer2D;
     /* Reinitializes the Framebuffer in place using dimensions: `radius` x `radius`. */
@@ -1462,7 +1462,7 @@ declare namespace REGL {
     use<
       Context extends REGL.DefaultContext = REGL.DefaultContext,
       Props extends {} = {}
-    >(body: CommandBodyFn<Context, Props>): void;
+    >(body: REGL.CommandBodyFn<Context, Props>): void;
 
     /* Resizes the Framebuffer and all its attachments. */
     resize(radius: number): REGL.Framebuffer2D;
@@ -1503,7 +1503,7 @@ declare namespace REGL {
 
   type Framebuffer2DAttachment = REGL.Texture2D | REGL.Renderbuffer;
 
-  interface FramebufferCube extends Resource {
+  interface FramebufferCube extends REGL.Resource {
     /* Reinitializes the FramebufferCube in place using face dimensions 1 x 1. */
     (): REGL.FramebufferCube;
     /* Reinitializes the FramebufferCube in place using face dimensions `radius` x `radius`. */
