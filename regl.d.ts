@@ -1208,8 +1208,13 @@ declare namespace REGL {
      * Default: null
      */
     channels?: REGL.TextureChannelsType | null;
+    /**
+     * The following properties, `data` and `copy` are mutually exclusive.
+     */
     /* Image data for the texture. Default: null */
     data?: REGL.TextureImageData | null;
+    /* Create texture by copying the pixels in the current frame buffer. Default: false */
+    copy?: boolean;
 
     /* Sets magnification filter. Default: 'nearest' */
     mag?: REGL.TextureMagFilterType;

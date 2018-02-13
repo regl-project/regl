@@ -1739,6 +1739,7 @@ A data source from an image can be one of the following types:
 | `premultiplyAlpha` | Premultiply alpha when unpacking                                                                                                                                 | `false`     |
 | `colorSpace`       | Sets colorspace conversion                                                                                                                                       | `'none'`    |
 | `data`             | Image data for the texture                                                                                                                                       | `null`      |
+| `copy`    |        | Copy the pixels in the current frame buffer. Cannot be used with `data` prop.                                                                                    | `false`     |
 | `channels`             | Number of channels for the texture format                                                                                                                                       | `null`      |
 
 -   `mipmap`. If `boolean`, then it sets whether or not we should regenerate the mipmaps. If a `string`, it allows you to specify a hint to the mipmap generator. It can be one of the hints below
