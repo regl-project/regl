@@ -948,15 +948,15 @@ declare namespace REGL {
      * Reinitializes the buffer with the new content.
      * Relevant WebGL API: `gl.bufferData`
      */
-    (data: REGL.BufferData): void;
-    (options: REGL.BufferOptions): void;
+    (data: REGL.BufferData): REGL.Buffer;
+    (options: REGL.BufferOptions): REGL.Buffer;
 
     /**
      * Update a portion of the buffer, optionally starting at byte offset `offset`.
      * Relevant WebGL API: `gl.bufferSubData`
      */
-    subdata(data: REGL.BufferData, offset?: number): void;
-    subdata(options: REGL.BufferOptions, offset?: number): void;
+    subdata(data: REGL.BufferData, offset?: number): REGL.Buffer;
+    subdata(options: REGL.BufferOptions, offset?: number): REGL.Buffer;
   }
 
   interface BufferOptions {
@@ -1014,15 +1014,15 @@ declare namespace REGL {
      * Reinitializes the element buffer with the new content.
      * Relevant WebGL API: `gl.bufferData`
      */
-    (data: ElementsData): void;
-    (options: ElementsOptions): void;
+    (data: REGL.ElementsData): REGL.Elements;
+    (options: REGL.ElementsOptions): REGL.Elements;
 
     /**
      * Update a portion of the element buffer, optionally starting at byte offset `offset`.
      * Relevant WebGL API: `gl.bufferSubData`
      */
-    subdata(data: ElementsData, offset?: number): void;
-    subdata(options: ElementsOptions, offset?: number): void;
+    subdata(data: REGL.ElementsData, offset?: number): REGL.Elements;
+    subdata(options: REGL.ElementsOptions, offset?: number): REGL.Elements;
   }
 
   interface ElementsOptions {
@@ -1170,15 +1170,15 @@ declare namespace REGL {
 
   interface Texture2D extends Texture {
     /* Reinitializes the texture in place with dimensions 1 x 1. */
-    (): void;
+    (): REGL.Texture2D;
     /* Reinitializes the texture in place with dimensions `radius` x `radius`. */
-    (radius: number): void;
+    (radius: number): REGL.Texture2D;
     /* Reinitializes the texture in place with dimensions `width` x `height`. */
-    (width: number, height: number): void;
+    (width: number, height: number): REGL.Texture2D;
     /* Reinitializes the texture in place using the provided `data`. */
-    (data: REGL.TextureImageData): void;
+    (data: REGL.TextureImageData): REGL.Texture2D;
     /* Reinitializes the texture in place using creation `options`. */
-    (options: REGL.Texture2DOptions): void;
+    (options: REGL.Texture2DOptions): REGL.Texture2D;
 
     /**
      * Replaces the part of texture with new data.
@@ -1189,14 +1189,14 @@ declare namespace REGL {
      * @param level     mipmap level of the texture to modify (Default: `0`)
      */
     /* Replaces the area at offset `x` (default: 0), `y` (default: 0), with `data`. */
-    subimage(data: REGL.TextureImageData, x?: number, y?: number, level?: number): void;
+    subimage(data: REGL.TextureImageData, x?: number, y?: number, level?: number): REGL.Texture2D;
     /* Replaces a subset of the image using creation `options`. */
-    subimage(options: Texture2DOptions): void;
+    subimage(options: Texture2DOptions): REGL.Texture2D;
 
     /** Resizes the texture to `radius` x `radius`. */
-    resize(radius: number): void;
+    resize(radius: number): REGL.Texture2D;
     /** Resizes the texture to dimensions `width` x `height`. */
-    resize(width: number, height: number): void;
+    resize(width: number, height: number): REGL.Texture2D;
   }
 
   interface Texture2DOptions {
@@ -1315,23 +1315,23 @@ declare namespace REGL {
 
   interface TextureCube extends Texture {
     /* Reinitializes the texture in place with faces of dimensions 1 x 1. */
-    (): void;
+    (): REGL.TextureCube;
     /* Reinitializes the texture in place with faces of dimensions `radius` x `radius`. */
-    (radius: number): void;
+    (radius: number): REGL.TextureCube;
     /* Reinitializes the texture in place using the provided image data for the six faces. */
     (
       posXData: REGL.TextureImageData, negXData: REGL.TextureImageData,
       posYData: REGL.TextureImageData, negYData: REGL.TextureImageData,
       posZData: REGL.TextureImageData, negZData: REGL.TextureImageData
-    ): void;
+    ): REGL.TextureCube;
     /* Reinitializes the texture in place using the provided creation options for the six faces. */
     (
       posXOptions: REGL.Texture2DOptions, negXOptions: REGL.Texture2DOptions,
       posYOptions: REGL.Texture2DOptions, negYOptions: REGL.Texture2DOptions,
       posZOptions: REGL.Texture2DOptions, negZOptions: REGL.Texture2DOptions,
-    ): void;
+    ): REGL.TextureCube;
     /* Reinitializes the texture in place using creation `options`. */
-    (options: REGL.TextureCubeOptions): void;
+    (options: REGL.TextureCubeOptions): REGL.TextureCube;
 
     /**
      * Replaces the part of texture with new data.
@@ -1348,10 +1348,10 @@ declare namespace REGL {
       x?: number,
       y?: number,
       level?: number,
-    ): void;
+    ): REGL.TextureCube;
 
     /** Resizes the cube-map texture, setting the dimensions of each face to `radius` x `radius`. */
-    resize(radius: number): void;
+    resize(radius: number): REGL.TextureCube;
   }
 
   type TextureCubeFaceIndex =
@@ -1391,17 +1391,17 @@ declare namespace REGL {
     readonly format: number;
 
     /* Reinitializes the Renderbuffer in place using dimensions: 1 x 1. */
-    (): void;
+    (): REGL.Renderbuffer;
     /* Reinitializes the Renderbuffer in place using dimensions: `radius` x `radius`. */
-    (radius: number): void;
+    (radius: number): REGL.Renderbuffer;
     /* Reinitializes the Renderbuffer in place using dimensions: `width` x `height`. */
-    (width: number, height: number): void;
+    (width: number, height: number): REGL.Renderbuffer;
     /* Reinitializes the Renderbuffer in place using creation `options`. */
-    (options: RenderbufferOptions): void;
+    (options: REGL.RenderbufferOptions): REGL.Renderbuffer;
 
     /* Resizes the Renderbuffer. */
-    resize(radius: number): void;
-    resize(width: number, height: number): void;
+    resize(radius: number): REGL.Renderbuffer;
+    resize(width: number, height: number): REGL.Renderbuffer;
   }
 
   interface RenderbufferOptions {
@@ -1447,13 +1447,13 @@ declare namespace REGL {
 
   interface Framebuffer2D extends Resource {
     /* Reinitializes the Framebuffer in place using dimensions: 1 x 1. */
-    (): void;
+    (): REGL.Framebuffer2D;
     /* Reinitializes the Framebuffer in place using dimensions: `radius` x `radius`. */
-    (radius: number): void;
+    (radius: number): REGL.Framebuffer2D;
     /* Reinitializes the Framebuffer in place using dimensions: `width` x `height`. */
-    (width: number, height: number): void;
+    (width: number, height: number): REGL.Framebuffer2D;
     /* Reinitializes the Framebuffer in place using creation `options`. */
-    (options: FramebufferOptions): void;
+    (options: REGL.FramebufferOptions): REGL.Framebuffer2D;
 
     /* Framebuffer binding */
 
@@ -1464,8 +1464,8 @@ declare namespace REGL {
     >(body: CommandBodyFn<Context, Props>): void;
 
     /* Resizes the Framebuffer and all its attachments. */
-    resize(radius: number): void;
-    resize(width: number, height: number): void;
+    resize(radius: number): REGL.Framebuffer2D;
+    resize(width: number, height: number): REGL.Framebuffer2D;
   }
 
   interface FramebufferOptions {
@@ -1504,14 +1504,14 @@ declare namespace REGL {
 
   interface FramebufferCube extends Resource {
     /* Reinitializes the FramebufferCube in place using face dimensions 1 x 1. */
-    (): void;
+    (): REGL.FramebufferCube;
     /* Reinitializes the FramebufferCube in place using face dimensions `radius` x `radius`. */
-    (radius: number): void;
+    (radius: number): REGL.FramebufferCube;
     /* Reinitializes the FramebufferCube in place using creation `options`. */
-    (options: FramebufferCubeOptions): void;
+    (options: FramebufferCubeOptions): REGL.FramebufferCube;
 
     /* Resizes the FramebufferCube and all its attachments. */
-    resize(radius: number): void;
+    resize(radius: number): REGL.FramebufferCube;
   }
 
   interface FramebufferCubeOptions {
