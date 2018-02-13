@@ -92,6 +92,7 @@
   "scripts": {
     "test": "standard | snazzy && tape test/util/index.js | faucet",
     "test-browser": "budo test/util/browser.js --open",
+    "test-typescript": "tsc",
     "cover": "istanbul cover test/util/index.js",
     "bench-browser": "budo bench/bench.js --open",
     "bench-node": "node bench/bench-node.js",
@@ -104,6 +105,7 @@
     "build-gallery": "node bin/build-gallery.js",
     "build-compare": "node bin/build-compare.js",
     "build-docs": "remark API.md -o API.md",
+    "build-typescript": "cp regl.d.ts dist/",
     "lint-docs": "remark --frail --quiet README.md API.md DEVELOPING.md CHANGES.md"
   },
   "repository": {
