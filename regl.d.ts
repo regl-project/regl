@@ -357,7 +357,7 @@ declare namespace REGL {
      * RGBA values (range 0-1) to use when the color buffer is cleared. Initial value: [0, 0, 0, 0].
      * Relevant WebGL API: `gl.clearColor`
      */
-    color?: [number, number, number, number];
+    color?: REGL.Vec4;
     /**
      * Depth value (range 0-1) to use when the depth buffer is cleared. Initial value: 1.
      * Relevant WebGL API: `gl.clearDepth`
@@ -594,7 +594,7 @@ declare namespace REGL {
     /* Color mask */
 
     /* Sets `gl.colorMask`. Default: [true, true, true, true] */
-    colorMask?: MaybeDynamic<[boolean, boolean, boolean, boolean], ParentContext & OwnContext, Props>;
+    colorMask?: MaybeDynamic<REGL.BVec4, ParentContext & OwnContext, Props>;
 
     /* Sample coverage */
 
@@ -731,7 +731,7 @@ declare namespace REGL {
      */
     func?: REGL.BlendingFunctionCombined | REGL.BlendingFunctionSeparate;
     /* Sets `gl.blendColor` */
-    color?: [number, number, number, number];
+    color?: REGL.Vec4;
   }
 
   interface BlendingEquationSeparate {
@@ -1656,4 +1656,48 @@ declare namespace REGL {
      */
     gpuTime: number;
   }
+
+  /**
+   * The following types are defined for the convenience of clients of this library. They represent
+   * the most likely forms in which values being passed to shaders (via uniforms and attributes) are
+   * defined: flat JS arrays for vectors and either flat or two-dimensional JS arrays for matrices.
+   */
+
+  type Vec2 = [number, number];
+  type Vec3 = [number, number, number];
+  type Vec4 = [number, number, number, number];
+
+  type BVec2 = [boolean, boolean];
+  type BVec3 = [boolean, boolean, boolean];
+  type BVec4 = [boolean, boolean, boolean, boolean];
+
+  type Mat2 = [
+    number, number,
+    number, number
+  ] | [
+    REGL.Vec2,
+    REGL.Vec2
+  ];
+
+  type Mat3 = [
+    number, number, number,
+    number, number, number,
+    number, number, number
+  ] | [
+    REGL.Vec3,
+    REGL.Vec3,
+    REGL.Vec3
+  ];
+
+  type Mat4 = [
+    number, number, number, number,
+    number, number, number, number,
+    number, number, number, number,
+    number, number, number, number
+  ] | [
+    REGL.Vec4,
+    REGL.Vec4,
+    REGL.Vec4,
+    REGL.Vec4
+  ];
 }
