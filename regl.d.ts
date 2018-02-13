@@ -419,8 +419,10 @@ declare namespace REGL {
     (body?: REGL.CommandBodyFn<Context, Props>): void;
     /** Run a command `count` times. */
     (count: number, body?: REGL.CommandBodyFn<Context, Props>): void;
+    /** Run a command with props. */
+    (props: Partial<Props>, body?: REGL.CommandBodyFn<Context, Props>): void;
     /** Run a command batch. */
-    (props: Partial<Props> | Array<Partial<Props>>, body?: REGL.CommandBodyFn<Context, Props>): void;
+    (props: Array<Partial<Props>>, body?: REGL.CommandBodyFn<Context, Props>): void;
   }
 
   interface DrawConfig<
