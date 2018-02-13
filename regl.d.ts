@@ -91,13 +91,13 @@ declare namespace REGL {
      * will set a WebGL state machine to a specified `state`.
      */
     <
-      ParentContext extends REGL.DefaultContext = REGL.DefaultContext,
-      OwnContext extends {} = {},
-      Props extends {} = {},
       Uniforms extends {} = {},
-      Attributes extends {} = {}
+      Attributes extends {} = {},
+      Props extends {} = {},
+      OwnContext extends {} = {},
+      ParentContext extends REGL.DefaultContext = REGL.DefaultContext
     >(
-      drawConfig: REGL.DrawConfig<ParentContext, OwnContext, Props, Uniforms, Attributes>,
+      drawConfig: REGL.DrawConfig<Uniforms, Attributes, Props, OwnContext, ParentContext>,
     ): REGL.DrawCommand<ParentContext & OwnContext, Props>;
 
     /**
@@ -424,11 +424,11 @@ declare namespace REGL {
   }
 
   interface DrawConfig<
-    ParentContext extends REGL.DefaultContext = REGL.DefaultContext,
-    OwnContext extends {} = {},
-    Props extends {} = {},
     Uniforms extends {} = {},
-    Attributes extends {} = {}
+    Attributes extends {} = {},
+    Props extends {} = {},
+    OwnContext extends {} = {},
+    ParentContext extends REGL.DefaultContext = REGL.DefaultContext
   > {
 
     /* Shaders */
