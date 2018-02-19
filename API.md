@@ -7,6 +7,7 @@
     -   [Quick start](#quick-start)
 
         -   [As a fullscreen canvas](#as-a-fullscreen-canvas)
+        -   [From a query selector](#from-a-selector-string)
         -   [From a container div](#from-a-container-div)
         -   [From a canvas](#from-a-canvas)
         -   [From a WebGL context](#from-a-webgl-context)
@@ -173,6 +174,17 @@ var regl = require('regl')()
 
 This canvas will dynamically resize whenever the window changes shape.  For most quick demos this is an easy way to get started using `regl`.
 
+#### From a selector string
+
+If the first argument is a CSS selector string, `regl` will attempt to find and use the corresponding DOM element. This may be:
+1) an existing HTMLCanvasElement
+2) an element that contains a canvas
+3) an element in which you'd like `regl` to create a canvas
+
+```javascript
+var regl = require('regl')('#my-canvas');
+```
+
 #### From a container div
 
 Alternatively passing a container element as the first argument appends the generated canvas to its children.
@@ -229,8 +241,8 @@ var regl = require('regl')(require('gl')(256, 256))
 | Options              | Meaning                                                                                                                                                                       |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `gl`                 | A reference to a WebGL rendering context. (Default created from canvas)                                                                                                       |
-| `canvas`             | A reference to an HTML canvas element. (Default created and appending to container)                                                                                           |
-| `container`          | A container element which regl inserts a canvas into. (Default `document.body`)                                                                                               |
+| `canvas`             | A reference to an HTML canvas element. (Default created and appended to container)                                                                                           |
+| `container`          | A container element into which regl inserts a canvas. (Default `document.body`)                                                                                               |
 | `attributes`         | The [context creation attributes](https://www.khronos.org/registry/webgl/specs/1.0/#WEBGLCONTEXTATTRIBUTES) passed to the WebGL context constructor.  See below for defaults. |
 | `pixelRatio`         | A multiplier which is used to scale the canvas size relative to the container.  (Default `window.devicePixelRatio`)                                                           |
 | `extensions`         | A list of extensions that must be supported by WebGL context. Default `[]`                                                                                                    |
@@ -248,7 +260,7 @@ var regl = require('regl')(require('gl')(256, 256))
 
 ### Error messages and debug mode
 
-By default if you compile `regl` with browserify then all error messages and checks are removed.  This is done in order to reduce the size of the final bundle and to improve run time performance.  
+By default if you compile `regl` with browserify then all error messages and checks are removed.  This is done in order to reduce the size of the final bundle and to improve run time performance.
 
 **If you want error messages and are using browserify make sure that you compile using `--debug`**.  Not only will this insert debug messages but it will also give you source maps which make finding errors easier.
 
@@ -315,7 +327,7 @@ command(count)
 command([props0, props1, props2, ..., propsn])
 ```
 
-In batch mode the command can be a little smarter regarding binding shaders/performing some checks. The command can then figure out which props are constant, which are dynamic, and then only apply the changes on each dynamic prop. This offers a small performance boost. 
+In batch mode the command can be a little smarter regarding binding shaders/performing some checks. The command can then figure out which props are constant, which are dynamic, and then only apply the changes on each dynamic prop. This offers a small performance boost.
 
 #### Scoped commands
 
@@ -674,7 +686,8 @@ var command = regl({
 
 **Notes**
 
--   To specify uniforms in nested structs use the fully qualified path with dot notation
+-   To specify uniforms in GLSL structs use the fully qualified path with dot notation.
+-   To specify uniforms in GLSL arrays use the fully qualified path with bracket notation.
 -   Matrix uniforms are specified as flat length n^2 arrays without transposing
 
 **Related WebGL APIs**
@@ -1405,8 +1418,8 @@ var positionBuffer = regl.buffer([
 
 | Data type          | Description          |
 | ------------------ | ---------------------|
-| `'uint8'`          | `gl.UNSIGNED_BYTE`   |  
-| `'int8'`           | `gl.BYTE`            |  
+| `'uint8'`          | `gl.UNSIGNED_BYTE`   |
+| `'int8'`           | `gl.BYTE`            |
 | `'uint16'`         | `gl.UNSIGNED_SHORT`  |
 | `'int16'`          | `gl.SHORT`           |
 | `'uint32'`         | `gl.UNSIGNED_INT`    |
@@ -1726,6 +1739,7 @@ A data source from an image can be one of the following types:
 | `premultiplyAlpha` | Premultiply alpha when unpacking                                                                                                                                 | `false`     |
 | `colorSpace`       | Sets colorspace conversion                                                                                                                                       | `'none'`    |
 | `data`             | Image data for the texture                                                                                                                                       | `null`      |
+| `copy`    |        | Copy the pixels in the current frame buffer. Cannot be used with `data` prop.                                                                                    | `false`     |
 | `channels`             | Number of channels for the texture format                                                                                                                                       | `null`      |
 
 -   `mipmap`. If `boolean`, then it sets whether or not we should regenerate the mipmaps. If a `string`, it allows you to specify a hint to the mipmap generator. It can be one of the hints below
@@ -2242,18 +2256,20 @@ var texFBO = regl.framebuffer({
 })
 ```
 
-| Property       | Description                                                                                                                                                            | Default                  |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| `width`        | Sets the width of the framebuffer                                                                                                                                      | `gl.drawingBufferWidth`  |
-| `height`       | Sets the height of the framebuffer                                                                                                                                     | `gl.drawingBufferHeight` |
-| `color`        | An optional array of either textures renderbuffers for the color attachment.                                                                                           |                          |
-| `depth`        | If boolean, then toggles the depth attachment.  Otherwise if a renderbuffer/texture sets the depth attachment.                                                         | `true`                   |
-| `stencil`      | If boolean, then toggles the stencil attachment.  Otherwise if a renderbuffer sets the stencil attachment.                                                             | `true`                   |
-| `depthStencil` | If boolean, then toggles both the depth and stencil attachment.  Otherwise if a renderbuffer/texture sets the combined depth/stencil attachment.                       | `true`                   |
-| `colorFormat`  | Sets the format of the color buffer.  Ignored if color                                                                                                                 | `'rgba'`                 |
-| `colorType`    | Sets the type of the color buffer if it is a texture                                                                                                                   | `'uint8'`                |
-| `colorCount`   | Sets the number of color buffers. Values > 1 require [WEBGL_draw_buffers](https://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/)                       | `1`                      |
-| `depthTexture` | Toggles whether depth/stencil attachments should be in texture. Requires [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) | `false`                  |
+| Property         | Description                                                                                                                                                            | Default                  |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `shape`          | Sets the dimensions [width, height] for the framebuffer.                                                                                                               |                          |
+| `radius`         | Sets the dimensions `radius` x `radius` for the framebuffer.                                                                                                           |                          |
+| `width`          | Sets the width of the framebuffer                                                                                                                                      | `gl.drawingBufferWidth`  |
+| `height`         | Sets the height of the framebuffer                                                                                                                                     | `gl.drawingBufferHeight` |
+| `color`/`colors` | A texture or renderbuffer (or an array of these) for the color attachment.                                                                                             |                          |
+| `depth`          | If boolean, toggles the depth attachment. If a renderbuffer or texture, sets the depth attachment.                                                                     | `true`                   |
+| `stencil`        | If boolean, toggles the stencil attachment. If a renderbuffer or texture, sets the stencil attachment.                                                                 | `true`                   |
+| `depthStencil`   | If boolean, toggles both the depth and stencil attachments.  If a renderbuffer or texture, sets the combined depth/stencil attachment.                                 | `true`                   |
+| `colorFormat`    | Sets the format of the color buffer.  Ignored if `color` is specified.                                                                                                 | `'rgba'`                 |
+| `colorType`      | Sets the type of the color buffer if it is a texture.                                                                                                                  | `'uint8'`                |
+| `colorCount`     | Sets the number of color buffers. Values > 1 require [WEBGL_draw_buffers](https://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/)                       | `1`                      |
+| `depthTexture`   | Toggles whether depth/stencil attachments should be in texture. Requires [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) | `false`                  |
 
 | Color format | Description       | Attachment   | Notes                                                                                                                     |
 | ------------ | ----------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------- |
@@ -2266,16 +2282,16 @@ var texFBO = regl.framebuffer({
 | `'rgba32f'`  | `gl.RGBA32F`      | Renderbuffer | only if [WEBGL_color_buffer_float](https://www.khronos.org/registry/webgl/extensions/WEBGL_color_buffer_float/) supported |
 | `'srgba'`    | `gl.SRGB8_ALPHA8` | Renderbuffer | only if [EXT_sRGB](https://www.khronos.org/registry/webgl/extensions/EXT_sRGB/) supported                                 |
 
-| Color type     | Description                                                                                                                |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `'uint8'`      | `gl.UNSIGNED_BYTE`                                                                                                         |
-| `'half float'` | 16 bit float, requires [OES_texture_half_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_half_float/) |
-| `'float'`      | 32 bit float, requires [OES_texture_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_float/)           |
+| Color type     | Description                                                                                                                                       |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'uint8'`      | `gl.UNSIGNED_BYTE`                                                                                                                                |
+| `'half float'` | `ext.HALF_FLOAT_OES` (16-bit float), requires [OES_texture_half_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_half_float/) |
+| `'float'`      | `gl.FLOAT` (32-bit float), requires [OES_texture_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_float/)                     |
 
 **Notes**
 
--   If `color` is not specified, then color attachments are created automatically
--   Instead of passing width/height, it is also possible to pass in `shape` to the framebuffer constructor.
+-   If neither `color` nor `colors` is specified, then color attachments are created automatically.
+-   `shape`, `radius`, and `width`/`height` are alternative (and mutually exclusive) means for setting the size of the framebuffer.
 
 **Relevant WebGL APIs**
 
@@ -2363,31 +2379,35 @@ var cubeAlt = regl.framebufferCube({
 })
 ```
 
-| Parameter      | Description                      |
-| -------------- | -------------------------------- |
-| `radius`       | The size of the cube buffer      |
-| `color`        | The color buffer attachment      |
-| `colorFormat`  | Format of color buffer to create |
-| `colorType`    | Type of color buffer             |
-| `colorCount`   | Number of color attachments      |
-| `depth`        | Depth buffer attachment          |
-| `stencil`      | Stencil buffer attachment        |
-| `depthStencil` | Depth-stencil attachment         |
+| Property         | Description                                                                                                                                                            | Default                  |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `shape`          | Sets the dimensions [width, height] for each face of the cube. Width must equal height.                                                                                |                          |
+| `radius`         | Sets the dimensions `radius` x `radius` for each face of the cube.                                                                                                     |                          |
+| `width`          | Sets the width dimension for each face of the cube. Must equal `height`.                                                                                               | `gl.drawingBufferWidth`  |
+| `height`         | Sets the height dimension for each face of the cube. Must equal `width`.                                                                                               | `gl.drawingBufferHeight` |
+| `color`/`colors` | A TextureCube or array of TextureCubes for the color attachment.                                                                                                       |                          |
+| `depth`          | If boolean, toggles the depth attachment. If texture, sets the depth attachment.                                                                                       | `true`                   |
+| `stencil`        | If boolean, toggles the stencil attachment. If texture, sets the stencil attachment.                                                                                   | `true`                   |
+| `depthStencil`   | If boolean, toggles both the depth and stencil attachments.  If texture, sets the combined depth/stencil attachment.                                                   | `true`                   |
+| `colorFormat`    | Sets the format of the color buffer.  Ignored if `color` is specified.                                                                                                 | `'rgba'`                 |
+| `colorType`      | Sets the type of the color buffer.                                                                                                                                     | `'uint8'`                |
+| `colorCount`     | Sets the number of color buffers. Values > 1 require [WEBGL_draw_buffers](https://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/)                       | `1`                      |
+| `depthTexture`   | Toggles whether depth/stencil attachments should be in texture. Requires [WEBGL_depth_texture](https://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) | `false`                  |
 
 | Color format | Description | Attachment |
 | ------------ | ----------- | ---------- |
 | `'rgba'`     | `gl.RGBA`   | Texture    |
 
-| Color type     | Description                                                                                                                |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `'uint8'`      | `gl.UNSIGNED_BYTE`                                                                                                         |
-| `'half float'` | 16 bit float, requires [OES_texture_half_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_half_float/) |
-| `'float'`      | 32 bit float, requires [OES_texture_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_float/)           |
+| Color type     | Description                                                                                                                                       |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'uint8'`      | `gl.UNSIGNED_BYTE`                                                                                                                                |
+| `'half float'` | `ext.HALF_FLOAT_OES` (16-bit float), requires [OES_texture_half_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_half_float/) |
+| `'float'`      | `gl.FLOAT` (32-bit float), requires [OES_texture_float](https://www.khronos.org/registry/webgl/extensions/OES_texture_float/)                     |
 
 **Notes**
 
--   The specified depth/stencil/depth-stencil attachment will be reused
-    for all 6 cube faces.
+-   The specified depth/stencil/depth-stencil attachment will be reused for all 6 cube faces.
+-   `shape`, `radius`, and `width`/`height` are alternative (and mutually exclusive) means for setting the size of the framebuffer.
 
 #### Cube framebuffer update
 
@@ -2594,6 +2614,7 @@ regl exposes info about the WebGL context limits and capabilities via the `regl.
 | `renderer`                | `gl.RENDERER`                                                       |
 | `vendor`                  | `gl.VENDOR`                                                         |
 | `version`                 | `gl.VERSION`                                                        |
+| `textureFormats`          | A list of all supported texture formats                             |
 
 **Relevant WebGL APIs**
 
@@ -2614,12 +2635,16 @@ regl exposes info about the WebGL context limits and capabilities via the `regl.
 | `textureCount`               | The number of textures currently allocated                                 |
 | `cubeCount`                  | The number of cube maps currently allocated                                |
 | `renderbufferCount`          | The number of renderbuffers currently allocated                            |
+| `maxTextureUnits`            | The maximum number of texture units used                                   |
 | `getTotalTextureSize()`      | The total amount of memory allocated for textures and cube maps            |
 | `getTotalBufferSize()`       | The total amount of memory allocated for array buffers and element buffers |
 | `getTotalRenderbufferSize()` | The total amount of memory allocated for renderbuffers                     |
 | `getMaxUniformsCount()`      | The maximum number of uniforms in any shader                               |
 | `getMaxAttributesCount()`    | The maximum number of attributes in any shader                             |
-| `maxTextureUnits()`          | The maximum number of texture units used                                   |
+
+**Notes**
+-   The functions `getTotalTextureSize`, `getTotalBufferSize`, `getTotalRenderbufferSize`, `getMaxUniformsCount`, and `getMaxAttributesCount` are only available if `regl` is initialized with the option `profile: true`.
+
 
 * * *
 

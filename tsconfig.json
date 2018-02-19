@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "lib": ["dom", "es6"],
+    "strict": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}

@@ -1,0 +1,11 @@
+declare module 'angle-normals';
+declare module 'baboon-image';
+declare module 'bunny';
+declare module 'gl-mat4';
+declare module 'gl-mat4/lookAt';
+declare module 'gl-mat4/perspective';
+declare module 'hsv2rgb';
+declare module 'mouse-change';
+declare module 'parse-dds';
+declare module 'resl';
+declare module 'vectorize-text';
