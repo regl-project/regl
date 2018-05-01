@@ -557,7 +557,7 @@ Mesh.prototype.draw = regl({
 
   uniforms: {
     // dynamic properties are invoked with the same `this` as the command
-    model: function () => {
+    model: function () {
       var c = this.center
       return [
         1, 0, 0, 0,
