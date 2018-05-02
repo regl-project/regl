@@ -397,6 +397,31 @@ tape('framebuffer', function (t) {
   checkContents(testFBO1, [255, 0, 0, 255], 'batch fbo 1')
   checkContents(testFBO2, [0, 0, 255, 255], 'batch fbo 2')
 
+  if (typeof document !== 'undefined') {
+    // test for #476, add support of rgb texture
+    // FIXME ok in browser, but still failed in headless-gl
+    var rgbTex = regl.texture({
+      width: 4,
+      height: 4,
+      format: 'rgb',
+      type: 'uint8'
+    })
+
+    var rgbFBO = regl.framebuffer({
+      color: [rgbTex]
+    })
+    setFramebufferStatic({
+      framebuffer: rgbFBO
+    }, function () {
+      clearCheck({
+        width: 4,
+        height: 4,
+        framebuffer: rgbFBO,
+        color: [0, 255, 0, 255]
+      }, 'fbo with rgb texture')
+    })
+  }
+
   regl.destroy()
   t.equals(gl.getError(), 0, 'error ok')
   createContext.destroy(gl)
