@@ -29,6 +29,7 @@ tape('scope', function (t) {
       'varying vec4 fragColor;',
       'void main() {',
       'gl_Position=vec4(0.25 * (position - 3.5), 0, 1);',
+      'gl_PointSize=1.;',
       '}'
     ].join('\n'),
 
