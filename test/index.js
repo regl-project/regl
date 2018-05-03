@@ -1,3 +1,6 @@
+// set minimal stacktrace to reduce obsessive logs
+Error.stackTraceLimit = 1
+
 require('./destroy-bound-buffer')
 require('./flatten')
 require('./context-loss')
