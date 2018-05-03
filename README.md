@@ -23,13 +23,20 @@
       alt="NPM version" />
   </a>
   <!-- Build Status -->
+  <a href="https://travis-ci.org/regl-project/regl/">
+    <img src="https://travis-ci.org/regl-project/regl.svg?branch=master&style=flat-square"
+      alt="Build Status" />
+  </a>
+  <!-- CircleCI Build Status -->
+  <!--
   <a href="https://circleci.com/gh/regl-project/regl">
     <img src="https://circleci.com/gh/regl-project/regl.svg?style=shield"
       alt="Build Status" />
   </a>
+  -->
   <!-- File size -->
   <a href="https://npmcdn.com/regl/dist/regl.min.js">
-    <img src="https://badge-size.herokuapp.com/mikolalysenko/regl/gh-pages/dist/regl.min.js.svg?compression=gzip" alt="File Size" />
+    <img src="https://badge-size.herokuapp.com/mikolalysenko/regl/gh-pages/dist/regl.min.js.svg?compression=gzip&style=flat-square" alt="File Size" />
   </a>
   <!-- Downloads -->
   <a href="https://npmjs.org/package/regl">
