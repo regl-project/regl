@@ -91,10 +91,10 @@
     "vertices-bounding-box": "^1.0.0"
   },
   "scripts": {
-    "test": "standard | snazzy && tape test/util/index.js | faucet",
+    "test": "standard | snazzy && tape test/index.js | faucet",
     "test-browser": "budo test/util/browser.js --open",
     "test-typescript": "tsc",
-    "cover": "istanbul cover test/util/index.js",
+    "cover": "istanbul cover test/index.js",
     "bench-browser": "budo bench/bench.js --open",
     "bench-node": "node bench/bench-node.js",
     "bench-graph": "node bench/bench-graph.js",
