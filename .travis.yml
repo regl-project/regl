@@ -4,3 +4,5 @@ node_js:
   - "6"
 matrix:
   fast_finish: true
+before_install:
+  - sudo apt-get -y install libglew-dev
