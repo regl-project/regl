@@ -81,7 +81,6 @@ tape('drawing', function (t) {
     0, 0, 0, 0, 0, 0, 0, 0
   ], 'point')
 
-
   // lines
   checkPixmap({
     primitive: 'lines',
