@@ -2,6 +2,5 @@ sudo: false
 language: node_js
 node_js:
   - "6"
-  - "5"
 matrix:
   fast_finish: true
