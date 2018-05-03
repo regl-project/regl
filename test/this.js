@@ -1,5 +1,5 @@
 var createContext = require('./util/create-context')
-var createREGL = require('../../regl')
+var createREGL = require('../regl')
 var tape = require('tape')
 
 tape('this / state variables', function (t) {
@@ -22,6 +22,7 @@ tape('this / state variables', function (t) {
         'uniform vec2 offset;',
         'void main() {',
         'gl_Position=vec4(0.25 * (offset + position - 3.5), 0, 1);',
+        'gl_PointSize=1.;',
         '}'
       ].join('\n'),
 

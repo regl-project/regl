@@ -22,13 +22,11 @@
   "browserify": {
     "transform": "./browserify/transform"
   },
-  "dependencies": {},
   "devDependencies": {
-    "browserify": "^13.1.1",
-    "es2020": "^1.1.9",
     "angle-normals": "^1.0.0",
     "baboon-image": "^2.0.0",
     "bl": "^1.1.2",
+    "browserify": "^13.1.1",
     "budo": "^8.1.0",
     "bunny": "^1.0.1",
     "canvas-fit": "^1.5.0",
@@ -38,8 +36,8 @@
     "deglob": "^1.1.1",
     "dependency-check": "^2.6.0",
     "disc": "^1.3.2",
+    "es2020": "^1.1.9",
     "falafel": "^1.2.0",
-    "faucet": "0.0.1",
     "fuse-vertices": "^0.1.2",
     "geo-3d-transform-mat4": "^1.0.0",
     "getusermedia": "^1.3.7",
@@ -54,6 +52,7 @@
     "google-closure-compiler": "^20160315.2.0",
     "hsv2rgb": "^1.1.0",
     "install": "^0.8.1",
+    "is-travis": "^2.0.0",
     "istanbul": "^0.4.3",
     "mkdirp": "^0.5.1",
     "mouse-change": "^1.3.0",
@@ -83,6 +82,7 @@
     "snazzy": "^3.0.0",
     "standard": "^6.0.7",
     "surface-nets": "^1.0.2",
+    "tap-min": "^1.2.2",
     "tape": "^4.4.0",
     "teapot": "^1.0.0",
     "three": "^0.79.0",
@@ -91,10 +91,10 @@
     "vertices-bounding-box": "^1.0.0"
   },
   "scripts": {
-    "test": "standard | snazzy && tape test/util/index.js | faucet",
+    "test": "standard | snazzy && tape test/index.js | tap-min",
     "test-browser": "budo test/util/browser.js --open",
     "test-typescript": "tsc",
-    "cover": "istanbul cover test/util/index.js",
+    "cover": "istanbul cover test/index.js",
     "bench-browser": "budo bench/bench.js --open",
     "bench-node": "node bench/bench-node.js",
     "bench-graph": "node bench/bench-graph.js",

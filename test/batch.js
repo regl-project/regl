@@ -39,6 +39,7 @@ tape('batch', function (t) {
         'uniform vec2 offset;',
         'void main() {',
         '  gl_Position = vec4(0.25 * (position + offset - 3.5), 0, 1);',
+        '  gl_PointSize = 1.;',
         '}'
       ].join('\n'),
 

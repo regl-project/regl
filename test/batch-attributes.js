@@ -20,6 +20,7 @@ tape('batch mode attributes', function (t) {
       'varying vec4 fragColor;',
       'void main() {',
       'gl_Position=vec4(2.0 * (position + 0.5) / 5.0 - 1.0, 0, 1);',
+      'gl_PointSize=1.;',
       '}'
     ].join('\n'),
 

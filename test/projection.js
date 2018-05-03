@@ -23,6 +23,7 @@ tape('glsl projection test', function (t) {
         '  vec2 pixel = p + offset;',
         '  vec2 clip = 0.25 * (pixel - 3.5);',
         '  gl_Position = vec4(clip, 0, 1);',
+        '  gl_PointSize = 1.;',
         '}'
       ].join('\n')
     },

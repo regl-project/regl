@@ -79,7 +79,7 @@ Then you can view the results in `coverage/lcov-report/index.html`
 
 ### Adding a test case
 
-To add a test case, create a new file in the `test/` folder and then add a reference to it in `test/util/index.js`.  Take a look at the examples in the test folder for help.
+To add a test case, create a new file in the `test/` folder and then add a reference to it in `test/index.js`.  Take a look at the examples in the test folder for help.
 
 ## Benchmarks
 
