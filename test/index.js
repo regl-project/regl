@@ -1,5 +1,5 @@
 // set minimal stacktrace to reduce obsessive logs
-Error.stackTraceLimit = 1
+if (require('is-travis')) Error.stackTraceLimit = 0
 
 require('./destroy-bound-buffer')
 require('./flatten')
