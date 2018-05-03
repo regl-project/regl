@@ -4,7 +4,7 @@ var tape = require('tape')
 
 const RESOLUTION = 8
 
-tape.only('glsl projection-line test', function (t) {
+tape('glsl projection-line test', function (t) {
   var gl = createContext(RESOLUTION, RESOLUTION)
   var regl = createREGL(gl)
 
