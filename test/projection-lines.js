@@ -4,7 +4,7 @@ var tape = require('tape')
 
 const RESOLUTION = 8
 
-tape('glsl projection-line test', function (t) {
+tape.only('glsl projection-line test', function (t) {
   var gl = createContext(RESOLUTION, RESOLUTION)
   var regl = createREGL(gl)
 
@@ -20,11 +20,12 @@ tape('glsl projection-line test', function (t) {
         'attribute vec2 p;',
         'void main () {',
         '  vec2 pixel = p;',
-        '  vec2 clip = 0.25 * (pixel - 3.5);',
+        '  vec2 clip = 0.25 * (pixel - 3.45);',
         '  gl_Position = vec4(clip, 0, 1);',
         '}'
       ].join('\n')
     },
+    lineWidth: 1,
     attributes: { p: regl.prop('line') },
     count: 2,
     primitive: 'lines'
@@ -60,6 +61,7 @@ tape('glsl projection-line test', function (t) {
       actual.push('\n')
       expected.push('\n')
     }
+
     t.equals(actual.join(''), expected.join(''),
       'line ' + precision + ' @ ' + start.join() + ' - ' + end.join())
   }
