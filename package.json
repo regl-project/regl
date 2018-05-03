@@ -22,7 +22,6 @@
   "browserify": {
     "transform": "./browserify/transform"
   },
-  "dependencies": {},
   "devDependencies": {
     "angle-normals": "^1.0.0",
     "baboon-image": "^2.0.0",
@@ -82,7 +81,6 @@
     "snazzy": "^3.0.0",
     "standard": "^6.0.7",
     "surface-nets": "^1.0.2",
-    "tap-pessimist": "^1.0.1",
     "tape": "^4.4.0",
     "teapot": "^1.0.0",
     "three": "^0.79.0",
@@ -91,7 +89,7 @@
     "vertices-bounding-box": "^1.0.0"
   },
   "scripts": {
-    "test": "standard | snazzy && tape test/index.js | tap-pessimist",
+    "test": "standard | snazzy && tape test/index.js | tap-min",
     "test-browser": "budo test/util/browser.js --open",
     "test-typescript": "tsc",
     "cover": "istanbul cover test/index.js",
