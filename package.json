@@ -81,6 +81,7 @@
     "snazzy": "^3.0.0",
     "standard": "^6.0.7",
     "surface-nets": "^1.0.2",
+    "tap-min": "^1.2.2",
     "tape": "^4.4.0",
     "teapot": "^1.0.0",
     "three": "^0.79.0",
