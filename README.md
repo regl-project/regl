@@ -12,42 +12,17 @@
 <br />
 
 <div align="center">
-  <!-- Stability -->
-  <a href="https://nodejs.org/api/documentation.html#documentation_stability_index">
-    <img src="https://img.shields.io/badge/stability-experimental-orange.svg?style=flat-square"
-      alt="API stability" />
-  </a>
-  <!-- NPM version -->
-  <a href="https://npmjs.org/package/regl">
-    <img src="https://img.shields.io/npm/v/regl.svg?style=flat-square"
-      alt="NPM version" />
-  </a>
-  <!-- Build Status -->
-  <a href="https://travis-ci.org/regl-project/regl/">
-    <img src="https://travis-ci.org/regl-project/regl.svg?branch=master&style=flat-square"
-      alt="Build Status" />
-  </a>
-  <!-- CircleCI Build Status -->
-  <!--
-  <a href="https://circleci.com/gh/regl-project/regl">
-    <img src="https://circleci.com/gh/regl-project/regl.svg?style=shield"
-      alt="Build Status" />
-  </a>
-  -->
-  <!-- File size -->
-  <a href="https://npmcdn.com/regl/dist/regl.min.js">
-    <img src="https://badge-size.herokuapp.com/mikolalysenko/regl/gh-pages/dist/regl.min.js.svg?compression=gzip&style=flat-square" alt="File Size" />
-  </a>
-  <!-- Downloads -->
-  <a href="https://npmjs.org/package/regl">
-    <img src="https://img.shields.io/npm/dm/regl.svg?style=flat-square"
-      alt="Downloads" />
-  </a>
-  <!-- Standard -->
-  <a href="https://standardjs.com">
-    <img src="https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square"
-      alt="Standard" />
-  </a>
+  [![API Stability](https://img.shields.io/badge/stability-experimental-orange.svg?style=flat-square)](https://nodejs.org/api/documentation.html#documentation_stability_index)
+
+  [![NPM Version](https://img.shields.io/npm/v/regl.svg?style=flat-square)](https://npmjs.org/package/regl)
+
+  [![Build Status](https://img.shields.io/travis/regl-project/regl.svg?style=flat-square)](https://travis-ci.org/regl-project/regl/)
+
+  [![File Size](https://badge-size.herokuapp.com/mikolalysenko/regl/gh-pages/dist/regl.min.js.svg?compression=gzip&style=flat-square)](https://npmcdn.com/regl/dist/regl.min.js)
+
+  [![Downloads](https://img.shields.io/npm/dm/regl.svg?style=flat-square)](https://npmjs.org/package/regl)
+
+  [![Standard](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square)](https://standardjs.com)
 </div>
 
 <div align="center">
