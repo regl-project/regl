@@ -12,6 +12,7 @@
 <br />
 
 <div align="center">
+
   [![API Stability](https://img.shields.io/badge/stability-experimental-orange.svg?style=flat-square)](https://nodejs.org/api/documentation.html#documentation_stability_index)
 
   [![NPM Version](https://img.shields.io/npm/v/regl.svg?style=flat-square)](https://npmjs.org/package/regl)
@@ -23,6 +24,7 @@
   [![Downloads](https://img.shields.io/npm/dm/regl.svg?style=flat-square)](https://npmjs.org/package/regl)
 
   [![Standard](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square)](https://standardjs.com)
+
 </div>
 
 <div align="center">
