@@ -1,8 +1,16 @@
-sudo: false
 language: node_js
+os: linux
+sudo: required
+dist: trusty
+addons:
+  apt:
+    packages:
+    - mesa-utils
+    - xvfb
+    - libgl1-mesa-dri
+    - libglapi-mesa
+    - libosmesa6
 node_js:
-  - "6"
-matrix:
-  fast_finish: true
-before_install:
-  - sudo apt-get -y install libglew-dev
+  - '6'
+before_script:
+  - export DISPLAY=:99.0; sh -e /etc/init.d/xvfb start
