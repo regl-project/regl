@@ -173,7 +173,6 @@ tape('elements', function (t) {
       t.ok('destroy successful')
     }
   ]
-
   var poll = setInterval(function () {
     if (cases.length === 0) {
       clearInterval(poll)
@@ -181,5 +180,5 @@ tape('elements', function (t) {
     } else {
       (cases.shift())()
     }
-  })
+  }, 0)
 })
