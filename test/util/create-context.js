@@ -1,10 +1,11 @@
 if (typeof document !== 'undefined') {
   var canvas = document.createElement('canvas')
-  var context = canvas.getContext('webgl', {
+  var opts = {
     antialias: false,
     stencil: true,
     preserveDrawingBuffer: true
-  })
+  }
+  var context = canvas.getContext('webgl', opts) || canvas.getContext('experimental-webgl', opts)
   canvas.style.position = 'fixed'
   canvas.style.top = '0'
   canvas.style.right = '0'
