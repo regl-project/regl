@@ -427,7 +427,7 @@ require('resl')({
         The below vertex shader needs some explaining:
 
         We define dark cap and light cap as in figure 9-6 of this article:
-        http://http.developer.nvidia.com/GPUGems/gpugems_ch09.html
+        https://developer.nvidia.com/gpugems/GPUGems/gpugems_ch09.html
 
         Firstly, drawing the light cap is easy, because we can just draw the rabbit mesh as usual. See figure 9-6, and you should understand.
 
