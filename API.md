@@ -1687,6 +1687,17 @@ image.onload = function () {
   var imageTexture = regl.texture(image)
 }
 
+/* From an ImageBitmap
+ * This is only useful when loading many images, as bitmaps can be created asynchronously
+ * and will transfer faster than an image element.
+ */
+var image = new Image()
+image.src = 'http://mydomain.com/myimage.png'
+image.onload = function () {
+  createImageBitmap(image).then(function (bitmap) {
+    var imageTexture = regl.texture(bitmap)
+  }
+}
 
 // From a canvas
 var canvas = document.createElement(canvas)
@@ -1717,6 +1728,7 @@ A data source from an image can be one of the following types:
 | Array                       | Interpreted as array of pixel values with type based on the input type                                  |
 | `ndarray`                   | Any object with a `shape, stride, offset, data` (see [SciJS ndarray](https://github.com/scijs/ndarray)) |
 | Image                       | An HTML image element                                                                                   |
+| ImageBitmap                 | An ImageBitmap object                                                                                   |
 | Video                       | An HTML video element                                                                                   |
 | Canvas                      | A canvas element                                                                                        |
 | Context 2D                  | A canvas 2D context                                                                                     |

@@ -61,6 +61,17 @@ tape('texture cube', function (t) {
     }, /\(regl\)/, name + ' throws')
   }
 
+  function checkShouldNotThrow (desc, name) {
+    var thrown = false
+    try {
+      regl.cube(desc)
+    } catch (e) {
+      thrown = true
+    }
+
+    t.ok(!thrown, name + ' should not throw')
+  }
+
   function comparePixels (texture, width, height, faces, tolerance, name) {
     createContext.resize(gl, width, height)
     regl._refresh()
@@ -369,6 +380,76 @@ tape('texture cube', function (t) {
       ]
     ]
   })
+
+  // test for #471
+  checkShouldNotThrow({
+    min: 'linear mipmap linear',
+    mag: 'linear',
+    format: 'rgba',
+    radius: 2,
+    faces: [
+      {
+        mipmap: [
+          [ 0, 1, 2, 3,
+            4, 5, 6, 7,
+            8, 9, 10, 11,
+            12, 13, 14, 15 ],
+          [ 0, 1,
+            2, 3 ]
+        ]
+      },
+      {
+        mipmap: [
+          [ 0, 1, 2, 3,
+            4, 5, 6, 7,
+            8, 9, 10, 11,
+            12, 13, 14, 15 ],
+          [ 0, 1,
+            2, 3 ]
+        ]
+      },
+      {
+        mipmap: [
+          [ 0, 1, 2, 3,
+            4, 5, 6, 7,
+            8, 9, 10, 11,
+            12, 13, 14, 15 ],
+          [ 0, 1,
+            2, 3 ]
+        ]
+      },
+      {
+        mipmap: [
+          [ 0, 1, 2, 3,
+            4, 5, 6, 7,
+            8, 9, 10, 11,
+            12, 13, 14, 15 ],
+          [ 0, 1,
+            2, 3 ]
+        ]
+      },
+      {
+        mipmap: [
+          [ 0, 1, 2, 3,
+            4, 5, 6, 7,
+            8, 9, 10, 11,
+            12, 13, 14, 15 ],
+          [ 0, 1,
+            2, 3 ]
+        ]
+      },
+      {
+        mipmap: [
+          [ 0, 1, 2, 3,
+            4, 5, 6, 7,
+            8, 9, 10, 11,
+            12, 13, 14, 15 ],
+          [ 0, 1,
+            2, 3 ]
+        ]
+      }
+    ]
+  }, 'preallocated mipmap faces')
 
   // in the below tests, we make sure that we can properly read the properties
   // 'format', 'type', 'min', 'mag', 'wrapS, 'wrapT' from the created texture.

@@ -22,7 +22,7 @@ regl({
   attribute vec2 position;
   varying vec2 uv;
   void main () {
-    uv = position;
+    uv = vec2(1.0 - position.x, position.y);
     gl_Position = vec4(1.0 - 2.0 * position, 0, 1);
   }`,
 
