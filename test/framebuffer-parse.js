@@ -519,24 +519,9 @@ tape('framebuffer parsing', function (t) {
       }
     }
 
-    checkProperties(
-      regl.framebuffer(fboArgs),
-      {
-        width: 10,
-        height: 10,
-        color: [expected],
-        depthStencil: {
-          target: gl.RENDERBUFFER,
-          format: gl.DEPTH_STENCIL
-        }
-      },
-      'for colorFormat=' + testCase.colorFormat + (testCase.tex ? (' and colorType=' + testCase.colorType) : ''))
-
-    // if not renderbuffer, also do the test for cubic fbo.
-    if (testCase.tex) {
-      console.log()
-      checkPropertiesCube(
-        regl.framebufferCube(fboArgs),
+    try {
+      checkProperties(
+        regl.framebuffer(fboArgs),
         {
           width: 10,
           height: 10,
@@ -546,7 +531,29 @@ tape('framebuffer parsing', function (t) {
             format: gl.DEPTH_STENCIL
           }
         },
-        'cubic fbo, for colorFormat=' + testCase.colorFormat + (testCase.tex ? (' and colorType=' + testCase.colorType) : ''))
+        'for colorFormat=' + testCase.colorFormat + (testCase.tex ? (' and colorType=' + testCase.colorType) : ''))
+    } catch (e) {
+        t.notOk(true, e.toString());
+    }
+
+    // if not renderbuffer, also do the test for cubic fbo.
+    if (testCase.tex) {
+      try {
+        checkPropertiesCube(
+          regl.framebufferCube(fboArgs),
+          {
+            width: 10,
+            height: 10,
+            color: [expected],
+            depthStencil: {
+              target: gl.RENDERBUFFER,
+              format: gl.DEPTH_STENCIL
+            }
+          },
+          'cubic fbo, for colorFormat=' + testCase.colorFormat + (testCase.tex ? (' and colorType=' + testCase.colorType) : ''))
+      } catch (e) {
+        t.notOk(true, e.toString());
+      }
     }
   })
 
