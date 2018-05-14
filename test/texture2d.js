@@ -985,7 +985,6 @@ tape('texture 2d', function (t) {
         type: 'uint8'
       }, 'DOM image element - subimage')
 
-
       endTest()
     }
 
