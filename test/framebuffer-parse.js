@@ -533,7 +533,7 @@ tape('framebuffer parsing', function (t) {
         },
         'for colorFormat=' + testCase.colorFormat + (testCase.tex ? (' and colorType=' + testCase.colorType) : ''))
     } catch (e) {
-        t.notOk(true, e.toString());
+      t.notOk(true, e.toString())
     }
 
     // if not renderbuffer, also do the test for cubic fbo.
@@ -552,7 +552,7 @@ tape('framebuffer parsing', function (t) {
           },
           'cubic fbo, for colorFormat=' + testCase.colorFormat + (testCase.tex ? (' and colorType=' + testCase.colorType) : ''))
       } catch (e) {
-        t.notOk(true, e.toString());
+        t.notOk(true, e.toString())
       }
     }
   })
