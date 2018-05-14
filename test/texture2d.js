@@ -162,7 +162,8 @@ tape('texture 2d', function (t) {
 
       var actual = regl.read()
       for (i = 0; i < expected.length; ++i) {
-        if (!(Math.abs(actual[i] - expected[i]) <= tolerance)) {
+        // ignore null pixels as insignificant
+        if (expected[i] !== null && !(Math.abs(actual[i] - expected[i]) <= tolerance)) {
           t.fail(name + ' @ index ' + i + ' ' + expected[i] + ' - ' + actual[i])
           return
         }
@@ -974,15 +975,16 @@ tape('texture 2d', function (t) {
         width: 5,
         height: 5,
         pixels: [
-          255, 0, 0, 255, 255, 255, 255, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 0,
-          255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 0,
-          0, 0, 0, 255, 0, 0, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 0, 0, 0,
-          0, 0, 0, 255, 0, 0, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 0, 0, 0,
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+          255, 0, 0, 255, 255, 255, 255, 255, 0, 0, 0, 255, 0, 0, 0, 255, null, null, null, null,
+          255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 255, 0, 0, 0, 255, null, null, null, null,
+          0, 0, 0, 255, 0, 0, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, null, null, null, null,
+          0, 0, 0, 255, 0, 0, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, null, null, null, null,
+          null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null
         ],
         format: 'rgba',
         type: 'uint8'
       }, 'DOM image element - subimage')
+
 
       endTest()
     }
