@@ -1,6 +1,7 @@
 var tape = require('tape')
 var createContext = require('./util/create-context')
 var createREGL = require('../regl')
+var ie = require('is-iexplorer')
 
 tape('regl constructor', function (t) {
   // loading from a bad selector string breaks
@@ -140,7 +141,7 @@ tape('regl constructor', function (t) {
       }
     })
     t.equals(regl._gl.canvas, canvas, 'create from canvas ok')
-    t.equals(regl.attributes.premultipliedAlpha, false, 'create from attributes ok')
+    !ie && t.equals(regl.attributes.premultipliedAlpha, false, 'create from attributes ok')
     regl.destroy()
 
     var container = document.createElement('div')
