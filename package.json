@@ -92,7 +92,7 @@
   },
   "scripts": {
     "test": "standard | snazzy && tape test/index.js | tap-min",
-    "test-browser": "budo test/util/browser.js --open",
+    "test-browser": "budo test/browser.js --open",
     "test-typescript": "tsc",
     "cover": "istanbul cover test/index.js",
     "bench-browser": "budo bench/bench.js --open",
