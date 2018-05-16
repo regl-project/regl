@@ -77,7 +77,7 @@ tape('depth', function (t) {
     regl.clear({
       depth: cdepth
     })
-    // t.equals(gl.getParameter(gl.DEPTH_CLEAR_VALUE), cdepth, 'clear depth')
+    t.equals(gl.getParameter(gl.DEPTH_CLEAR_VALUE), cdepth, 'clear depth')
   }
 
   function testFlags (cdepth, flags, prefix) {
@@ -270,7 +270,6 @@ tape('depth', function (t) {
     }
   })
 
-testStatic(1, [0.25, 0.75], {"mask":false,"enable":false,"func":"always"} )
   var poll = setInterval(function () {
     if (cases.length === 0) {
       clearInterval(poll)
@@ -280,9 +279,10 @@ testStatic(1, [0.25, 0.75], {"mask":false,"enable":false,"func":"always"} )
       t.end()
     } else {
       var top = cases.pop()
-      // testStatic(top[0], top[1], top[2])
-      // testDynamic(top[0], false, top[1], top[2])
-      // testDynamic(top[0], true, top[1], top[2])
+
+      testStatic(top[0], top[1], top[2])
+      testDynamic(top[0], false, top[1], top[2])
+      testDynamic(top[0], true, top[1], top[2])
     }
   }, 1)
 })
