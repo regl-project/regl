@@ -112,7 +112,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mikolalysenko/regl.git"
+    "url": "git+https://github.com/regl-project/regl.git"
   },
   "keywords": [
     "webgl",
@@ -131,7 +131,7 @@
   "author": "Mikola Lysenko",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/mikolalysenko/regl/issues"
+    "url": "https://github.com/regl-project/regl/issues"
   },
   "standard": {
     "ignore": [
@@ -140,5 +140,5 @@
       "example/util/ammo.js"
     ]
   },
-  "homepage": "https://mikolalysenko.github.io/regl"
+  "homepage": "https://regl-project.github.io/regl"
 }
