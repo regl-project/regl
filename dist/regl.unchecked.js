@@ -1545,12 +1545,14 @@ function objectName (str) {
 
 var CANVAS_CLASS = objectName('HTMLCanvasElement');
 var CONTEXT2D_CLASS = objectName('CanvasRenderingContext2D');
+var BITMAP_CLASS = objectName('ImageBitmap');
 var IMAGE_CLASS = objectName('HTMLImageElement');
 var VIDEO_CLASS = objectName('HTMLVideoElement');
 
 var PIXEL_CLASSES = Object.keys(arrayTypes).concat([
   CANVAS_CLASS,
   CONTEXT2D_CLASS,
+  BITMAP_CLASS,
   IMAGE_CLASS,
   VIDEO_CLASS
 ]);
@@ -1615,6 +1617,10 @@ function isCanvasElement (object) {
 
 function isContext2D (object) {
   return classString(object) === CONTEXT2D_CLASS
+}
+
+function isBitmap (object) {
+  return classString(object) === BITMAP_CLASS
 }
 
 function isImageElement (object) {
@@ -2150,6 +2156,11 @@ function createTextureSet (
       image.width = image.element.width;
       image.height = image.element.height;
       image.channels = 4;
+    } else if (isBitmap(data)) {
+      image.element = data;
+      image.width = data.width;
+      image.height = data.height;
+      image.channels = 4;
     } else if (isImageElement(data)) {
       image.element = data;
       image.width = data.naturalWidth;
@@ -2381,7 +2392,7 @@ function createTextureSet (
       var minFilter = options.min;
       
       info.minFilter = minFilters[minFilter];
-      if (MIPMAP_FILTERS.indexOf(info.minFilter) >= 0) {
+      if (MIPMAP_FILTERS.indexOf(info.minFilter) >= 0 && !('faces' in options)) {
         info.genMipmaps = true;
       }
     }
@@ -3234,12 +3245,14 @@ var GL_HALF_FLOAT_OES$1 = 0x8D61;
 var GL_UNSIGNED_BYTE$4 = 0x1401;
 var GL_FLOAT$3 = 0x1406;
 
+var GL_RGB$1 = 0x1907;
 var GL_RGBA$1 = 0x1908;
 
 // for every texture format, store
 // the number of channels
 var textureFormatChannels = [];
 textureFormatChannels[GL_RGBA$1] = 4;
+textureFormatChannels[GL_RGB$1] = 3;
 
 // for every texture type, store
 // the size in bytes.
@@ -7519,7 +7532,6 @@ function stats () {
     textureCount: 0,
     cubeCount: 0,
     renderbufferCount: 0,
-
     maxTextureUnits: 0
   }
 }
@@ -7730,7 +7742,6 @@ function wrapREGL (args) {
   };
 
   var limits = wrapLimits(gl, extensions);
-  var elementState = wrapElementsState(gl, extensions, bufferState, stats$$1);
   var attributeState = wrapAttributeState(
     gl,
     extensions,
@@ -7741,6 +7752,7 @@ function wrapREGL (args) {
     stats$$1,
     config,
     attributeState);
+  var elementState = wrapElementsState(gl, extensions, bufferState, stats$$1);
   var shaderState = wrapShaderState(gl, stringStore, stats$$1, config);
   var textureState = createTextureSet(
     gl,
