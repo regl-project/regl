@@ -17,8 +17,8 @@ tape('cube fbo resize test', function (t) {
 
   if (ie) {
     t.throws(function () {
-    cubeFbo.resize(5)
-  })
+      cubeFbo.resize(5)
+    })
   } else {
     cubeFbo.resize(5)
   }
