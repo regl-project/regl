@@ -16,7 +16,7 @@
   [![API Stability](https://img.shields.io/badge/stability-experimental-orange.svg?style=flat-square)](https://nodejs.org/api/documentation.html#documentation_stability_index)
   [![NPM Version](https://img.shields.io/npm/v/regl.svg?style=flat-square)](https://npmjs.org/package/regl)
   [![Build Status](https://img.shields.io/travis/regl-project/regl.svg?style=flat-square)](https://travis-ci.org/regl-project/regl/)
-  [![File Size](https://badge-size.herokuapp.com/mikolalysenko/regl/gh-pages/dist/regl.min.js.svg?compression=gzip&style=flat-square)](https://npmcdn.com/regl/dist/regl.min.js)
+  [![File Size](https://badge-size.herokuapp.com/regl-project/regl/gh-pages/dist/regl.min.js.svg?compression=gzip&style=flat-square)](https://npmcdn.com/regl/dist/regl.min.js)
   [![Downloads](https://img.shields.io/npm/dm/regl.svg?style=flat-square)](https://npmjs.org/package/regl)
   [![Standard](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square)](https://standardjs.com)
 
@@ -28,7 +28,7 @@
       Docs
     </a>
     <span> | </span>
-    <a href="https://gitter.im/mikolalysenko/regl">
+    <a href="https://gitter.im/regl-project/regl">
       Chat
     </a>
     <span> | </span>

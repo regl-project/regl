@@ -241,7 +241,7 @@ function generateGallery (files) {
     // source code link
     li += '<p>' +
       '<a href="' +
-      'https://github.com/mikolalysenko/regl/blob/gh-pages/' + file +
+      'https://github.com/regl-project/regl/blob/gh-pages/' + file +
       '">Source Code</a>' +
       '</p>'
 
