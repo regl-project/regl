@@ -42,7 +42,7 @@ if (require('is-travis')) Error.stackTraceLimit = 0
 // require('./scissor')
 // require('./viewport')
 // require('./texture2d')
-require('./textureCube')
+// require('./textureCube')
 // require('./renderbuffer')
 // // TODO: IE
 // require('./framebuffer-parse')
@@ -60,7 +60,7 @@ require('./textureCube')
 // require('./stats-gputime')
 // require('./instance')
 // // TODO: IE
-// require('./cube-fbo-resize')
+require('./cube-fbo-resize')
 // require('./dynamic-cube-fbo')
 // require('./dynamic-scissor')
 // require('./dynamic-viewport')

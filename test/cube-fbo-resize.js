@@ -1,6 +1,7 @@
 var createContext = require('./util/create-context')
 var createREGL = require('../regl')
 var tape = require('tape')
+var ie = require('is-iexplorer')
 
 tape('cube fbo resize test', function (t) {
   var gl = createContext(2, 2)
@@ -8,10 +9,19 @@ tape('cube fbo resize test', function (t) {
 
   t.equals(gl.getError(), 0, 'error code ok')
 
-  var cubeFbo = regl.framebufferCube(10)
+  var cubeFbo = regl.framebufferCube(8)
   t.equals(gl.getError(), 0, 'error code ok')
 
-  cubeFbo.resize(8)
+  cubeFbo.resize(4)
+  t.equals(gl.getError(), 0, 'error code ok')
+
+  if (ie) {
+    t.throws(function () {
+    cubeFbo.resize(5)
+  })
+  } else {
+    cubeFbo.resize(5)
+  }
   t.equals(gl.getError(), 0, 'error code ok')
 
   regl.destroy()
