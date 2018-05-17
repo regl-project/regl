@@ -163,7 +163,6 @@ tape('texture 2d', function (t) {
 
       var actual = regl.read()
       for (i = 0; i < expected.length; ++i) {
-        // ignore null pixels as insignificant
         if (!(Math.abs(actual[i] - expected[i]) <= tolerance)) {
           t.fail(name + ' @ index ' + i + ' ' + expected[i] + ' - ' + actual[i])
           return
