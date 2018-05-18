@@ -2627,6 +2627,8 @@ regl exposes info about the WebGL context limits and capabilities via the `regl.
 | `vendor`                  | `gl.VENDOR`                                                         |
 | `version`                 | `gl.VERSION`                                                        |
 | `textureFormats`          | A list of all supported texture formats                             |
+| `readFloat`               | If reading float numbers is supported |
+| `cubeNpot`                | If non power of two cube texture dimensions are supported |
 
 **Relevant WebGL APIs**
 
