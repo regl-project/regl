@@ -176,10 +176,10 @@ function createCanvas (element, onDone, pixelRatio) {
   }
 }
 
-function createContext (canvas, contexAttributes) {
+function createContext (canvas, contextAttributes) {
   function get (name) {
     try {
-      return canvas.getContext(name, contexAttributes)
+      return canvas.getContext(name, contextAttributes)
     } catch (e) {
       return null
     }
@@ -357,6 +357,112 @@ function createExtensionCache (gl, config) {
   }
 }
 
+function loop (n, f) {
+  var result = Array(n);
+  for (var i = 0; i < n; ++i) {
+    result[i] = f(i);
+  }
+  return result
+}
+
+var GL_BYTE = 5120;
+var GL_UNSIGNED_BYTE$1 = 5121;
+var GL_SHORT = 5122;
+var GL_UNSIGNED_SHORT = 5123;
+var GL_INT = 5124;
+var GL_UNSIGNED_INT = 5125;
+var GL_FLOAT$1 = 5126;
+
+function nextPow16 (v) {
+  for (var i = 16; i <= (1 << 28); i *= 16) {
+    if (v <= i) {
+      return i
+    }
+  }
+  return 0
+}
+
+function log2 (v) {
+  var r, shift;
+  r = (v > 0xFFFF) << 4;
+  v >>>= r;
+  shift = (v > 0xFF) << 3;
+  v >>>= shift; r |= shift;
+  shift = (v > 0xF) << 2;
+  v >>>= shift; r |= shift;
+  shift = (v > 0x3) << 1;
+  v >>>= shift; r |= shift;
+  return r | (v >> 1)
+}
+
+function createPool () {
+  var bufferPool = loop(8, function () {
+    return []
+  });
+
+  function alloc (n) {
+    var sz = nextPow16(n);
+    var bin = bufferPool[log2(sz) >> 2];
+    if (bin.length > 0) {
+      return bin.pop()
+    }
+    return new ArrayBuffer(sz)
+  }
+
+  function free (buf) {
+    bufferPool[log2(buf.byteLength) >> 2].push(buf);
+  }
+
+  function allocType (type, n) {
+    var result = null;
+    switch (type) {
+      case GL_BYTE:
+        result = new Int8Array(alloc(n), 0, n);
+        break
+      case GL_UNSIGNED_BYTE$1:
+        result = new Uint8Array(alloc(n), 0, n);
+        break
+      case GL_SHORT:
+        result = new Int16Array(alloc(2 * n), 0, n);
+        break
+      case GL_UNSIGNED_SHORT:
+        result = new Uint16Array(alloc(2 * n), 0, n);
+        break
+      case GL_INT:
+        result = new Int32Array(alloc(4 * n), 0, n);
+        break
+      case GL_UNSIGNED_INT:
+        result = new Uint32Array(alloc(4 * n), 0, n);
+        break
+      case GL_FLOAT$1:
+        result = new Float32Array(alloc(4 * n), 0, n);
+        break
+      default:
+        return null
+    }
+    if (result.length !== n) {
+      return result.subarray(0, n)
+    }
+    return result
+  }
+
+  function freeType (array) {
+    free(array.buffer);
+  }
+
+  return {
+    alloc: alloc,
+    free: free,
+    allocType: allocType,
+    freeType: freeType
+  }
+}
+
+var pool = createPool();
+
+// zero pool for initial zero data
+module.exports.zero = createPool();
+
 var GL_SUBPIXEL_BITS = 0x0D50;
 var GL_RED_BITS = 0x0D52;
 var GL_GREEN_BITS = 0x0D53;
@@ -390,6 +496,18 @@ var GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT = 0x84FF;
 var GL_MAX_COLOR_ATTACHMENTS_WEBGL = 0x8CDF;
 var GL_MAX_DRAW_BUFFERS_WEBGL = 0x8824;
 
+var GL_TEXTURE_2D = 0x0DE1;
+var GL_TEXTURE_CUBE_MAP = 0x8513;
+var GL_TEXTURE_CUBE_MAP_POSITIVE_X = 0x8515;
+var GL_TEXTURE0 = 0x84C0;
+var GL_RGBA = 0x1908;
+var GL_FLOAT = 0x1406;
+var GL_UNSIGNED_BYTE = 0x1401;
+var GL_FRAMEBUFFER = 0x8D40;
+var GL_FRAMEBUFFER_COMPLETE = 0x8CD5;
+var GL_COLOR_ATTACHMENT0 = 0x8CE0;
+var GL_COLOR_BUFFER_BIT$1 = 0x4000;
+
 var wrapLimits = function (gl, extensions) {
   var maxAnisotropic = 1;
   if (extensions.ext_texture_filter_anisotropic) {
@@ -402,6 +520,51 @@ var wrapLimits = function (gl, extensions) {
     maxDrawbuffers = gl.getParameter(GL_MAX_DRAW_BUFFERS_WEBGL);
     maxColorAttachments = gl.getParameter(GL_MAX_COLOR_ATTACHMENTS_WEBGL);
   }
+
+  // detect if reading float textures is available (Safari doesn't support)
+  var readFloat = !!extensions.oes_texture_float;
+  if (readFloat) {
+    var readFloatTexture = gl.createTexture();
+    gl.bindTexture(GL_TEXTURE_2D, readFloatTexture);
+    gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_FLOAT, null);
+
+    var fbo = gl.createFramebuffer();
+    gl.bindFramebuffer(GL_FRAMEBUFFER, fbo);
+    gl.framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, readFloatTexture, 0);
+    gl.bindTexture(GL_TEXTURE_2D, null);
+
+    if (gl.checkFramebufferStatus(GL_FRAMEBUFFER) !== GL_FRAMEBUFFER_COMPLETE) readFloat = false;
+
+    else {
+      gl.viewport(0, 0, 1, 1);
+      gl.clearColor(1.0, 0.0, 0.0, 1.0);
+      gl.clear(GL_COLOR_BUFFER_BIT$1);
+      var pixels = pool.allocType(GL_FLOAT, 4);
+      gl.readPixels(0, 0, 1, 1, GL_RGBA, GL_FLOAT, pixels);
+
+      if (gl.getError()) readFloat = false;
+      else {
+        gl.deleteFramebuffer(fbo);
+        gl.deleteTexture(readFloatTexture);
+
+        readFloat = pixels[0] === 1.0;
+      }
+
+      pool.freeType(pixels);
+    }
+  }
+
+  // detect non power of two cube textures support (IE doesn't support)
+  var npotTextureCube = true;
+  var cubeTexture = gl.createTexture();
+  var data = pool.allocType(GL_UNSIGNED_BYTE, 36);
+  gl.activeTexture(GL_TEXTURE0);
+  gl.bindTexture(GL_TEXTURE_CUBE_MAP, cubeTexture);
+  gl.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, 3, 3, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+  pool.freeType(data);
+  gl.bindTexture(GL_TEXTURE_CUBE_MAP, null);
+  gl.deleteTexture(cubeTexture);
+  npotTextureCube = !gl.getError();
 
   return {
     // drawing buffer bit depth
@@ -446,7 +609,11 @@ var wrapLimits = function (gl, extensions) {
     glsl: gl.getParameter(GL_SHADING_LANGUAGE_VERSION),
     renderer: gl.getParameter(GL_RENDERER),
     vendor: gl.getParameter(GL_VENDOR),
-    version: gl.getParameter(GL_VERSION)
+    version: gl.getParameter(GL_VERSION),
+
+    // quirks
+    readFloat: readFloat,
+    npotTextureCube: npotTextureCube
   }
 };
 
@@ -478,105 +645,6 @@ function isNDArrayLike (obj) {
 
 var values = function (obj) {
   return Object.keys(obj).map(function (key) { return obj[key] })
-};
-
-function loop (n, f) {
-  var result = Array(n);
-  for (var i = 0; i < n; ++i) {
-    result[i] = f(i);
-  }
-  return result
-}
-
-var GL_BYTE = 5120;
-var GL_UNSIGNED_BYTE$1 = 5121;
-var GL_SHORT = 5122;
-var GL_UNSIGNED_SHORT = 5123;
-var GL_INT = 5124;
-var GL_UNSIGNED_INT = 5125;
-var GL_FLOAT$1 = 5126;
-
-var bufferPool = loop(8, function () {
-  return []
-});
-
-function nextPow16 (v) {
-  for (var i = 16; i <= (1 << 28); i *= 16) {
-    if (v <= i) {
-      return i
-    }
-  }
-  return 0
-}
-
-function log2 (v) {
-  var r, shift;
-  r = (v > 0xFFFF) << 4;
-  v >>>= r;
-  shift = (v > 0xFF) << 3;
-  v >>>= shift; r |= shift;
-  shift = (v > 0xF) << 2;
-  v >>>= shift; r |= shift;
-  shift = (v > 0x3) << 1;
-  v >>>= shift; r |= shift;
-  return r | (v >> 1)
-}
-
-function alloc (n) {
-  var sz = nextPow16(n);
-  var bin = bufferPool[log2(sz) >> 2];
-  if (bin.length > 0) {
-    return bin.pop()
-  }
-  return new ArrayBuffer(sz)
-}
-
-function free (buf) {
-  bufferPool[log2(buf.byteLength) >> 2].push(buf);
-}
-
-function allocType (type, n) {
-  var result = null;
-  switch (type) {
-    case GL_BYTE:
-      result = new Int8Array(alloc(n), 0, n);
-      break
-    case GL_UNSIGNED_BYTE$1:
-      result = new Uint8Array(alloc(n), 0, n);
-      break
-    case GL_SHORT:
-      result = new Int16Array(alloc(2 * n), 0, n);
-      break
-    case GL_UNSIGNED_SHORT:
-      result = new Uint16Array(alloc(2 * n), 0, n);
-      break
-    case GL_INT:
-      result = new Int32Array(alloc(4 * n), 0, n);
-      break
-    case GL_UNSIGNED_INT:
-      result = new Uint32Array(alloc(4 * n), 0, n);
-      break
-    case GL_FLOAT$1:
-      result = new Float32Array(alloc(4 * n), 0, n);
-      break
-    default:
-      return null
-  }
-  if (result.length !== n) {
-    return result.subarray(0, n)
-  }
-  return result
-}
-
-function freeType (array) {
-  free(array.buffer);
-}
-
-var pool = {
-  alloc: alloc,
-  free: free,
-  allocType: allocType,
-  freeType: freeType
 };
 
 var flattenUtils = {
@@ -717,8 +785,8 @@ var arrayShape = flattenUtils.shape;
 var GL_STATIC_DRAW = 0x88E4;
 var GL_STREAM_DRAW = 0x88E0;
 
-var GL_UNSIGNED_BYTE = 5121;
-var GL_FLOAT = 5126;
+var GL_UNSIGNED_BYTE$2 = 5121;
+var GL_FLOAT$2 = 5126;
 
 var DTYPES_SIZES = [];
 DTYPES_SIZES[5120] = 1; // int8
@@ -760,7 +828,7 @@ function wrapBufferState (gl, stats, config, attributeState) {
     this.usage = GL_STATIC_DRAW;
     this.byteLength = 0;
     this.dimension = 1;
-    this.dtype = GL_UNSIGNED_BYTE;
+    this.dtype = GL_UNSIGNED_BYTE$2;
 
     this.persistentData = null;
 
@@ -802,7 +870,7 @@ function wrapBufferState (gl, stats, config, attributeState) {
     var shape;
     buffer.usage = usage;
     if (Array.isArray(data)) {
-      buffer.dtype = dtype || GL_FLOAT;
+      buffer.dtype = dtype || GL_FLOAT$2;
       if (data.length > 0) {
         var flatData;
         if (Array.isArray(data[0])) {
@@ -831,7 +899,7 @@ function wrapBufferState (gl, stats, config, attributeState) {
           }
         } else if (isTypedArray(data[0])) {
           buffer.dimension = data[0].length;
-          buffer.dtype = dtype || typedArrayCode(data[0]) || GL_FLOAT;
+          buffer.dtype = dtype || typedArrayCode(data[0]) || GL_FLOAT$2;
           flatData = arrayFlatten(
             data,
             [data.length, data[0].length],
@@ -876,7 +944,7 @@ function wrapBufferState (gl, stats, config, attributeState) {
         
       }
 
-      buffer.dtype = dtype || typedArrayCode(data.data) || GL_FLOAT;
+      buffer.dtype = dtype || typedArrayCode(data.data) || GL_FLOAT$2;
       buffer.dimension = shapeY;
 
       var transposeData = pool.allocType(buffer.dtype, shapeX * shapeY);
@@ -963,8 +1031,9 @@ function wrapBufferState (gl, stats, config, attributeState) {
 
       buffer.bind();
       if (!data) {
-        gl.bufferData(buffer.type, byteLength, usage);
-        buffer.dtype = dtype || GL_UNSIGNED_BYTE;
+        // #475
+        if (byteLength) gl.bufferData(buffer.type, byteLength, usage);
+        buffer.dtype = dtype || GL_UNSIGNED_BYTE$2;
         buffer.usage = usage;
         buffer.dimension = dimension;
         buffer.byteLength = byteLength;
@@ -1129,7 +1198,7 @@ var GL_LINES = 1;
 var GL_TRIANGLES = 4;
 
 var GL_BYTE$1 = 5120;
-var GL_UNSIGNED_BYTE$2 = 5121;
+var GL_UNSIGNED_BYTE$3 = 5121;
 var GL_SHORT$1 = 5122;
 var GL_UNSIGNED_SHORT$1 = 5123;
 var GL_INT$1 = 5124;
@@ -1145,7 +1214,7 @@ function wrapElementsState (gl, extensions, bufferState, stats) {
   var elementCount = 0;
 
   var elementTypes = {
-    'uint8': GL_UNSIGNED_BYTE$2,
+    'uint8': GL_UNSIGNED_BYTE$3,
     'uint16': GL_UNSIGNED_SHORT$1
   };
 
@@ -1211,7 +1280,7 @@ function wrapElementsState (gl, extensions, bufferState, stats) {
         3);
     } else {
       gl.bufferData(GL_ELEMENT_ARRAY_BUFFER, byteLength, usage);
-      elements.buffer.dtype = dtype || GL_UNSIGNED_BYTE$2;
+      elements.buffer.dtype = dtype || GL_UNSIGNED_BYTE$3;
       elements.buffer.usage = usage;
       elements.buffer.dimension = 3;
       elements.buffer.byteLength = byteLength;
@@ -1220,9 +1289,9 @@ function wrapElementsState (gl, extensions, bufferState, stats) {
     var dtype = type;
     if (!type) {
       switch (elements.buffer.dtype) {
-        case GL_UNSIGNED_BYTE$2:
+        case GL_UNSIGNED_BYTE$3:
         case GL_BYTE$1:
-          dtype = GL_UNSIGNED_BYTE$2;
+          dtype = GL_UNSIGNED_BYTE$3;
           break
 
         case GL_UNSIGNED_SHORT$1:
@@ -1288,12 +1357,12 @@ function wrapElementsState (gl, extensions, bufferState, stats) {
         buffer();
         elements.primType = GL_TRIANGLES;
         elements.vertCount = 0;
-        elements.type = GL_UNSIGNED_BYTE$2;
+        elements.type = GL_UNSIGNED_BYTE$3;
       } else if (typeof options === 'number') {
         buffer(options);
         elements.primType = GL_TRIANGLES;
         elements.vertCount = options | 0;
-        elements.type = GL_UNSIGNED_BYTE$2;
+        elements.type = GL_UNSIGNED_BYTE$3;
       } else {
         var data = null;
         var usage = GL_STATIC_DRAW$1;
@@ -1432,11 +1501,11 @@ function isArrayLike (s) {
 
 var GL_COMPRESSED_TEXTURE_FORMATS = 0x86A3;
 
-var GL_TEXTURE_2D = 0x0DE1;
-var GL_TEXTURE_CUBE_MAP = 0x8513;
-var GL_TEXTURE_CUBE_MAP_POSITIVE_X = 0x8515;
+var GL_TEXTURE_2D$1 = 0x0DE1;
+var GL_TEXTURE_CUBE_MAP$1 = 0x8513;
+var GL_TEXTURE_CUBE_MAP_POSITIVE_X$1 = 0x8515;
 
-var GL_RGBA = 0x1908;
+var GL_RGBA$1 = 0x1908;
 var GL_ALPHA = 0x1906;
 var GL_RGB = 0x1907;
 var GL_LUMINANCE = 0x1909;
@@ -1475,10 +1544,10 @@ var GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG = 0x8C03;
 
 var GL_COMPRESSED_RGB_ETC1_WEBGL = 0x8D64;
 
-var GL_UNSIGNED_BYTE$3 = 0x1401;
+var GL_UNSIGNED_BYTE$4 = 0x1401;
 var GL_UNSIGNED_SHORT$2 = 0x1403;
 var GL_UNSIGNED_INT$2 = 0x1405;
-var GL_FLOAT$2 = 0x1406;
+var GL_FLOAT$3 = 0x1406;
 
 var GL_TEXTURE_WRAP_S = 0x2802;
 var GL_TEXTURE_WRAP_T = 0x2803;
@@ -1511,7 +1580,7 @@ var GL_UNPACK_COLORSPACE_CONVERSION_WEBGL = 0x9243;
 
 var GL_BROWSER_DEFAULT_WEBGL = 0x9244;
 
-var GL_TEXTURE0 = 0x84C0;
+var GL_TEXTURE0$1 = 0x84C0;
 
 var MIPMAP_FILTERS = [
   GL_NEAREST_MIPMAP_NEAREST,
@@ -1525,7 +1594,7 @@ var CHANNELS_FORMAT = [
   GL_LUMINANCE,
   GL_LUMINANCE_ALPHA,
   GL_RGB,
-  GL_RGBA
+  GL_RGBA$1
 ];
 
 var FORMAT_CHANNELS = {};
@@ -1536,7 +1605,7 @@ FORMAT_CHANNELS[GL_DEPTH_STENCIL] =
 FORMAT_CHANNELS[GL_LUMINANCE_ALPHA] = 2;
 FORMAT_CHANNELS[GL_RGB] =
 FORMAT_CHANNELS[GL_SRGB_EXT] = 3;
-FORMAT_CHANNELS[GL_RGBA] =
+FORMAT_CHANNELS[GL_RGBA$1] =
 FORMAT_CHANNELS[GL_SRGB_ALPHA_EXT] = 4;
 
 function objectName (str) {
@@ -1560,8 +1629,8 @@ var PIXEL_CLASSES = Object.keys(arrayTypes).concat([
 // for every texture type, store
 // the size in bytes.
 var TYPE_SIZES = [];
-TYPE_SIZES[GL_UNSIGNED_BYTE$3] = 1;
-TYPE_SIZES[GL_FLOAT$2] = 4;
+TYPE_SIZES[GL_UNSIGNED_BYTE$4] = 1;
+TYPE_SIZES[GL_FLOAT$3] = 4;
 TYPE_SIZES[GL_HALF_FLOAT_OES] = 2;
 
 TYPE_SIZES[GL_UNSIGNED_SHORT$2] = 2;
@@ -1652,10 +1721,10 @@ function typedArrayCode$1 (data) {
 function convertData (result, data) {
   var n = data.length;
   switch (result.type) {
-    case GL_UNSIGNED_BYTE$3:
+    case GL_UNSIGNED_BYTE$4:
     case GL_UNSIGNED_SHORT$2:
     case GL_UNSIGNED_INT$2:
-    case GL_FLOAT$2:
+    case GL_FLOAT$3:
       var converted = pool.allocType(result.type, n);
       converted.set(data);
       result.data = converted;
@@ -1673,7 +1742,7 @@ function convertData (result, data) {
 function preConvert (image, n) {
   return pool.allocType(
     image.type === GL_HALF_FLOAT_OES
-      ? GL_FLOAT$2
+      ? GL_FLOAT$3
       : image.type, n)
 }
 
@@ -1772,7 +1841,7 @@ function createTextureSet (
   };
 
   var textureTypes = {
-    'uint8': GL_UNSIGNED_BYTE$3,
+    'uint8': GL_UNSIGNED_BYTE$4,
     'rgba4': GL_UNSIGNED_SHORT_4_4_4_4,
     'rgb565': GL_UNSIGNED_SHORT_5_6_5,
     'rgb5 a1': GL_UNSIGNED_SHORT_5_5_5_1
@@ -1783,7 +1852,7 @@ function createTextureSet (
     'luminance': GL_LUMINANCE,
     'luminance alpha': GL_LUMINANCE_ALPHA,
     'rgb': GL_RGB,
-    'rgba': GL_RGBA,
+    'rgba': GL_RGBA$1,
     'rgba4': GL_RGBA4,
     'rgb5 a1': GL_RGB5_A1,
     'rgb565': GL_RGB565
@@ -1797,7 +1866,7 @@ function createTextureSet (
   }
 
   if (extensions.oes_texture_float) {
-    textureTypes.float32 = textureTypes.float = GL_FLOAT$2;
+    textureTypes.float32 = textureTypes.float = GL_FLOAT$3;
   }
 
   if (extensions.oes_texture_half_float) {
@@ -1906,7 +1975,7 @@ function createTextureSet (
         glenum === GL_DEPTH_STENCIL) {
       color[glenum] = glenum;
     } else if (glenum === GL_RGB5_A1 || key.indexOf('rgba') >= 0) {
-      color[glenum] = GL_RGBA;
+      color[glenum] = GL_RGBA$1;
     } else {
       color[glenum] = GL_RGB;
     }
@@ -1915,9 +1984,9 @@ function createTextureSet (
 
   function TexFlags () {
     // format info
-    this.internalformat = GL_RGBA;
-    this.format = GL_RGBA;
-    this.type = GL_UNSIGNED_BYTE$3;
+    this.internalformat = GL_RGBA$1;
+    this.format = GL_RGBA$1;
+    this.type = GL_UNSIGNED_BYTE$4;
     this.compressed = false;
 
     // pixel storage
@@ -2112,7 +2181,7 @@ function createTextureSet (
     } else if (isTypedArray(data)) {
       image.channels = image.channels || 4;
       image.data = data;
-      if (!('type' in options) && image.type === GL_UNSIGNED_BYTE$3) {
+      if (!('type' in options) && image.type === GL_UNSIGNED_BYTE$4) {
         image.type = typedArrayCode$1(data);
       }
     } else if (isNumericArray(data)) {
@@ -2122,7 +2191,7 @@ function createTextureSet (
       image.needsFree = true;
     } else if (isNDArrayLike(data)) {
       var array = data.data;
-      if (!Array.isArray(array) && image.type === GL_UNSIGNED_BYTE$3) {
+      if (!Array.isArray(array) && image.type === GL_UNSIGNED_BYTE$4) {
         image.type = typedArrayCode$1(array);
       }
       var shape = data.shape;
@@ -2196,7 +2265,7 @@ function createTextureSet (
       image.needsFree = true;
     }
 
-    if (image.type === GL_FLOAT$2) {
+    if (image.type === GL_FLOAT$3) {
       
     } else if (image.type === GL_HALF_FLOAT_OES) {
       
@@ -2213,6 +2282,7 @@ function createTextureSet (
     var type = info.type;
     var width = info.width;
     var height = info.height;
+    var channels = info.channels;
 
     setFlags(info);
 
@@ -2225,8 +2295,16 @@ function createTextureSet (
       gl.copyTexImage2D(
         target, miplevel, format, info.xOffset, info.yOffset, width, height, 0);
     } else {
-      gl.texImage2D(
-        target, miplevel, format, width, height, 0, format, type, data);
+      var nullData = !data;
+      if (nullData) {
+        data = pool.zero.allocType(type, width * height * channels);
+      }
+
+      gl.texImage2D(target, miplevel, format, width, height, 0, format, type, data);
+
+      if (nullData && data) {
+        pool.zero.freeType(data);
+      }
     }
   }
 
@@ -2493,7 +2571,7 @@ function createTextureSet (
   function REGLTexture (target) {
     TexFlags.call(this);
     this.mipmask = 0;
-    this.internalformat = GL_RGBA;
+    this.internalformat = GL_RGBA$1;
 
     this.id = textureCount++;
 
@@ -2513,7 +2591,7 @@ function createTextureSet (
   }
 
   function tempBind (texture) {
-    gl.activeTexture(GL_TEXTURE0);
+    gl.activeTexture(GL_TEXTURE0$1);
     gl.bindTexture(texture.target, texture.texture);
   }
 
@@ -2522,7 +2600,7 @@ function createTextureSet (
     if (prev) {
       gl.bindTexture(prev.target, prev.texture);
     } else {
-      gl.bindTexture(GL_TEXTURE_2D, null);
+      gl.bindTexture(GL_TEXTURE_2D$1, null);
     }
   }
 
@@ -2532,7 +2610,7 @@ function createTextureSet (
     var unit = texture.unit;
     var target = texture.target;
     if (unit >= 0) {
-      gl.activeTexture(GL_TEXTURE0 + unit);
+      gl.activeTexture(GL_TEXTURE0$1 + unit);
       gl.bindTexture(target, null);
       textureUnits[unit] = null;
     }
@@ -2570,7 +2648,7 @@ function createTextureSet (
           stats.maxTextureUnits = unit + 1; // +1, since the units are zero-based
         }
         texture.unit = unit;
-        gl.activeTexture(GL_TEXTURE0 + unit);
+        gl.activeTexture(GL_TEXTURE0$1 + unit);
         gl.bindTexture(texture.target, texture.texture);
       }
       return unit
@@ -2588,7 +2666,7 @@ function createTextureSet (
   });
 
   function createTexture2D (a, b) {
-    var texture = new REGLTexture(GL_TEXTURE_2D);
+    var texture = new REGLTexture(GL_TEXTURE_2D$1);
     textureSet[texture.id] = texture;
     stats.textureCount++;
 
@@ -2626,8 +2704,8 @@ function createTextureSet (
       reglTexture2D.height = mipData.height;
 
       tempBind(texture);
-      setMipMap(mipData, GL_TEXTURE_2D);
-      setTexInfo(texInfo, GL_TEXTURE_2D);
+      setMipMap(mipData, GL_TEXTURE_2D$1);
+      setTexInfo(texInfo, GL_TEXTURE_2D$1);
       tempRestore();
 
       freeMipMap(mipData);
@@ -2674,7 +2752,7 @@ function createTextureSet (
       
 
       tempBind(texture);
-      setSubImage(imageData, GL_TEXTURE_2D, x, y, level);
+      setSubImage(imageData, GL_TEXTURE_2D$1, x, y, level);
       tempRestore();
 
       freeImage(imageData);
@@ -2693,17 +2771,27 @@ function createTextureSet (
       reglTexture2D.height = texture.height = h;
 
       tempBind(texture);
+
+      var data;
+      var channels = texture.channels;
+      var type = texture.type;
+
       for (var i = 0; texture.mipmask >> i; ++i) {
+        var _w = w >> i;
+        var _h = h >> i;
+        if (!_w || !_h) break
+        data = pool.zero.allocType(type, _w * _h * channels);
         gl.texImage2D(
-          GL_TEXTURE_2D,
+          GL_TEXTURE_2D$1,
           i,
           texture.format,
-          w >> i,
-          h >> i,
+          _w,
+          _h,
           0,
           texture.format,
           texture.type,
-          null);
+          data);
+        if (data) pool.zero.freeType(data);
       }
       tempRestore();
 
@@ -2738,7 +2826,7 @@ function createTextureSet (
   }
 
   function createTextureCube (a0, a1, a2, a3, a4, a5) {
-    var texture = new REGLTexture(GL_TEXTURE_CUBE_MAP);
+    var texture = new REGLTexture(GL_TEXTURE_CUBE_MAP$1);
     textureSet[texture.id] = texture;
     stats.cubeCount++;
 
@@ -2787,6 +2875,11 @@ function createTextureSet (
       }
 
       copyFlags(texture, faces[0]);
+
+      if (!limits.npotTextureCube) {
+        
+      }
+
       if (texInfo.genMipmaps) {
         texture.mipmask = (faces[0].width << 1) - 1;
       } else {
@@ -2801,9 +2894,9 @@ function createTextureSet (
 
       tempBind(texture);
       for (i = 0; i < 6; ++i) {
-        setMipMap(faces[i], GL_TEXTURE_CUBE_MAP_POSITIVE_X + i);
+        setMipMap(faces[i], GL_TEXTURE_CUBE_MAP_POSITIVE_X$1 + i);
       }
-      setTexInfo(texInfo, GL_TEXTURE_CUBE_MAP);
+      setTexInfo(texInfo, GL_TEXTURE_CUBE_MAP$1);
       tempRestore();
 
       if (config.profile) {
@@ -2854,7 +2947,7 @@ function createTextureSet (
       
 
       tempBind(texture);
-      setSubImage(imageData, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, x, y, level);
+      setSubImage(imageData, GL_TEXTURE_CUBE_MAP_POSITIVE_X$1 + face, x, y, level);
       tempRestore();
 
       freeImage(imageData);
@@ -2875,7 +2968,7 @@ function createTextureSet (
       for (var i = 0; i < 6; ++i) {
         for (var j = 0; texture.mipmask >> j; ++j) {
           gl.texImage2D(
-            GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+            GL_TEXTURE_CUBE_MAP_POSITIVE_X$1 + i,
             j,
             texture.format,
             radius >> j,
@@ -2920,8 +3013,8 @@ function createTextureSet (
   // Called when regl is destroyed
   function destroyTextures () {
     for (var i = 0; i < numTexUnits; ++i) {
-      gl.activeTexture(GL_TEXTURE0 + i);
-      gl.bindTexture(GL_TEXTURE_2D, null);
+      gl.activeTexture(GL_TEXTURE0$1 + i);
+      gl.bindTexture(GL_TEXTURE_2D$1, null);
       textureUnits[i] = null;
     }
     values(textureSet).forEach(destroy);
@@ -2948,8 +3041,8 @@ function createTextureSet (
         if ((texture.mipmask & (1 << i)) === 0) {
           continue
         }
-        if (texture.target === GL_TEXTURE_2D) {
-          gl.texImage2D(GL_TEXTURE_2D,
+        if (texture.target === GL_TEXTURE_2D$1) {
+          gl.texImage2D(GL_TEXTURE_2D$1,
             i,
             texture.internalformat,
             texture.width >> i,
@@ -2960,7 +3053,7 @@ function createTextureSet (
             null);
         } else {
           for (var j = 0; j < 6; ++j) {
-            gl.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + j,
+            gl.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X$1 + j,
               i,
               texture.internalformat,
               texture.width >> i,
@@ -3229,36 +3322,36 @@ var wrapRenderbuffers = function (gl, extensions, limits, stats, config) {
 };
 
 // We store these constants so that the minifier can inline them
-var GL_FRAMEBUFFER = 0x8D40;
+var GL_FRAMEBUFFER$1 = 0x8D40;
 var GL_RENDERBUFFER$1 = 0x8D41;
 
-var GL_TEXTURE_2D$1 = 0x0DE1;
-var GL_TEXTURE_CUBE_MAP_POSITIVE_X$1 = 0x8515;
+var GL_TEXTURE_2D$2 = 0x0DE1;
+var GL_TEXTURE_CUBE_MAP_POSITIVE_X$2 = 0x8515;
 
-var GL_COLOR_ATTACHMENT0 = 0x8CE0;
+var GL_COLOR_ATTACHMENT0$1 = 0x8CE0;
 var GL_DEPTH_ATTACHMENT = 0x8D00;
 var GL_STENCIL_ATTACHMENT = 0x8D20;
 var GL_DEPTH_STENCIL_ATTACHMENT = 0x821A;
 
-var GL_FRAMEBUFFER_COMPLETE = 0x8CD5;
+var GL_FRAMEBUFFER_COMPLETE$1 = 0x8CD5;
 var GL_HALF_FLOAT_OES$1 = 0x8D61;
-var GL_UNSIGNED_BYTE$4 = 0x1401;
-var GL_FLOAT$3 = 0x1406;
+var GL_UNSIGNED_BYTE$5 = 0x1401;
+var GL_FLOAT$4 = 0x1406;
 
 var GL_RGB$1 = 0x1907;
-var GL_RGBA$1 = 0x1908;
+var GL_RGBA$2 = 0x1908;
 
 // for every texture format, store
 // the number of channels
 var textureFormatChannels = [];
-textureFormatChannels[GL_RGBA$1] = 4;
+textureFormatChannels[GL_RGBA$2] = 4;
 textureFormatChannels[GL_RGB$1] = 3;
 
 // for every texture type, store
 // the size in bytes.
 var textureTypeSizes = [];
-textureTypeSizes[GL_UNSIGNED_BYTE$4] = 1;
-textureTypeSizes[GL_FLOAT$3] = 4;
+textureTypeSizes[GL_UNSIGNED_BYTE$5] = 1;
+textureTypeSizes[GL_FLOAT$4] = 4;
 textureTypeSizes[GL_HALF_FLOAT_OES$1] = 2;
 
 function wrapFBOState (
@@ -3348,14 +3441,14 @@ function wrapFBOState (
     if (attachment) {
       if (attachment.texture) {
         gl.framebufferTexture2D(
-          GL_FRAMEBUFFER,
+          GL_FRAMEBUFFER$1,
           location,
           attachment.target,
           attachment.texture._texture.texture,
           0);
       } else {
         gl.framebufferRenderbuffer(
-          GL_FRAMEBUFFER,
+          GL_FRAMEBUFFER$1,
           location,
           GL_RENDERBUFFER$1,
           attachment.renderbuffer._renderbuffer.renderbuffer);
@@ -3364,7 +3457,7 @@ function wrapFBOState (
   }
 
   function parseAttachment (attachment) {
-    var target = GL_TEXTURE_2D$1;
+    var target = GL_TEXTURE_2D$2;
     var texture = null;
     var renderbuffer = null;
 
@@ -3409,7 +3502,7 @@ function wrapFBOState (
         type: type
       });
       texture._texture.refCount = 0;
-      return new FramebufferAttachment(GL_TEXTURE_2D$1, texture, null)
+      return new FramebufferAttachment(GL_TEXTURE_2D$2, texture, null)
     } else {
       var rb = renderbufferState.create({
         width: width,
@@ -3471,36 +3564,36 @@ function wrapFBOState (
   function updateFramebuffer (framebuffer) {
     var i;
 
-    gl.bindFramebuffer(GL_FRAMEBUFFER, framebuffer.framebuffer);
+    gl.bindFramebuffer(GL_FRAMEBUFFER$1, framebuffer.framebuffer);
     var colorAttachments = framebuffer.colorAttachments;
     for (i = 0; i < colorAttachments.length; ++i) {
-      attach(GL_COLOR_ATTACHMENT0 + i, colorAttachments[i]);
+      attach(GL_COLOR_ATTACHMENT0$1 + i, colorAttachments[i]);
     }
     for (i = colorAttachments.length; i < limits.maxColorAttachments; ++i) {
       gl.framebufferTexture2D(
-        GL_FRAMEBUFFER,
-        GL_COLOR_ATTACHMENT0 + i,
-        GL_TEXTURE_2D$1,
+        GL_FRAMEBUFFER$1,
+        GL_COLOR_ATTACHMENT0$1 + i,
+        GL_TEXTURE_2D$2,
         null,
         0);
     }
 
     gl.framebufferTexture2D(
-      GL_FRAMEBUFFER,
+      GL_FRAMEBUFFER$1,
       GL_DEPTH_STENCIL_ATTACHMENT,
-      GL_TEXTURE_2D$1,
+      GL_TEXTURE_2D$2,
       null,
       0);
     gl.framebufferTexture2D(
-      GL_FRAMEBUFFER,
+      GL_FRAMEBUFFER$1,
       GL_DEPTH_ATTACHMENT,
-      GL_TEXTURE_2D$1,
+      GL_TEXTURE_2D$2,
       null,
       0);
     gl.framebufferTexture2D(
-      GL_FRAMEBUFFER,
+      GL_FRAMEBUFFER$1,
       GL_STENCIL_ATTACHMENT,
-      GL_TEXTURE_2D$1,
+      GL_TEXTURE_2D$2,
       null,
       0);
 
@@ -3509,12 +3602,12 @@ function wrapFBOState (
     attach(GL_DEPTH_STENCIL_ATTACHMENT, framebuffer.depthStencilAttachment);
 
     // Check status code
-    var status = gl.checkFramebufferStatus(GL_FRAMEBUFFER);
-    if (status !== GL_FRAMEBUFFER_COMPLETE) {
+    var status = gl.checkFramebufferStatus(GL_FRAMEBUFFER$1);
+    if (status !== GL_FRAMEBUFFER_COMPLETE$1) {
       
     }
 
-    gl.bindFramebuffer(GL_FRAMEBUFFER, framebufferState.next);
+    gl.bindFramebuffer(GL_FRAMEBUFFER$1, framebufferState.next);
     framebufferState.cur = framebufferState.next;
 
     // FIXME: Clear error code here.  This is a work around for a bug in
@@ -3943,14 +4036,14 @@ function wrapFBOState (
         radius = radius || cube.width;
         
         params.color[i] = {
-          target: GL_TEXTURE_CUBE_MAP_POSITIVE_X$1,
+          target: GL_TEXTURE_CUBE_MAP_POSITIVE_X$2,
           data: colorCubes[i]
         };
       }
 
       for (i = 0; i < 6; ++i) {
         for (var j = 0; j < colorCubes.length; ++j) {
-          params.color[j].target = GL_TEXTURE_CUBE_MAP_POSITIVE_X$1 + i;
+          params.color[j].target = GL_TEXTURE_CUBE_MAP_POSITIVE_X$2 + i;
         }
         // reuse depth-stencil attachments across all cube maps
         if (i > 0) {
@@ -4035,7 +4128,7 @@ function wrapFBOState (
   })
 }
 
-var GL_FLOAT$4 = 5126;
+var GL_FLOAT$5 = 5126;
 
 function AttributeRecord () {
   this.state = 0;
@@ -4048,7 +4141,7 @@ function AttributeRecord () {
   this.buffer = null;
   this.size = 0;
   this.normalized = false;
-  this.type = GL_FLOAT$4;
+  this.type = GL_FLOAT$5;
   this.offset = 0;
   this.stride = 0;
   this.divisor = 0;
@@ -4284,10 +4377,10 @@ function wrapShaderState (gl, stringStore, stats, config) {
   }
 }
 
-var GL_RGBA$2 = 6408;
-var GL_UNSIGNED_BYTE$5 = 5121;
+var GL_RGBA$3 = 6408;
+var GL_UNSIGNED_BYTE$6 = 5121;
 var GL_PACK_ALIGNMENT = 0x0D05;
-var GL_FLOAT$5 = 0x1406; // 5126
+var GL_FLOAT$6 = 0x1406; // 5126
 
 function wrapReadPixels (
   gl,
@@ -4295,18 +4388,23 @@ function wrapReadPixels (
   reglPoll,
   context,
   glAttributes,
-  extensions) {
+  extensions,
+  limits) {
   function readPixelsImpl (input) {
     var type;
     if (framebufferState.next === null) {
       
-      type = GL_UNSIGNED_BYTE$5;
+      type = GL_UNSIGNED_BYTE$6;
     } else {
       
       type = framebufferState.next.colorAttachments[0].texture._texture.type;
 
       if (extensions.oes_texture_float) {
         
+
+        if (type === GL_FLOAT$6) {
+          
+        }
       } else {
         
       }
@@ -4333,9 +4431,9 @@ function wrapReadPixels (
 
     // sanity check input.data
     if (data) {
-      if (type === GL_UNSIGNED_BYTE$5) {
+      if (type === GL_UNSIGNED_BYTE$6) {
         
-      } else if (type === GL_FLOAT$5) {
+      } else if (type === GL_FLOAT$6) {
         
       }
     }
@@ -4351,9 +4449,9 @@ function wrapReadPixels (
 
     // Allocate data
     if (!data) {
-      if (type === GL_UNSIGNED_BYTE$5) {
+      if (type === GL_UNSIGNED_BYTE$6) {
         data = new Uint8Array(size);
-      } else if (type === GL_FLOAT$5) {
+      } else if (type === GL_FLOAT$6) {
         data = data || new Float32Array(size);
       }
     }
@@ -4364,7 +4462,7 @@ function wrapReadPixels (
 
     // Run read pixels
     gl.pixelStorei(GL_PACK_ALIGNMENT, 4);
-    gl.readPixels(x, y, width, height, GL_RGBA$2,
+    gl.readPixels(x, y, width, height, GL_RGBA$3,
                   type,
                   data);
 
@@ -4576,7 +4674,7 @@ function createEnvironment () {
 // "cute" names for vector components
 var CUTE_COMPONENTS = 'xyzw'.split('');
 
-var GL_UNSIGNED_BYTE$6 = 5121;
+var GL_UNSIGNED_BYTE$7 = 5121;
 
 var ATTRIB_STATE_POINTER = 1;
 var ATTRIB_STATE_CONSTANT = 2;
@@ -4662,7 +4760,7 @@ var GL_POLYGON_OFFSET_FILL = 0x8037;
 var GL_SAMPLE_ALPHA_TO_COVERAGE = 0x809E;
 var GL_SAMPLE_COVERAGE = 0x80A0;
 
-var GL_FLOAT$6 = 5126;
+var GL_FLOAT$7 = 5126;
 var GL_FLOAT_VEC2 = 35664;
 var GL_FLOAT_VEC3 = 35665;
 var GL_FLOAT_VEC4 = 35666;
@@ -4695,8 +4793,8 @@ var GL_ONE = 1;
 var GL_FUNC_ADD = 0x8006;
 var GL_LESS = 513;
 
-var GL_FRAMEBUFFER$1 = 0x8D40;
-var GL_COLOR_ATTACHMENT0$1 = 0x8CE0;
+var GL_FRAMEBUFFER$2 = 0x8D40;
+var GL_COLOR_ATTACHMENT0$2 = 0x8CE0;
 
 var blendFuncs = {
   '0': 0,
@@ -4983,7 +5081,7 @@ function reglCore (
         return [0]
       }
       return loop(i, function (j) {
-        return GL_COLOR_ATTACHMENT0$1 + j
+        return GL_COLOR_ATTACHMENT0$2 + j
       })
     });
   }
@@ -6116,7 +6214,7 @@ function reglCore (
           '}else{',
           CUTE_COMPONENTS.map(function (name, i) {
             return (
-              result[name] + '=' + VALUE + '.constant.length>=' + i +
+              result[name] + '=' + VALUE + '.constant.length>' + i +
               '?' + VALUE + '.constant[' + i + ']:0;'
             )
           }).join(''),
@@ -6269,13 +6367,13 @@ function reglCore (
     }
     scope(
       'if(', NEXT, '){',
-      GL, '.bindFramebuffer(', GL_FRAMEBUFFER$1, ',', NEXT, '.framebuffer);');
+      GL, '.bindFramebuffer(', GL_FRAMEBUFFER$2, ',', NEXT, '.framebuffer);');
     if (extDrawBuffers) {
       scope(EXT_DRAW_BUFFERS, '.drawBuffersWEBGL(',
         DRAW_BUFFERS, '[', NEXT, '.colorAttachments.length]);');
     }
     scope('}else{',
-      GL, '.bindFramebuffer(', GL_FRAMEBUFFER$1, ',null);');
+      GL, '.bindFramebuffer(', GL_FRAMEBUFFER$2, ',null);');
     if (extDrawBuffers) {
       scope(EXT_DRAW_BUFFERS, '.drawBuffersWEBGL(', BACK_BUFFER, ');');
     }
@@ -6655,7 +6753,7 @@ function reglCore (
               LOCATION, ',false,', MAT_VALUE, ');');
           } else {
             switch (type) {
-              case GL_FLOAT$6:
+              case GL_FLOAT$7:
                 
                 infix = '1f';
                 break
@@ -6766,7 +6864,7 @@ function reglCore (
           unroll = 4;
           break
 
-        case GL_FLOAT$6:
+        case GL_FLOAT$7:
           infix = '1f';
           break
 
@@ -6905,7 +7003,7 @@ function reglCore (
           PRIMITIVE,
           COUNT,
           ELEMENT_TYPE,
-          OFFSET + '<<((' + ELEMENT_TYPE + '-' + GL_UNSIGNED_BYTE$6 + ')>>1)',
+          OFFSET + '<<((' + ELEMENT_TYPE + '-' + GL_UNSIGNED_BYTE$7 + ')>>1)',
           INSTANCES
         ], ');');
       }
@@ -6936,7 +7034,7 @@ function reglCore (
           PRIMITIVE,
           COUNT,
           ELEMENT_TYPE,
-          OFFSET + '<<((' + ELEMENT_TYPE + '-' + GL_UNSIGNED_BYTE$6 + ')>>1)'
+          OFFSET + '<<((' + ELEMENT_TYPE + '-' + GL_UNSIGNED_BYTE$7 + ')>>1)'
         ] + ');');
       }
 
@@ -7427,7 +7525,6 @@ function reglCore (
       emitPollFramebuffer(env, refresh, null, true);
 
       // Refresh updates all attribute state changes
-      var extInstancing = gl.getExtension('angle_instanced_arrays');
       var INSTANCING;
       if (extInstancing) {
         INSTANCING = env.link(extInstancing);
@@ -7791,7 +7888,7 @@ function wrapREGL (args) {
     framebufferState,
     core.procs.poll,
     contextState,
-    glAttributes, extensions);
+    glAttributes, extensions, limits);
 
   var nextState = core.next;
   var canvas = gl.canvas;
