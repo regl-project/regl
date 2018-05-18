@@ -1,6 +1,7 @@
 var createContext = require('./util/create-context')
 var createREGL = require('../regl')
 var tape = require('tape')
+var ie = require('is-iexplorer')
 
 tape('framebuffer', function (t) {
   var gl = createContext(16, 16)
@@ -95,7 +96,7 @@ tape('framebuffer', function (t) {
     radius: 8
   })
 
-  var testCubeFBO1 = regl.framebufferCube({
+  var testCubeFBO1 = !ie && regl.framebufferCube({
     radius: 5
   })
 
@@ -121,7 +122,7 @@ tape('framebuffer', function (t) {
     }, 'fbo 1 - static')
   })
 
-  if (typeof document !== 'undefined') {
+  if (!ie && typeof document !== 'undefined') {
     for (i = 0; i < 6; i++) {
       setFramebufferStatic({
         framebuffer: testCubeFBO1.faces[i]
@@ -190,7 +191,7 @@ tape('framebuffer', function (t) {
     }, 'fbo 1 - restore')
   })
 
-  if (typeof document !== 'undefined') {
+  if (!ie && typeof document !== 'undefined') {
     for (i = 0; i < 6; i++) {
       setFramebufferStatic({
         framebuffer: testCubeFBO1.faces[i]
@@ -287,7 +288,7 @@ tape('framebuffer', function (t) {
             color: [0, 0, 0, 255]
           }, 'draw buffer nested')
 
-          setFramebufferDynamic({
+          !ie && setFramebufferDynamic({
             framebuffer: testCubeFBO1.faces[(i + 1) % 6],
             color: [0, 0, 0, 0]
           }, function () {
@@ -348,14 +349,14 @@ tape('framebuffer', function (t) {
   })
   gl.finish()
 
-  /* if (typeof document !== 'undefined') {
+  if (!ie && typeof document !== 'undefined') {
     for (i = 0; i < 6; i++) {
       setFramebufferDynamic({
         framebuffer: testCubeFBO1.faces[i],
         color: [0, 1, 1, 1]
       })
     }
-  }*/
+  }
   gl.finish()
 
   setFramebufferDynamic({

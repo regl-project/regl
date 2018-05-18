@@ -1,6 +1,7 @@
 var createContext = require('./util/create-context')
 var createREGL = require('../regl')
 var tape = require('tape')
+var ie = require('is-iexplorer')
 
 tape('framebuffer - depth stencil attachment', function (t) {
   var N = 5
@@ -44,6 +45,12 @@ tape('framebuffer - depth stencil attachment', function (t) {
       z: regl.prop('z')
     },
 
+    depth: {
+      enable: function (context, props) {
+        return !!props.depth
+      }
+    },
+
     stencil: {
       enable: function (context, props) {
         return 'stencil' in props
@@ -75,35 +82,41 @@ tape('framebuffer - depth stencil attachment', function (t) {
         color: [1, 0, 0, 1],
         x: [[-1, 2], [5, 2]],
         z: 0.5,
-        stencil: 1
+        stencil: 1,
+        depth: depth
       })
       drawLine({
         color: [0, 1, 0, 1],
         x: [[1, -1], [1, 5]],
         z: 0.75,
-        stencil: 2
+        stencil: 2,
+        depth: depth
       })
       drawLine({
         color: [0, 0, 1, 1],
         x: [[3, 0], [3, 5]],
         z: 0.25,
-        stencil: 1
+        stencil: 1,
+        depth: depth
       })
     } else {
       drawLine({
         color: [1, 0, 0, 1],
         x: [[-1, 2], [5, 2]],
-        z: 0.5
+        z: 0.5,
+        depth: depth
       })
       drawLine({
         color: [0, 1, 0, 1],
         x: [[1, -1], [1, 5]],
-        z: 0.75
+        z: 0.75,
+        depth: depth
       })
       drawLine({
         color: [0, 0, 1, 1],
         x: [[3, -1], [3, 5]],
-        z: 0.25
+        z: 0.25,
+        depth: depth
       })
     }
 
@@ -165,7 +178,7 @@ tape('framebuffer - depth stencil attachment', function (t) {
   // TODO: rendering to depth-stencil does not seem to work in headless
   // we should look into this.
   if (typeof document !== 'undefined') {
-    testFBOCube('color buffer only, cube fbo, ',
+    !ie && testFBOCube('color buffer only, cube fbo, ',
       regl.framebufferCube({
         radius: N,
         depthStencil: false
@@ -206,7 +219,7 @@ tape('framebuffer - depth stencil attachment', function (t) {
       }),
       true, true)
 
-    testFBOCube('depth-stencil renderbuffer - implicit, cube fbo, ',
+    !ie && testFBOCube('depth-stencil renderbuffer - implicit, cube fbo, ',
       regl.framebufferCube({
         radius: N,
         depthStencil: true
@@ -223,7 +236,7 @@ tape('framebuffer - depth stencil attachment', function (t) {
       }),
       true, true)
 
-    testFBOCube('depth-stencil renderbuffer, cube fbo, ',
+    !ie && testFBOCube('depth-stencil renderbuffer, cube fbo, ',
       regl.framebufferCube({
         radius: N,
         depthStencil: regl.renderbuffer({

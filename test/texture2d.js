@@ -1,6 +1,7 @@
 var createContext = require('./util/create-context')
 var createREGL = require('../regl')
 var tape = require('tape')
+var ie = require('is-iexplorer')
 
 tape('texture 2d', function (t) {
   var gl = createContext(16, 16)
@@ -516,7 +517,7 @@ tape('texture 2d', function (t) {
       shape: [2, 2, 1],
       flipY: true,
       alignment: 4,
-      colorSpace: 'none',
+      colorSpace: ie ? 'browser' : 'none',
       data: new Uint8Array([1, 2, 0, 0, 3, 4, 0, 0])
     }),
     {
@@ -548,7 +549,7 @@ tape('texture 2d', function (t) {
         },
         {
           flipY: false,
-          colorSpace: 'none',
+          colorSpace: ie ? 'browser' : 'none',
           data: new Uint8Array([1, 2, 0, 0, 3, 4, 0, 0])
         },
         {

@@ -46,4 +46,4 @@ function updateDOM () {
   pendingRaf = null
 }
 
-require('../index')
+require('./index')

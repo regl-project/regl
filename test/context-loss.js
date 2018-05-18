@@ -240,6 +240,7 @@ function testContextLoss (t, gl, extLoseContext, onDone) {
 
   function pollTests () {
     if (tests.length === 0) {
+      t.equals(gl.getError(), 0, 'error ok')
       regl.destroy()
       onDone()
       return

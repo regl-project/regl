@@ -1,6 +1,7 @@
 var createContext = require('./util/create-context')
 var createREGL = require('../regl')
 var tape = require('tape')
+var ie = require('is-iexplorer')
 
 var GL_TEXTURE_CUBE_MAP_POSITIVE_X = 0x8515
 
@@ -304,7 +305,7 @@ tape('framebuffer parsing', function (t) {
     },
     'explicit color cube')
 
-  checkPropertiesCube(
+  !ie && checkPropertiesCube(
     regl.framebufferCube({
       radius: 5,
       stencil: true,
@@ -325,7 +326,7 @@ tape('framebuffer parsing', function (t) {
     },
     'radius cube')
 
-  checkPropertiesCube(
+  !ie && checkPropertiesCube(
     regl.framebufferCube(5),
     {
       width: 5,
@@ -362,7 +363,7 @@ tape('framebuffer parsing', function (t) {
     },
     'shape and no depth')
 
-  checkPropertiesCube(
+  !ie && checkPropertiesCube(
     regl.framebufferCube({
       shape: [5, 5],
       depth: false,
@@ -539,7 +540,7 @@ tape('framebuffer parsing', function (t) {
     // if not renderbuffer, also do the test for cubic fbo.
     if (testCase.tex) {
       try {
-        checkPropertiesCube(
+        !ie && checkPropertiesCube(
           regl.framebufferCube(fboArgs),
           {
             width: 10,

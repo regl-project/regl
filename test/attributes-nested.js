@@ -46,8 +46,8 @@ tape('attributes nested', function (t) {
 
   function checkPixels (expected) {
     var actual = regl.read()
-    console.log('actual: ', actual)
-    console.log('expected: ', expected)
+    // console.log('actual: ', actual)
+    // console.log('expected: ', expected)
     for (var i = 0; i < 5 * 5; ++i) {
       if (!!actual[4 * i] !== !!expected[i]) {
         console.log('fail at: ', i)

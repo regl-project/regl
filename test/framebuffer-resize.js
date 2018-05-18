@@ -1,6 +1,7 @@
 var createContext = require('./util/create-context')
 var createREGL = require('../regl')
 var tape = require('tape')
+var ie = require('is-iexplorer')
 
 tape('framebuffer resizing', function (t) {
   var gl = createContext(16, 16)
@@ -69,19 +70,21 @@ tape('framebuffer resizing', function (t) {
   checkFBO(fbo, {width: 2, height: 3})
   t.equals(fbo.color[0], color)
 
-  // Now test .resize for cubic framebuffers.
-  var cubeFbo = regl.framebufferCube(10)
+  if (!ie) {
+    // Now test .resize for cubic framebuffers.
+    var cubeFbo = regl.framebufferCube(10)
 
-  t.equals(cubeFbo.resize(10), cubeFbo, 'cube, resizing to same size does nothing')
-  checkCubeFBO(cubeFbo, {width: 10, height: 10})
+    t.equals(cubeFbo.resize(10), cubeFbo, 'cube, resizing to same size does nothing')
+    checkCubeFBO(cubeFbo, {width: 10, height: 10})
 
-  // this testcase should pass, but right now it does not.
-  // We'll uncomment once issue #152 is resolved.
-  t.equals(cubeFbo.resize(3), cubeFbo, 'cube, resizing returns the right thing')
-  checkCubeFBO(cubeFbo, {width: 3, height: 3})
+    // this testcase should pass, but right now it does not.
+    // We'll uncomment once issue #152 is resolved.
+    t.equals(cubeFbo.resize(3), cubeFbo, 'cube, resizing returns the right thing')
+    checkCubeFBO(cubeFbo, {width: 3, height: 3})
 
-  cubeFbo({radius: 8})
-  checkCubeFBO(cubeFbo, {width: 8, height: 8})
+    cubeFbo({radius: 8})
+    checkCubeFBO(cubeFbo, {width: 8, height: 8})
+  }
 
   // now test .resize for MRT.
   if (regl.hasExtension('webgl_draw_buffers')) {

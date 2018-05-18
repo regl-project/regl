@@ -1,6 +1,7 @@
 var createContext = require('./util/create-context')
 var createREGL = require('../regl')
 var tape = require('tape')
+var safari = require('is-safari')
 
 tape('read pixels', function (t) {
   var W = 5
@@ -92,7 +93,7 @@ tape('read pixels', function (t) {
   })
 
   // now do it for an float fbo
-  if (regl.hasExtension('oes_texture_float')) {
+  if (regl.hasExtension('oes_texture_float') && !safari) {
     fbo = regl.framebuffer({
       width: W,
       height: H,

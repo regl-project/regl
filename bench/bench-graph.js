@@ -201,7 +201,7 @@ function createGraph (json) {
       .append('a')
       .attr('xlink:href',
             function (d) {
-              return 'https://github.com/mikolalysenko/regl/commit/' + d.hash
+              return 'https://github.com/regl-project/regl/commit/' + d.hash
             })
       .attr('target', '"_blank"')
       .append('circle')
@@ -219,7 +219,7 @@ function createGraph (json) {
 
         var desc = d.title + d.description
         var shortenedDesc = desc.length > 70 ? desc.substring(0, 69) + '...' : desc
-        var commitUrl = 'https://github.com/mikolalysenko/regl/commit/' + d.hash
+        var commitUrl = 'https://github.com/regl-project/regl/commit/' + d.hash
 
         var timeDiff = moment(d.date).fromNow()
 

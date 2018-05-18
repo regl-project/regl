@@ -15,14 +15,12 @@ tape('buffer arg parsing', function (t) {
       t.same(bufferProps[prop], props[prop], prefix + '.' + prop)
     })
     gl.bindBuffer(gl.ARRAY_BUFFER, bufferProps.buffer)
-    gl.getBufferParameter(
+    t.same(gl.getBufferParameter(
       gl.ARRAY_BUFFER,
-      gl.BUFFER_SIZE,
-      bufferProps.byteLength)
-    gl.getBufferParameter(
+      gl.BUFFER_SIZE), bufferProps.byteLength, prefix + ' gl.buffer size')
+    t.same(gl.getBufferParameter(
       gl.ARRAY_BUFFER,
-      gl.BUFFER_USAGE,
-      bufferProps.usage)
+      gl.BUFFER_USAGE), bufferProps.usage, prefix + ' gl.buffer usage')
   }
 
   checkProperties(

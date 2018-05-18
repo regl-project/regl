@@ -1,6 +1,7 @@
 var createContext = require('./util/create-context')
 var createREGL = require('../regl')
 var tape = require('tape')
+var ie = require('is-iexplorer')
 
 tape('texture cube', function (t) {
   var gl = createContext(16, 16)
@@ -185,7 +186,7 @@ tape('texture cube', function (t) {
     ]
   })
 
-  checkProperties('cube shape only', regl.cube(5), {
+  !ie && checkProperties('cube shape only', regl.cube(5), {
     width: 5,
     height: 5
   })

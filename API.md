@@ -2627,6 +2627,8 @@ regl exposes info about the WebGL context limits and capabilities via the `regl.
 | `vendor`                  | `gl.VENDOR`                                                         |
 | `version`                 | `gl.VERSION`                                                        |
 | `textureFormats`          | A list of all supported texture formats                             |
+| `readFloat`               | If reading float numbers is supported |
+| `npotTextureCube`         | If non power of two cube texture dimensions are supported |
 
 **Relevant WebGL APIs**
 
@@ -2782,7 +2784,7 @@ By default, `regl` is compiled with a number of assertions, checks and validatio
 
 ### Profiling tips
 
-If your application is running too slow and you want to understand what is going on, regl provides many hooks which you can use to monitor and [debug your performance](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#profiling).
+If your application is running too slow and you want to understand what is going on, regl provides many hooks which you can use to monitor and [debug your performance](https://github.com/regl-project/regl/blob/gh-pages/API.md#profiling).
 
 ### Context loss mitigation
 
@@ -2790,4 +2792,4 @@ A WebGL application must be prepared to lose context at any time.  This is an un
 
 ### Use batch mode
 
-If you want to draw a bunch of copies of the same object, only with different properties, be sure to use [batch mode](https://github.com/mikolalysenko/regl/blob/gh-pages/API.md#batch-rendering).  Commands rendered in batch mode can be optimized by avoiding certain state checks which are required for serial commands.
+If you want to draw a bunch of copies of the same object, only with different properties, be sure to use [batch mode](https://github.com/regl-project/regl/blob/gh-pages/API.md#batch-rendering).  Commands rendered in batch mode can be optimized by avoiding certain state checks which are required for serial commands.
