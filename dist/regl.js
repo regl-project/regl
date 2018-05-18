@@ -1118,7 +1118,7 @@ function createPool () {
 var pool = createPool();
 
 // zero pool for initial zero data
-module.exports.zero = createPool();
+pool.zero = createPool();
 
 var GL_SUBPIXEL_BITS = 0x0D50;
 var GL_RED_BITS = 0x0D52;
