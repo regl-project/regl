@@ -3607,7 +3607,8 @@ function wrapFBOState (
       
     }
 
-    gl.bindFramebuffer(GL_FRAMEBUFFER$1, framebufferState.next);
+
+    gl.bindFramebuffer(GL_FRAMEBUFFER$1, framebufferState.next ? framebufferState.next.framebuffer : null);
     framebufferState.cur = framebufferState.next;
 
     // FIXME: Clear error code here.  This is a work around for a bug in
