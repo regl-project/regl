@@ -32,6 +32,8 @@ var extend = function (base, opts) {
 // a browserify transform for optimized/minified bundles.
 //
 /* globals atob */
+var endl = '\n';
+
 // only used for extracting shader names.  if atob not present, then errors
 // will be slightly crappier
 function decodeB64 (str) {
@@ -283,7 +285,7 @@ function checkShaderError (gl, shader, source, type, command) {
       file.lines.forEach(function (line) {
         if (line.errors.length > 0) {
           push(leftPad(line.number, 4) + '|  ', 'background-color:yellow; font-weight:bold');
-          push(line.line + '\n', 'color:red; background-color:yellow; font-weight:bold');
+          push(line.line + endl, 'color:red; background-color:yellow; font-weight:bold');
 
           // try to guess token
           var offset = 0;
@@ -304,17 +306,17 @@ function checkShaderError (gl, shader, source, type, command) {
             }
 
             push(leftPad('| ', 6));
-            push(leftPad('^^^', offset + 3) + '\n', 'font-weight:bold');
+            push(leftPad('^^^', offset + 3) + endl, 'font-weight:bold');
             push(leftPad('| ', 6));
-            push(message + '\n', 'font-weight:bold');
+            push(message + endl, 'font-weight:bold');
           });
-          push(leftPad('| ', 6) + '\n');
+          push(leftPad('| ', 6) + endl);
         } else {
           push(leftPad(line.number, 4) + '|  ');
-          push(line.line + '\n', 'color:red');
+          push(line.line + endl, 'color:red');
         }
       });
-      if (typeof document !== 'undefined') {
+      if (typeof document !== 'undefined' && !window.chrome) {
         styles[0] = strings.join('%c');
         console.log.apply(console, styles);
       } else {
@@ -336,11 +338,11 @@ function checkLinkError (gl, program, fragShader, vertShader, command) {
       vertParse[0].name + '", and fragment shader "' + fragParse[0].name + '"';
 
     if (typeof document !== 'undefined') {
-      console.log('%c' + header + '\n%c' + errLog,
+      console.log('%c' + header + endl + '%c' + errLog,
         'color:red;text-decoration:underline;font-weight:bold',
         'color:red');
     } else {
-      console.log(header + '\n' + errLog);
+      console.log(header + endl + errLog);
     }
     check.raise(header);
   }
