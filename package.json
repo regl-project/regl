@@ -1,6 +1,6 @@
 {
   "name": "regl",
-  "version": "1.3.6",
+  "version": "1.3.7",
   "description": "regl is a fast functional WebGL framework.",
   "main": "dist/regl.js",
   "types": "dist/regl.d.ts",
