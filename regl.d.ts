@@ -1191,7 +1191,7 @@ declare namespace REGL {
     /* Replaces the area at offset `x` (default: 0), `y` (default: 0), with `data`. */
     subimage(data: REGL.TextureImageData, x?: number, y?: number, level?: number): REGL.Texture2D;
     /* Replaces a subset of the image using creation `options`. */
-    subimage(options: Texture2DOptions): REGL.Texture2D;
+    subimage(options: Texture2DOptions, x?: number, y?: number, level?: number): REGL.Texture2D;
 
     /** Resizes the texture to `radius` x `radius`. */
     resize(radius: number): REGL.Texture2D;
