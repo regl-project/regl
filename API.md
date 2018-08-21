@@ -2467,8 +2467,8 @@ regl({framebuffer: fbo})(() => {
 | Property | Description                                                               | Default                    |
 | -------- | ------------------------------------------------------------------------- | -------------------------- |
 | `data`   | An optional `ArrayBufferView` which gets the result of reading the pixels | `null`                     |
-| `x`      | The x-offset of the upper-left corner of the rectangle in pixels          | `0`                        |
-| `y`      | The y-offset of the upper-left corner of the rectangle in pixels          | `0`                        |
+| `x`      | The x-offset of the lower-left corner of the rectangle in pixels          | `0`                        |
+| `y`      | The y-offset of the lower-left corner of the rectangle in pixels          | `0`                        |
 | `width`  | The width of the rectangle in pixels                                      | Current framebuffer width  |
 | `height` | The height of the rectangle in pixels                                     | Current framebuffer height |
 | `framebuffer` | Sets the framebuffer to read pixels from | The currently bound framebuffer |
