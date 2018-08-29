@@ -190,7 +190,7 @@ const drawNormal = regl({
     }
     visibility *= 1.0 / 8.0;
 
-    gl_FragColor = vec4((ambient * visibility + diffuse), 1.0);
+    gl_FragColor = vec4((ambient + visibility * diffuse), 1.0);
   }`,
   vert: `
   precision mediump float;
