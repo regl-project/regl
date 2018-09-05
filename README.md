@@ -19,6 +19,8 @@
   [![File Size](https://badge-size.herokuapp.com/regl-project/regl/gh-pages/dist/regl.min.js.svg?compression=gzip&style=flat-square)](https://npmcdn.com/regl/dist/regl.min.js)
   [![Downloads](https://img.shields.io/npm/dm/regl.svg?style=flat-square)](https://npmjs.org/package/regl)
   [![Standard](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square)](https://standardjs.com)
+[![Code Quality: Javascript](https://img.shields.io/lgtm/grade/javascript/g/regl-project/regl.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/regl-project/regl/context:javascript)
+[![Total Alerts](https://img.shields.io/lgtm/alerts/g/regl-project/regl.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/regl-project/regl/alerts)
 
 </div>
 
