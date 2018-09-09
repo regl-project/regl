@@ -45,6 +45,7 @@ tape('framebuffer resizing', function (t) {
   }
 
   var fbo = regl.framebuffer(10, 10)
+  var maxSize = regl.limits.maxRenderbufferSize
 
   t.equals(fbo.resize(10), fbo, 'resizing to same size does nothing')
   checkFBO(fbo, {width: 10, height: 10})
@@ -54,6 +55,9 @@ tape('framebuffer resizing', function (t) {
 
   t.equals(fbo.resize(8), fbo, 'resize returned the right thing')
   checkFBO(fbo, {width: 8, height: 8})
+
+  t.equals(fbo.resize(maxSize), fbo, 'resize returned the right thing')
+  checkFBO(fbo, {width: maxSize, height: maxSize})
 
   // reinitialize fbo
 
