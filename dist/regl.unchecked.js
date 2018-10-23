@@ -349,7 +349,7 @@ function createExtensionCache (gl, config) {
     extensions: extensions,
     restore: function () {
       Object.keys(extensions).forEach(function (name) {
-        if (!tryLoadExtension(name)) {
+        if (extensions[name] && !tryLoadExtension(name)) {
           throw new Error('(regl): error restoring extension ' + name)
         }
       });
@@ -3606,7 +3606,6 @@ function wrapFBOState (
     if (status !== GL_FRAMEBUFFER_COMPLETE$1) {
       
     }
-
 
     gl.bindFramebuffer(GL_FRAMEBUFFER$1, framebufferState.next ? framebufferState.next.framebuffer : null);
     framebufferState.cur = framebufferState.next;
