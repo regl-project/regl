@@ -3767,6 +3767,15 @@ function createTextureSet (
   }
 
   function restoreTextures () {
+    for (var i = 0; i < numTexUnits; ++i) {
+      var tex = textureUnits[i];
+      if (tex) {
+        tex.bindCount = 0;
+        tex.unit = -1;
+        textureUnits[i] = null;
+      }
+    }
+    
     values(textureSet).forEach(function (texture) {
       texture.texture = gl.createTexture();
       gl.bindTexture(texture.target, texture.texture);
