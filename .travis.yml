@@ -5,6 +5,7 @@ dist: trusty
 addons:
   apt:
     packages:
+    - x11proto-xf86vidmode-dev
     - mesa-utils
     - xvfb
     - libgl1-mesa-dri
