@@ -5,7 +5,6 @@ dist: trusty
 addons:
   apt:
     packages:
-    - xutils-dev
     - libxi-dev
     - mesa-utils
     - xvfb
