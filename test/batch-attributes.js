@@ -28,7 +28,7 @@ tape('batch mode attributes', function (t) {
       position: regl.prop('position')
     },
 
-    depth: {enable: false, mask: false},
+    depth: { enable: false, mask: false },
 
     primitive: regl.prop('primitive'),
     count: regl.prop('count'),
@@ -101,7 +101,7 @@ tape('batch mode attributes', function (t) {
   ], 'batch points')
 
   checkPixmap([{
-    position: {buffer: regl.buffer([0, 0, 4, 0, 4, 4, -1, 4]), offset: 0},
+    position: { buffer: regl.buffer([0, 0, 4, 0, 4, 4, -1, 4]), offset: 0 },
     primitive: 'line strip',
     count: 4,
     offset: 0,

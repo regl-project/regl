@@ -5,7 +5,7 @@ var tape = require('tape')
 
 tape('instance', function (t) {
   var gl = createContext(6, 6)
-  var regl = createREGL({gl: gl, extensions: ['ANGLE_instanced_arrays']})
+  var regl = createREGL({ gl: gl, extensions: ['ANGLE_instanced_arrays'] })
 
   function checkPixmap (args, expected, remark) {
     var base = {
@@ -38,7 +38,7 @@ tape('instance', function (t) {
         }
       },
 
-      depth: {enable: false, mask: false},
+      depth: { enable: false, mask: false },
       instances: 2
     }
 
@@ -63,7 +63,7 @@ tape('instance', function (t) {
     for (d = 1; d <= 2; d++) {
       base.attributes.offset.divisor = d
       command = regl(base)
-      regl.clear({color: [0, 0, 0, 0]})
+      regl.clear({ color: [0, 0, 0, 0] })
       command()
       runCheck('static, divisor ' + d, d)
     }
@@ -76,8 +76,8 @@ tape('instance', function (t) {
       base.attributes.buffer = regl.prop('offsetBuffer')
 
       command = regl(base)
-      regl.clear({color: [0, 0, 0, 0]})
-      command({offsetBuffer: regl.buffer([[0.0, 0.0], [0.05, 1.0]])})
+      regl.clear({ color: [0, 0, 0, 0] })
+      command({ offsetBuffer: regl.buffer([[0.0, 0.0], [0.05, 1.0]]) })
       runCheck('dynamic, divisor ' + d, d)
     }
   }

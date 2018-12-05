@@ -1,4 +1,4 @@
-/* global alert*/
+/* global alert */
 
 function flatten (data) {
   var result = []

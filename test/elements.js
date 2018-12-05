@@ -35,7 +35,7 @@ tape('elements', function (t) {
       ])
     },
 
-    depth: {enable: false},
+    depth: { enable: false },
 
     elements: elements,
 
@@ -68,7 +68,7 @@ tape('elements', function (t) {
       ])
     },
 
-    depth: {enable: false},
+    depth: { enable: false },
 
     elements: regl.prop('elements')
   })
@@ -124,22 +124,22 @@ tape('elements', function (t) {
   var cases = [
     function () {
       regl.clear({ color: [1, 0, 0, 1] })
-      drawStatic({c: [0, 0, 1, 1]})
+      drawStatic({ c: [0, 0, 1, 1] })
       testPlus('draw - static')
     },
     function () {
       regl.clear({ color: [1, 0, 0, 1] })
-      drawStatic([{c: [0, 0, 1, 1]}])
+      drawStatic([{ c: [0, 0, 1, 1] }])
       testPlus('batch - static')
     },
     function () {
       regl.clear({ color: [1, 0, 0, 1] })
-      drawDynamic({elements: elements})
+      drawDynamic({ elements: elements })
       testPlus('draw - dynamic')
     },
     function () {
       regl.clear({ color: [1, 0, 0, 1] })
-      drawDynamic([{elements: elements}])
+      drawDynamic([{ elements: elements }])
       testPlus('batch - dynamic')
     },
     function () {
@@ -151,17 +151,17 @@ tape('elements', function (t) {
     },
     function () {
       regl.clear({ color: [1, 0, 0, 1] })
-      drawStatic({c: [0, 0, 1, 1]})
+      drawStatic({ c: [0, 0, 1, 1] })
       testBar('draw - static')
     },
     function () {
       regl.clear({ color: [1, 0, 0, 1] })
-      drawDynamic({elements: elements})
+      drawDynamic({ elements: elements })
       testBar('draw - dynamic')
     },
     function () {
       regl.clear({ color: [1, 0, 0, 1] })
-      drawDynamic([{elements: elements}])
+      drawDynamic([{ elements: elements }])
       testBar('draw - dynamic')
     },
     function () {

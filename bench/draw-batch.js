@@ -29,7 +29,7 @@ module.exports = function (regl) {
     },
 
     uniforms: {
-      color: function ({tick}, props, batchId) {
+      color: function ({ tick }, props, batchId) {
         return [
           Math.sin((0.1 + Math.sin(batchId)) * tick + 3.0 * batchId),
           Math.cos(0.02 * tick + 0.1 * batchId),
@@ -37,7 +37,7 @@ module.exports = function (regl) {
           1
         ]
       },
-      angle: function ({tick}) {
+      angle: function ({ tick }) {
         return 0.01 * tick
       },
       offset: regl.prop('offset')

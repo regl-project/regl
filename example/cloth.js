@@ -179,12 +179,12 @@ const drawCloth = regl({
 
   uniforms: {
     view: regl.context('view'),
-    projection: ({viewportWidth, viewportHeight}) =>
+    projection: ({ viewportWidth, viewportHeight }) =>
       mat4.perspective([],
-                       Math.PI / 4,
-                       viewportWidth / viewportHeight,
-                       0.01,
-                       1000),
+        Math.PI / 4,
+        viewportWidth / viewportHeight,
+        0.01,
+        1000),
     texture: regl.prop('clothTexture')
   },
 
@@ -218,7 +218,7 @@ require('resl')({
   },
 
   onDone: ({ clothTexture }) => {
-    regl.frame(({tick}) => {
+    regl.frame(({ tick }) => {
       const deltaTime = 0.017
 
       regl.clear({
@@ -325,7 +325,7 @@ require('resl')({
       }
 
       // the average of the total face normals approximates the vertex normals.
-      for (var i = 0; i < normal.length; i++) {
+      for (i = 0; i < normal.length; i++) {
         vec3.normalize(normal[i], normal[i])
       }
 
@@ -336,7 +336,7 @@ require('resl')({
       positionBuffer.subdata(position)
       normalBuffer.subdata(normal)
 
-      drawCloth({elements, uv, clothTexture})
+      drawCloth({ elements, uv, clothTexture })
       camera.tick()
     })
   }

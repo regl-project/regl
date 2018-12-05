@@ -23,7 +23,6 @@ const FILTER_RADIUS = 1
 camera.rotate([0.0, 0.0], [0.0, -0.4])
 camera.zoom(300.0)
 
-
 // create fbo. We set the size in `regl.frame`
 const fbo = regl.framebuffer({
   color: regl.texture({
@@ -93,12 +92,12 @@ const setupDefault = regl({
   uniforms: {
     // View Projection matrices.
     view: () => camera.view(),
-    projection: ({viewportWidth, viewportHeight}) =>
+    projection: ({ viewportWidth, viewportHeight }) =>
       mat4.perspective([],
-                       Math.PI / 4,
-                       viewportWidth / viewportHeight,
-                       0.01,
-                       3000),
+        Math.PI / 4,
+        viewportWidth / viewportHeight,
+        0.01,
+        3000),
 
     // light settings. These can of course by tweaked to your likings.
     lightDir: [0.39, 0.87, 0.29],
@@ -277,9 +276,9 @@ const drawFboBlurred = regl({
     position: [ -4, -4, 4, -4, 0, 4 ]
   },
   uniforms: {
-    tex: ({count}) => fbo,
-    wRcp: ({viewportWidth}) => 1.0 / viewportWidth,
-    hRcp: ({viewportHeight}) => 1.0 / viewportHeight
+    tex: ({ count }) => fbo,
+    wRcp: ({ viewportWidth }) => 1.0 / viewportWidth,
+    hRcp: ({ viewportHeight }) => 1.0 / viewportHeight
   },
   depth: { enable: false },
   count: 3
@@ -305,7 +304,7 @@ require('resl')({
   },
 
   onDone: ({ heightTexture, rockTexture }) => {
-    regl.frame(({deltaTime, viewportWidth, viewportHeight}) => {
+    regl.frame(({ deltaTime, viewportWidth, viewportHeight }) => {
       /*
         We need to set the FBO size in `regl.frame`, because the viewport size will change if
         the user resizes the browser window.
@@ -322,21 +321,21 @@ require('resl')({
           depth: 1
         })
 
-        drawTerrain({elements, xzPosition, heightTexture, rockTexture})
+        drawTerrain({ elements, xzPosition, heightTexture, rockTexture })
 
         drawBunny([
-          {color: [0.4, 0.2, 0.1], scale: 1.7, position: [0.0, -65.0, 0.0], rotation: [0.0, 0.8, 0.0]},
-          {color: [0.6, 0.2, 0.5], scale: 5.2, position: [30.0, -65.0, -80.0], rotation: [-0.5, 0.0, 0.0]},
-          {color: [0.4, 0.2, 0.6], scale: 1.5, position: [120.0, -55.0, -100.0], rotation: [-0.5, 1.9, 0.0]},
-          {color: [0.7, 0.7, 0.7], scale: 2.2, position: [50.0, -60.0, 0.0], rotation: [-0.2, 0.0, 0.0]},
-          {color: [0.0, 0.2, 0.5], scale: 1.0, position: [-50.0, -60.0, 0.0], rotation: [0.0, 1.2, 0.0]},
-          {color: [0.4, 0.4, 0.0], scale: 1.0, position: [-50.0, -45.0, 40.0], rotation: [0.0, 0, -0.6]},
-          {color: [0.2, 0.2, 0.2], scale: 3.3, position: [100.0, -65.0, 50.0], rotation: [0.0, -0.4, -0.0]},
-          {color: [0.4, 0.1, 0.1], scale: 2.1, position: [70.0, -65.0, 80.0], rotation: [0.1, 0.6, 0.2]},
-          {color: [0.2, 0.5, 0.2], scale: 6.1, position: [-50.0, -70.0, 80.0], rotation: [0.0, -0.9, 0.0]},
-          {color: [0.3, 0.5, 0.5], scale: 4.1, position: [-50.0, -70.0, -60.0], rotation: [0.7, -0.0, 0.0]},
-          {color: [0.4, 0.4, 0.1], scale: 1.8, position: [-80.0, -50.0, -110.0], rotation: [0.0, -0.0, 0.0]},
-          {color: [0.7, 0.4, 0.1], scale: 1.3, position: [-120.0, -85.0, -40.0], rotation: [0.0, +2.1, -0.3]}
+          { color: [0.4, 0.2, 0.1], scale: 1.7, position: [0.0, -65.0, 0.0], rotation: [0.0, 0.8, 0.0] },
+          { color: [0.6, 0.2, 0.5], scale: 5.2, position: [30.0, -65.0, -80.0], rotation: [-0.5, 0.0, 0.0] },
+          { color: [0.4, 0.2, 0.6], scale: 1.5, position: [120.0, -55.0, -100.0], rotation: [-0.5, 1.9, 0.0] },
+          { color: [0.7, 0.7, 0.7], scale: 2.2, position: [50.0, -60.0, 0.0], rotation: [-0.2, 0.0, 0.0] },
+          { color: [0.0, 0.2, 0.5], scale: 1.0, position: [-50.0, -60.0, 0.0], rotation: [0.0, 1.2, 0.0] },
+          { color: [0.4, 0.4, 0.0], scale: 1.0, position: [-50.0, -45.0, 40.0], rotation: [0.0, 0, -0.6] },
+          { color: [0.2, 0.2, 0.2], scale: 3.3, position: [100.0, -65.0, 50.0], rotation: [0.0, -0.4, -0.0] },
+          { color: [0.4, 0.1, 0.1], scale: 2.1, position: [70.0, -65.0, 80.0], rotation: [0.1, 0.6, 0.2] },
+          { color: [0.2, 0.5, 0.2], scale: 6.1, position: [-50.0, -70.0, 80.0], rotation: [0.0, -0.9, 0.0] },
+          { color: [0.3, 0.5, 0.5], scale: 4.1, position: [-50.0, -70.0, -60.0], rotation: [0.7, -0.0, 0.0] },
+          { color: [0.4, 0.4, 0.1], scale: 1.8, position: [-80.0, -50.0, -110.0], rotation: [0.0, -0.0, 0.0] },
+          { color: [0.7, 0.4, 0.1], scale: 1.3, position: [-120.0, -85.0, -40.0], rotation: [0.0, +2.1, -0.3] }
         ])
       })
       // end render to FBO

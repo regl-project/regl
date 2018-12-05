@@ -416,7 +416,7 @@ tape('framebuffer parsing', function (t) {
     format: 'depth stencil'
   })
 
-  var fbo = regl.framebuffer({color: tex, depthStencil: rb})
+  var fbo = regl.framebuffer({ color: tex, depthStencil: rb })
 
   checkProperties(
     fbo,
@@ -439,7 +439,7 @@ tape('framebuffer parsing', function (t) {
 
   var cube = regl.cube(1)
 
-  var cubeFbo = regl.framebufferCube({color: cube, depthStencil: rb})
+  var cubeFbo = regl.framebufferCube({ color: cube, depthStencil: rb })
 
   checkPropertiesCube(
     cubeFbo,
@@ -465,28 +465,28 @@ tape('framebuffer parsing', function (t) {
 
   // next, we will 'colorType' and 'colorFormat'. We test for all possible combinations of these values.
   var testCases = [
-    {tex: true, colorFormat: 'rgba', colorType: 'uint8', expectedFormat: gl.RGBA, expectedType: gl.UNSIGNED_BYTE},
-    {tex: false, colorFormat: 'rgba4', expectedFormat: gl.RGBA4},
-    {tex: false, colorFormat: 'rgb565', expectedFormat: gl.RGB565}
-//    {tex: false, colorFormat: 'rgb5 a1', expectedFormat: gl.RGB5_A1}
+    { tex: true, colorFormat: 'rgba', colorType: 'uint8', expectedFormat: gl.RGBA, expectedType: gl.UNSIGNED_BYTE },
+    { tex: false, colorFormat: 'rgba4', expectedFormat: gl.RGBA4 },
+    { tex: false, colorFormat: 'rgb565', expectedFormat: gl.RGB565 }
+    //    {tex: false, colorFormat: 'rgb5 a1', expectedFormat: gl.RGB5_A1}
   ]
 
   // these test cases should fail.
   var badTestCases = [
-    {colorFormat: 'alpha', colorType: 'uint8'},
-    {colorFormat: 'luminance', colorType: 'uint8'},
-    {colorFormat: 'luminance alpha', colorType: 'uint8'}
+    { colorFormat: 'alpha', colorType: 'uint8' },
+    { colorFormat: 'luminance', colorType: 'uint8' },
+    { colorFormat: 'luminance alpha', colorType: 'uint8' }
   ]
 
   if (regl.hasExtension('oes_texture_float')) {
-    testCases.push({tex: true, colorFormat: 'rgba', colorType: 'float', expectedFormat: gl.RGBA, expectedType: gl.FLOAT})
-    badTestCases.push({colorFormat: 'rgb', colorType: 'float'})
+    testCases.push({ tex: true, colorFormat: 'rgba', colorType: 'float', expectedFormat: gl.RGBA, expectedType: gl.FLOAT })
+    badTestCases.push({ colorFormat: 'rgb', colorType: 'float' })
   }
 
   if (regl.hasExtension('oes_texture_half_float')) {
     var GL_HALF_FLOAT_OES = 0x8D61
-    testCases.push({tex: true, colorFormat: 'rgba', colorType: 'half float', expectedFormat: gl.RGBA, expectedType: GL_HALF_FLOAT_OES})
-    badTestCases.push({colorFormat: 'rgb', colorType: 'half float'})
+    testCases.push({ tex: true, colorFormat: 'rgba', colorType: 'half float', expectedFormat: gl.RGBA, expectedType: GL_HALF_FLOAT_OES })
+    badTestCases.push({ colorFormat: 'rgb', colorType: 'half float' })
   }
 
   // We'll skip testing the renderbuffer formats rgba32f, rgba16f, rgb16f.
@@ -496,7 +496,7 @@ tape('framebuffer parsing', function (t) {
 
   if (regl.hasExtension('ext_srgb')) {
     var GL_SRGB8_ALPHA8_EXT = 0x8C43
-    testCases.push({tex: false, colorFormat: 'srgba', expectedFormat: GL_SRGB8_ALPHA8_EXT})
+    testCases.push({ tex: false, colorFormat: 'srgba', expectedFormat: GL_SRGB8_ALPHA8_EXT })
   }
 
   testCases.forEach(function (testCase, i) {
@@ -567,12 +567,12 @@ tape('framebuffer parsing', function (t) {
 
     t.throws(
       function () { regl.framebuffer(fboArgs) },
-        /\(regl\)/,
+      /\(regl\)/,
       'throws for colorFormat=' + testCase.colorFormat + ' and colorType=' + testCase.colorType)
 
     t.throws(
       function () { regl.framebufferCube(fboArgs) },
-        /\(regl\)/,
+      /\(regl\)/,
       'throws for cubic fbo, colorFormat=' + testCase.colorFormat + ' and colorType=' + testCase.colorType)
   })
 
@@ -590,17 +590,17 @@ tape('framebuffer parsing', function (t) {
     }
 
     for (i = 0; i < regl.limits.maxColorAttachments; i++) {
-      expected.color[i] = {target: gl.TEXTURE_2D, format: gl.RGBA, type: gl.UNSIGNED_BYTE}
+      expected.color[i] = { target: gl.TEXTURE_2D, format: gl.RGBA, type: gl.UNSIGNED_BYTE }
     }
 
     checkProperties(
-      regl.framebuffer({colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments}),
+      regl.framebuffer({ colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments }),
       expected,
       'for MRT with colorCount: ' + regl.limits.maxColorAttachments)
 
     t.throws(
-      function () { regl.framebuffer({colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments + 1}) },
-        /\(regl\)/,
+      function () { regl.framebuffer({ colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments + 1 }) },
+      /\(regl\)/,
       'throws for exceeding regl.limits.maxColorAttachments')
   }
 
@@ -618,16 +618,16 @@ tape('framebuffer parsing', function (t) {
     }
 
     for (i = 0; i < regl.limits.maxColorAttachments; i++) {
-      expected.color[i] = {target: gl.TEXTURE_2D, format: gl.RGBA, type: gl.UNSIGNED_BYTE}
+      expected.color[i] = { target: gl.TEXTURE_2D, format: gl.RGBA, type: gl.UNSIGNED_BYTE }
     }
     checkPropertiesCube(
-      regl.framebufferCube({colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments}),
+      regl.framebufferCube({ colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments }),
       expected,
       'cube, for MRT with colorCount: ' + regl.limits.maxColorAttachments)
 
     t.throws(
-      function () { regl.framebufferCube({colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments + 1}) },
-        /\(regl\)/,
+      function () { regl.framebufferCube({ colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments + 1 }) },
+      /\(regl\)/,
       'throws for exceeding regl.limits.maxColorAttachments on cube')
   }
 
@@ -636,37 +636,40 @@ tape('framebuffer parsing', function (t) {
     t.throws(function () {
       regl.framebuffer({
         color: [
-          regl.texture({type: 'float'}),
-          regl.texture({type: 'uint8'})
-        ]}) },
-             /\(regl\)/,
-             '#1 check color attachments with different bit planes throws')
+          regl.texture({ type: 'float' }),
+          regl.texture({ type: 'uint8' })
+        ] })
+    },
+    /\(regl\)/,
+    '#1 check color attachments with different bit planes throws')
 
     t.throws(function () {
       regl.framebuffer({
         color: [
-          regl.texture({type: 'uint8', format: 'rgb'}),
-          regl.texture({type: 'float', format: 'rgba'})
-        ]}) },
-             /\(regl\)/,
-             '#2 check color attachments with different bit planes throws')
+          regl.texture({ type: 'uint8', format: 'rgb' }),
+          regl.texture({ type: 'float', format: 'rgba' })
+        ] })
+    },
+    /\(regl\)/,
+    '#2 check color attachments with different bit planes throws')
 
     t.throws(function () {
       regl.framebuffer({
         color: [
-          regl.texture({type: 'half float', format: 'rgb'}),
-          regl.texture({type: 'uint8', format: 'rgba'})
-        ]}) },
-             /\(regl\)/,
-             '#3 check color attachments with different bit planes throws')
+          regl.texture({ type: 'half float', format: 'rgb' }),
+          regl.texture({ type: 'uint8', format: 'rgba' })
+        ] })
+    },
+    /\(regl\)/,
+    '#3 check color attachments with different bit planes throws')
 
     var thrown = false
     try {
       regl.framebuffer({
         color: [
-          regl.texture({type: 'float'}),
-          regl.texture({type: 'float'})
-        ]})
+          regl.texture({ type: 'float' }),
+          regl.texture({ type: 'float' })
+        ] })
     } catch (e) {
       thrown = true
     }

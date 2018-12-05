@@ -172,7 +172,7 @@ tape('elements - more', function (t) {
       return regl(extend({
         frag: frag,
         vert: vert,
-        depth: {enable: false},
+        depth: { enable: false },
         attributes: {
           position: positions
         }
@@ -183,7 +183,7 @@ tape('elements - more', function (t) {
       var desc = {
         frag: frag,
         vert: vert,
-        depth: {enable: false},
+        depth: { enable: false },
         attributes: {
           position: positions
         }
@@ -201,7 +201,7 @@ tape('elements - more', function (t) {
         context: data,
         frag: frag,
         vert: vert,
-        depth: {enable: false},
+        depth: { enable: false },
         attributes: {
           position: positions
         }
@@ -218,7 +218,7 @@ tape('elements - more', function (t) {
       var desc = {
         frag: frag,
         vert: vert,
-        depth: {enable: false},
+        depth: { enable: false },
         attributes: {
           position: positions
         }
@@ -239,7 +239,7 @@ tape('elements - more', function (t) {
       var desc = {
         frag: frag,
         vert: vert,
-        depth: {enable: false},
+        depth: { enable: false },
         attributes: {
           position: positions
         }
@@ -259,7 +259,7 @@ tape('elements - more', function (t) {
         context: data,
         frag: frag,
         vert: vert,
-        depth: {enable: false},
+        depth: { enable: false },
         attributes: {
           position: positions
         }

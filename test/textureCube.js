@@ -50,7 +50,7 @@ tape('texture cube', function (t) {
       right: regl.prop('right')
     },
 
-    depth: {enable: false},
+    depth: { enable: false },
 
     count: 3
   })
@@ -205,17 +205,17 @@ tape('texture cube', function (t) {
       [[[0, 0, 0, 255]]],
       [[[255, 255, 0, 255]]],
       [[[0, 255, 255, 255]]]), {
-        width: 1,
-        height: 1,
-        faces: [
-          [255, 0, 0, 255],
-          [0, 255, 0, 255],
-          [0, 0, 255, 255],
-          [0, 0, 0, 255],
-          [255, 255, 0, 255],
-          [0, 255, 255, 255]
-        ]
-      })
+      width: 1,
+      height: 1,
+      faces: [
+        [255, 0, 0, 255],
+        [0, 255, 0, 255],
+        [0, 0, 255, 255],
+        [0, 0, 0, 255],
+        [255, 255, 0, 255],
+        [0, 255, 255, 255]
+      ]
+    })
 
     checkProperties('cube colors - face map', regl.cube({
       faces: [
@@ -456,42 +456,42 @@ tape('texture cube', function (t) {
   // 'format', 'type', 'min', 'mag', 'wrapS, 'wrapT' from the created texture.
 
   var testCases = [
-    {format: 'rgba', type: 'uint8'},
-    {format: 'rgba4', type: 'rgba4'},
-    {format: 'rgb565', type: 'rgb565'},
-    {format: 'rgb5 a1', type: 'rgb5 a1'},
-    {format: 'alpha', type: 'uint8'},
-    {format: 'luminance', type: 'uint8'},
-    {format: 'luminance alpha', type: 'uint8'}
+    { format: 'rgba', type: 'uint8' },
+    { format: 'rgba4', type: 'rgba4' },
+    { format: 'rgb565', type: 'rgb565' },
+    { format: 'rgb5 a1', type: 'rgb5 a1' },
+    { format: 'alpha', type: 'uint8' },
+    { format: 'luminance', type: 'uint8' },
+    { format: 'luminance alpha', type: 'uint8' }
   ]
 
   if (regl.hasExtension('oes_texture_float')) {
-    testCases.push({format: 'rgba', type: 'float32'})
-    testCases.push({format: 'rgb', type: 'float32'})
-    testCases.push({format: 'luminance', type: 'float32'})
-    testCases.push({format: 'luminance alpha', type: 'float32'})
+    testCases.push({ format: 'rgba', type: 'float32' })
+    testCases.push({ format: 'rgb', type: 'float32' })
+    testCases.push({ format: 'luminance', type: 'float32' })
+    testCases.push({ format: 'luminance alpha', type: 'float32' })
   }
 
   if (regl.hasExtension('oes_texture_half_float')) {
-    testCases.push({format: 'rgba', type: 'float16'})
-    testCases.push({format: 'luminance', type: 'float16'})
-    testCases.push({format: 'luminance alpha', type: 'float16'})
+    testCases.push({ format: 'rgba', type: 'float16' })
+    testCases.push({ format: 'luminance', type: 'float16' })
+    testCases.push({ format: 'luminance alpha', type: 'float16' })
   }
 
   if (regl.hasExtension('ext_srgb')) {
-    testCases.push({format: 'srgba', type: 'uint8'})
-    testCases.push({format: 'srgb', type: 'uint8'})
+    testCases.push({ format: 'srgba', type: 'uint8' })
+    testCases.push({ format: 'srgb', type: 'uint8' })
   }
   // TODO: also add compressed formats to 'testCases'
 
-  testCases.push({mag: 'nearest', min: 'nearest'})
-  testCases.push({mag: 'linear', min: 'linear'})
-  testCases.push({mag: 'linear', min: 'linear mipmap linear'})
-  testCases.push({mag: 'linear', min: 'nearest mipmap linear'})
-  testCases.push({mag: 'linear', min: 'linear mipmap nearest'})
-  testCases.push({mag: 'linear', min: 'nearest mipmap nearest'})
+  testCases.push({ mag: 'nearest', min: 'nearest' })
+  testCases.push({ mag: 'linear', min: 'linear' })
+  testCases.push({ mag: 'linear', min: 'linear mipmap linear' })
+  testCases.push({ mag: 'linear', min: 'nearest mipmap linear' })
+  testCases.push({ mag: 'linear', min: 'linear mipmap nearest' })
+  testCases.push({ mag: 'linear', min: 'nearest mipmap nearest' })
 
-  testCases.push({wrapS: 'clamp', wrapT: 'clamp'})
+  testCases.push({ wrapS: 'clamp', wrapT: 'clamp' })
 
   testCases.forEach(function (testCase, i) {
     var name

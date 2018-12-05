@@ -29,7 +29,7 @@ tape('drawing', function (t) {
         position: regl.buffer([0, 0, 4, 0, 4, 4, 0, 4])
       },
 
-      depth: {enable: false, mask: false}
+      depth: { enable: false, mask: false }
     }
 
     Object.keys(args).forEach(function (x) {
@@ -51,15 +51,15 @@ tape('drawing', function (t) {
 
     var command = regl(base)
 
-    regl.clear({color: [0, 0, 0, 0]})
+    regl.clear({ color: [0, 0, 0, 0] })
     command()
     runCheck('static')
 
-    regl.clear({color: [0, 0, 0, 0]})
+    regl.clear({ color: [0, 0, 0, 0] })
     command(1)
     runCheck('batch')
 
-    regl.clear({color: [0, 0, 0, 0]})
+    regl.clear({ color: [0, 0, 0, 0] })
     command(function () {
       regl.draw()
     })

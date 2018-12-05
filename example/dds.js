@@ -91,7 +91,7 @@ require('resl')({
         specular: specular,
         normals: normals,
         diffuse: diffuse,
-        lightPosition: ({tick}) => {
+        lightPosition: ({ tick }) => {
           var t = 0.025 * tick
           return [2.0 * Math.cos(t), 2.0 * Math.sin(t)]
         }

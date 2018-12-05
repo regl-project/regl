@@ -63,7 +63,7 @@ tape('attributes nested', function (t) {
 
     primitive: 'points',
     count: 3,
-    depth: {enable: false},
+    depth: { enable: false },
 
     attributes: {
       position: {
@@ -80,7 +80,7 @@ tape('attributes nested', function (t) {
     color: [0, 0, 0, 0]
   })
 
-  cmd({position: input})
+  cmd({ position: input })
   t.ok(checkPixels(expected), 'dynamic 1-shot draw')
 
   regl.clear({

@@ -56,7 +56,7 @@ const cubeProps = {
   cubeFBO: null
 }
 
-function setupCube ({center, fbo}, block) {
+function setupCube ({ center, fbo }, block) {
   mat4.perspective(
     cubeProps.projection,
     Math.PI / 2.0,
@@ -81,14 +81,14 @@ const cameraProps = {
 
 const setupCamera = regl({
   context: {
-    projection: function ({viewportWidth, viewportHeight}) {
+    projection: function ({ viewportWidth, viewportHeight }) {
       return mat4.perspective(this.projection,
         this.fov,
         viewportWidth / viewportHeight,
         0.01,
         1000.0)
     },
-    view: function (context, {eye, target}) {
+    view: function (context, { eye, target }) {
       return mat4.lookAt(this.view,
         eye,
         target,
@@ -141,7 +141,7 @@ const drawBunny = regl({
     eye: regl.context('eye'),
     tint: regl.prop('tint'),
     envMap: bunnyFBO,
-    model: (context, {position}) => mat4.translate(
+    model: (context, { position }) => mat4.translate(
       [], mat4.identity([]), position)
   }
 })
@@ -176,7 +176,7 @@ const drawTeapot = regl({
     eye: regl.context('eye'),
     tint: regl.prop('tint'),
     envMap: teapotFBO,
-    model: (context, {position}) => mat4.translate([], mat4.identity([]), position)
+    model: (context, { position }) => mat4.translate([], mat4.identity([]), position)
   }
 })
 
@@ -224,7 +224,7 @@ const drawGround = regl({
   count: 6
 })
 
-regl.frame(({tick, drawingBufferWidth, drawingBufferHeight, pixelRatio}) => {
+regl.frame(({ tick, drawingBufferWidth, drawingBufferHeight, pixelRatio }) => {
   const t = 0.01 * tick
 
   const bunnyPos = [
@@ -281,7 +281,7 @@ regl.frame(({tick, drawingBufferWidth, drawingBufferHeight, pixelRatio}) => {
       20.0 * Math.sin(theta)
     ],
     target: [0, 0, 0]
-  }, ({eye, tick}) => {
+  }, ({ eye, tick }) => {
     regl.clear({
       color: [0, 0, 0, 1],
       depth: 1

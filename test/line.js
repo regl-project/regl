@@ -61,7 +61,7 @@ tape('line', function (t) {
             pixels[ptr + 3] === 255) {
           rowGot.push(' ')
         } else if (
-            pixels[ptr] === 0 &&
+          pixels[ptr] === 0 &&
             pixels[ptr + 1] === 0 &&
             pixels[ptr + 2] === 255 &&
             pixels[ptr + 3] === 255) {

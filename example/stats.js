@@ -48,8 +48,8 @@ var boxPosition = [
   [+0.5, +0.5, +0.5], [+0.5, +0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], // positive x face
   [+0.5, +0.5, -0.5], [-0.5, +0.5, -0.5], [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], // negative z face
   [-0.5, +0.5, -0.5], [-0.5, +0.5, +0.5], [-0.5, -0.5, +0.5], [-0.5, -0.5, -0.5], // negative x face.
-  [-0.5, +0.5, -0.5], [+0.5, +0.5, -0.5], [+0.5, +0.5, +0.5], [-0.5, +0.5, +0.5],  // top face
-  [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], [-0.5, -0.5, +0.5]  // bottom face
+  [-0.5, +0.5, -0.5], [+0.5, +0.5, -0.5], [+0.5, +0.5, +0.5], [-0.5, +0.5, +0.5], // top face
+  [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], [-0.5, -0.5, +0.5] // bottom face
 ]
 
 const boxElements = [
@@ -94,12 +94,12 @@ const scope1 = regl({
   uniforms: {
     // View Projection matrices.
     view: () => camera.view(),
-    projection: ({viewportWidth, viewportHeight}) =>
+    projection: ({ viewportWidth, viewportHeight }) =>
       mat4.perspective([],
-                       Math.PI / 4,
-                       viewportWidth / viewportHeight,
-                       0.01,
-                       2000),
+        Math.PI / 4,
+        viewportWidth / viewportHeight,
+        0.01,
+        2000),
 
     // light settings. These can of course by tweaked to your likings.
     lightDir: [0.39, 0.87, 0.29],
@@ -224,7 +224,7 @@ regl.frame(() => {
     var SPACING = -100
     for (x = 0; x < X_COUNT; x++) {
       for (z = 0; z < Z_COUNT; z++) {
-        boxes.push({scale: 50.7, position: [-200.0 + x * SPACING, 40, 200 + z * SPACING]})
+        boxes.push({ scale: 50.7, position: [-200.0 + x * SPACING, 40, 200 + z * SPACING] })
       }
     }
 
@@ -237,12 +237,12 @@ regl.frame(() => {
     var bunnies = []
     for (x = 0; x < X_COUNT; x++) {
       for (z = 0; z < Z_COUNT; z++) {
-        bunnies.push({scale: 5.2, position: [x * SPACING, 3.3, -80.0 + z * SPACING]})
+        bunnies.push({ scale: 5.2, position: [x * SPACING, 3.3, -80.0 + z * SPACING] })
       }
     }
 
     scope3({}, () => {
-      drawPlane({scale: 2000.0, position: [0.0, 0.0, 0.0]})
+      drawPlane({ scale: 2000.0, position: [0.0, 0.0, 0.0] })
       drawBunny(bunnies)
     })
 

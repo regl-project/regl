@@ -42,7 +42,7 @@ tape('dynamic cube fbo', function (t) {
     uniforms: {
       color: regl.prop('color')
     },
-    depth: {enable: false},
+    depth: { enable: false },
     count: 3
   })
 
@@ -56,7 +56,7 @@ tape('dynamic cube fbo', function (t) {
 
   function checkCubeMap (color, remark) {
     for (var i = 0; i < 6; i++) {
-      setFramebufferStatic({framebuffer: testCubeFBO1.faces[i]}, function () {
+      setFramebufferStatic({ framebuffer: testCubeFBO1.faces[i] }, function () {
         var pixels = regl.read()
         t.same(
           [pixels[0], pixels[1], pixels[2], pixels[3]],
@@ -76,8 +76,8 @@ tape('dynamic cube fbo', function (t) {
   checkCubeMap([0, 255, 255, 255], 'dynamic')
 
   for (i = 0; i < 6; ++i) {
-    setFramebufferStatic({framebuffer: testCubeFBO1.faces[i]}, function () {
-      regl.clear({color: [255, 0, 255, 255]})
+    setFramebufferStatic({ framebuffer: testCubeFBO1.faces[i] }, function () {
+      regl.clear({ color: [255, 0, 255, 255] })
     })
   }
   checkCubeMap([255, 0, 255, 255], 'static')

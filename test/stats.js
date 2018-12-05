@@ -12,7 +12,7 @@ tape('test regl.stats', function (t) {
     //
     // Begin Test stats.bufferCount
     //
-    regl = createREGL({gl: gl, profile: true})
+    regl = createREGL({ gl: gl, profile: true })
     var stats = regl.stats
 
     t.equals(stats.bufferCount, 0, 'stats.bufferCount==0 at start')
@@ -67,8 +67,8 @@ tape('test regl.stats', function (t) {
 
     t.equals(stats.framebufferCount, 0, 'stats.framebufferCount==0 at start')
 
-    regl.framebuffer({radius: 5})
-    regl.framebuffer({width: 2, height: 4, depth: false, stencil: false})
+    regl.framebuffer({ radius: 5 })
+    regl.framebuffer({ width: 2, height: 4, depth: false, stencil: false })
 
     t.equals(stats.framebufferCount, 2, 'stats.framebufferCount==2 after creating 2 buffers')
 
@@ -151,7 +151,7 @@ tape('test regl.stats', function (t) {
     })
 
     for (var i = 0; i < 30; i++) {
-      draw3({frag: frag, vert: vert})
+      draw3({ frag: frag, vert: vert })
     }
 
     t.equals(stats.shaderCount, 1, 'stats.shaderCount==1, after calling dynamic drawCommand several times')
@@ -170,7 +170,7 @@ tape('test regl.stats', function (t) {
 
     t.equals(stats.textureCount, 0, 'stats.textureCount==0 at start')
 
-    var tex = regl.texture({shape: [16, 16]})
+    var tex = regl.texture({ shape: [16, 16] })
     tex(5)
     regl.texture({
       width: 2,
@@ -234,8 +234,8 @@ tape('test regl.stats', function (t) {
     t.equals(stats.renderbufferCount, 0, 'stats.renderbufferCount==0 at start')
 
     regl.renderbuffer()
-    var rb = regl.renderbuffer({width: 16, height: 16, format: 'rgba4'})
-    regl.renderbuffer({width: 2, height: 2, format: 'depth'})
+    var rb = regl.renderbuffer({ width: 16, height: 16, format: 'rgba4' })
+    regl.renderbuffer({ width: 2, height: 2, format: 'depth' })
     rb(3, 3)
     t.equals(stats.renderbufferCount, 3, 'stats.renderbufferCount==3 after creating 3 renderbuffers')
 
@@ -266,42 +266,42 @@ tape('test regl.stats', function (t) {
     stats = regl.stats
 
     var testCases = [
-      {format: 'alpha', type: 'uint8', expected: 256},
-      {format: 'luminance', type: 'uint8', expected: 256},
-      {format: 'luminance alpha', type: 'uint8', expected: 512},
-      {format: 'rgb', type: 'uint8', expected: 768},
-      {format: 'rgba', type: 'uint8', expected: 1024},
-      {format: 'rgba4', type: 'rgba4', expected: 512},
-      {format: 'rgb5 a1', type: 'rgb5 a1', expected: 512},
-      {format: 'rgb565', type: 'rgb565', expected: 512}
+      { format: 'alpha', type: 'uint8', expected: 256 },
+      { format: 'luminance', type: 'uint8', expected: 256 },
+      { format: 'luminance alpha', type: 'uint8', expected: 512 },
+      { format: 'rgb', type: 'uint8', expected: 768 },
+      { format: 'rgba', type: 'uint8', expected: 1024 },
+      { format: 'rgba4', type: 'rgba4', expected: 512 },
+      { format: 'rgb5 a1', type: 'rgb5 a1', expected: 512 },
+      { format: 'rgb565', type: 'rgb565', expected: 512 }
     ]
 
     if (regl.hasExtension('ext_srgb')) {
-      testCases.push({format: 'srgba', type: 'uint8', expected: 1024})
-      testCases.push({format: 'srgb', type: 'uint8', expected: 768})
+      testCases.push({ format: 'srgba', type: 'uint8', expected: 1024 })
+      testCases.push({ format: 'srgb', type: 'uint8', expected: 768 })
     }
 
     if (regl.hasExtension('oes_texture_float')) {
-      testCases.push({format: 'alpha', type: 'float', expected: 1024})
-      testCases.push({format: 'luminance', type: 'float', expected: 1024})
-      testCases.push({format: 'luminance alpha', type: 'float', expected: 2048})
-      testCases.push({format: 'rgb', type: 'float', expected: 3072})
-      testCases.push({format: 'rgba', type: 'float', expected: 4096})
+      testCases.push({ format: 'alpha', type: 'float', expected: 1024 })
+      testCases.push({ format: 'luminance', type: 'float', expected: 1024 })
+      testCases.push({ format: 'luminance alpha', type: 'float', expected: 2048 })
+      testCases.push({ format: 'rgb', type: 'float', expected: 3072 })
+      testCases.push({ format: 'rgba', type: 'float', expected: 4096 })
       if (regl.hasExtension('ext_srgb')) {
-        testCases.push({format: 'srgb', type: 'float', expected: 3072})
-        testCases.push({format: 'srgba', type: 'float', expected: 4096})
+        testCases.push({ format: 'srgb', type: 'float', expected: 3072 })
+        testCases.push({ format: 'srgba', type: 'float', expected: 4096 })
       }
     }
 
     if (regl.hasExtension('oes_texture_half_float')) {
-      testCases.push({format: 'alpha', type: 'half float', expected: 512})
-      testCases.push({format: 'luminance', type: 'half float', expected: 512})
-      testCases.push({format: 'luminance alpha', type: 'half float', expected: 1024})
-      testCases.push({format: 'rgb', type: 'half float', expected: 1536})
-      testCases.push({format: 'rgba', type: 'half float', expected: 2048})
+      testCases.push({ format: 'alpha', type: 'half float', expected: 512 })
+      testCases.push({ format: 'luminance', type: 'half float', expected: 512 })
+      testCases.push({ format: 'luminance alpha', type: 'half float', expected: 1024 })
+      testCases.push({ format: 'rgb', type: 'half float', expected: 1536 })
+      testCases.push({ format: 'rgba', type: 'half float', expected: 2048 })
       if (regl.hasExtension('ext_srgb')) {
-        testCases.push({format: 'srgb', type: 'half float', expected: 1536})
-        testCases.push({format: 'srgba', type: 'half float', expected: 2048})
+        testCases.push({ format: 'srgb', type: 'half float', expected: 1536 })
+        testCases.push({ format: 'srgba', type: 'half float', expected: 2048 })
       }
     }
 
@@ -322,39 +322,39 @@ tape('test regl.stats', function (t) {
     }
 
     if (regl.hasExtension('webgl_compressed_texture_s3tc')) {
-      testCases.push({format: 'rgb s3tc dxt1', type: 'uint8', expected: 128, data: getZeros(128)})
-      testCases.push({format: 'rgba s3tc dxt1', type: 'uint8', expected: 128, data: getZeros(128)})
-      testCases.push({format: 'rgba s3tc dxt3', type: 'uint8', expected: 256, data: getZeros(256)})
-      testCases.push({format: 'rgba s3tc dxt5', type: 'uint8', expected: 256, data: getZeros(256)})
+      testCases.push({ format: 'rgb s3tc dxt1', type: 'uint8', expected: 128, data: getZeros(128) })
+      testCases.push({ format: 'rgba s3tc dxt1', type: 'uint8', expected: 128, data: getZeros(128) })
+      testCases.push({ format: 'rgba s3tc dxt3', type: 'uint8', expected: 256, data: getZeros(256) })
+      testCases.push({ format: 'rgba s3tc dxt5', type: 'uint8', expected: 256, data: getZeros(256) })
     }
 
     if (regl.hasExtension('webgl_compressed_texture_atc')) {
-      testCases.push({format: 'rgb atc', type: 'uint8', expected: 128, data: getZeros(128)})
-      testCases.push({format: 'rgba atc explicit alpha', type: 'uint8', expected: 256, data: getZeros(256)})
-      testCases.push({format: 'rgba atc interpolated alpha', type: 'uint8', expected: 256, data: getZeros(256)})
+      testCases.push({ format: 'rgb atc', type: 'uint8', expected: 128, data: getZeros(128) })
+      testCases.push({ format: 'rgba atc explicit alpha', type: 'uint8', expected: 256, data: getZeros(256) })
+      testCases.push({ format: 'rgba atc interpolated alpha', type: 'uint8', expected: 256, data: getZeros(256) })
     }
 
     if (regl.hasExtension('webgl_compressed_texture_pvrtc')) {
-      testCases.push({format: 'rgb pvrtc 4bppv1', type: 'uint8', expected: 128, data: getZeros(128)})
-      testCases.push({format: 'rgb pvrtc 2bppv1', type: 'uint8', expected: 64, data: getZeros(64)})
-      testCases.push({format: 'rgba pvrtc 4bppv1', type: 'uint8', expected: 128, data: getZeros(128)})
-      testCases.push({format: 'rgba pvrtc 2bppv1', type: 'uint8', expected: 64, data: getZeros(64)})
+      testCases.push({ format: 'rgb pvrtc 4bppv1', type: 'uint8', expected: 128, data: getZeros(128) })
+      testCases.push({ format: 'rgb pvrtc 2bppv1', type: 'uint8', expected: 64, data: getZeros(64) })
+      testCases.push({ format: 'rgba pvrtc 4bppv1', type: 'uint8', expected: 128, data: getZeros(128) })
+      testCases.push({ format: 'rgba pvrtc 2bppv1', type: 'uint8', expected: 64, data: getZeros(64) })
     }
 
     if (regl.hasExtension('webgl_compressed_texture_etc1')) {
-      testCases.push({format: 'rgb etc1', type: 'uint8', expected: 128, data: getZeros(128)})
+      testCases.push({ format: 'rgb etc1', type: 'uint8', expected: 128, data: getZeros(128) })
     }
 
     var totalSize = 0
     var textures = []
     testCases.forEach(function (testCase, i) {
-      var arg = {shape: [16, 16], type: testCase.type, format: testCase.format}
+      var arg = { shape: [16, 16], type: testCase.type, format: testCase.format }
       if (typeof testCase.data !== 'undefined') {
         arg.data = testCase.data
       }
       var tex = regl.texture(arg)
 
-      arg = {radius: 16, type: testCase.type, format: testCase.format}
+      arg = { radius: 16, type: testCase.type, format: testCase.format }
       if (typeof testCase.data !== 'undefined') {
         arg.faces = [
           testCase.data,
@@ -368,10 +368,10 @@ tape('test regl.stats', function (t) {
       var c = regl.cube(arg)
 
       t.equals(tex.stats.size, testCase.expected,
-               'correct texture size' +
+        'correct texture size' +
                ' for type \'' + testCase.type + '\' and format \'' + testCase.format + '\'')
       t.equals(c.stats.size, testCase.expected * 6,
-               'correct cube map size' +
+        'correct cube map size' +
                ' for type \'' + testCase.type + '\' and format \'' + testCase.format + '\'')
 
       totalSize += testCase.expected // texture size
@@ -389,34 +389,36 @@ tape('test regl.stats', function (t) {
       tex.destroy()
 
       t.equals(stats.getTotalTextureSize(), totalSize,
-               'stats.getTotalTextureSize() after destroy() texture ' + i)
+        'stats.getTotalTextureSize() after destroy() texture ' + i)
     })
     regl.destroy()
 
     //
     // test texture.stats.size and cube.stats.size for mipmaps.
     //
-    regl = createREGL({gl: gl, profile: true})
+    regl = createREGL({ gl: gl, profile: true })
     stats = regl.stats
 
-    var arg = {shape: [16, 16], type: 'uint8', format: 'rgba', mipmap: true}
+    var arg = { shape: [16, 16], type: 'uint8', format: 'rgba', mipmap: true }
     tex = regl.texture(arg)
     t.equals(tex.stats.size, (16 * 16 + 8 * 8 + 4 * 4 + 2 * 2 + 1 * 1) * 4,
-             'correct mipmapped texture size')
+      'correct mipmapped texture size')
 
     var c = regl.cube(arg)
     t.equals(c.stats.size, (16 * 16 + 8 * 8 + 4 * 4 + 2 * 2 + 1 * 1) * 4 * 6,
-             'correct mipmapped cube map size')
+      'correct mipmapped cube map size')
     regl.destroy()
 
     //
     // test texture.stats.size and cube.stats.size after texture.resize()
     //
-    regl = createREGL({gl: gl, profile: true, optionalExtensions: [
-      'oes_texture_float',
-      'oes_texture_half_float',
-      'ext_srgb',
-      'webgl_depth_texture']})
+    regl = createREGL({ gl: gl,
+      profile: true,
+      optionalExtensions: [
+        'oes_texture_float',
+        'oes_texture_half_float',
+        'ext_srgb',
+        'webgl_depth_texture'] })
     stats = regl.stats
 
     testCases.forEach(function (testCase, i) {
@@ -428,19 +430,19 @@ tape('test regl.stats', function (t) {
         return
       }
 
-      var tex = regl.texture({shape: [16, 16], type: testCase.type, format: testCase.format})
+      var tex = regl.texture({ shape: [16, 16], type: testCase.type, format: testCase.format })
       tex.resize(8, 8)
 
-      var c = regl.cube({radius: 16, type: testCase.type, format: testCase.format})
+      var c = regl.cube({ radius: 16, type: testCase.type, format: testCase.format })
       c.resize(8, 8)
 
       // divide by four, since we resized.
       t.equals(tex.stats.size, (testCase.expected / 4),
-               'correct resized texture size' +
+        'correct resized texture size' +
                ' for type \'' + testCase.type + '\' and format \'' + testCase.format + '\'')
 
       t.equals(c.stats.size, ((testCase.expected * 6) / 4),
-               'correct resized cube map size' +
+        'correct resized cube map size' +
                ' for type \'' + testCase.type + '\' and format \'' + testCase.format + '\'')
     })
     regl.destroy()
@@ -465,24 +467,24 @@ tape('test regl.stats', function (t) {
     stats = regl.stats
 
     var bufferTestCases = [
-      {type: 'int8', expected: 256},
-      {type: 'int16', expected: 512},
-      {type: 'int32', expected: 1024},
+      { type: 'int8', expected: 256 },
+      { type: 'int16', expected: 512 },
+      { type: 'int32', expected: 1024 },
 
-      {type: 'uint8', expected: 256},
-      {type: 'uint16', expected: 512},
-      {type: 'uint32', expected: 1024},
+      { type: 'uint8', expected: 256 },
+      { type: 'uint16', expected: 512 },
+      { type: 'uint32', expected: 1024 },
 
-      {type: 'float', expected: 1024}
+      { type: 'float', expected: 1024 }
     ]
 
     totalSize = 0
     var buffers = []
     bufferTestCases.forEach(function (testCase, i) {
-      var buf = regl.buffer({length: 256, type: testCase.type})
+      var buf = regl.buffer({ length: 256, type: testCase.type })
 
       t.equals(buf.stats.size, testCase.expected,
-               'correct buffer size' +
+        'correct buffer size' +
                ' for type \'' + testCase.type)
 
       totalSize += testCase.expected
@@ -498,7 +500,7 @@ tape('test regl.stats', function (t) {
       buf.destroy()
 
       t.equals(stats.getTotalBufferSize(), totalSize,
-               'stats.getTotalBufferSize() after destroy() buffer ' + i)
+        'stats.getTotalBufferSize() after destroy() buffer ' + i)
     })
     regl.destroy()
 
@@ -583,7 +585,7 @@ tape('test regl.stats', function (t) {
     // test stats.getMaxUniformsCount()
     // test stats.getMaxAttributesCount()
     //
-    regl = createREGL({gl: gl, profile: true})
+    regl = createREGL({ gl: gl, profile: true })
     stats = regl.stats
 
     regl({
@@ -630,14 +632,14 @@ tape('test regl.stats', function (t) {
     regl.destroy()
 
     t.equals(stats.getMaxUniformsCount(), 0,
-             'stats.getMaxUniformsCount()==0 after regl.destroy()')
+      'stats.getMaxUniformsCount()==0 after regl.destroy()')
     t.equals(stats.getMaxAttributesCount(), 0,
-             'stats.getMaxAttributesCount()==0 after regl.destroy()')
+      'stats.getMaxAttributesCount()==0 after regl.destroy()')
 
     //
     // Test stats.maxTextureUnits
     //
-    regl = createREGL({gl: gl, profile: true})
+    regl = createREGL({ gl: gl, profile: true })
     stats = regl.stats
 
     var tex0 = regl.texture({})

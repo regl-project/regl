@@ -24,7 +24,7 @@ module.exports = function (regl) {
     },
 
     uniforms: {
-      angle: function ({tick}) {
+      angle: function ({ tick }) {
         return 0.01 * tick
       }
     },
@@ -35,6 +35,6 @@ module.exports = function (regl) {
   })
 
   return function () {
-    draw({position: [-1, 0, 0, -1, 1, 1]})
+    draw({ position: [-1, 0, 0, -1, 1, 1] })
   }
 }

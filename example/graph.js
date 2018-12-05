@@ -142,7 +142,7 @@ const splatVerts = regl({
     },
     equation: 'add'
   },
-  depth: {enable: false, mask: false},
+  depth: { enable: false, mask: false },
   primitive: 'points',
   count: VERTEX_COUNT,
   elements: null
@@ -187,7 +187,7 @@ const blurPass = regl({
       return result
     }
   },
-  depth: {enable: false, mask: false},
+  depth: { enable: false, mask: false },
   count: 3
 })
 
@@ -225,7 +225,7 @@ const gradPass = regl({
       return [1 / props.src.width, 1 / props.src.height]
     }
   },
-  depth: {enable: false, mask: false},
+  depth: { enable: false, mask: false },
   count: 3
 })
 
@@ -281,7 +281,7 @@ const applySpringForces = regl({
     },
     equation: 'add'
   },
-  depth: {enable: false, mask: false},
+  depth: { enable: false, mask: false },
   count: ARCS.length,
   primitive: 'points'
 })
@@ -308,7 +308,7 @@ const integrateVerts = regl({
   varying vec2 id;
 
   float rnd (vec2 co) {
-  	return fract(sin(t*0.1+dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
+    return fract(sin(t*0.1+dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
   }
 
   void main () {
@@ -327,7 +327,7 @@ const integrateVerts = regl({
   uniforms: {
     vertexState: regl.prop('src'),
     field: regl.prop('field'),
-    temperature: ({tick}) => 1.0 / (0.5 * tick + 20.0),
+    temperature: ({ tick }) => 1.0 / (0.5 * tick + 20.0),
     t: regl.context('tick')
   },
   count: 3
@@ -354,9 +354,9 @@ const renderPoints = regl({
     id: VERTEX_ID_BUFFER
   },
   uniforms: {
-    vertexState: ({tick}) => VERTEX_STATE[tick % 2]
+    vertexState: ({ tick }) => VERTEX_STATE[tick % 2]
   },
-  depth: {enable: false, mask: false},
+  depth: { enable: false, mask: false },
   primitive: 'points',
   count: VERTEX_COUNT,
   elements: null
@@ -401,10 +401,10 @@ const renderEdges = regl({
     arcDir: ARCS.map((arc, i) => i % 2)
   },
   uniforms: {
-    vertexState: ({tick}) => VERTEX_STATE[tick % 2],
+    vertexState: ({ tick }) => VERTEX_STATE[tick % 2],
     dir: regl.prop('dir')
   },
-  depth: {enable: false, mask: false},
+  depth: { enable: false, mask: false },
   count: ARCS.length,
   primitive: 'lines',
   lineWidth: lineWidth
@@ -427,7 +427,7 @@ const splatMouse = regl({
   }`,
   attributes: { p: [0] },
   uniforms: {
-    mouse: ({drawingBufferWidth, drawingBufferHeight, pixelRatio}) => [
+    mouse: ({ drawingBufferWidth, drawingBufferHeight, pixelRatio }) => [
       2.0 * pixelRatio * mouse.x / drawingBufferWidth - 1.0,
       1.0 - 2.0 * pixelRatio * mouse.y / drawingBufferHeight
     ],
@@ -438,7 +438,7 @@ const splatMouse = regl({
 })
 
 // Main integration loop
-function step ({tick}) {
+function step ({ tick }) {
   setFBO({ framebuffer: FIELDS[0] }, () => {
     regl.clear({ color: [0, 0, 0, 1] })
     splatMouse()
@@ -473,6 +473,6 @@ regl.frame((context) => {
   regl.clear({
     color: [1, 1, 1, 1]
   })
-  renderEdges([{dir: 0}, {dir: 1}])
+  renderEdges([{ dir: 0 }, { dir: 1 }])
   renderPoints()
 })

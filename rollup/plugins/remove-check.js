@@ -9,14 +9,12 @@ module.exports = function removeCheck () {
             case 'CallExpression':
               if (isCheckCall(node.callee)) {
                 node.update('')
-                return
               }
               break
             case 'ImportDeclaration':
               if (node.specifiers.length === 1 &&
                   isCheckImport(node.specifiers[0])) {
                 node.update('')
-                return
               }
               break
           }

@@ -128,60 +128,60 @@ var hitAudioBuffers = []
 
 hitAudioBuffers[0] =
     createAudioBuffer(0.15,
-                      (channelData, frameCount) => {
-                        var current = volume
-                        for (var i = 0; i < frameCount; i++) {
-                          if (i % 100 === 0) {
-                            current *= -1.0
-                          }
-                          channelData[i] = current * (1.0 - i / frameCount)
-                        }
-                      })
+      (channelData, frameCount) => {
+        var current = volume
+        for (var i = 0; i < frameCount; i++) {
+          if (i % 100 === 0) {
+            current *= -1.0
+          }
+          channelData[i] = current * (1.0 - i / frameCount)
+        }
+      })
 
 hitAudioBuffers[1] =
     createAudioBuffer(0.15,
-                      (channelData, frameCount) => {
-                        var current = volume
-                        for (var i = 0; i < frameCount; i++) {
-                          if (i % 150 === 0) {
-                            current *= -1.0
-                          }
-                          channelData[i] = current * (1.0 - i / frameCount)
-                        }
-                      })
+      (channelData, frameCount) => {
+        var current = volume
+        for (var i = 0; i < frameCount; i++) {
+          if (i % 150 === 0) {
+            current *= -1.0
+          }
+          channelData[i] = current * (1.0 - i / frameCount)
+        }
+      })
 
 // We play this sound when the player wins.
 // It is just a square wave, with some simple frequency modulation.
 var winAudioBuffer =
     createAudioBuffer(0.4,
-                      (channelData, frameCount) => {
-                        var current = volume
-                        var period = 50
-                        for (var i = 0; i < frameCount; i++) {
-                          if (i % period === 0) {
-                            current *= -1.0
-                          }
-                          if (i % 600 === 0) {
-                            period -= 2
-                          }
-                          var a = (i / frameCount)
-                          channelData[i] = current * (1.0 - a)
-                        }
-                      })
+      (channelData, frameCount) => {
+        var current = volume
+        var period = 50
+        for (var i = 0; i < frameCount; i++) {
+          if (i % period === 0) {
+            current *= -1.0
+          }
+          if (i % 600 === 0) {
+            period -= 2
+          }
+          var a = (i / frameCount)
+          channelData[i] = current * (1.0 - a)
+        }
+      })
 
 // We play this sound when the player loses.
 // It is just white noise.
 var loseAudioBuffer =
     createAudioBuffer(0.5,
-                      (channelData, frameCount) => {
-                        var current = getRand(-volume, +volume)
-                        for (var i = 0; i < frameCount; i++) {
-                          if (i % 150 === 0) {
-                            current = getRand(-volume, +volume)
-                          }
-                          channelData[i] = current * (1.0 - i / frameCount)
-                        }
-                      })
+      (channelData, frameCount) => {
+        var current = getRand(-volume, +volume)
+        for (var i = 0; i < frameCount; i++) {
+          if (i % 150 === 0) {
+            current = getRand(-volume, +volume)
+          }
+          channelData[i] = current * (1.0 - i / frameCount)
+        }
+      })
 
 // compute the reflection vector for an incident vector `v` against
 // a surface with the normal `n`.
@@ -252,7 +252,7 @@ const drawAabb = regl({
 // initialize game.
 resetBall(true)
 
-regl.frame(function ({viewportWidth, viewportHeight, pixelRatio}) {
+regl.frame(function ({ viewportWidth, viewportHeight, pixelRatio }) {
   regl.clear({
     color: [0, 0, 0, 1]
   })

@@ -14,7 +14,7 @@ var gl = c.getContext('webgl', {
 })
 
 const fit = require('canvas-fit')
-const regl = require('../regl')({gl: gl})
+const regl = require('../regl')({ gl: gl })
 const mat4 = require('gl-mat4')
 window.addEventListener('resize', fit(webglCanvas), false)
 const bunny = require('bunny')
@@ -44,8 +44,8 @@ var boxPosition = [
   [+0.5, +0.5, +0.5], [+0.5, +0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], // positive x face
   [+0.5, +0.5, -0.5], [-0.5, +0.5, -0.5], [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], // negative z face
   [-0.5, +0.5, -0.5], [-0.5, +0.5, +0.5], [-0.5, -0.5, +0.5], [-0.5, -0.5, -0.5], // negative x face.
-  [-0.5, +0.5, -0.5], [+0.5, +0.5, -0.5], [+0.5, +0.5, +0.5], [-0.5, +0.5, +0.5],  // top face
-  [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], [-0.5, -0.5, +0.5]  // bottom face
+  [-0.5, +0.5, -0.5], [+0.5, +0.5, -0.5], [+0.5, +0.5, +0.5], [-0.5, +0.5, +0.5], // top face
+  [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], [-0.5, -0.5, +0.5] // bottom face
 ]
 
 const boxElements = [
@@ -137,12 +137,12 @@ Mesh.prototype.draw = regl({
     color: regl.prop('color'),
     lightDir: [0.39, 0.87, 0.29],
     view: () => { return mat4.lookAt([], [0.0, 10.0, 20.0], [0, 0, 0], [0, 1, 0]) },
-    projection: ({viewportWidth, viewportHeight}) =>
+    projection: ({ viewportWidth, viewportHeight }) =>
       mat4.perspective([],
-                       Math.PI / 4,
-                       viewportWidth / viewportHeight,
-                       0.01,
-                       1000)
+        Math.PI / 4,
+        viewportWidth / viewportHeight,
+        0.01,
+        1000)
   },
   attributes: {
     position: regl.this('position'),
@@ -243,13 +243,13 @@ var drawFullscreenTexture = regl({
   },
 
   uniforms: {
-    viewportWidth: ({viewportWidth}) => viewportWidth,
-    viewportHeight: ({viewportHeight}) => viewportHeight,
+    viewportWidth: ({ viewportWidth }) => viewportWidth,
+    viewportHeight: ({ viewportHeight }) => viewportHeight,
 
     // cycle through the transition textures, as t goes from 0.0 to 1.0
     tex: (_, props) => { return textures[Math.floor(props.t * N_TEX)] },
 
-    scale: ({viewportWidth, viewportHeight}) => {
+    scale: ({ viewportWidth, viewportHeight }) => {
       return [Math.ceil(viewportWidth / TEX_W), Math.ceil(viewportHeight / TEX_H)]
     }
   },
@@ -320,7 +320,7 @@ var boxMesh = new Mesh(boxElements, boxPosition, boxNormal)
 var f0 = filterMask0
 var f1 = filterMask1
 
-regl.frame(({tick}) => {
+regl.frame(({ tick }) => {
   regl.clear({
     color: [0, 0, 0, 255],
     depth: 1,
@@ -329,16 +329,16 @@ regl.frame(({tick}) => {
 
   // These are the scenes we will be transitioning between.
   var scene0 = () => {
-    boxMesh.draw({scale: 10.2, color: [0.0, 0.5, 0.0]})
+    boxMesh.draw({ scale: 10.2, color: [0.0, 0.5, 0.0] })
   }
   var scene1 = () => {
-    bunnyMesh.draw({scale: 1.0, color: [0.6, 0.0, 0.0]})
+    bunnyMesh.draw({ scale: 1.0, color: [0.6, 0.0, 0.0] })
   }
 
   // Takes this many frames to transition from one scene to the other.
   var CYCLE_LENGTH = 60
 
-  var normTick = tick % CYCLE_LENGTH  // normalize tick to be in range [0,CYCLE_LENGTH-1]
+  var normTick = tick % CYCLE_LENGTH // normalize tick to be in range [0,CYCLE_LENGTH-1]
   var t = normTick * normTick * 0.001
   if (t > 1.0) {
     t = 1.0
@@ -354,7 +354,7 @@ regl.frame(({tick}) => {
   globalScope(() => {
     // first, render to stencil buffer.
     createMask(() => {
-      drawFullscreenTexture({t: t})
+      drawFullscreenTexture({ t: t })
     })
 
     // then actually render the scenes.
