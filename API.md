@@ -248,7 +248,7 @@ var regl = require('regl')(require('gl')(256, 256))
 
 ### Error messages and debug mode
 
-By default if you compile `regl` with browserify then all error messages and checks are removed.  This is done in order to reduce the size of the final bundle and to improve run time performance.  
+By default if you compile `regl` with browserify then all error messages and checks are removed.  This is done in order to reduce the size of the final bundle and to improve run time performance.
 
 **If you want error messages and are using browserify make sure that you compile using `--debug`**.  Not only will this insert debug messages but it will also give you source maps which make finding errors easier.
 
@@ -494,6 +494,12 @@ setupCamera({
   // draw stuff
 })
 ```
+
+**Drawing pure context with `regl.draw()`**
+`regl.draw()` calls draw on an empty command
+it can be useful if you put everything for drawing into context variables
+basically `regl.draw()` is a shortcut for `regl({})()`
+
 
 #### Props
 
@@ -1387,8 +1393,8 @@ var positionBuffer = regl.buffer([
 
 | Data type          | Description          |
 | ------------------ | ---------------------|
-| `'uint8'`          | `gl.UNSIGNED_BYTE`   |  
-| `'int8'`           | `gl.BYTE`            |  
+| `'uint8'`          | `gl.UNSIGNED_BYTE`   |
+| `'int8'`           | `gl.BYTE`            |
 | `'uint16'`         | `gl.UNSIGNED_SHORT`  |
 | `'int16'`          | `gl.SHORT`           |
 | `'uint32'`         | `gl.UNSIGNED_INT`    |
