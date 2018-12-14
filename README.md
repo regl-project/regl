@@ -1,5 +1,5 @@
 <div align="center">
-  :crown:
+  👑
 </div>
 <h1 align="center">
   regl
