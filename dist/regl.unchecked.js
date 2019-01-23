@@ -4560,7 +4560,7 @@ function createEnvironment () {
       def: def,
       toString: function () {
         return join([
-          (vars.length > 0 ? 'var ' + vars + ';' : ''),
+          (vars.length > 0 ? 'var ' + vars.join(',') + ';' : ''),
           join(code)
         ])
       }
