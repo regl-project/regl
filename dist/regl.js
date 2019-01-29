@@ -3001,16 +3001,7 @@ function createTextureSet (
       gl.copyTexImage2D(
         target, miplevel, format, info.xOffset, info.yOffset, width, height, 0);
     } else {
-      var nullData = !data;
-      if (nullData) {
-        data = pool.zero.allocType(type, width * height * channels);
-      }
-
-      gl.texImage2D(target, miplevel, format, width, height, 0, format, type, data);
-
-      if (nullData && data) {
-        pool.zero.freeType(data);
-      }
+      gl.texImage2D(target, miplevel, format, width, height, 0, format, type, data || null);
     }
   }
 
