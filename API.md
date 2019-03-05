@@ -705,7 +705,7 @@ var command = regl({
 
   attributes: {
     // Attributes can be declared explicitly
-    normals: {
+    normal: {
       buffer: regl.buffer([
         // ...
       ]),
