@@ -4,8 +4,8 @@
   <p> This example shows how to pass props to draw commands </p>
 */
 
-import REGL = require("../../regl");
-const regl = REGL();
+import REGL = require('../../regl')
+const regl = REGL()
 
 interface Uniforms {
   angle: number;
@@ -39,12 +39,15 @@ const draw = regl<Uniforms, Attributes, Props>({
     }`,
 
   attributes: {
-    position: [-1, 0, 0, -1, 1, 1]
+    position: [
+      -1, 0,
+      0, -1,
+      1, 1]
   },
 
   uniforms: {
-    color: regl.prop<Props, "color">("color"),
-    angle: ({ tick }) => 0.01 * tick
+    color: regl.prop<Props, 'color'>('color'),
+    angle: ({tick}) => 0.01 * tick
   },
 
   depth: {
@@ -65,13 +68,14 @@ const draw = regl<Uniforms, Attributes, Props>({
       };
     }
   },
-  count: 3
-});
 
-regl.frame(({ tick }) => {
+  count: 3
+})
+
+regl.frame(({tick}) => {
   regl.clear({
     color: [0, 0, 0, 1]
-  });
+  })
 
   draw({
     color: [
@@ -80,5 +84,5 @@ regl.frame(({ tick }) => {
       Math.sin(0.02 * (0.3 * tick)),
       1
     ]
-  });
-});
+  })
+})
