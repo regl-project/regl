@@ -4,8 +4,8 @@
   <p> This example shows how to pass props to draw commands </p>
 */
 
-import REGL = require('../../regl')
-const regl = REGL()
+import REGL = require("../../regl");
+const regl = REGL();
 
 interface Uniforms {
   angle: number;
@@ -39,28 +39,39 @@ const draw = regl<Uniforms, Attributes, Props>({
     }`,
 
   attributes: {
-    position: [
-      -1, 0,
-      0, -1,
-      1, 1]
+    position: [-1, 0, 0, -1, 1, 1]
   },
 
   uniforms: {
-    color: regl.prop<Props, 'color'>('color'),
-    angle: ({tick}) => 0.01 * tick
+    color: regl.prop<Props, "color">("color"),
+    angle: ({ tick }) => 0.01 * tick
   },
 
   depth: {
     enable: false
   },
 
+  scissor: {
+    enable: true,
+    box: ({ tick, viewportWidth, viewportHeight }) => {
+      const SCISSOR_TIME = 500;
+      const percent = (tick % SCISSOR_TIME) / SCISSOR_TIME;
+      const scaleFactor = (percent >= 0.5 ? 1 - percent : percent) * 2.0;
+      return {
+        x: (viewportWidth / 2) * scaleFactor,
+        y: (viewportHeight / 2) * scaleFactor,
+        width: viewportWidth - viewportWidth * scaleFactor,
+        height: viewportHeight - viewportHeight * scaleFactor
+      };
+    }
+  },
   count: 3
-})
+});
 
-regl.frame(({tick}) => {
+regl.frame(({ tick }) => {
   regl.clear({
     color: [0, 0, 0, 1]
-  })
+  });
 
   draw({
     color: [
@@ -69,5 +80,5 @@ regl.frame(({tick}) => {
       Math.sin(0.02 * (0.3 * tick)),
       1
     ]
-  })
-})
+  });
+});
