@@ -1515,7 +1515,7 @@ declare namespace REGL {
     resize(radius: number): REGL.FramebufferCube;
          
     /* Faces of the FramebufferCube */
-    faces?: [
+    faces: [
       REGL.Framebuffer,
       REGL.Framebuffer,
       REGL.Framebuffer,
