@@ -153,6 +153,33 @@ tape('buffer arg parsing', function (t) {
     },
     'ndarray-like input')
 
+  checkProperties(
+    regl.buffer(new ArrayBuffer(4)),
+    {
+      type: gl.ARRAY_BUFFER,
+      dtype: gl.UNSIGNED_BYTE,
+      dimension: 1,
+      usage: gl.STATIC_DRAW,
+      byteLength: 4,
+      data: new ArrayBuffer(4)
+    },
+    'arraybuffer')
+
+  checkProperties(
+    regl.buffer({
+      usage: 'dynamic',
+      data: new ArrayBuffer(4)
+    }),
+    {
+      type: gl.ARRAY_BUFFER,
+      dtype: gl.UNSIGNED_BYTE,
+      dimension: 1,
+      usage: gl.DYNAMIC_DRAW,
+      byteLength: 4,
+      data: new ArrayBuffer(4)
+    },
+    'dynamic arraybuffer')
+
   regl.destroy()
   t.equals(gl.getError(), 0, 'error ok')
   createContext.destroy(gl)
