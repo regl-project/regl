@@ -569,10 +569,10 @@ Mesh.prototype.draw = regl({
 
     view: regl.prop('view'),
     projection: regl.prop('projection')
-  }
+  },
 
   attributes: {
-    // here we are using 'positions' proeprty of the mesh
+    // here we are using 'positions' property of the mesh
     position: regl.this('positions')
   },
 
