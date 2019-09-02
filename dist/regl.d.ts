@@ -1513,6 +1513,16 @@ declare namespace REGL {
 
     /* Resizes the FramebufferCube and all its attachments. */
     resize(radius: number): REGL.FramebufferCube;
+         
+    /* Faces of the FramebufferCube */
+    faces: [
+      REGL.Framebuffer,
+      REGL.Framebuffer,
+      REGL.Framebuffer,
+      REGL.Framebuffer,
+      REGL.Framebuffer
+    ]
+
   }
 
   interface FramebufferCubeOptions {
