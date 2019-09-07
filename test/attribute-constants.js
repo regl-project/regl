@@ -4,6 +4,16 @@ var createContext = require('./util/create-context')
 var createREGL = require('../regl')
 
 tape('attribute constants', function (t) {
+  // This test does not work unless we either perform a complete refresh of the canvas element or
+  // enable the ANGLE_instanced_arrays extension. That should not need to be the case, but since
+  // earlier tests use the ANGLE_instanced_arrays extension and since this test does not, the
+  // canvas ends up polluted and managing divisors is necessary even though this particular regl
+  // context does not know about the extension.
+  //
+  // A more robust long-term solution is perhaps to have regl query the available extensions and
+  // register them as available even if you did not ask for them.
+  createContext.refreshCanvas()
+
   var gl = createContext(2, 2)
   var regl = createREGL(gl)
 
@@ -274,6 +284,59 @@ tape('attribute constants', function (t) {
         }
       })
     })
+  })
+
+  t.test('attributes switched between const and non-const', function (t) {
+    var drawForSwitching = regl({
+      frag: [
+        'void main() {',
+        '  gl_FragColor = vec4(1,0,0,0);',
+        '}'
+      ].join('\n'),
+      vert: [
+        'precision highp float;',
+        'attribute vec2 position;',
+        'attribute float isActive;',
+        'void main() {',
+        ' if (isActive == 0.) return;',
+        ' gl_PointSize = 1.;',
+        ' gl_Position = vec4(position, 0, 1);',
+        '}'
+      ].join('\n'),
+      attributes: {
+        position: [
+          [-0.5, -0.5],
+          [0.5, -0.5]
+        ],
+        isActive: regl.prop('isActive')
+      },
+      depth: {enable: false},
+      count: 2,
+      primitive: 'points'
+    })
+
+    regl.clear({color: [0, 0, 0, 0]})
+    drawForSwitching({isActive: [0, 1]})
+
+    var pixels = regl.read()
+    t.equal(pixels[0], 0)
+    t.equal(pixels[4], 255)
+
+    regl.clear({color: [0, 0, 0, 0]})
+    drawForSwitching({isActive: {constant: [1]}})
+
+    pixels = regl.read()
+    t.equal(pixels[0], 255)
+    t.equal(pixels[4], 255)
+
+    regl.clear({color: [0, 0, 0, 0]})
+    drawForSwitching({isActive: [0, 1]})
+
+    pixels = regl.read()
+    t.equal(pixels[0], 0)
+    t.equal(pixels[4], 255)
+
+    t.end()
   })
 
   regl.destroy()

@@ -1,23 +1,33 @@
 if (typeof document !== 'undefined') {
-  var canvas = document.createElement('canvas')
-  var opts = {
-    antialias: false,
-    stencil: true,
-    preserveDrawingBuffer: true
+  var canvas, opts, context
+
+  var refreshCanvas = function () {
+    if (canvas) canvas.remove()
+
+    canvas = document.createElement('canvas')
+    opts = {
+      antialias: false,
+      stencil: true,
+      preserveDrawingBuffer: true
+    }
+    context = canvas.getContext('webgl', opts) || canvas.getContext('experimental-webgl', opts)
+    canvas.style.position = 'fixed'
+    canvas.style.top = '0'
+    canvas.style.right = '0'
+    canvas.style.width = '256px'
+    canvas.style.height = '256px'
+    document.body.appendChild(canvas)
   }
-  var context = canvas.getContext('webgl', opts) || canvas.getContext('experimental-webgl', opts)
-  canvas.style.position = 'fixed'
-  canvas.style.top = '0'
-  canvas.style.right = '0'
-  canvas.style.width = '256px'
-  canvas.style.height = '256px'
-  document.body.appendChild(canvas)
+
+  refreshCanvas()
 
   module.exports = function (width, height) {
     canvas.width = width
     canvas.height = height
     return context
   }
+
+  module.exports.refreshCanvas = refreshCanvas
 
   module.exports.resize = function (gl, w, h) {
     canvas.width = w
