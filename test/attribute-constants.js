@@ -15,7 +15,7 @@ tape('attribute constants', function (t) {
   createContext.refreshCanvas();
 
   var gl = createContext(2, 2)
-  var regl = createREGL({gl: gl})
+  var regl = createREGL(gl)
 
   var vert = [
     'precision highp float;',
