@@ -6679,6 +6679,7 @@ function reglCore (
           '}if(', CUTE_COMPONENTS.map(function (c, i) {
             return BINDING + '.' + c + '!==' + CONST_COMPONENTS[i]
           }).join('||'), '){',
+          BINDING, '.buffer=null;',
           GL, '.vertexAttrib4f(', LOCATION, ',', CONST_COMPONENTS, ');',
           CUTE_COMPONENTS.map(function (c, i) {
             return BINDING + '.' + c + '=' + CONST_COMPONENTS[i] + ';'

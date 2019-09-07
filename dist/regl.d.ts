@@ -1522,7 +1522,6 @@ declare namespace REGL {
       REGL.Framebuffer,
       REGL.Framebuffer
     ]
-
   }
 
   interface FramebufferCubeOptions {
