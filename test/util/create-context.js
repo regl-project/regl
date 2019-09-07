@@ -1,8 +1,8 @@
 if (typeof document !== 'undefined') {
   var canvas, opts, context
 
-  function refreshCanvas () {
-    if (canvas) canvas.remove();
+  var refreshCanvas = function () {
+    if (canvas) canvas.remove()
 
     canvas = document.createElement('canvas')
     opts = {
