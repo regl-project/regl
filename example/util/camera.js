@@ -49,7 +49,7 @@ function createCamera (regl, props) {
 
   function damp (x) {
     var xd = x * 0.9
-    if (xd < 0.1) {
+    if (Math.abs(xd) < 0.1) {
       return 0
     }
     return xd
