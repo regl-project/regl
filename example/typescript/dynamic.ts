@@ -54,6 +54,21 @@ const draw = regl<Uniforms, Attributes, Props>({
     enable: false
   },
 
+  scissor: {
+    enable: true,
+    box: ({ tick, viewportWidth, viewportHeight }) => {
+      const SCISSOR_TIME = 500;
+      const percent = (tick % SCISSOR_TIME) / SCISSOR_TIME;
+      const scaleFactor = (percent >= 0.5 ? 1 - percent : percent) * 2.0;
+      return {
+        x: (viewportWidth / 2) * scaleFactor,
+        y: (viewportHeight / 2) * scaleFactor,
+        width: viewportWidth - viewportWidth * scaleFactor,
+        height: viewportHeight - viewportHeight * scaleFactor
+      };
+    }
+  },
+
   count: 3
 })
 

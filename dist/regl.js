@@ -1609,6 +1609,13 @@ function wrapBufferState (gl, stats, config, attributeState) {
       } else {
         pool.freeType(transposeData);
       }
+    } else if (data instanceof ArrayBuffer) {
+      buffer.dtype = GL_UNSIGNED_BYTE$3;
+      buffer.dimension = dimension;
+      initBufferFromTypedArray(buffer, data, usage);
+      if (persist) {
+        buffer.persistentData = new Uint8Array(new Uint8Array(data));
+      }
     } else {
       check$1.raise('invalid buffer data');
     }
@@ -1646,7 +1653,8 @@ function wrapBufferState (gl, stats, config, attributeState) {
       var dimension = 1;
       if (Array.isArray(options) ||
           isTypedArray(options) ||
-          isNDArrayLike(options)) {
+          isNDArrayLike(options) ||
+          options instanceof ArrayBuffer) {
         data = options;
       } else if (typeof options === 'number') {
         byteLength = options | 0;
@@ -1716,7 +1724,7 @@ function wrapBufferState (gl, stats, config, attributeState) {
       var offset = (offset_ || 0) | 0;
       var shape;
       buffer.bind();
-      if (isTypedArray(data)) {
+      if (isTypedArray(data) || data instanceof ArrayBuffer) {
         setSubData(data, offset);
       } else if (Array.isArray(data)) {
         if (data.length > 0) {
@@ -2988,7 +2996,6 @@ function createTextureSet (
     var type = info.type;
     var width = info.width;
     var height = info.height;
-    var channels = info.channels;
 
     setFlags(info);
 
@@ -5426,7 +5433,7 @@ function createEnvironment () {
       def: def,
       toString: function () {
         return join([
-          (vars.length > 0 ? 'var ' + vars + ';' : ''),
+          (vars.length > 0 ? 'var ' + vars.join(',') + ';' : ''),
           join(code)
         ])
       }
@@ -7305,6 +7312,7 @@ function reglCore (
         var VALUE = env.invoke(block, dyn);
 
         var shared = env.shared;
+        var constants = env.constants;
 
         var IS_BUFFER_ARGS = shared.isBufferArgs;
         var BUFFER_STATE = shared.buffer;
@@ -7366,7 +7374,7 @@ function reglCore (
           BUFFER, '=', BUFFER_STATE, '.getBuffer(', VALUE, '.buffer);',
           '}',
           TYPE, '="type" in ', VALUE, '?',
-          shared.glTypes, '[', VALUE, '.type]:', BUFFER, '.dtype;',
+          constants.glTypes, '[', VALUE, '.type]:', BUFFER, '.dtype;',
           result.normalized, '=!!', VALUE, '.normalized;');
         function emitReadRecord (name) {
           block(result[name], '=', VALUE, '.', name, '|0;');
@@ -7826,6 +7834,7 @@ function reglCore (
         scope(
           'if(', BINDING, '.buffer){',
           GL, '.disableVertexAttribArray(', LOCATION, ');',
+          BINDING, '.buffer=null;',
           '}if(', CUTE_COMPONENTS.map(function (c, i) {
             return BINDING + '.' + c + '!==' + CONST_COMPONENTS[i]
           }).join('||'), '){',

@@ -352,6 +352,9 @@ declare namespace REGL {
     DynamicVariable<Type> |
     DynamicVariableFn<Type, Context, Props>;
 
+  type MaybeNestedDynamic<Type, Context extends REGL.DefaultContext, Props extends {}> =
+    { [K in keyof Type]: MaybeDynamic<Type[K], Context, Props> };
+
   interface ClearOptions {
     /**
      * RGBA values (range 0-1) to use when the color buffer is cleared. Initial value: [0, 0, 0, 0].
@@ -604,7 +607,7 @@ declare namespace REGL {
 
     /* Scissor */
 
-    scissor?: MaybeDynamic<REGL.ScissorOptions, ParentContext & OwnContext, Props>;
+    scissor?: MaybeNestedDynamic<REGL.ScissorOptions, ParentContext & OwnContext, Props>;
 
     /* Viewport */
 
@@ -1513,6 +1516,15 @@ declare namespace REGL {
 
     /* Resizes the FramebufferCube and all its attachments. */
     resize(radius: number): REGL.FramebufferCube;
+         
+    /* Faces of the FramebufferCube */
+    faces: [
+      REGL.Framebuffer,
+      REGL.Framebuffer,
+      REGL.Framebuffer,
+      REGL.Framebuffer,
+      REGL.Framebuffer
+    ]
   }
 
   interface FramebufferCubeOptions {
