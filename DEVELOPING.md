@@ -21,7 +21,7 @@ npm install -g budo
 Then go into the example folder and run any example with the following command:
 
 ```sh
-budo basic.js --open
+budo example/basic.js --open
 ```
 
 Where you can replace `basic.js` with the name of whatever example you want to run.
