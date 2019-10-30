@@ -1089,24 +1089,21 @@ tape('texture 2d', function (t) {
     },
     'magwrap4')
 
+  checkShouldNotThrow(
+    {
+      format: 'depth',
+      type: 'uint16',
+      width: 2,
+      height: 2
+    },
+    'depthTexture')
   var depthTexture = regl.texture({
     format: 'depth',
     type: 'uint16',
     width: 2,
     height: 2
   })
-  checkProperties(
-    depthTexture,
-    {
-      format: 'depth',
-      type: 'uint16',
-      minFilter: gl.LINEAR_MIPMAP_LINEAR,
-      magFilter: gl.LINEAR,
-      width: 2,
-      height: 2
-    },
-    'depthTexture')
-  depthTexture.resize(4, 4);
+  depthTexture.resize(4, 4)
 
   if (typeof document !== 'undefined') {
     runDOMTests()
