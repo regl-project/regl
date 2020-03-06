@@ -20,7 +20,7 @@ tape('glsl projection-line test', function (t) {
         'attribute vec2 p;',
         'void main () {',
         '  vec2 pixel = p;',
-        '  vec2 clip = 0.25 * (pixel - 3.45);',
+        '  vec2 clip = 0.25 * (pixel - 3.5);',
         '  gl_Position = vec4(clip, 0, 1);',
         '}'
       ].join('\n')
@@ -49,21 +49,28 @@ tape('glsl projection-line test', function (t) {
     for (var y = 0; y < RESOLUTION; ++y) {
       for (var x = 0; x < RESOLUTION; ++x) {
         var offset = 4 * (x + y * RESOLUTION)
-        if (
+        if ((x === start[0] && y === start[1]) ||
+            (x === end[0] && y === end[1])) {
+          expected.push('[01]')
+        } else if (
           Math.min(start[0], end[0]) <= x && x <= Math.max(start[0], end[0]) &&
           Math.min(start[1], end[1]) <= y && y <= Math.max(start[1], end[1])) {
-          expected.push(1)
+          expected.push('1')
         } else {
-          expected.push(0)
+          expected.push('0')
         }
         actual.push((!!data[offset]) | 0)
       }
       actual.push('\n')
-      expected.push('\n')
+      expected.push('\\n')
     }
 
-    t.equals(actual.join(''), expected.join(''),
-      'line ' + precision + ' @ ' + start.join() + ' - ' + end.join())
+    const pattern = new RegExp(expected.join(''))
+    t.comment('actual=')
+    t.comment(actual.join(''))
+    t.comment('expected=')
+    t.comment(expected.join(''))
+    t.ok(actual.join('').match(pattern), 'line ' + precision + ' @ ' + start.join() + ' - ' + end.join())
   }
 
   ;['lowp', 'mediump', 'highp'].forEach(function (precision) {

@@ -16,12 +16,11 @@ tape('glsl projection test', function (t) {
     ].join('\n'),
     vert: function (context, props) {
       return [
-        'precision ' + props.precision + ' float;',
-        'attribute vec2 p;',
+        'attribute ' + props.precision + ' vec2 p;',
         'uniform vec2 offset;',
         'void main () {',
-        '  vec2 pixel = p + offset;',
-        '  vec2 clip = 0.25 * (pixel - 3.5);',
+        '  highp vec2 pixel = p + offset;',
+        '  highp vec2 clip = 0.25 * (pixel - 3.5);',
         '  gl_Position = vec4(clip, 0, 1);',
         '  gl_PointSize = 1.;',
         '}'

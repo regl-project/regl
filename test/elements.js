@@ -104,7 +104,9 @@ tape('elements', function (t) {
   function testPlus (msg) {
     testImage(function (i, j, expect) {
       if (i === 3 || j === 3) {
-        expect(0, 0, 255, 255)
+        if (!(i === 0 || j === 0 || i === 6 || j === 6)) {
+          expect(0, 0, 255, 255)
+        }
       } else {
         expect(255, 0, 0, 255)
       }
@@ -114,7 +116,9 @@ tape('elements', function (t) {
   function testBar (msg) {
     testImage(function (i, j, expect) {
       if (i === 3) {
-        expect(0, 0, 255, 255)
+        if (!(j === 0 || j === 6)) {
+          expect(0, 0, 255, 255)
+        }
       } else {
         expect(255, 0, 0, 255)
       }

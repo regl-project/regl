@@ -143,7 +143,6 @@ function handleCase (name, www, root, onComplete) {
     if (--counter > 0) {
       return
     }
-    console.log('built case:', name, comparisons)
     onComplete(name, comparisons)
   }
 }
@@ -173,7 +172,8 @@ function writeComparisonPage (comparisons) {
   // save sources
   fs.writeFile(
     path.join(WWW_DIR, 'manifest.json'),
-    JSON.stringify(comparisons, null, '  '))
+    JSON.stringify(comparisons, null, '  '),
+    () => { })
 
   var html = [
     `<!DOCTYPE html>
