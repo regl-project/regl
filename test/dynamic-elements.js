@@ -30,7 +30,7 @@ tape('dynamic elements', function (t) {
 
     elements: regl.prop('elements'),
 
-    depth: {enable: false, mask: false}
+    depth: { enable: false, mask: false }
   })
 
   function checkPixmap (args, expected, remark) {

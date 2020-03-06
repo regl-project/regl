@@ -39,7 +39,7 @@ const drawCheckerboard = regl({
   },
 
   uniforms: {
-    tick: ({tick}) => 0.005 * tick,
+    tick: ({ tick }) => 0.005 * tick,
 
     texture: regl.texture({
       min: 'linear mipmap linear',

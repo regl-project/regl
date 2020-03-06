@@ -37,14 +37,14 @@ const setupEnvMap = regl({
 
     view: regl.prop('view'),
 
-    projection: ({viewportWidth, viewportHeight}) =>
+    projection: ({ viewportWidth, viewportHeight }) =>
       mat4.perspective([],
         Math.PI / 4,
         viewportWidth / viewportHeight,
         0.01,
         1000),
 
-    invView: (context, {view}) => mat4.invert([], view)
+    invView: (context, { view }) => mat4.invert([], view)
   }
 })
 
@@ -105,7 +105,7 @@ require('resl')({
     }
   },
   onDone: () => {
-    regl.frame(({tick}) => {
+    regl.frame(({ tick }) => {
       const t = 0.01 * tick
       setupEnvMap({
         view: mat4.lookAt([],

@@ -215,9 +215,9 @@ const position = (time, i) => {
     Math.cos(i + 1.32 * time * 0.1 * Math.sin((0.92 + 0.53 * i))) * 0.27 + 0.5
   ]
 }
-const start_bounds = [0.5, 0.5, 0.5]
-const end_bounds = [1.5, 1.5, 1.5]
-const step_sizes = [0, 1, 2].map((i) => (end_bounds[i] - start_bounds[i]) / size)
+const startBounds = [0.5, 0.5, 0.5]
+const endBounds = [1.5, 1.5, 1.5]
+const stepSizes = [0, 1, 2].map((i) => (endBounds[i] - startBounds[i]) / size)
 
 // Outside the radius of influence, we assume field contribution of zero
 const radius = size * Math.sqrt(strength / subtract)
@@ -227,31 +227,31 @@ const render = (tick) => {
   let fieldArray = new Float32Array(size * size * size)
 
   for (let n = 0; n < numblobs; n++) {
-    let ballx, bally, ballz, x_bounds, y_bounds, z_bounds, bounds
-    [ballx, bally, ballz] = position(time, n)
-    bounds = [ballx, bally, ballz].map((c) => {
+    let ballX, ballY, ballZ, xBounds, yBounds, zBounds, bounds
+    [ballX, ballY, ballZ] = position(time, n)
+    bounds = [ballX, ballY, ballZ].map((c) => {
       let coordCenter = c * size
       return [
         Math.max(Math.floor(coordCenter - radius), 1),
         Math.min(Math.floor(coordCenter + radius), size - 1)
       ]
     })
-    x_bounds = bounds[0]
-    y_bounds = bounds[1]
-    z_bounds = bounds[2]
+    xBounds = bounds[0]
+    yBounds = bounds[1]
+    zBounds = bounds[2]
 
-    for (let z = z_bounds[0]; z < z_bounds[1]; z++) {
-      let z_offset = size * size * z
+    for (let z = zBounds[0]; z < zBounds[1]; z++) {
+      let zOffset = size * size * z
 
-      for (let y = y_bounds[0]; y < y_bounds[1]; y++) {
-        let y_offset = size * y
+      for (let y = yBounds[0]; y < yBounds[1]; y++) {
+        let yOffset = size * y
 
-        for (let x = x_bounds[0]; x < x_bounds[1]; x++) {
-          let fx = x / size - ballx
-          let fy = y / size - bally
-          let fz = z / size - ballz
+        for (let x = xBounds[0]; x < xBounds[1]; x++) {
+          let fx = x / size - ballX
+          let fy = y / size - ballY
+          let fz = z / size - ballZ
           let val = strength / (0.000001 + (fx * fx) + (fy * fy) + (fz * fz)) - subtract
-          if (val > 0.0) fieldArray[z_offset + y_offset + x] += val
+          if (val > 0.0) fieldArray[zOffset + yOffset + x] += val
         }
       }
     }
@@ -260,17 +260,17 @@ const render = (tick) => {
   let mesh = surfaceNets(ndarray(fieldArray, [size, size, size]), 80.0)
 
   // Transform index coordinates to space coordinates
-  let coordinate_positions = new Array(mesh.positions.length)
+  let coordinatePositions = new Array(mesh.positions.length)
   for (let i = 0; i < mesh.positions.length; i++) {
     let position = mesh.positions[i]
-    let transformed_position = new Array(3)
+    let transformedPosition = new Array(3)
     for (let j = 0; j < 3; j++) {
-      transformed_position[j] = start_bounds[j] + (position[j] * step_sizes[j])
+      transformedPosition[j] = startBounds[j] + (position[j] * stepSizes[j])
     }
-    coordinate_positions[i] = transformed_position
+    coordinatePositions[i] = transformedPosition
   }
 
-  return {positions: coordinate_positions, cells: mesh.cells}
+  return { positions: coordinatePositions, cells: mesh.cells }
 }
 
 require('resl')({
@@ -296,15 +296,15 @@ require('resl')({
       })
     }
   },
-  onDone: ({sphereTexture, normalTexture}) => {
-    regl.frame(({time}) => {
+  onDone: ({ sphereTexture, normalTexture }) => {
+    regl.frame(({ time }) => {
       let mesh = render(time)
-      positionBuffer({data: mesh.positions})
-      cellsBuffer({data: mesh.cells})
-      normalBuffer({data: normals(mesh.cells, mesh.positions)})
+      positionBuffer({ data: mesh.positions })
+      cellsBuffer({ data: mesh.cells })
+      normalBuffer({ data: normals(mesh.cells, mesh.positions) })
       camera(() => {
-        drawBackground({depth: {enable: false, mask: false}})
-        regl.clear({depth: 1})
+        drawBackground({ depth: { enable: false, mask: false } })
+        regl.clear({ depth: 1 })
         drawMetaballs({
           textureMap: sphereTexture,
           normalMap: normalTexture

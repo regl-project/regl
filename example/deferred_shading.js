@@ -32,9 +32,9 @@ camera.zoom(500.0) // 10.0
 
 const fbo = regl.framebuffer({
   color: [
-    regl.texture({type: 'float'}), // albedo
-    regl.texture({type: 'float'}), // normal
-    regl.texture({type: 'float'}) // position
+    regl.texture({ type: 'float' }), // albedo
+    regl.texture({ type: 'float' }), // normal
+    regl.texture({ type: 'float' }) // position
   ],
   depth: true
 })
@@ -45,8 +45,8 @@ var boxPosition = [
   [+0.5, +0.5, +0.5], [+0.5, +0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], // positive x face
   [+0.5, +0.5, -0.5], [-0.5, +0.5, -0.5], [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], // negative z face
   [-0.5, +0.5, -0.5], [-0.5, +0.5, +0.5], [-0.5, -0.5, +0.5], [-0.5, -0.5, -0.5], // negative x face.
-  [-0.5, +0.5, -0.5], [+0.5, +0.5, -0.5], [+0.5, +0.5, +0.5], [-0.5, +0.5, +0.5],  // top face
-  [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], [-0.5, -0.5, +0.5]  // bottom face
+  [-0.5, +0.5, -0.5], [+0.5, +0.5, -0.5], [+0.5, +0.5, +0.5], [-0.5, +0.5, +0.5], // top face
+  [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], [-0.5, -0.5, +0.5] // bottom face
 ]
 
 const boxElements = [
@@ -76,12 +76,12 @@ var boxNormal = [
 const globalScope = regl({
   uniforms: {
     view: () => camera.view(),
-    projection: ({viewportWidth, viewportHeight}) =>
+    projection: ({ viewportWidth, viewportHeight }) =>
       mat4.perspective([],
-                       Math.PI / 4,
-                       viewportWidth / viewportHeight,
-                       0.01,
-                       2000)
+        Math.PI / 4,
+        viewportWidth / viewportHeight,
+        0.01,
+        2000)
   }
 })
 
@@ -317,7 +317,7 @@ var drawGeometry = () => {
   var bunnies = []
   var N_BUNNIES = 5 // number of bunnies.
 
-  function negMod (x, n) {  // modulo that works for negative numbers
+  function negMod (x, n) { // modulo that works for negative numbers
     return ((x % n) + n) % n
   }
 
@@ -352,7 +352,7 @@ var drawGeometry = () => {
       // translation
       var t = [xs * S / 2.0 + xd, -0.2, zs * S / 2.0 + zd]
 
-      bunnies.push({scale: s, translate: t, color: c, yRotate: r})
+      bunnies.push({ scale: s, translate: t, color: c, yRotate: r })
     }
   }
 
@@ -361,7 +361,7 @@ var drawGeometry = () => {
   //
 
   bunnyMesh.draw(bunnies)
-  boxMesh.draw({scale: [S, T, S], translate: [0.0, 0.0, 0], color: C})
+  boxMesh.draw({ scale: [S, T, S], translate: [0.0, 0.0, 0], color: C })
 }
 
 var drawPointLights = (tick) => {
@@ -380,12 +380,13 @@ var drawPointLights = (tick) => {
     var R = args.R // the radius of the rose curve.
     var s = args.s // use this parameter to spread out the points on the rose curve.
     var seed = args.seed // random seed
+    var i = 0
 
     for (var j = 0; j < N; ++j) {
       var theta = s * 2 * Math.PI * i * (1.0 / (N))
       theta += tick * 0.01
 
-      var i = j + seed
+      i = j + seed
 
       var a = 0.8
 
@@ -396,18 +397,20 @@ var drawPointLights = (tick) => {
       var rad = ((Math.abs(3112 * i * i * i + 2137 + i * i + 232 * i) % 255) / 255) * 0.9 * 30.0 + 30.0
       // See the wikipedia article for a definition of n and d.
       var k = n / d
-      pointLights.push({radius: rad, translate:
+      pointLights.push({ radius: rad,
+        translate:
                         [R * Math.cos(k * theta * v) * Math.cos(theta * v), 20.9, R * Math.cos(k * theta * v) * Math.sin(theta * v)],
-                        ambientLight: [a * r, a * g, a * b], diffuseLight: [r, g, b]})
+        ambientLight: [a * r, a * g, a * b],
+        diffuseLight: [r, g, b] })
     }
   }
 
   // We make the point lights move on rose curves. This looks rather cool.
   // https://en.wikipedia.org/wiki/Rose_(mathematics)
-  makeRose({N: 10, n: 3, d: 1, v: 0.4, R: 300, seed: 0, s: 1})
-  makeRose({N: 20, n: 7, d: 4, v: 0.6, R: 350, seed: 3000, s: 1})
-  makeRose({N: 20, n: 10, d: 6, v: 0.7, R: 350, seed: 30000, s: 1})
-  makeRose({N: 40, n: 7, d: 9, v: 0.7, R: 450, seed: 60000, s: 10})
+  makeRose({ N: 10, n: 3, d: 1, v: 0.4, R: 300, seed: 0, s: 1 })
+  makeRose({ N: 20, n: 7, d: 4, v: 0.6, R: 350, seed: 3000, s: 1 })
+  makeRose({ N: 20, n: 10, d: 6, v: 0.7, R: 350, seed: 30000, s: 1 })
+  makeRose({ N: 40, n: 7, d: 9, v: 0.7, R: 450, seed: 60000, s: 10 })
 
   //
   // Next, we draw all point lights as spheres.
@@ -415,7 +418,7 @@ var drawPointLights = (tick) => {
   drawPointLight(pointLights)
 }
 
-regl.frame(({tick, viewportWidth, viewportHeight}) => {
+regl.frame(({ tick, viewportWidth, viewportHeight }) => {
   fbo.resize(viewportWidth, viewportHeight)
 
   globalScope(() => {

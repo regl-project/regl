@@ -10,7 +10,7 @@
 
 const canvas = document.body.appendChild(document.createElement('canvas'))
 const fit = require('canvas-fit')
-const regl = require('../regl')({canvas: canvas})
+const regl = require('../regl')({ canvas: canvas })
 const mat4 = require('gl-mat4')
 const vec3 = require('gl-vec3')
 var mp = require('mouse-position')(canvas)
@@ -43,15 +43,15 @@ var projectionMatrix = new Float32Array(16)
 const globalScope = regl({
   uniforms: {
     lightDir: [0.92, 0.3, 0.2],
-    projection: ({viewportWidth, viewportHeight}) => {
+    projection: ({ viewportWidth, viewportHeight }) => {
       return mat4.perspective(projectionMatrix, Math.PI / 4, viewportWidth / viewportHeight, 0.01, 1000.0)
     },
-    view: ({tick}) => {
+    view: ({ tick }) => {
       var s = 0.8
       return mat4.lookAt(viewMatrix,
-                         [50 * s, 9.5, 30 * s],
-                         [0, 2.5, 0],
-                         [0, 1, 0])
+        [50 * s, 9.5, 30 * s],
+        [0, 2.5, 0],
+        [0, 1, 0])
     }
   }
 })
@@ -130,7 +130,7 @@ var solver = new BtSequentialImpulseConstraintSolver()
 var physicsWorld = new BtDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration)
 physicsWorld.setGravity(new BtVector3(0, -6.0, 0))
 
-function createPlane ({color}) {
+function createPlane ({ color }) {
   /*
     First we create the plane mesh.
     */
@@ -167,10 +167,10 @@ function createPlane ({color}) {
   var rigidBody = new BtRigidBody(ci)
   physicsWorld.addRigidBody(rigidBody)
 
-  return {rigidBody: rigidBody, drawCall: planeMesh, color: color}
+  return { rigidBody: rigidBody, drawCall: planeMesh, color: color }
 }
 
-function createBox ({color, position, size}) {
+function createBox ({ color, position, size }) {
   /*
     First we create the box mesh
     */
@@ -182,8 +182,8 @@ function createBox ({color, position, size}) {
     [+0.5, +0.5, +0.5], [+0.5, +0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], // positive x face
     [+0.5, +0.5, -0.5], [-0.5, +0.5, -0.5], [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], // negative z face
     [-0.5, +0.5, -0.5], [-0.5, +0.5, +0.5], [-0.5, -0.5, +0.5], [-0.5, -0.5, -0.5], // negative x face.
-    [-0.5, +0.5, -0.5], [+0.5, +0.5, -0.5], [+0.5, +0.5, +0.5], [-0.5, +0.5, +0.5],  // top face
-    [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], [-0.5, -0.5, +0.5]  // bottom face
+    [-0.5, +0.5, -0.5], [+0.5, +0.5, -0.5], [+0.5, +0.5, +0.5], [-0.5, +0.5, +0.5], // top face
+    [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], [-0.5, -0.5, +0.5] // bottom face
   ]
 
   for (var i = 0; i < boxPosition.length; i++) {
@@ -234,7 +234,7 @@ function createBox ({color, position, size}) {
   var rigidBody = new BtRigidBody(ci)
   physicsWorld.addRigidBody(rigidBody)
 
-  return {rigidBody: rigidBody, drawCall: boxMesh, color: color}
+  return { rigidBody: rigidBody, drawCall: boxMesh, color: color }
 }
 
 function shootSphere () {
@@ -285,7 +285,7 @@ function shootSphere () {
   var POWER = 80.0
   rigidBody.applyImpulse(new BtVector3(POWER * rayDir[0], POWER * rayDir[1], POWER * rayDir[2]), new BtVector3(rayOrigin[0], rayOrigin[1], rayOrigin[2]))
 
-  return {rigidBody: rigidBody, drawCall: sphereMesh, color: [1.0, 1.0, 1.0]}
+  return { rigidBody: rigidBody, drawCall: sphereMesh, color: [1.0, 1.0, 1.0] }
 }
 
 var transformTemp = new BtTransform()
@@ -304,7 +304,7 @@ function getModelMatrix (rb) {
 }
 
 var objs = [] // contains all the physics objects.
-objs.push(createPlane({color: [0.8, 0.8, 0.8]}))
+objs.push(createPlane({ color: [0.8, 0.8, 0.8] }))
 
 // create wall.
 var WALL_HEIGHT = 12
@@ -319,7 +319,7 @@ for (var i = 0; i < WALL_HEIGHT; i++) {
       ((Math.abs(143 * x * z + x * z * z + 19) % 11) / 11) * 0.65
     ]
 
-    objs.push(createBox({color: c, position: [0.0, 0.5 + i * 1.0, -5.0 + 2.0 * (j - WALL_WIDTH / 2)], size: [1.0, 1.0, 2.0]}))
+    objs.push(createBox({ color: c, position: [0.0, 0.5 + i * 1.0, -5.0 + 2.0 * (j - WALL_WIDTH / 2)], size: [1.0, 1.0, 2.0] }))
   }
 }
 
@@ -327,7 +327,7 @@ mb.on('down', function () {
   objs.push(shootSphere())
 })
 
-regl.frame(({tick}) => {
+regl.frame(({ tick }) => {
   regl.clear({
     color: [0, 0, 0, 255],
     depth: 1
@@ -341,7 +341,7 @@ regl.frame(({tick}) => {
     for (var i = 0; i < objs.length; i++) {
       var o = objs[i]
       drawNormal(() => {
-        o.drawCall.draw({model: getModelMatrix(o.rigidBody), color: o.color})
+        o.drawCall.draw({ model: getModelMatrix(o.rigidBody), color: o.color })
       })
     }
   })

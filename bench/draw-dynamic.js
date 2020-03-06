@@ -29,7 +29,7 @@ module.exports = function (regl) {
 
     uniforms: {
       color: regl.prop('color'),
-      angle: function ({tick}) {
+      angle: function ({ tick }) {
         return 0.01 * tick
       }
     },

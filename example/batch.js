@@ -39,13 +39,13 @@ const draw = regl({
 
   uniforms: {
     // the batchId parameter gives the index of the command
-    color: ({tick}, props, batchId) => [
+    color: ({ tick }, props, batchId) => [
       Math.sin(0.02 * ((0.1 + Math.sin(batchId)) * tick + 3.0 * batchId)),
       Math.cos(0.02 * (0.02 * tick + 0.1 * batchId)),
       Math.sin(0.02 * ((0.3 + Math.cos(2.0 * batchId)) * tick + 0.8 * batchId)),
       1
     ],
-    angle: ({tick}) => 0.01 * tick,
+    angle: ({ tick }) => 0.01 * tick,
     offset: regl.prop('offset')
   },
 

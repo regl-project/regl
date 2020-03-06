@@ -24,11 +24,10 @@ var gl = c.getContext('webgl', {
 const fit = require('canvas-fit')
 const mat4 = require('gl-mat4')
 
-const regl = require('../regl')({gl: gl})
+const regl = require('../regl')({ gl: gl })
 
 const camera = require('canvas-orbit-camera')(webglCanvas)
 window.addEventListener('resize', fit(webglCanvas), false)
-
 
 camera.rotate([0.0, 0.0], [0.0, -0.4])
 camera.zoom(-28.0)
@@ -52,7 +51,7 @@ require('resl')({
       parser: JSON.parse
     }
   },
-  onDone: ({DATA}) => {
+  onDone: ({ DATA }) => {
     var meshBuffer = regl.buffer(DATA.MESH)
     var shadowBuffer = regl.buffer(DATA.SHADOW)
 
@@ -62,7 +61,7 @@ require('resl')({
         lightDir: () => [-0.39, -0.87, -0.29],
 
         // create the combined projection and view matrices.
-        camera: ({tick, viewportWidth, viewportHeight}) => {
+        camera: ({ tick, viewportWidth, viewportHeight }) => {
           var fovy = Math.PI / 2
           var aspect = viewportWidth / viewportHeight
           var near = 0.01
@@ -487,7 +486,7 @@ require('resl')({
       }
     })
 
-    regl.frame(({tick}) => {
+    regl.frame(({ tick }) => {
       var rabbits = []
 
       var phi0 = tick * 0.003
@@ -515,24 +514,24 @@ require('resl')({
       mat4.translate(mPlane, mPlane, [0, 0, 0])
 
       globalScope(() => {
-        regl.clear({depth: 1, color: [0, 0, 0, 1]})
+        regl.clear({ depth: 1, color: [0, 0, 0, 1] })
 
         // ----First pass: Draw mesh, no stencil buffer
         pass1(() => {
           // draw all the shadow-casting rabbits.
           for (var i = 0; i < rabbits.length; i++) {
-            drawRabbit({intensity: 1.0, model: rabbits[i]})
+            drawRabbit({ intensity: 1.0, model: rabbits[i] })
           }
         })
-        drawPlane({intensity: 1.0, model: mPlane})
+        drawPlane({ intensity: 1.0, model: mPlane })
 
         // ---Second pass: Draw to stencil buffer
         pass2(() => {
-          regl.clear({stencil: 0})
+          regl.clear({ stencil: 0 })
           shadowScope(() => {
             for (var i = 0; i < rabbits.length; i++) {
-              drawShadowSilhoutte({model: rabbits[i]})
-              drawShadowCaps({model: rabbits[i]})
+              drawShadowSilhoutte({ model: rabbits[i] })
+              drawShadowCaps({ model: rabbits[i] })
             }
           })
         })
@@ -544,9 +543,9 @@ require('resl')({
             but with a slightly darker color
           */
           for (var i = 0; i < rabbits.length; i++) {
-            drawRabbit({intensity: 0.1, model: rabbits[i]})
+            drawRabbit({ intensity: 0.1, model: rabbits[i] })
           }
-          drawPlane({intensity: 0.1, model: mPlane})
+          drawPlane({ intensity: 0.1, model: mPlane })
         })
       })
       camera.tick()

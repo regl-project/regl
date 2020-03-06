@@ -33,7 +33,7 @@ const draw = regl({
 
   uniforms: {
     color: regl.prop('color'),
-    angle: ({tick}) => 0.01 * tick
+    angle: ({ tick }) => 0.01 * tick
   },
 
   depth: {
@@ -43,7 +43,7 @@ const draw = regl({
   count: 3
 })
 
-regl.frame(({tick}) => {
+regl.frame(({ tick }) => {
   regl.clear({
     color: [0, 0, 0, 1]
   })

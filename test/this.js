@@ -30,7 +30,7 @@ tape('this / state variables', function (t) {
         position: regl.buffer([0, 0, 4, 0, 4, 4, 0, 4])
       },
 
-      depth: {enable: false, mask: false}
+      depth: { enable: false, mask: false }
     }
 
     Object.keys(slots).forEach(function (x) {
@@ -48,11 +48,11 @@ tape('this / state variables', function (t) {
       t.same(actual, expected, remark + ' - ' + suffix)
     }
 
-    regl.clear({color: [0, 0, 0, 0]})
+    regl.clear({ color: [0, 0, 0, 0] })
     command.call(args)
     checkPixels('draw')
 
-    regl.clear({color: [0, 0, 0, 0]})
+    regl.clear({ color: [0, 0, 0, 0] })
     command.call(args, 1)
     checkPixels('batch')
   }

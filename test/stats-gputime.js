@@ -44,9 +44,9 @@ tape('test gpuTime', function (t) {
     var draw3 = regl(obj)
     var draw4 = regl(obj)
 
-    var scope1 = regl({profile: true})
-    var scope2 = regl({profile: true})
-    var scope3 = regl({profile: true})
+    var scope1 = regl({ profile: true })
+    var scope2 = regl({ profile: true })
+    var scope3 = regl({ profile: true })
 
     t.ok(draw1.stats.gpuTime === 0, 'draw1.stats.gpuTime=0 at startup')
     t.ok(draw2.stats.gpuTime === 0, 'draw2.stats.gpuTime=0 at startup')
@@ -68,11 +68,11 @@ tape('test gpuTime', function (t) {
         partOne: function () {
           var batch = []
           for (var i = 0; i < 10; ++i) {
-            batch.push({offset: [0, 0.1 * i]})
+            batch.push({ offset: [0, 0.1 * i] })
           }
           draw1(batch)
 
-          draw2({offset: [0, 0.1]})
+          draw2({ offset: [0, 0.1] })
         },
         partTwo: function () {
           t.ok(draw1.stats.gpuTime > 0, 'draw1.stats.gpuTime > 0 after batch call')
@@ -87,7 +87,7 @@ tape('test gpuTime', function (t) {
       },
       {
         partOne: function () {
-          draw1({offset: [0, 0.1]})
+          draw1({ offset: [0, 0.1] })
         },
         partTwo: function () {
           // now test that calling the drawCall once again will increase gpuTime.
@@ -100,9 +100,9 @@ tape('test gpuTime', function (t) {
       {
         partOne: function () {
           for (var i = 0; i < 10; ++i) {
-            draw1({offset: [0, 0.1 * i]})
+            draw1({ offset: [0, 0.1 * i] })
           }
-          draw2({offset: [0, 0.1]})
+          draw2({ offset: [0, 0.1] })
         },
         partTwo: function () {
           // make sure that if we call a drawCall as one-shot several times, the counter is also incremented several times.
@@ -117,20 +117,20 @@ tape('test gpuTime', function (t) {
         partOne: function () {
           var batch = []
           for (var i = 0; i < 10; ++i) {
-            batch.push({offset: [0, 0.1 * i]})
+            batch.push({ offset: [0, 0.1 * i] })
           }
 
           scope1({}, function () {
             scope2({}, function () {
               for (var i = 0; i < 10; ++i) {
-                draw2({offset: [0, 0.1 * i]})
+                draw2({ offset: [0, 0.1 * i] })
               }
               scope3({}, function () {
-                draw3({offset: [0, 0.1]})
+                draw3({ offset: [0, 0.1] })
                 draw1(batch)
               })
             })
-            draw4({offset: [0, 0.1]})
+            draw4({ offset: [0, 0.1] })
           })
         },
         partTwo: function () {

@@ -376,7 +376,7 @@ tape('framebuffer', function (t) {
     for (i = 0; i < 6; i++) {
       checkContents(testCubeFBO1.faces[i], [0, 255, 255, 255], 'cube draw fbo 1, face #' + i)
     }
-  }*/
+  } */
 
   // TODO: write tests for cubic fbos once issue #154 is resolved.
   // batch mode

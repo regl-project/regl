@@ -252,7 +252,7 @@ function generateGallery (files) {
 
     li += '</li>'
 
-    return {li: li, tags: tags, id: id}
+    return { li: li, tags: tags, id: id }
   })
 
   // next, we'll make sure to put the basic examples first in the list.
@@ -260,7 +260,7 @@ function generateGallery (files) {
   for (i = 0; i < pfiles.length; i++) {
     var pfile = pfiles[i]
     if (pfile.tags.indexOf('basic') >= 0) {
-      exListStr += pfile.li + '\n'  // add basic first.
+      exListStr += pfile.li + '\n' // add basic first.
     } else {
       laterStr += pfile.li + '\n' // add later.
     }
@@ -285,7 +285,7 @@ function generateGallery (files) {
   var json = []
   for (i = 0; i < pfiles.length; i++) {
     var p = pfiles[i]
-    json.push({tags: p.tags, id: p.id})
+    json.push({ tags: p.tags, id: p.id })
   }
 
   // next, we inject some javascript code that is used to implement the tag-filtering system.

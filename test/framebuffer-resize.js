@@ -47,13 +47,13 @@ tape('framebuffer resizing', function (t) {
   var fbo = regl.framebuffer(10, 10)
 
   t.equals(fbo.resize(10), fbo, 'resizing to same size does nothing')
-  checkFBO(fbo, {width: 10, height: 10})
+  checkFBO(fbo, { width: 10, height: 10 })
 
   t.equals(fbo.resize(30, 5), fbo, 'resize returned the right thing')
-  checkFBO(fbo, {width: 30, height: 5})
+  checkFBO(fbo, { width: 30, height: 5 })
 
   t.equals(fbo.resize(8), fbo, 'resize returned the right thing')
-  checkFBO(fbo, {width: 8, height: 8})
+  checkFBO(fbo, { width: 8, height: 8 })
 
   // reinitialize fbo
 
@@ -62,12 +62,12 @@ tape('framebuffer resizing', function (t) {
     color: color
   })
 
-  checkFBO(fbo, {width: 8, height: 8})
+  checkFBO(fbo, { width: 8, height: 8 })
   t.equals(fbo.color[0], color)
 
   fbo.resize(2, 3)
 
-  checkFBO(fbo, {width: 2, height: 3})
+  checkFBO(fbo, { width: 2, height: 3 })
   t.equals(fbo.color[0], color)
 
   if (!ie) {
@@ -75,20 +75,20 @@ tape('framebuffer resizing', function (t) {
     var cubeFbo = regl.framebufferCube(10)
 
     t.equals(cubeFbo.resize(10), cubeFbo, 'cube, resizing to same size does nothing')
-    checkCubeFBO(cubeFbo, {width: 10, height: 10})
+    checkCubeFBO(cubeFbo, { width: 10, height: 10 })
 
     // this testcase should pass, but right now it does not.
     // We'll uncomment once issue #152 is resolved.
     t.equals(cubeFbo.resize(3), cubeFbo, 'cube, resizing returns the right thing')
-    checkCubeFBO(cubeFbo, {width: 3, height: 3})
+    checkCubeFBO(cubeFbo, { width: 3, height: 3 })
 
-    cubeFbo({radius: 8})
-    checkCubeFBO(cubeFbo, {width: 8, height: 8})
+    cubeFbo({ radius: 8 })
+    checkCubeFBO(cubeFbo, { width: 8, height: 8 })
   }
 
   // now test .resize for MRT.
   if (regl.hasExtension('webgl_draw_buffers')) {
-    var mrtFbo = regl.framebuffer({colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments})
+    var mrtFbo = regl.framebuffer({ colorFormat: 'rgba', colorType: 'uint8', colorCount: regl.limits.maxColorAttachments })
 
     mrtFbo.resize(2, 3)
 

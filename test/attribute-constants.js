@@ -47,7 +47,7 @@ tape('attribute constants', function (t) {
       ]
     },
     count: 3,
-    depth: {enable: false},
+    depth: { enable: false },
     primitive: 'triangles'
   }
 
@@ -217,15 +217,15 @@ tape('attribute constants', function (t) {
       command({ color: color })
     },
     'batch': function (command, color) {
-      command([{color: color}])
+      command([{ color: color }])
     },
     'scope': function (command, color) {
-      command({color: color}, function () {
+      command({ color: color }, function () {
         regl.draw()
       })
     },
     'scope - batch': function (command, color) {
-      command({color: color}, function () {
+      command({ color: color }, function () {
         regl.draw(1)
       })
     }

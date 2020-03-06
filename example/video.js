@@ -52,7 +52,7 @@ const drawDoggie = regl({
   uniforms: {
     texture: regl.prop('video'),
 
-    screenShape: ({viewportWidth, viewportHeight}) =>
+    screenShape: ({ viewportWidth, viewportHeight }) =>
       [viewportWidth, viewportHeight],
 
     time: regl.context('time')
@@ -70,7 +70,7 @@ require('resl')({
     }
   },
 
-  onDone: ({video}) => {
+  onDone: ({ video }) => {
     video.autoplay = true
     video.loop = true
     video.play()

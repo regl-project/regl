@@ -165,12 +165,12 @@ const drawWorld = regl({
 
   uniforms: {
     view: regl.context('view'),
-    projection: ({viewportWidth, viewportHeight}) =>
+    projection: ({ viewportWidth, viewportHeight }) =>
       mat4.perspective([],
-                       Math.PI / 4,
-                       viewportWidth / viewportHeight,
-                       0.01,
-                       1000),
+        Math.PI / 4,
+        viewportWidth / viewportHeight,
+        0.01,
+        1000),
     atlas: regl.prop('atlas')
   },
 
@@ -200,7 +200,7 @@ require('resl')({
 
   onDone: ({ atlas }) => {
     regl.frame(() => {
-      drawWorld({position, elements, uv, normal, atlas})
+      drawWorld({ position, elements, uv, normal, atlas })
       camera.tick()
     })
   }

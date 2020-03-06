@@ -45,7 +45,7 @@ var invalidBlendCombinations = [
 
 tape('blend', function (t) {
   var gl = createContext(16, 16)
-  var regl = createREGL({gl: gl, optionalExtensions: ['ext_blend_minmax']})
+  var regl = createREGL({ gl: gl, optionalExtensions: ['ext_blend_minmax'] })
 
   if (regl.hasExtension('ext_blend_minmax')) {
     blendEquations.min = GL_MIN_EXT

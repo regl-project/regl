@@ -228,7 +228,7 @@ tape('depth', function (t) {
   }
 
   function testStatic (cdepth, depths, flags) {
-    var drawStatic = regl(extend(extend({}, desc), {depth: flags}))
+    var drawStatic = regl(extend(extend({}, desc), { depth: flags }))
     regl.clear({
       color: [0, 0, 0, 1],
       depth: cdepth

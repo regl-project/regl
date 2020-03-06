@@ -37,7 +37,7 @@ tape('texture 2d', function (t) {
       tex: regl.prop('texture')
     },
 
-    depth: {enable: false},
+    depth: { enable: false },
 
     count: 3
   })
@@ -106,7 +106,7 @@ tape('texture 2d', function (t) {
       }
     },
 
-    depth: {enable: false},
+    depth: { enable: false },
 
     count: 3
   })
@@ -206,7 +206,7 @@ tape('texture 2d', function (t) {
 
     if (regl.hasExtension('ext_texture_filter_anisotropic')) {
       var aniso = gl.getTexParameter(gl.TEXTURE_2D,
-                                     gl.getExtension('ext_texture_filter_anisotropic').TEXTURE_MAX_ANISOTROPY_EXT)
+        gl.getExtension('ext_texture_filter_anisotropic').TEXTURE_MAX_ANISOTROPY_EXT)
       t.equals(aniso, props.anisotropic || 1, name + ': aniso ext')
     }
   }
@@ -673,23 +673,23 @@ tape('texture 2d', function (t) {
       'float type infer')
 
     checkProperties(
-      regl.texture({type: 'float', shape: [1, 1, 1], format: 'luminance'}),
-      {width: 1, height: 1, format: 'luminance', type: 'float32'},
+      regl.texture({ type: 'float', shape: [1, 1, 1], format: 'luminance' }),
+      { width: 1, height: 1, format: 'luminance', type: 'float32' },
       'luminance_float32')
 
     checkProperties(
-      regl.texture({type: 'float', shape: [1, 1], format: 'alpha'}),
-      {width: 1, height: 1, format: 'alpha', type: 'float32'},
+      regl.texture({ type: 'float', shape: [1, 1], format: 'alpha' }),
+      { width: 1, height: 1, format: 'alpha', type: 'float32' },
       'alpha_float32')
 
     checkProperties(
-      regl.texture({type: 'float', shape: [1, 1, 2]}),
-      {width: 1, height: 1, format: 'luminance alpha', type: 'float32'},
+      regl.texture({ type: 'float', shape: [1, 1, 2] }),
+      { width: 1, height: 1, format: 'luminance alpha', type: 'float32' },
       'luminance_alpha_float32')
 
     checkProperties(
-      regl.texture({type: 'float', shape: [1, 1, 3]}),
-      {width: 1, height: 1, format: 'rgb', type: 'float32'},
+      regl.texture({ type: 'float', shape: [1, 1, 3] }),
+      { width: 1, height: 1, format: 'rgb', type: 'float32' },
       'rgb_float32')
   } else {
     checkShouldThrow({
@@ -706,23 +706,23 @@ tape('texture 2d', function (t) {
     //
 
     checkProperties(
-      regl.texture({type: 'float16', shape: [1, 1, 1], format: 'luminance'}),
-      {width: 1, height: 1, format: 'luminance', type: 'float16'},
+      regl.texture({ type: 'float16', shape: [1, 1, 1], format: 'luminance' }),
+      { width: 1, height: 1, format: 'luminance', type: 'float16' },
       'luminance_float16')
 
     checkProperties(
-      regl.texture({type: 'float16', shape: [1, 1], format: 'alpha'}),
-      {width: 1, height: 1, format: 'alpha', type: 'float16'},
+      regl.texture({ type: 'float16', shape: [1, 1], format: 'alpha' }),
+      { width: 1, height: 1, format: 'alpha', type: 'float16' },
       'alpha_float16')
 
     checkProperties(
-      regl.texture({type: 'float16', shape: [1, 1, 2]}),
-      {width: 1, height: 1, format: 'luminance alpha', type: 'float16'},
+      regl.texture({ type: 'float16', shape: [1, 1, 2] }),
+      { width: 1, height: 1, format: 'luminance alpha', type: 'float16' },
       'luminance_alpha_float16')
 
     checkProperties(
-      regl.texture({type: 'float16', shape: [1, 1, 3]}),
-      {width: 1, height: 1, format: 'rgb', type: 'float16'},
+      regl.texture({ type: 'float16', shape: [1, 1, 3] }),
+      { width: 1, height: 1, format: 'rgb', type: 'float16' },
       'rgb_float16')
   } else {
     checkShouldThrow({
@@ -751,20 +751,20 @@ tape('texture 2d', function (t) {
   if (regl.hasExtension('webgl_compressed_texture_s3tc')) {
     var dxtTestCases = []
 
-    dxtTestCases.push({shape: [6, 6], format: 'rgb s3tc dxt1', data: getZeros(18), isThrow: true})
-    dxtTestCases.push({shape: [6, 6], format: 'rgba s3tc dxt1', data: getZeros(18), isThrow: true})
-    dxtTestCases.push({shape: [6, 6], format: 'rgba s3tc dxt3', data: getZeros(36), isThrow: true})
-    dxtTestCases.push({shape: [6, 6], format: 'rgba s3tc dxt5', data: getZeros(36), isThrow: true})
+    dxtTestCases.push({ shape: [6, 6], format: 'rgb s3tc dxt1', data: getZeros(18), isThrow: true })
+    dxtTestCases.push({ shape: [6, 6], format: 'rgba s3tc dxt1', data: getZeros(18), isThrow: true })
+    dxtTestCases.push({ shape: [6, 6], format: 'rgba s3tc dxt3', data: getZeros(36), isThrow: true })
+    dxtTestCases.push({ shape: [6, 6], format: 'rgba s3tc dxt5', data: getZeros(36), isThrow: true })
 
-    dxtTestCases.push({shape: [8, 8], format: 'rgb s3tc dxt1', data: getZeros(32), isThrow: false})
-    dxtTestCases.push({shape: [8, 8], format: 'rgba s3tc dxt1', data: getZeros(32), isThrow: false})
-    dxtTestCases.push({shape: [8, 8], format: 'rgba s3tc dxt3', data: getZeros(64), isThrow: false})
-    dxtTestCases.push({shape: [8, 8], format: 'rgba s3tc dxt5', data: getZeros(64), isThrow: false})
+    dxtTestCases.push({ shape: [8, 8], format: 'rgb s3tc dxt1', data: getZeros(32), isThrow: false })
+    dxtTestCases.push({ shape: [8, 8], format: 'rgba s3tc dxt1', data: getZeros(32), isThrow: false })
+    dxtTestCases.push({ shape: [8, 8], format: 'rgba s3tc dxt3', data: getZeros(64), isThrow: false })
+    dxtTestCases.push({ shape: [8, 8], format: 'rgba s3tc dxt5', data: getZeros(64), isThrow: false })
 
     for (var i = 0; i < dxtTestCases.length; i++) {
       var testCase = dxtTestCases[i]
 
-      var arg = {shape: testCase.shape, type: 'uint8', format: testCase.format, data: testCase.data}
+      var arg = { shape: testCase.shape, type: 'uint8', format: testCase.format, data: testCase.data }
       var name = 'compressed texture of shape ' + testCase.shape + ' and format ' + testCase.format
 
       if (testCase.isThrow) {

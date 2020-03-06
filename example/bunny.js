@@ -32,14 +32,14 @@ const drawBunny = regl({
 
   uniforms: {
     model: mat4.identity([]),
-    view: ({tick}) => {
+    view: ({ tick }) => {
       const t = 0.01 * tick
       return mat4.lookAt([],
         [30 * Math.cos(t), 2.5, 30 * Math.sin(t)],
         [0, 2.5, 0],
         [0, 1, 0])
     },
-    projection: ({viewportWidth, viewportHeight}) =>
+    projection: ({ viewportWidth, viewportHeight }) =>
       mat4.perspective([],
         Math.PI / 4,
         viewportWidth / viewportHeight,

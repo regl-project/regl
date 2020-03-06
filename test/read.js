@@ -40,31 +40,31 @@ tape('read pixels', function (t) {
   t.equals(result, bytes, 'read typedarray ok')
 
   // width/height input
-  t.equals(regl.read({width: 2, height: 2}).length, 16, 'width/height ok')
+  t.equals(regl.read({ width: 2, height: 2 }).length, 16, 'width/height ok')
 
   // options input
-  t.equals(regl.read({x: 3, y: 3}).length, 16, 'offset ok')
+  t.equals(regl.read({ x: 3, y: 3 }).length, 16, 'offset ok')
 
   // read out of bounds
-  throws('bad width', [{width: -2}])
-  throws('bad height', [{height: -2}])
+  throws('bad width', [{ width: -2 }])
+  throws('bad height', [{ height: -2 }])
   throws('bad offset', [{ x: -2 }])
-  throws('bad typedarray', [{data: []}])
+  throws('bad typedarray', [{ data: [] }])
   throws('small typedarray', [new Uint8Array(1)])
 
   // check pixels for default framebuffer
-  regl.clear({color: [1, 0, 0, 1]})
+  regl.clear({ color: [1, 0, 0, 1] })
   var pixels = regl.read()
   checkFBO(pixels, [255, 0, 0, 255], 'read null fbo ok')
 
-  regl.clear({color: [1, 0, 0, 1]})
+  regl.clear({ color: [1, 0, 0, 1] })
   pixels = new Uint8Array(W * H * 4)
-  regl.read({data: pixels})
+  regl.read({ data: pixels })
   checkFBO(pixels, [255, 0, 0, 255], 'read null fbo, reuse buffer, ok')
 
   pixels = new Float32Array(W * H * 4)
-  throws('throws if attempt use Float32Array to null fbo', [{data: pixels}])
-  throws('throws if attempt use object to null fbo', [{data: {}}])
+  throws('throws if attempt use Float32Array to null fbo', [{ data: pixels }])
+  throws('throws if attempt use object to null fbo', [{ data: {} }])
 
   // now do it for an uint8 fbo
   var fbo = regl.framebuffer({
@@ -73,23 +73,23 @@ tape('read pixels', function (t) {
     colorFormat: 'rgba',
     colorType: 'uint8'
   })
-  regl({framebuffer: fbo})(function () {
-    regl.clear({color: [1, 0, 0, 1]})
+  regl({ framebuffer: fbo })(function () {
+    regl.clear({ color: [1, 0, 0, 1] })
     pixels = regl.read()
     checkFBO(pixels, [255, 0, 0, 255], 'read uint8 fbo ok')
   })
 
-  regl({framebuffer: fbo})(function () {
-    regl.clear({color: [1, 0, 0, 1]})
+  regl({ framebuffer: fbo })(function () {
+    regl.clear({ color: [1, 0, 0, 1] })
     pixels = new Uint8Array(W * H * 4)
-    regl.read({data: pixels})
+    regl.read({ data: pixels })
     checkFBO(pixels, [255, 0, 0, 255], 'read uint8 fbo, reuse buffer, ok')
   })
 
-  regl({framebuffer: fbo})(function () {
+  regl({ framebuffer: fbo })(function () {
     pixels = new Float32Array(W * H * 4)
-    throws('throws if attempt use Float32Array to uint8 fbo', [{data: pixels}])
-    throws('throws if attempt use object to uint8 fbo', [{data: {}}])
+    throws('throws if attempt use Float32Array to uint8 fbo', [{ data: pixels }])
+    throws('throws if attempt use object to uint8 fbo', [{ data: {} }])
   })
 
   // now do it for an float fbo
@@ -101,23 +101,23 @@ tape('read pixels', function (t) {
       colorType: 'float'
     })
 
-    regl({framebuffer: fbo})(function () {
-      regl.clear({color: [0.5, 0.25, 0.5, 0.25]})
+    regl({ framebuffer: fbo })(function () {
+      regl.clear({ color: [0.5, 0.25, 0.5, 0.25] })
       pixels = regl.read()
       checkFBO(pixels, [0.5, 0.25, 0.5, 0.25], 'read float fbo ok')
     })
 
-    regl({framebuffer: fbo})(function () {
-      regl.clear({color: [0.5, 0.25, 0.5, 0.25]})
+    regl({ framebuffer: fbo })(function () {
+      regl.clear({ color: [0.5, 0.25, 0.5, 0.25] })
       pixels = new Float32Array(W * H * 4)
-      regl.read({data: pixels})
+      regl.read({ data: pixels })
       checkFBO(pixels, [0.5, 0.25, 0.5, 0.25], 'read float fbo, reuse buffer, ok')
     })
 
-    regl({framebuffer: fbo})(function () {
+    regl({ framebuffer: fbo })(function () {
       pixels = new Uint8Array(W * H * 4)
-      throws('throws if attempt use Uint8Array to float fbo', [{data: pixels}])
-      throws('throws if attempt use object to float fbo', [{data: {}}])
+      throws('throws if attempt use Uint8Array to float fbo', [{ data: pixels }])
+      throws('throws if attempt use object to float fbo', [{ data: {} }])
     })
   }
 
@@ -136,7 +136,7 @@ tape('read pixels', function (t) {
         width: W,
         height: H
       })
-      regl({framebuffer: fbo})(function () {
+      regl({ framebuffer: fbo })(function () {
         regl.read()
       })
     } catch (e) {

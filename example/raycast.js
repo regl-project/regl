@@ -9,7 +9,7 @@
 
 const canvas = document.body.appendChild(document.createElement('canvas'))
 const fit = require('canvas-fit')
-const regl = require('../regl')({canvas: canvas})
+const regl = require('../regl')({ canvas: canvas })
 const mat4 = require('gl-mat4')
 const vec3 = require('gl-vec3')
 window.addEventListener('resize', fit(canvas), false)
@@ -86,8 +86,8 @@ var boxPosition = [
   [+0.5, +0.5, +0.5], [+0.5, +0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], // positive x face
   [+0.5, +0.5, -0.5], [-0.5, +0.5, -0.5], [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], // negative z face
   [-0.5, +0.5, -0.5], [-0.5, +0.5, +0.5], [-0.5, -0.5, +0.5], [-0.5, -0.5, -0.5], // negative x face.
-  [-0.5, +0.5, -0.5], [+0.5, +0.5, -0.5], [+0.5, +0.5, +0.5], [-0.5, +0.5, +0.5],  // top face
-  [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], [-0.5, -0.5, +0.5]  // bottom face
+  [-0.5, +0.5, -0.5], [+0.5, +0.5, -0.5], [+0.5, +0.5, +0.5], [-0.5, +0.5, +0.5], // top face
+  [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], [-0.5, -0.5, +0.5] // bottom face
 ]
 
 const boxElements = [
@@ -117,12 +117,12 @@ const globalScope = regl({
   uniforms: {
     lightDir: [0.39, 0.87, 0.29],
     view: () => viewMatrix,
-    projection: ({viewportWidth, viewportHeight}) =>
+    projection: ({ viewportWidth, viewportHeight }) =>
       mat4.perspective(projectionMatrix,
-                       Math.PI / 4,
-                       viewportWidth / viewportHeight,
-                       0.01,
-                       1000)
+        Math.PI / 4,
+        viewportWidth / viewportHeight,
+        0.01,
+        1000)
   }
 })
 
@@ -245,15 +245,15 @@ var boxMesh = new Mesh(boxElements, boxPosition, boxNormal)
 var planeMesh = new Mesh(planeElements, planePosition, planeNormal)
 
 var meshes = [
-  {scale: 80.0, translate: [0.0, 0.0, 0.0], color: [0.5, 0.5, 0.5], mesh: planeMesh},
+  { scale: 80.0, translate: [0.0, 0.0, 0.0], color: [0.5, 0.5, 0.5], mesh: planeMesh },
 
-  {scale: 0.2, translate: [0.0, 0.0, 0.0], color: [0.6, 0.0, 0.0], mesh: bunnyMesh},
-  {scale: 0.3, translate: [-6.0, 0.0, -3.0], color: [0.6, 0.6, 0.0], mesh: bunnyMesh},
-  {scale: 0.16, translate: [3.0, 0.0, 2.0], color: [0.2, 0.5, 0.6], mesh: bunnyMesh},
+  { scale: 0.2, translate: [0.0, 0.0, 0.0], color: [0.6, 0.0, 0.0], mesh: bunnyMesh },
+  { scale: 0.3, translate: [-6.0, 0.0, -3.0], color: [0.6, 0.6, 0.0], mesh: bunnyMesh },
+  { scale: 0.16, translate: [3.0, 0.0, 2.0], color: [0.2, 0.5, 0.6], mesh: bunnyMesh },
 
-  {scale: 2.0, translate: [4.0, 1.0, 0.0], color: [0.6, 0.0, 0.0], mesh: boxMesh},
-  {scale: 1.3, translate: [-3.0, 0.6, -4.0], color: [0.0, 0.6, 0.0], mesh: boxMesh},
-  {scale: 0.7, translate: [-3.0, 0.5, 4.0], color: [0.0, 0.0, 0.8], mesh: boxMesh}
+  { scale: 2.0, translate: [4.0, 1.0, 0.0], color: [0.6, 0.0, 0.0], mesh: boxMesh },
+  { scale: 1.3, translate: [-3.0, 0.6, -4.0], color: [0.0, 0.6, 0.0], mesh: boxMesh },
+  { scale: 0.7, translate: [-3.0, 0.5, 4.0], color: [0.0, 0.0, 0.8], mesh: boxMesh }
 ]
 
 var iSelectedMesh = -1
@@ -287,9 +287,9 @@ mb.on('down', function () {
       // apply model matrix on the triangle.
       var tri =
           [vec3.transformMat4([], m.mesh.position[f[0]], modelMatrix),
-           vec3.transformMat4([], m.mesh.position[f[1]], modelMatrix),
-           vec3.transformMat4([], m.mesh.position[f[2]], modelMatrix)
-      ]
+            vec3.transformMat4([], m.mesh.position[f[1]], modelMatrix),
+            vec3.transformMat4([], m.mesh.position[f[2]], modelMatrix)
+          ]
       var res = []
       var t = intersectTriangle(res, rayPoint, rayDir, tri)
       if (t !== null) {
@@ -305,7 +305,7 @@ mb.on('down', function () {
   }
 })
 
-regl.frame(({tick}) => {
+regl.frame(({ tick }) => {
   regl.clear({
     color: [0, 0, 0, 255],
     depth: 1

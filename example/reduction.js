@@ -7,7 +7,7 @@
   becomes 'op(x0, op(x1, op(x2,...) ))'. For example, given the elements 4, 2, 4, 1, and the operator '+',
   the parallell reduction will be 11, which is just the sum of the elements. </p>
 */
-/* globals performance*/
+/* globals performance */
 
 // we're not gonna render anything in this demo, so make smallest possible canvas.
 const canvas = document.body.appendChild(document.createElement('canvas'))
@@ -143,19 +143,19 @@ function gpuReduceCreate (data, op) {
   // slower than the CPU.
   return function () {
     // first pass.
-    reducePass({inTex: firstTexture, outFbo: fbos[0], rcpDim: 1.0 / (fbos[0].width * 2)})
+    reducePass({ inTex: firstTexture, outFbo: fbos[0], rcpDim: 1.0 / (fbos[0].width * 2) })
 
     // the rest of the passes.
     for (i = 0; i < fbos.length - 1; i++) {
       var inFbo = fbos[i + 0]
       var outFbo = fbos[i + 1]
 
-      reducePass({inTex: inFbo.color[0], outFbo: outFbo, rcpDim: 1.0 / (outFbo.width * 2)})
+      reducePass({ inTex: inFbo.color[0], outFbo: outFbo, rcpDim: 1.0 / (outFbo.width * 2) })
     }
 
     // now retrieve the result from the GPU
     var result
-    regl({framebuffer: fbos[fbos.length - 1]})(() => {
+    regl({ framebuffer: fbos[fbos.length - 1] })(() => {
       result = regl.read()[0]
     })
     return result
@@ -204,8 +204,8 @@ function profile (gpu) {
     }
 
     var cmd = gpu
-        ? () => gpuReduce()
-        : () => cpuReduce(data, (a, b) => Math.max(a, b))
+      ? () => gpuReduce()
+      : () => cpuReduce(data, (a, b) => Math.max(a, b))
 
     // profile.
     var t0 = performance.now()

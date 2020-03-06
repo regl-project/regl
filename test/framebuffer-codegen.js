@@ -12,7 +12,7 @@ tape('framebuffer-codegen', function (t) {
   })
 
   function checkColor (name, fbo, color, x, y) {
-    setFBO({fbo: fbo}, function (context) {
+    setFBO({ fbo: fbo }, function (context) {
       var pixels = regl.read({ x: x, y: y, width: 1, height: 1 })
       t.same(
         Array.prototype.slice.call(pixels),
@@ -55,7 +55,7 @@ tape('framebuffer-codegen', function (t) {
       }
       return 3
     },
-    depth: {enable: false}
+    depth: { enable: false }
   }
 
   function expandCases (input, propName, propValue) {
@@ -87,13 +87,13 @@ tape('framebuffer-codegen', function (t) {
 
       var context = {}
       context[propName] = propValue
-      ext = {context: extend(context, parent.context || {})}
+      ext = { context: extend(context, parent.context || {}) }
       ext[propName] = regl.context(propName)
       cases[propName + '-context-const ' + name] = extend(extend({}, parent), ext)
 
       context = {}
       context[propName] = regl.prop(propName)
-      ext = {context: extend(context, parent.context || {})}
+      ext = { context: extend(context, parent.context || {}) }
       ext[propName] = regl.context(propName)
       cases[propName + '-context-prop ' + name] = extend(extend({}, parent), ext)
 
@@ -120,10 +120,10 @@ tape('framebuffer-codegen', function (t) {
       },
       'framebuffer',
       framebuffer),
-      'viewport',
-      viewport),
-      'frag',
-      frag)
+    'viewport',
+    viewport),
+    'frag',
+    frag)
   }
 
   function generateDrawModes (props_) {
@@ -285,7 +285,7 @@ tape('framebuffer-codegen', function (t) {
       var cmd = tests[name]
       var testName = fboName + ',' + viewportName + ':' + name
       colors.forEach(function (color) {
-        setFBO({fbo: fbo}, function () {
+        setFBO({ fbo: fbo }, function () {
           regl.clear({
             color: [0, 0, 0, 0]
           })

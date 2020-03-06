@@ -192,15 +192,15 @@ tape('renderbuffer parsing', function (t) {
     t.equals(r.format, expectedFormat, ' format str for format ' + expectedFormat)
   }
 
-  checkFormat({format: 'rgba4'})
-  checkFormat({format: 'rgb565'})
-  checkFormat({format: 'rgb5 a1'})
-  checkFormat({format: 'depth'})
-  checkFormat({format: 'stencil'})
-  checkFormat({format: 'depth stencil'})
+  checkFormat({ format: 'rgba4' })
+  checkFormat({ format: 'rgb565' })
+  checkFormat({ format: 'rgb5 a1' })
+  checkFormat({ format: 'depth' })
+  checkFormat({ format: 'stencil' })
+  checkFormat({ format: 'depth stencil' })
 
   if (regl.hasExtension('ext_srgb')) {
-    checkFormat({format: 'srgba'})
+    checkFormat({ format: 'srgba' })
   }
 
   /*

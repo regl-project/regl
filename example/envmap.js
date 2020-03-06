@@ -12,7 +12,7 @@ const normals = require('angle-normals')
 
 const setupEnvMap = regl({
   context: {
-    view: ({tick}) => {
+    view: ({ tick }) => {
       const t = 0.01 * tick
       return mat4.lookAt([],
         [30 * Math.cos(t), 2.5, 30 * Math.sin(t)],
@@ -30,13 +30,13 @@ const setupEnvMap = regl({
   uniforms: {
     envmap: regl.prop('cube'),
     view: regl.context('view'),
-    projection: ({viewportWidth, viewportHeight}) =>
+    projection: ({ viewportWidth, viewportHeight }) =>
       mat4.perspective([],
         Math.PI / 4,
         viewportWidth / viewportHeight,
         0.01,
         1000),
-    invView: ({view}) => mat4.invert([], view)
+    invView: ({ view }) => mat4.invert([], view)
   }
 })
 

@@ -1,4 +1,4 @@
-/* global performance*/
+/* global performance */
 var CASES = require('./list')
 var extend = require('../lib/util/extend')
 var createREGL = require('../dist/regl')
@@ -100,7 +100,7 @@ function benchmark (caseName, testCase) {
       stencil: 0
     })
     var start = present()
-    procedure({tick: tick})
+    procedure({ tick: tick })
     timeSamples.push(present() - start)
 
     // dont have this in headless.
@@ -135,7 +135,7 @@ function benchmark (caseName, testCase) {
         depth: 1,
         stencil: 0
       })
-      procedure({tick: i})
+      procedure({ tick: i })
     }
 
     timeSamples.length = 0

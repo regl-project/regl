@@ -5,7 +5,7 @@
 
 */
 /* global AudioContext */
-const regl = require('../regl')({pixelRatio: 1})
+const regl = require('../regl')({ pixelRatio: 1 })
 const perspective = require('gl-mat4/perspective')
 const lookAt = require('gl-mat4/lookAt')
 
@@ -20,7 +20,7 @@ require('resl')({
     }
   },
 
-  onDone: ({song}) => {
+  onDone: ({ song }) => {
     const context = new AudioContext()
     const source = context.createMediaElementSource(song)
     const analyser = context.createAnalyser()
@@ -143,27 +143,27 @@ require('resl')({
       },
 
       uniforms: {
-        offsetRow: ({tick}) => tick % N,
+        offsetRow: ({ tick }) => tick % N,
         terrain: terrainTexture,
-        projection: ({viewportWidth, viewportHeight}) =>
+        projection: ({ viewportWidth, viewportHeight }) =>
           perspective([],
             Math.PI / 8,
             viewportWidth / viewportHeight,
             0.01,
             1000),
-        view: ({tick}) =>
+        view: ({ tick }) =>
           lookAt([],
             [ 0.5 + 0.2 * Math.cos(0.001 * tick),
               1,
               0.7 + 0.2 * Math.cos(0.003 * tick + 2.4) ],
             [0.5, 0, 0],
             [0, 0, 1]),
-        lightPosition: ({tick}) => [
+        lightPosition: ({ tick }) => [
           0.5 + Math.sin(0.01 * tick),
           1.0 + Math.cos(0.01 * tick),
           1.0 + 0.6 * Math.cos(0.04 * tick) ],
         color: colorTexture,
-        t: ({tick}) => 0.01 * tick
+        t: ({ tick }) => 0.01 * tick
       },
 
       elements: null,
@@ -178,7 +178,7 @@ require('resl')({
       data: new Uint8Array(N)
     }
     const freqSamples = new Uint8Array(N)
-    regl.frame(({tick}) => {
+    regl.frame(({ tick }) => {
       const offsetRow = tick % N
 
       // Clear background

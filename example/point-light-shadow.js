@@ -57,8 +57,8 @@ var boxPosition = [
   [+0.5, +0.5, +0.5], [+0.5, +0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], // positive x face
   [+0.5, +0.5, -0.5], [-0.5, +0.5, -0.5], [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], // negative z face
   [-0.5, +0.5, -0.5], [-0.5, +0.5, +0.5], [-0.5, -0.5, +0.5], [-0.5, -0.5, -0.5], // negative x face.
-  [-0.5, +0.5, -0.5], [+0.5, +0.5, -0.5], [+0.5, +0.5, +0.5], [-0.5, +0.5, +0.5],  // top face
-  [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], [-0.5, -0.5, +0.5]  // bottom face
+  [-0.5, +0.5, -0.5], [+0.5, +0.5, -0.5], [+0.5, +0.5, +0.5], [-0.5, +0.5, +0.5], // top face
+  [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], [-0.5, -0.5, +0.5] // bottom face
 ]
 
 const boxElements = [
@@ -148,12 +148,12 @@ const drawDepth = regl({
 const drawNormal = regl({
   uniforms: {
     view: () => camera.view(),
-    projection: ({viewportWidth, viewportHeight}) =>
+    projection: ({ viewportWidth, viewportHeight }) =>
       mat4.perspective([],
-                       Math.PI / 4,
-                       viewportWidth / viewportHeight,
-                       0.01,
-                       1000),
+        Math.PI / 4,
+        viewportWidth / viewportHeight,
+        0.01,
+        1000),
     shadowCube: shadowFbo
   },
   frag: `
@@ -248,7 +248,7 @@ var bunnyMesh = new Mesh(bunny.cells, bunny.positions, normals(bunny.cells, bunn
 var boxMesh = new Mesh(boxElements, boxPosition, boxNormal)
 var planeMesh = new Mesh(planeElements, planePosition, planeNormal)
 
-regl.frame(({tick}) => {
+regl.frame(({ tick }) => {
   var drawMeshes = () => {
     regl.clear({
       color: [0, 0, 0, 255],
@@ -270,7 +270,7 @@ regl.frame(({tick}) => {
       g = ((Math.abs(32278 * i + 213) % 255) / 255) * 0.4 + 0.15
       b = ((Math.abs(3112 * i * i * i + 2137 + i) % 255) / 255) * 0.05 + 0.05
 
-      bunnyMesh.draw({scale: 0.7, translate: [R * Math.cos(theta + phi0), 3.0, R * Math.sin(theta + phi0)], color: [r, g, b]})
+      bunnyMesh.draw({ scale: 0.7, translate: [R * Math.cos(theta + phi0), 3.0, R * Math.sin(theta + phi0)], color: [r, g, b] })
     }
 
     for (i = 0; i < 1.0; i += 0.15) {
@@ -281,10 +281,10 @@ regl.frame(({tick}) => {
       g = ((Math.abs(32278 * i + 213) % 255) / 255) * 0.3 + 0.4
       b = ((Math.abs(3112 * i * i * i + 2137 + i) % 255) / 255) * 0.4 + 0.4
 
-      boxMesh.draw({scale: 4.2, translate: [R * Math.cos(theta + phi1), 9.0, R * Math.sin(theta + phi1)], color: [r, g, b]})
+      boxMesh.draw({ scale: 4.2, translate: [R * Math.cos(theta + phi1), 9.0, R * Math.sin(theta + phi1)], color: [r, g, b] })
     }
 
-    planeMesh.draw({scale: 130.0, translate: [0.0, 0.0, 0.0], color: [1.0, 1.0, 1.0]})
+    planeMesh.draw({ scale: 130.0, translate: [0.0, 0.0, 0.0], color: [1.0, 1.0, 1.0] })
   }
 
   globalScope(() => {
