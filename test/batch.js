@@ -55,7 +55,7 @@ tape('batch', function (t) {
 
       count: 1,
 
-      depth: {enable: false},
+      depth: { enable: false },
 
       primitive: 'points'
     })
@@ -89,7 +89,7 @@ tape('batch', function (t) {
 
       count: 1,
 
-      depth: {enable: false},
+      depth: { enable: false },
 
       primitive: 'points'
     })

@@ -59,12 +59,12 @@ const updateSprites = regl({
   }
   `,
 
-  depth: {enable: false},
+  depth: { enable: false },
 
-  framebuffer: ({tick}) => SPRITES[(tick + 1) % 2],
+  framebuffer: ({ tick }) => SPRITES[(tick + 1) % 2],
 
   uniforms: {
-    state: ({tick}) => SPRITES[(tick) % 2],
+    state: ({ tick }) => SPRITES[(tick) % 2],
     shapeX: regl.context('viewportWidth'),
     shapeY: regl.context('viewportHeight'),
     deltaT: 0.1,
@@ -115,11 +115,11 @@ const drawSprites = regl({
   },
 
   uniforms: {
-    state: ({tick}) => SPRITES[tick % 2]
+    state: ({ tick }) => SPRITES[tick % 2]
   },
 
   primitive: 'points',
-  offset: (context, {count}) => N * N - count,
+  offset: (context, { count }) => N * N - count,
   elements: null,
   count: regl.prop('count')
 })
@@ -145,7 +145,7 @@ function toScreen (x, size, pixelRatio) {
   return Math.min(Math.max(2.0 * pixelRatio * x / size - 1.0, -0.999), 0.999)
 }
 
-regl.frame(({tick, drawingBufferWidth, drawingBufferHeight, pixelRatio}) => {
+regl.frame(({ tick, drawingBufferWidth, drawingBufferHeight, pixelRatio }) => {
   const mouseX = toScreen(mouse.x, drawingBufferWidth, pixelRatio)
   const mouseY = -toScreen(mouse.y, drawingBufferHeight, pixelRatio)
 

@@ -28,7 +28,7 @@ tape('batch mode attributes', function (t) {
       position: regl.prop('position')
     },
 
-    depth: {enable: false, mask: false},
+    depth: { enable: false, mask: false },
 
     primitive: regl.prop('primitive'),
     count: regl.prop('count'),
@@ -44,7 +44,11 @@ tape('batch mode attributes', function (t) {
     var pixels = regl.read()
     var actual = new Array(25)
     for (var i = 0; i < 25; ++i) {
-      actual[i] = Math.min(pixels[4 * i], 1)
+      if (expected[i] === 2) {
+        actual[i] = 2
+      } else {
+        actual[i] = Math.min(pixels[4 * i], 1)
+      }
     }
     t.same(actual, expected, remark)
   }
@@ -101,18 +105,18 @@ tape('batch mode attributes', function (t) {
   ], 'batch points')
 
   checkPixmap([{
-    position: {buffer: regl.buffer([0, 0, 4, 0, 4, 4, -1, 4]), offset: 0},
+    position: { buffer: regl.buffer([0, 0, 4, 0, 4, 4, -1, 4]), offset: 0 },
     primitive: 'line strip',
     count: 4,
     offset: 0,
     instances: -1
   }], [
-    1, 1, 1, 1, 1,
+    2, 1, 1, 1, 1,
     0, 0, 0, 0, 1,
     0, 0, 0, 0, 1,
     0, 0, 0, 0, 1,
-    1, 1, 1, 1, 1
-  ], 'line strip')
+    2, 1, 1, 1, 2
+  ], 's strip')
 
   // check offsets
   checkPixmap({

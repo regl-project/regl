@@ -10,13 +10,13 @@ var rng = require('seedrandom')('my_seed')
 
 var globalState = regl({
   uniforms: {
-    tick: ({tick}) => tick,
-    projection: ({viewportWidth, viewportHeight}) =>
+    tick: ({ tick }) => tick,
+    projection: ({ viewportWidth, viewportHeight }) =>
       mat4.perspective([],
-                       Math.PI / 4,
-                       viewportWidth / viewportHeight,
-                       0.01,
-                       1000),
+        Math.PI / 4,
+        viewportWidth / viewportHeight,
+        0.01,
+        1000),
     view: mat4.lookAt([], [2.1, 0, 1.3], [0, 0.0, 0], [0, 0, 1])
   },
   frag: `
@@ -240,7 +240,7 @@ drawCalls.push(createDrawCall({
   })
 }))
 
-regl.frame(({tick}) => {
+regl.frame(({ tick }) => {
   regl.clear({
     color: [0, 0, 0, 1],
     depth: 1

@@ -55,8 +55,8 @@ var boxPosition = [
   [+0.5, +0.5, +0.5], [+0.5, +0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], // positive x face
   [+0.5, +0.5, -0.5], [-0.5, +0.5, -0.5], [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], // negative z face
   [-0.5, +0.5, -0.5], [-0.5, +0.5, +0.5], [-0.5, -0.5, +0.5], [-0.5, -0.5, -0.5], // negative x face.
-  [-0.5, +0.5, -0.5], [+0.5, +0.5, -0.5], [+0.5, +0.5, +0.5], [-0.5, +0.5, +0.5],  // top face
-  [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], [-0.5, -0.5, +0.5]  // bottom face
+  [-0.5, +0.5, -0.5], [+0.5, +0.5, -0.5], [+0.5, +0.5, +0.5], [-0.5, +0.5, +0.5], // top face
+  [-0.5, -0.5, -0.5], [+0.5, -0.5, -0.5], [+0.5, -0.5, +0.5], [-0.5, -0.5, +0.5] // bottom face
 ]
 
 const boxElements = [
@@ -118,12 +118,12 @@ const drawDepth = regl({
 const drawNormal = regl({
   uniforms: {
     view: () => camera.view(),
-    projection: ({viewportWidth, viewportHeight}) =>
+    projection: ({ viewportWidth, viewportHeight }) =>
       mat4.perspective([],
-                       Math.PI / 4,
-                       viewportWidth / viewportHeight,
-                       0.01,
-                       2000),
+        Math.PI / 4,
+        viewportWidth / viewportHeight,
+        0.01,
+        2000),
     shadowMap: fbo,
     minBias: () => 0.005,
     maxBias: () => 0.03
@@ -237,7 +237,7 @@ var bunnyMesh = new Mesh(bunny.cells, bunny.positions, normals(bunny.cells, bunn
 var boxMesh = new Mesh(boxElements, boxPosition, boxNormal)
 var planeMesh = new Mesh(planeElements, planePosition, planeNormal)
 
-regl.frame(({tick}) => {
+regl.frame(({ tick }) => {
   var drawMeshes = () => {
     regl.clear({
       color: [0, 0, 0, 255],
@@ -251,10 +251,10 @@ regl.frame(({tick}) => {
     r = 5.0
     var bp2 = [r * Math.sin(t), 12.3, r * Math.cos(t)]
 
-    boxMesh.draw({scale: 4.2, translate: [0.0, 9.0, 0], color: [0.05, 0.5, 0.5]})
-    planeMesh.draw({scale: 80.0, translate: [0.0, 0.0, 0.0], color: [1.0, 1.0, 1.0]})
-    bunnyMesh.draw({scale: 0.7, translate: bp1, color: [0.55, 0.2, 0.05]})
-    bunnyMesh.draw({scale: 0.8, translate: bp2, color: [0.55, 0.55, 0.05]})
+    boxMesh.draw({ scale: 4.2, translate: [0.0, 9.0, 0], color: [0.05, 0.5, 0.5] })
+    planeMesh.draw({ scale: 80.0, translate: [0.0, 0.0, 0.0], color: [1.0, 1.0, 1.0] })
+    bunnyMesh.draw({ scale: 0.7, translate: bp1, color: [0.55, 0.2, 0.05] })
+    bunnyMesh.draw({ scale: 0.8, translate: bp2, color: [0.55, 0.55, 0.05] })
   }
 
   globalScope(() => {

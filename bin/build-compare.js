@@ -90,20 +90,20 @@ function handleCase (name, www, root, onComplete) {
     var minPath = path.join(TMP_DIR, name + '.bundle.min.js')
 
     rollup.rollup({
-      entry: sourcePath,
-      plugins: [
-        nodeResolve(),
-        json(),
-        commonjs(),
-        removeCheck(),
-        buble()
-      ]
+      input: sourcePath
     }).then(function (bundle) {
       console.log(`writing to ${bundlePath}`)
       return bundle.write({
         format: 'iife',
         moduleName: 'bundle',
-        dest: bundlePath
+        file: bundlePath,
+        plugins: [
+          nodeResolve(),
+          json(),
+          commonjs(),
+          removeCheck(),
+          buble()
+        ]
       })
     }).then(function () {
       var closureCompiler = new ClosureCompiler({
@@ -123,11 +123,11 @@ function handleCase (name, www, root, onComplete) {
         })
       })
     })
-    .catch(function (err) {
-      console.error(err.message)
-      console.error(err.stack)
-      process.exit(1)
-    })
+      .catch(function (err) {
+        console.error(err.message)
+        console.error(err.stack)
+        process.exit(1)
+      })
   }
 
   function appendCase (name, sourcePath, htmlPath) {
@@ -143,14 +143,13 @@ function handleCase (name, www, root, onComplete) {
     if (--counter > 0) {
       return
     }
-    console.log('built case:', name, comparisons)
     onComplete(name, comparisons)
   }
 }
 
 function writePage (name, htmlPath, data, cb) {
   fs.writeFile(htmlPath,
-`<!DOCTYPE html>
+    `<!DOCTYPE html>
 <html>
   <head>
     <title>${name}</title>
@@ -173,7 +172,8 @@ function writeComparisonPage (comparisons) {
   // save sources
   fs.writeFile(
     path.join(WWW_DIR, 'manifest.json'),
-    JSON.stringify(comparisons, null, '  '))
+    JSON.stringify(comparisons, null, '  '),
+    () => { })
 
   var html = [
     `<!DOCTYPE html>
@@ -203,8 +203,8 @@ function writeComparisonPage (comparisons) {
           <h2><a class="implementationlink" href="${path.relative('www', info.html)}">${name}</a>:</h2>
           <pre class="implementationsource${impl.suffix}">
 ${fs.readFileSync(info.source).toString()
-              .replace(/</g, '&lt;')
-              .replace(/>/g, '&gt;')}
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')}
           </pre>
         </div>`)
     })

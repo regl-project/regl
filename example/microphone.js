@@ -8,7 +8,7 @@
 const regl = require('../regl')()
 
 // First we need to get permission to use the microphone
-require('getusermedia')({audio: true}, function (err, stream) {
+require('getusermedia')({ audio: true }, function (err, stream) {
   if (err) {
     return
   }
@@ -63,12 +63,12 @@ require('getusermedia')({audio: true}, function (err, stream) {
     elements: null,
     instances: -1,
     lineWidth: 1,
-    depth: {enable: false},
+    depth: { enable: false },
     count: fftSize,
     primitive: 'line loop'
   })
 
-  regl.frame(({tick}) => {
+  regl.frame(({ tick }) => {
     // Clear draw buffer
     regl.clear({
       color: [0, 0, 0, 1],

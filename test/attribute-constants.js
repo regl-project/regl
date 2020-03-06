@@ -12,6 +12,9 @@ tape('attribute constants', function (t) {
   //
   // A more robust long-term solution is perhaps to have regl query the available extensions and
   // register them as available even if you did not ask for them.
+  if (!createContext.refreshCanvas) {
+    return t.end()
+  }
   createContext.refreshCanvas()
 
   var gl = createContext(2, 2)
@@ -47,7 +50,7 @@ tape('attribute constants', function (t) {
       ]
     },
     count: 3,
-    depth: {enable: false},
+    depth: { enable: false },
     primitive: 'triangles'
   }
 
@@ -217,15 +220,15 @@ tape('attribute constants', function (t) {
       command({ color: color })
     },
     'batch': function (command, color) {
-      command([{color: color}])
+      command([{ color: color }])
     },
     'scope': function (command, color) {
-      command({color: color}, function () {
+      command({ color: color }, function () {
         regl.draw()
       })
     },
     'scope - batch': function (command, color) {
-      command({color: color}, function () {
+      command({ color: color }, function () {
         regl.draw(1)
       })
     }
@@ -310,27 +313,27 @@ tape('attribute constants', function (t) {
         ],
         isActive: regl.prop('isActive')
       },
-      depth: {enable: false},
+      depth: { enable: false },
       count: 2,
       primitive: 'points'
     })
 
-    regl.clear({color: [0, 0, 0, 0]})
-    drawForSwitching({isActive: [0, 1]})
+    regl.clear({ color: [0, 0, 0, 0] })
+    drawForSwitching({ isActive: [0, 1] })
 
     var pixels = regl.read()
     t.equal(pixels[0], 0)
     t.equal(pixels[4], 255)
 
-    regl.clear({color: [0, 0, 0, 0]})
-    drawForSwitching({isActive: {constant: [1]}})
+    regl.clear({ color: [0, 0, 0, 0] })
+    drawForSwitching({ isActive: { constant: [1] } })
 
     pixels = regl.read()
     t.equal(pixels[0], 255)
     t.equal(pixels[4], 255)
 
-    regl.clear({color: [0, 0, 0, 0]})
-    drawForSwitching({isActive: [0, 1]})
+    regl.clear({ color: [0, 0, 0, 0] })
+    drawForSwitching({ isActive: [0, 1] })
 
     pixels = regl.read()
     t.equal(pixels[0], 0)

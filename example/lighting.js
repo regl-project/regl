@@ -48,14 +48,14 @@ const drawBunny = regl({
   elements: bunny.cells,
 
   uniforms: {
-    view: ({tick}) => {
+    view: ({ tick }) => {
       const t = 0.01 * tick
       return mat4.lookAt([],
         [30 * Math.cos(t), 2.5, 30 * Math.sin(t)],
         [0, 2.5, 0],
         [0, 1, 0])
     },
-    projection: ({viewportWidth, viewportHeight}) =>
+    projection: ({ viewportWidth, viewportHeight }) =>
       mat4.perspective([],
         Math.PI / 4,
         viewportWidth / viewportHeight,
@@ -65,7 +65,7 @@ const drawBunny = regl({
     'lights[1].color': [0, 1, 0],
     'lights[2].color': [0, 0, 1],
     'lights[3].color': [1, 1, 0],
-    'lights[0].position': ({tick}) => {
+    'lights[0].position': ({ tick }) => {
       const t = 0.1 * tick
       return [
         10 * Math.cos(0.09 * (t)),
@@ -73,7 +73,7 @@ const drawBunny = regl({
         10 * Math.cos(0.09 * (3 * t))
       ]
     },
-    'lights[1].position': ({tick}) => {
+    'lights[1].position': ({ tick }) => {
       const t = 0.1 * tick
       return [
         10 * Math.cos(0.05 * (5 * t + 1)),
@@ -81,7 +81,7 @@ const drawBunny = regl({
         10 * Math.cos(0.05 * (0.1 * t))
       ]
     },
-    'lights[2].position': ({tick}) => {
+    'lights[2].position': ({ tick }) => {
       const t = 0.1 * tick
       return [
         10 * Math.cos(0.05 * (9 * t)),
@@ -89,7 +89,7 @@ const drawBunny = regl({
         10 * Math.cos(0.05 * (4 * t))
       ]
     },
-    'lights[3].position': ({tick}) => {
+    'lights[3].position': ({ tick }) => {
       const t = 0.1 * tick
       return [
         10 * Math.cos(0.1 * (0.3 * t)),

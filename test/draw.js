@@ -20,7 +20,7 @@ tape('drawing', function (t) {
         'attribute vec2 position;',
         'varying vec4 fragColor;',
         'void main() {',
-        'gl_Position=vec4(0.25 * (position - 3.45), 0, 1);',
+        'gl_Position=vec4(0.25 * (position - 3.5), 0, 1);',
         'gl_PointSize=1.;',
         '}'
       ].join('\n'),
@@ -29,7 +29,7 @@ tape('drawing', function (t) {
         position: regl.buffer([0, 0, 4, 0, 4, 4, 0, 4])
       },
 
-      depth: {enable: false, mask: false}
+      depth: { enable: false, mask: false }
     }
 
     Object.keys(args).forEach(function (x) {
@@ -51,15 +51,15 @@ tape('drawing', function (t) {
 
     var command = regl(base)
 
-    regl.clear({color: [0, 0, 0, 0]})
+    regl.clear({ color: [0, 0, 0, 0] })
     command()
     runCheck('static')
 
-    regl.clear({color: [0, 0, 0, 0]})
+    regl.clear({ color: [0, 0, 0, 0] })
     command(1)
     runCheck('batch')
 
-    regl.clear({color: [0, 0, 0, 0]})
+    regl.clear({ color: [0, 0, 0, 0] })
     command(function () {
       regl.draw()
     })
@@ -86,7 +86,7 @@ tape('drawing', function (t) {
     primitive: 'lines',
     count: 2
   }, [
-    1, 1, 1, 1, 0, 0, 0, 0,
+    2, 1, 1, 2, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
@@ -101,10 +101,10 @@ tape('drawing', function (t) {
     primitive: 'line strip',
     count: 3
   }, [
-    1, 1, 1, 1, 1, 0, 0, 0,
+    2, 1, 1, 1, 1, 0, 0, 0,
     0, 0, 0, 0, 1, 0, 0, 0,
     0, 0, 0, 0, 1, 0, 0, 0,
-    0, 0, 0, 0, 1, 0, 0, 0,
+    0, 0, 0, 0, 2, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
@@ -116,11 +116,11 @@ tape('drawing', function (t) {
     primitive: 'line loop',
     count: 4
   }, [
-    1, 1, 1, 1, 1, 0, 0, 0,
+    2, 1, 1, 1, 2, 0, 0, 0,
     1, 0, 0, 0, 1, 0, 0, 0,
     1, 0, 0, 0, 1, 0, 0, 0,
     1, 0, 0, 0, 1, 0, 0, 0,
-    1, 1, 1, 1, 1, 0, 0, 0,
+    2, 1, 1, 1, 2, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0

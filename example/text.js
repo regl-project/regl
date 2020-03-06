@@ -48,10 +48,10 @@ const drawFeedback = regl({
 
   uniforms: {
     texture: feedBackTexture,
-    t: ({tick}) => 0.001 * tick
+    t: ({ tick }) => 0.001 * tick
   },
 
-  depth: {enable: false},
+  depth: { enable: false },
 
   count: 3
 })
@@ -82,9 +82,9 @@ const drawText = regl({
   elements: textMesh.edges,
 
   uniforms: {
-    t: ({tick}) => 0.01 * tick,
+    t: ({ tick }) => 0.01 * tick,
 
-    view: ({tick}) => {
+    view: ({ tick }) => {
       const t = 0.01 * tick
       return lookAt([],
         [5 * Math.sin(t), 0, -5 * Math.cos(t)],
@@ -92,7 +92,7 @@ const drawText = regl({
         [0, -1, 0])
     },
 
-    projection: ({viewportWidth, viewportHeight}) =>
+    projection: ({ viewportWidth, viewportHeight }) =>
       perspective([],
         Math.PI / 4,
         viewportWidth / viewportHeight,
@@ -100,7 +100,7 @@ const drawText = regl({
         1000)
   },
 
-  depth: {enable: false}
+  depth: { enable: false }
 })
 
 regl.frame(() => {

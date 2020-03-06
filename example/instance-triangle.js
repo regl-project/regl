@@ -4,7 +4,7 @@
   <p> In this example, it is shown how you can draw a bunch of triangles using the
   instancing feature of regl. </p>
  */
-const regl = require('../regl')({extensions: ['angle_instanced_arrays']})
+const regl = require('../regl')({ extensions: ['angle_instanced_arrays'] })
 
 var N = 10 // N triangles on the width, N triangles on the height.
 

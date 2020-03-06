@@ -23,7 +23,7 @@ require('resl')({
     }
   },
 
-  onDone: ({map, tiles}) => {
+  onDone: ({ map, tiles }) => {
     const drawBackground = regl({
       frag: `
       precision mediump float;
@@ -62,8 +62,8 @@ require('resl')({
       count: 6
     })
 
-    regl.frame(({viewportWidth, viewportHeight}) => {
-      const {x, y} = mouse
+    regl.frame(({ viewportWidth, viewportHeight }) => {
+      const { x, y } = mouse
 
       const boxX = map[0].length * x / viewportWidth
       const boxY = map.length * y / viewportHeight

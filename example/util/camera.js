@@ -95,7 +95,7 @@ function createCamera (regl, props) {
 
   var injectContext = regl({
     context: Object.assign({}, cameraState, {
-      projection: function ({viewportWidth, viewportHeight}) {
+      projection: function ({ viewportWidth, viewportHeight }) {
         return perspective(cameraState.projection,
           Math.PI / 4.0,
           viewportWidth / viewportHeight,

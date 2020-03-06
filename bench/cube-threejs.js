@@ -9,7 +9,7 @@ module.exports = function (canvas, canvasWidth, canvasHeight) {
   function init () {
     scene = new THREE.Scene()
 
-    renderer = new THREE.WebGLRenderer({canvas: canvas})
+    renderer = new THREE.WebGLRenderer({ canvas: canvas })
     renderer.setPixelRatio(1)
     renderer.setSize(canvasWidth, canvasHeight)
 
@@ -39,7 +39,7 @@ module.exports = function (canvas, canvasWidth, canvasHeight) {
     var mats = []
     var i
     for (i = 0; i < 6; i++) {
-      mats.push(new THREE.MeshBasicMaterial({map: texture}))
+      mats.push(new THREE.MeshBasicMaterial({ map: texture }))
     }
     var mat = new THREE.MeshFaceMaterial(mats)
 

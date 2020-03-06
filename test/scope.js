@@ -40,7 +40,7 @@ tape('scope', function (t) {
     offset: regl.prop('offset'),
     count: regl.prop('count'),
 
-    depth: {enable: false, mask: false}
+    depth: { enable: false, mask: false }
   })
 
   // properties:

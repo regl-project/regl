@@ -178,7 +178,7 @@ tape('attributes', function (t) {
       var cmd = regl({
         frag: frag,
         vert: vert,
-        depth: {enable: false},
+        depth: { enable: false },
         attributes: {
           position: data
         },
@@ -193,7 +193,7 @@ tape('attributes', function (t) {
       var cmd = regl({
         frag: frag,
         vert: vert,
-        depth: {enable: false},
+        depth: { enable: false },
         attributes: {
           position: regl.prop('data')
         },
@@ -211,7 +211,7 @@ tape('attributes', function (t) {
         },
         frag: frag,
         vert: vert,
-        depth: {enable: false},
+        depth: { enable: false },
         attributes: {
           position: regl.context('data')
         },
@@ -226,7 +226,7 @@ tape('attributes', function (t) {
       var cmd = regl({
         frag: frag,
         vert: vert,
-        depth: {enable: false},
+        depth: { enable: false },
         attributes: {
           position: regl.this('data')
         },
@@ -245,7 +245,7 @@ tape('attributes', function (t) {
       return regl({
         frag: frag,
         vert: vert,
-        depth: {enable: false},
+        depth: { enable: false },
         attributes: {
           position: function (context, props) {
             return props.data
@@ -263,7 +263,7 @@ tape('attributes', function (t) {
         },
         frag: frag,
         vert: vert,
-        depth: {enable: false},
+        depth: { enable: false },
         attributes: {
           position: function (context) {
             return context.data

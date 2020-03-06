@@ -11,7 +11,7 @@ const fit = require('canvas-fit')
 const normals = require('angle-normals')
 
 const canvas = document.body.appendChild(document.createElement('canvas'))
-const regl = require('../regl')({canvas: canvas, extensions: ['angle_instanced_arrays']})
+const regl = require('../regl')({ canvas: canvas, extensions: ['angle_instanced_arrays'] })
 const camera = require('canvas-orbit-camera')(canvas)
 window.addEventListener('resize', fit(canvas), false)
 
@@ -117,12 +117,12 @@ const drawBunnies = regl({
   elements: bunny.cells,
   instances: N * N,
   uniforms: {
-    proj: ({viewportWidth, viewportHeight}) =>
+    proj: ({ viewportWidth, viewportHeight }) =>
       mat4.perspective([],
-                       Math.PI / 2,
-                       viewportWidth / viewportHeight,
-                       0.01,
-                       1000),
+        Math.PI / 2,
+        viewportWidth / viewportHeight,
+        0.01,
+        1000),
     model: mat4.identity([]),
     view: () => camera.view()
   }

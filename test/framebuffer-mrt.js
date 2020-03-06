@@ -39,7 +39,7 @@ tape('framebuffer - multiple draw buffers', function (t) {
       right: regl.prop('right')
     },
 
-    depth: {enable: false},
+    depth: { enable: false },
 
     count: 3
   })
@@ -74,7 +74,7 @@ tape('framebuffer - multiple draw buffers', function (t) {
 
     count: 3,
 
-    depth: {enable: false}
+    depth: { enable: false }
   })
 
   function to255 (c) {
@@ -186,7 +186,7 @@ tape('framebuffer - multiple draw buffers', function (t) {
 
       count: 3,
 
-      depth: {enable: false}
+      depth: { enable: false }
     })
 
     var fbo = regl.framebuffer({
@@ -253,7 +253,9 @@ tape('framebuffer - multiple draw buffers', function (t) {
       td = testData[i]
       draw({
         fbo: cubeFbo.faces[i],
-        color0: td[0], color1: td[1], color2: td[2]
+        color0: td[0],
+        color1: td[1],
+        color2: td[2]
       })
       checkCubeFace(cubeFbo.color[0], to255(td[0]), 'cube color 0, face #' + i, i)
       checkCubeFace(cubeFbo.color[1], to255(td[1]), 'cube color 1, face #' + i, i)
@@ -280,7 +282,9 @@ tape('framebuffer - multiple draw buffers', function (t) {
       td = testData[i]
       draw({
         fbo: cubeFbo2.faces[i],
-        color0: td[0], color1: td[1], color2: td[2]
+        color0: td[0],
+        color1: td[1],
+        color2: td[2]
       })
       checkCubeFace(cubeFbo2.color[0], to255(td[0]), 'cube color 0, face #' + i, i)
       checkCubeFace(cubeFbo2.color[1], to255(td[1]), 'cube color 1, face #' + i, i)

@@ -57,8 +57,8 @@ tape('flatten', function (t) {
     [1, 2, 3],
     [4, 5, 6]
   ], [2, 3], GL_INT),
-    [1, 2, 3, 4, 5, 6],
-    Int32Array), 'flatten 2d')
+  [1, 2, 3, 4, 5, 6],
+  Int32Array), 'flatten 2d')
   t.ok(checkFlatten(flatten([
     [
       [1, 2, 3],
@@ -77,8 +77,8 @@ tape('flatten', function (t) {
       [22, 23, 24]
     ]
   ], [4, 2, 3], GL_FLOAT),
-    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
-    Float32Array), 'flatten 3d')
+  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+  Float32Array), 'flatten 3d')
   t.ok(checkFlatten(flatten([
     [
       [
@@ -101,8 +101,8 @@ tape('flatten', function (t) {
       ]
     ]
   ], [2, 2, 2, 2], GL_UNSIGNED_BYTE),
-    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
-    Uint8Array), 'flatten 4d')
+  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+  Uint8Array), 'flatten 4d')
   t.ok(checkFlatten(flatten([
     [
       [
@@ -149,9 +149,9 @@ tape('flatten', function (t) {
       ]
     ]
   ], [2, 2, 2, 2, 2], GL_UNSIGNED_SHORT),
-    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
     21, 22, 23, 24, 25, 26, 27, 28, 29, 210, 211, 212, 213, 214, 215, 216],
-    Uint16Array), 'flatten 5d')
+  Uint16Array), 'flatten 5d')
 
   t.end()
 })

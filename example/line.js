@@ -148,7 +148,7 @@ const attributes = {
 }
 
 const uniforms = {
-  projection: ({viewportWidth, viewportHeight}) => (
+  projection: ({ viewportWidth, viewportHeight }) => (
     mat4.perspective([],
       Math.PI / 2,
       viewportWidth / viewportHeight,
@@ -157,7 +157,7 @@ const uniforms = {
   ),
   model: mat4.identity([]),
   view: () => camera.view(),
-  aspect: ({viewportWidth, viewportHeight}) => (
+  aspect: ({ viewportWidth, viewportHeight }) => (
     viewportWidth / viewportHeight
   ),
 
@@ -250,7 +250,7 @@ const draw = regl({
   frag
 })
 
-regl.frame(({tick}) => {
+regl.frame(({ tick }) => {
   regl.clear({
     color: [0.1, 0.1, 0.1, 1],
     depth: 1

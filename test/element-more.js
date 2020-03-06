@@ -71,11 +71,11 @@ tape('elements - more', function (t) {
 
     arrayOfArrays: {
       expected: [
+        2, 0, 0, 0, 0,
+        2, 1, 1, 2, 0,
         1, 0, 0, 0, 0,
-        1, 1, 1, 1, 0,
         1, 0, 0, 0, 0,
-        1, 0, 0, 0, 0,
-        1, 0, 0, 0, 0
+        2, 0, 0, 0, 0
       ],
 
       data: {
@@ -91,9 +91,9 @@ tape('elements - more', function (t) {
     ndarray: {
       expected: [
         0, 0, 0, 0, 0,
-        0, 1, 1, 1, 0,
+        0, 2, 1, 2, 0,
         0, 1, 0, 1, 0,
-        0, 1, 1, 1, 0,
+        0, 2, 1, 2, 0,
         0, 0, 0, 0, 0
       ],
 
@@ -130,9 +130,9 @@ tape('elements - more', function (t) {
     reglElements: {
       expected: [
         0, 0, 0, 0, 0,
+        0, 2, 0, 2, 0,
         0, 1, 0, 1, 0,
-        0, 1, 0, 1, 0,
-        0, 1, 1, 1, 0,
+        0, 2, 1, 2, 0,
         0, 0, 0, 0, 0
       ],
 
@@ -172,7 +172,7 @@ tape('elements - more', function (t) {
       return regl(extend({
         frag: frag,
         vert: vert,
-        depth: {enable: false},
+        depth: { enable: false },
         attributes: {
           position: positions
         }
@@ -183,7 +183,7 @@ tape('elements - more', function (t) {
       var desc = {
         frag: frag,
         vert: vert,
-        depth: {enable: false},
+        depth: { enable: false },
         attributes: {
           position: positions
         }
@@ -201,7 +201,7 @@ tape('elements - more', function (t) {
         context: data,
         frag: frag,
         vert: vert,
-        depth: {enable: false},
+        depth: { enable: false },
         attributes: {
           position: positions
         }
@@ -218,7 +218,7 @@ tape('elements - more', function (t) {
       var desc = {
         frag: frag,
         vert: vert,
-        depth: {enable: false},
+        depth: { enable: false },
         attributes: {
           position: positions
         }
@@ -239,7 +239,7 @@ tape('elements - more', function (t) {
       var desc = {
         frag: frag,
         vert: vert,
-        depth: {enable: false},
+        depth: { enable: false },
         attributes: {
           position: positions
         }
@@ -259,7 +259,7 @@ tape('elements - more', function (t) {
         context: data,
         frag: frag,
         vert: vert,
-        depth: {enable: false},
+        depth: { enable: false },
         attributes: {
           position: positions
         }
@@ -303,7 +303,7 @@ tape('elements - more', function (t) {
   function checkPixels (expected) {
     var actual = regl.read()
     for (var i = 0; i < 5 * 5; ++i) {
-      if (!!actual[4 * i] !== !!expected[i]) {
+      if (expected[i] !== 2 && !!actual[4 * i] !== !!expected[i]) {
         return false
       }
     }
