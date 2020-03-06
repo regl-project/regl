@@ -284,7 +284,7 @@ tape('framebuffer parsing', function (t) {
     },
     'empty cube')
 
-  checkPropertiesCube(
+  typeof window !== 'undefined' && checkPropertiesCube(
     regl.framebufferCube({
       color: regl.cube(32),
       stencil: true,
@@ -305,7 +305,7 @@ tape('framebuffer parsing', function (t) {
     },
     'explicit color cube')
 
-  !ie && checkPropertiesCube(
+  typeof window !== 'undefined' && !ie && checkPropertiesCube(
     regl.framebufferCube({
       radius: 5,
       stencil: true,
@@ -326,7 +326,7 @@ tape('framebuffer parsing', function (t) {
     },
     'radius cube')
 
-  !ie && checkPropertiesCube(
+  typeof window !== 'undefined' && !ie && checkPropertiesCube(
     regl.framebufferCube(5),
     {
       width: 5,
@@ -343,7 +343,7 @@ tape('framebuffer parsing', function (t) {
     },
     'only number argument cube')
 
-  checkProperties(
+  typeof window !== 'undefined' && checkProperties(
     regl.framebuffer({
       shape: [5, 5],
       depth: false
@@ -363,7 +363,7 @@ tape('framebuffer parsing', function (t) {
     },
     'shape and no depth')
 
-  !ie && checkPropertiesCube(
+  typeof window !== 'undefined' && !ie && checkPropertiesCube(
     regl.framebufferCube({
       shape: [5, 5],
       depth: false,
@@ -384,7 +384,7 @@ tape('framebuffer parsing', function (t) {
     },
     'shape and no depth cube')
 
-  checkProperties(
+  typeof window !== 'undefined' && checkProperties(
     regl.framebuffer({
       shape: [10, 10],
       colorTexture: false,
@@ -411,56 +411,58 @@ tape('framebuffer parsing', function (t) {
     type: 'uint8'
   })
 
-  var rb = regl.renderbuffer({
-    radius: 1,
-    format: 'depth stencil'
-  })
+  if (typeof window !== 'undefined') {
+    var rb = regl.renderbuffer({
+      radius: 1,
+      format: 'depth stencil'
+    })
 
-  var fbo = regl.framebuffer({ color: tex, depthStencil: rb })
+    var fbo = regl.framebuffer({ color: tex, depthStencil: rb })
 
-  checkProperties(
-    fbo,
-    {
-      width: 1,
-      height: 1,
-      color: [{
-        target: gl.TEXTURE_2D,
-        format: gl.RGBA,
-        type: gl.UNSIGNED_BYTE
-      }],
-      depthStencil: {
-        target: gl.RENDERBUFFER,
-        format: gl.DEPTH_STENCIL
-      }
-    },
-    'explict color and depth stencil')
-  t.equals(fbo.color[0], tex, 'same texture is used')
-  t.equals(fbo.depthStencil, rb, 'same renderbuffer is used')
+    checkProperties(
+      fbo,
+      {
+        width: 1,
+        height: 1,
+        color: [{
+          target: gl.TEXTURE_2D,
+          format: gl.RGBA,
+          type: gl.UNSIGNED_BYTE
+        }],
+        depthStencil: {
+          target: gl.RENDERBUFFER,
+          format: gl.DEPTH_STENCIL
+        }
+      },
+      'explict color and depth stencil')
+    t.equals(fbo.color[0], tex, 'same texture is used')
+    t.equals(fbo.depthStencil, rb, 'same renderbuffer is used')
 
-  var cube = regl.cube(1)
+    var cube = regl.cube(1)
 
-  var cubeFbo = regl.framebufferCube({ color: cube, depthStencil: rb })
+    var cubeFbo = regl.framebufferCube({ color: cube, depthStencil: rb })
 
-  checkPropertiesCube(
-    cubeFbo,
-    {
-      width: 1,
-      height: 1,
-      color: [{
-        target: gl.TEXTURE_2D,
-        format: gl.RGBA,
-        type: gl.UNSIGNED_BYTE
-      }],
-      depthStencil: {
-        target: gl.RENDERBUFFER,
-        format: gl.DEPTH_STENCIL
-      }
-    },
-    'explict color and depth stencil, cube')
-  t.equals(cubeFbo.color[0], cube, 'same cube is used, cube')
+    checkPropertiesCube(
+      cubeFbo,
+      {
+        width: 1,
+        height: 1,
+        color: [{
+          target: gl.TEXTURE_2D,
+          format: gl.RGBA,
+          type: gl.UNSIGNED_BYTE
+        }],
+        depthStencil: {
+          target: gl.RENDERBUFFER,
+          format: gl.DEPTH_STENCIL
+        }
+      },
+      'explict color and depth stencil, cube')
+    t.equals(cubeFbo.color[0], cube, 'same cube is used, cube')
 
-  for (var i = 0; i < 6; i++) {
-    t.equals(cubeFbo.faces[i].depthStencil, rb, 'same renderbuffer is used, cube, face #' + i)
+    for (var i = 0; i < 6; i++) {
+      t.equals(cubeFbo.faces[i].depthStencil, rb, 'same renderbuffer is used, cube, face #' + i)
+    }
   }
 
   // next, we will 'colorType' and 'colorFormat'. We test for all possible combinations of these values.
@@ -499,7 +501,7 @@ tape('framebuffer parsing', function (t) {
     testCases.push({ tex: false, colorFormat: 'srgba', expectedFormat: GL_SRGB8_ALPHA8_EXT })
   }
 
-  testCases.forEach(function (testCase, i) {
+  typeof window !== 'undefined' && testCases.forEach(function (testCase, i) {
     var fboArgs = {
       shape: [10, 10],
       colorFormat: testCase.colorFormat
@@ -558,7 +560,7 @@ tape('framebuffer parsing', function (t) {
     }
   })
 
-  badTestCases.forEach(function (testCase, i) {
+  typeof window !== 'undefined' && badTestCases.forEach(function (testCase, i) {
     var fboArgs = {
       shape: [10, 10],
       colorFormat: testCase.colorFormat,
@@ -678,7 +680,7 @@ tape('framebuffer parsing', function (t) {
   }
 
   regl.destroy()
-  t.equals(gl.getError(), 0, 'error ok')
+  typeof window !== 'undefined' && t.equals(gl.getError(), 0, 'error ok')
   createContext.destroy(gl)
   t.end()
 })

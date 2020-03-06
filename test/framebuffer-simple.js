@@ -96,7 +96,7 @@ tape('framebuffer', function (t) {
     radius: 8
   })
 
-  var testCubeFBO1 = !ie && regl.framebufferCube({
+  var testCubeFBO1 = typeof window !== 'undefined' && !ie && regl.framebufferCube({
     radius: 5
   })
 
