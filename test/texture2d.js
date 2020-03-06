@@ -8,7 +8,7 @@ tape('texture 2d', function (t) {
   var regl = createREGL(
     {
       gl: gl,
-      optionalExtensions: ['webgl_compressed_texture_s3tc', 'ext_texture_filter_anisotropic', 'oes_texture_float', 'oes_texture_half_float']
+      optionalExtensions: ['webgl_compressed_texture_s3tc', 'ext_texture_filter_anisotropic', 'oes_texture_float', 'oes_texture_half_float', 'webgl_depth_texture']
     })
 
   var renderTexture = regl({
@@ -1088,6 +1088,22 @@ tape('texture 2d', function (t) {
       mag: 'nearest'
     },
     'magwrap4')
+
+  checkShouldNotThrow(
+    {
+      format: 'depth',
+      type: 'uint16',
+      width: 2,
+      height: 2
+    },
+    'depthTexture')
+  var depthTexture = regl.texture({
+    format: 'depth',
+    type: 'uint16',
+    width: 2,
+    height: 2
+  })
+  depthTexture.resize(4, 4)
 
   if (typeof document !== 'undefined') {
     runDOMTests()
