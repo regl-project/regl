@@ -4245,7 +4245,9 @@ function wrapAttributeState (
         if (binding.buffer) {
           gl.enableVertexAttribArray(i)
           gl.vertexAttribPointer(i, binding.size, binding.type, binding.normalized, binding.stride, binding.offfset)
-          exti.vertexAttribDivisorANGLE(i, binding.divisor)
+          if (exti) {
+            exti.vertexAttribDivisorANGLE(i, binding.divisor)
+          }
         } else {
           gl.disableVertexAttribArray(i)
           gl.vertexAttrib4f(i, binding.x, binding.y, binding.z, binding.w)
@@ -4364,8 +4366,8 @@ function wrapAttributeState (
           rec.buffer = bufferState.getBuffer(spec)
           rec.size = rec.buffer.dimension | 0
           rec.normalized = false
-          rec.types = rec.buffer.dtype
-          rec.offfset = 0
+          rec.type = rec.buffer.dtype
+          rec.offset = 0
           rec.stride = 0
           rec.divisor = 0
           rec.state = 1
@@ -4375,11 +4377,11 @@ function wrapAttributeState (
           rec.normalized = !!spec.normalized || false
           if ('type' in spec) {
             
-            rec.types = glTypes[spec.type]
+            rec.type = glTypes[spec.type]
           } else {
-            rec.types = rec.buffer.dtype
+            rec.type = rec.buffer.dtype
           }
-          rec.offfset = (spec.offset || 0) | 0
+          rec.offset = (spec.offset || 0) | 0
           rec.stride = (spec.stride || 0) | 0
           rec.divisor = (spec.divisor || 0) | 0
           rec.state = 1
@@ -4586,7 +4588,9 @@ function wrapShaderState (gl, stringStore, stats, config) {
     fragShaders = {}
     vertShaders = {}
     for (var i = 0; i < programList.length; ++i) {
-      linkProgram(programList[i])
+      linkProgram(programList[i], null, programList[i].attributes.map(function (info) {
+        return [info.location, info.name]
+      }))
     }
   }
 
@@ -5667,7 +5671,7 @@ function reglCore (
         var bindings = []
         for (var i = 0; i < sAttributes.length; ++i) {
           
-          bindings.push(staticAttributes[sAttributes[i]], sAttributes[i])
+          bindings.push([staticAttributes[sAttributes[i]] | 0, sAttributes[i]])
         }
         return bindings
       }
@@ -5675,7 +5679,7 @@ function reglCore (
     return null
   }
 
-  function parseProgram (options, attribLocations) {
+  function parseProgram (options, env, attribLocations) {
     var staticOptions = options.static
     var dynamicOptions = options.dynamic
 
@@ -6633,7 +6637,7 @@ function reglCore (
         useVAO = useVAO && !!binding
         return binding
       })
-      if (useVAO) {
+      if (useVAO && staticBindings.length > 0) {
         var vao = attributeState.getVAO(attributeState.createVAO(staticBindings))
         result.drawVAO = new Declaration(null, null, null, function (env, scope) {
           return env.link(vao)
@@ -7896,6 +7900,11 @@ function reglCore (
       if (extInstancing) {
         INSTANCING = env.link(extInstancing)
       }
+
+      // update vertex array bindings
+      if (extensions.oes_vertex_array_object) {
+        refresh(env.link(extensions.oes_vertex_array_object), '.bindVertexArrayOES(null);')
+      }
       for (var i = 0; i < limits.maxAttributes; ++i) {
         var BINDING = refresh.def(shared.attributes, '[', i, ']')
         var ifte = env.cond(BINDING, '.buffer')
@@ -7928,6 +7937,9 @@ function reglCore (
             BINDING, '.divisor);')
         }
       }
+      refresh(
+        env.shared.vao, '.currentVAO=null;',
+        env.shared.vao, '.setVAO(', env.shared.vao, '.targetVAO);')
 
       Object.keys(GL_FLAGS).forEach(function (flag) {
         var cap = GL_FLAGS[flag]
