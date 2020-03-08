@@ -1514,6 +1514,79 @@ The following stats are tracked for each buffer in the `.stats` property:
 
 * * *
 
+### Vertex array objects
+
+`regl.vao` wraps WebGL vertex array objects.  A vertex array object is a complete binding state for the set of all attributes for a given shader.  This feature requires some caution when it is used since it depends on the specific ordering of vertex attributes which is determined at program link time.  This will only have a performance benefit when the `OES_vertex_array_object` extension is enabled.  If `OES_vertex_array_object` is not enabled, then vertex array objects are emulated.
+
+If `OES_vertex_array_object` is enabled then regl will try to optimize static draw commands when possible to user vertex array objects.
+
+#### Vertex array object constructor
+
+A vertex array object constructor takes as input an array of vertex bindings:
+
+```javascript
+// First we create the VAO object
+var vao = regl.vao([
+  // first attribute is a triangle
+  [ [0, 1], [1, 0], [1, 1] ],
+
+  // second attribute is a color
+  { x: 1, y: 0, z: 1 }
+])
+
+// then we create the command
+var command = regl({
+  frag: `
+  precision highp float;
+  varying vec3 fragColor;
+  void main () {
+    gl_FragColor = vec4(fragColor, 1.);
+  }`
+  
+  vert: `
+  precision highp float;
+  attribute vec2 position;
+  attribute vec3 color;
+  varying vec3 fragColor;
+  void main () {
+    fragColor = color;
+    gl_Position = vec4(position, 0, 1);
+  }`,
+
+  // specify the vertex array object for this command
+  vao: vao,
+
+  // when using a VAO object we give numerical ids for each attribute binding location
+  attributes: {
+    position: 0,
+    color: 1
+  },
+
+  count: 3
+})
+```
+
+**Relevant WebGL APIs**
+
+- [`OES_vertex_array_object`](https://www.khronos.org/registry/webgl/extensions/OES_vertex_array_object/)
+
+#### Vertex array object update
+
+You can update a vertex array object just like a buffer,
+
+```javascript
+vao([
+  [ [0, 1], [1, 0], [0.5, 1] ],
+  { x: 1, y: 1, z: 0 }
+])
+```
+
+#### Vertex array object destructor
+
+```javascript
+vao.destroy()
+```
+
 ### Elements
 
 `regl.elements` wraps WebGL element array buffer objects.  Each `regl.elements` object stores a buffer object as well as the primitive type and vertex count.
@@ -1569,8 +1642,6 @@ var starElements = regl.elements({
 | `'uint8'`          | `gl.UNSIGNED_BYTE`   |            |
 | `'uint16'`         | `gl.UNSIGNED_SHORT`  |            |
 | `'uint32'`         | `gl.UNSIGNED_INT`    | [OES_element_index_uint](https://www.khronos.org/registry/webgl/extensions/OES_element_index_uint/)               |
-
-
 
 **Notes**
 
