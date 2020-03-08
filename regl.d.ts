@@ -216,6 +216,9 @@ declare namespace REGL {
     /* Creates a FramebufferCube using creation `options`. */
     framebufferCube(options: REGL.FramebufferCubeOptions): REGL.FramebufferCube;
 
+    /* Creates a vertex array object */
+    vao(attributes: REGL.AttributeConfig[]) : REGL.VertexArrayObject;
+
     /* Events and listeners */
 
     /**
@@ -481,6 +484,11 @@ declare namespace REGL {
      */
     attributes?: REGL.MaybeDynamicAttributes<Attributes, ParentContext & OwnContext, Props>,
 
+    /**
+     * Configuration of vertex array object
+     */
+    vao?: REGL.MaybeDynamic<REGL.VertexArrayObject | AttributeConfig[], ParentContext & OwnContext, Props>,
+
     /* Drawing */
 
     /**
@@ -655,6 +663,7 @@ declare namespace REGL {
   }
 
   type Attribute =
+    number |
     ConstantAttribute |
     AttributeConfig |
     REGL.Buffer |
@@ -936,6 +945,10 @@ declare namespace REGL {
      * - `gl.deleteFramebuffer`
      */
     destroy(): void;
+  }
+
+  interface VertexArrayObject extends REGL.Resource {
+    (attributes: REGL.AttributeConfig[]): REGL.VertexArrayObject;
   }
 
   interface Buffer extends REGL.Resource {
@@ -1639,6 +1652,8 @@ declare namespace REGL {
     renderbufferCount: number;
     /** The maximum number of texture units used */
     maxTextureUnits: number;
+    /** Number of vertex array objects */
+    vaoCount: number;
 
     // The following functions are only available if regl is initialized with option `profile: true`
 

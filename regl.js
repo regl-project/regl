@@ -86,16 +86,20 @@ module.exports = function wrapREGL (args) {
   }
 
   var limits = wrapLimits(gl, extensions)
-  var attributeState = wrapAttributes(
-    gl,
-    extensions,
-    limits,
-    stringStore)
   var bufferState = wrapBuffers(
     gl,
     stats,
     config,
-    attributeState)
+    destroyBuffer)
+  var attributeState = wrapAttributes(
+    gl,
+    extensions,
+    limits,
+    stats,
+    bufferState)
+  function destroyBuffer (buffer) {
+    return attributeState.destroyBuffer(buffer)
+  }
   var elementState = wrapElements(gl, extensions, bufferState, stats)
   var shaderState = wrapShaders(gl, stringStore, stats, config)
   var textureState = wrapTextures(
@@ -220,6 +224,7 @@ module.exports = function wrapREGL (args) {
     textureState.restore()
     renderbufferState.restore()
     framebufferState.restore()
+    attributeState.restore()
     if (timer) {
       timer.restore()
     }
@@ -275,6 +280,7 @@ module.exports = function wrapREGL (args) {
       delete result.uniforms
       delete result.attributes
       delete result.context
+      delete result.vao
 
       if ('stencil' in result && result.stencil.op) {
         result.stencil.opBack = result.stencil.opFront = result.stencil.op
@@ -297,6 +303,10 @@ module.exports = function wrapREGL (args) {
       merge('polygonOffset')
       merge('scissor')
       merge('sample')
+
+      if ('vao' in options) {
+        result.vao = options.vao
+      }
 
       return result
     }
@@ -553,6 +563,7 @@ module.exports = function wrapREGL (args) {
     renderbuffer: renderbufferState.create,
     framebuffer: framebufferState.create,
     framebufferCube: framebufferState.createCube,
+    vao: attributeState.createVAO,
 
     // Expose context attributes
     attributes: glAttributes,
