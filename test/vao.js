@@ -24,7 +24,7 @@ function testVAO (regl, t) {
     frag: frag,
     vert: vert,
     attributes: {
-      position: 0,
+      position: 0
     },
     primitive: 'lines',
     depth: false,
@@ -46,27 +46,27 @@ function testVAO (regl, t) {
     0, 0, 0, 0, 0,
     1, 1, 1, 1, 1,
     0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0
   ]
   var verticalExpected = [
     0, 0, 1, 0, 0,
     0, 0, 1, 0, 0,
     0, 0, 1, 0, 0,
     0, 0, 1, 0, 0,
-    0, 0, 1, 0, 0,
+    0, 0, 1, 0, 0
   ]
   var crossExpected = [
     0, 0, 1, 0, 0,
     0, 0, 1, 0, 0,
     1, 1, 1, 1, 1,
     0, 0, 1, 0, 0,
-    0, 0, 1, 0, 0,
+    0, 0, 1, 0, 0
   ]
 
   function check (body, expected, name) {
     regl.clear({
       color: [0, 0, 0, 0],
-      depth: 1,
+      depth: 1
     })
     body()
     var actual = regl.read()
@@ -86,7 +86,7 @@ function testVAO (regl, t) {
 
   var staticScope = regl({
     vao: vaoVertical
-  });
+  })
 
   var dynamicScope = regl({
     vao: regl.prop('vao')
@@ -125,7 +125,7 @@ function testVAO (regl, t) {
         drawContext()
       })
   }, horizontalExpected, 'draw/scope/dynamic')
-  
+
   check(function () {
     drawStatic(1)
   }, horizontalExpected, 'batch/static')
@@ -133,7 +133,7 @@ function testVAO (regl, t) {
   check(function () {
     drawDynamic([
       { vao: vaoVerticalResource },
-      { vao: vaoHorizontalResource },
+      { vao: vaoHorizontalResource }
     ])
   }, crossExpected, 'batch/prop')
 
@@ -164,7 +164,7 @@ tape('vao - extension', function (t) {
     t.pass('extension not supported')
     createContext.destroy(gl)
     t.end()
-    return;
+    return
   }
 
   testVAO(regl, t)

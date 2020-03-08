@@ -92,16 +92,20 @@
     };
 
     var limits = wrapLimits(gl, extensions);
-    var attributeState = wrapAttributes(
-      gl,
-      extensions,
-      limits,
-      stringStore);
     var bufferState = wrapBuffers(
       gl,
       stats,
       config,
-      attributeState);
+      destroyBuffer);
+    var attributeState = wrapAttributes(
+      gl,
+      extensions,
+      limits,
+      stats,
+      bufferState);
+    function destroyBuffer (buffer) {
+      return attributeState.destroyBuffer(buffer)
+    }
     var elementState = wrapElements(gl, extensions, bufferState, stats);
     var shaderState = wrapShaders(gl, stringStore, stats, config);
     var textureState = wrapTextures(
@@ -226,6 +230,7 @@
       textureState.restore();
       renderbufferState.restore();
       framebufferState.restore();
+      attributeState.restore();
       if (timer) {
         timer.restore();
       }
@@ -262,6 +267,7 @@
       textureState.clear();
       elementState.clear();
       bufferState.clear();
+      attributeState.clear();
 
       if (timer) {
         timer.clear();
@@ -281,6 +287,7 @@
         delete result.uniforms;
         delete result.attributes;
         delete result.context;
+        delete result.vao;
 
         if ('stencil' in result && result.stencil.op) {
           result.stencil.opBack = result.stencil.opFront = result.stencil.op;
@@ -303,6 +310,10 @@
         merge('polygonOffset');
         merge('scissor');
         merge('sample');
+
+        if ('vao' in options) {
+          result.vao = options.vao;
+        }
 
         return result
       }
@@ -559,6 +570,7 @@
       renderbuffer: renderbufferState.create,
       framebuffer: framebufferState.create,
       framebufferCube: framebufferState.createCube,
+      vao: attributeState.createVAO,
 
       // Expose context attributes
       attributes: glAttributes,
