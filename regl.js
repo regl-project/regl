@@ -261,6 +261,7 @@ module.exports = function wrapREGL (args) {
     textureState.clear()
     elementState.clear()
     bufferState.clear()
+    attributeState.clear()
 
     if (timer) {
       timer.clear()

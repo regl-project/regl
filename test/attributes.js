@@ -4,7 +4,10 @@ var createREGL = require('../regl')
 
 tape('attributes', function (t) {
   var gl = createContext(5, 5)
-  var regl = createREGL(gl)
+  var regl = createREGL({
+    gl: gl,
+    optionalExtensions: [ 'oes_vertex_array_object' ]
+  })
 
   var frag = [
     'precision mediump float;',

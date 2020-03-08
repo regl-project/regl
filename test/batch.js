@@ -13,7 +13,10 @@ function find (array, pred) {
 tape('batch', function (t) {
   setTimeout(function () {
     var gl = createContext(8, 8)
-    var regl = createREGL(gl)
+    var regl = createREGL({
+      gl: gl,
+      optionalExtensions: [ 'oes_vertex_array_object' ]
+    })
 
     var points = [
       [2, 2],

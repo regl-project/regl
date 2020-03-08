@@ -4,7 +4,10 @@ var tape = require('tape')
 
 tape('drawing', function (t) {
   var gl = createContext(8, 8)
-  var regl = createREGL(gl)
+  var regl = createREGL({
+    gl: gl,
+    optionalExtensions: [ 'oes_vertex_array_object' ]
+  })
 
   function checkPixmap (args, expected, remark) {
     var base = {
