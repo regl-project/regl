@@ -2,10 +2,7 @@ var tape = require('tape')
 var createContext = require('./util/create-context')
 var createREGL = require('../regl')
 
-tape('vao - no extension', function (t) {
-  var gl = createContext(5, 5)
-  var regl = createREGL(gl)
-
+function testVAO (regl, t) {
   var frag = [
     'precision mediump float;',
     'void main() {',
@@ -18,7 +15,7 @@ tape('vao - no extension', function (t) {
     'attribute vec2 position;',
     'varying vec4 fragColor;',
     'void main() {',
-    'gl_Position=vec4(2.0 * (position + 0.5) / 5.0 - 1.0, 0, 1);',
+    'gl_Position=vec4((position - 2.5) / 2.5, 0, 1);',
     'gl_PointSize=1.;',
     '}'
   ].join('\n')
@@ -35,10 +32,10 @@ tape('vao - no extension', function (t) {
   }
 
   var vaoHorizontal = [
-    [ [3, -1], [3, 5] ]
+    [ [-1, 3], [5, 3] ]
   ]
   var vaoVertical = [
-    [ [-1, 3], [5, 3] ]
+    [ [3, -1], [3, 5] ]
   ]
 
   var vaoHorizontalResource = regl.vao(vaoHorizontal)
@@ -69,6 +66,7 @@ tape('vao - no extension', function (t) {
   function check (body, expected, name) {
     regl.clear({
       color: [0, 0, 0, 0],
+      depth: 1,
     })
     body()
     var actual = regl.read()
@@ -152,12 +150,7 @@ tape('vao - no extension', function (t) {
         drawContext(1)
       })
   }, horizontalExpected, 'batch/scope/dynamic')
-
-  regl.destroy()
-  t.equals(gl.getError(), 0, 'error ok')
-  createContext.destroy(gl)
-  t.end()
-})
+}
 
 tape('vao - extension', function (t) {
   var gl = createContext(5, 5)
@@ -174,152 +167,19 @@ tape('vao - extension', function (t) {
     return;
   }
 
-  var frag = [
-    'precision mediump float;',
-    'void main() {',
-    'gl_FragColor = vec4(1, 1, 1, 1);',
-    '}'
-  ].join('\n')
+  testVAO(regl, t)
 
-  var vert = [
-    'precision mediump float;',
-    'attribute vec2 position;',
-    'varying vec4 fragColor;',
-    'void main() {',
-    'gl_Position=vec4(2.0 * (position + 0.5) / 5.0 - 1.0, 0, 1);',
-    'gl_PointSize=1.;',
-    '}'
-  ].join('\n')
+  regl.destroy()
+  t.equals(gl.getError(), 0, 'error ok')
+  createContext.destroy(gl)
+  t.end()
+})
 
-  var baseCommand = {
-    frag: frag,
-    vert: vert,
-    attributes: {
-      position: 0,
-    },
-    primitive: 'lines',
-    depth: false,
-    count: 2
-  }
+tape('vao - emulation', function (t) {
+  var gl = createContext(5, 5)
+  var regl = createREGL(gl)
 
-  var vaoHorizontal = [
-    [ [3, -1], [3, 5] ]
-  ]
-  var vaoVertical = [
-    [ [-1, 3], [5, 3] ]
-  ]
-
-  var vaoHorizontalResource = regl.vao(vaoHorizontal)
-  var vaoVerticalResource = regl.vao(vaoVertical)
-
-  var horizontalExpected = [
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-    1, 1, 1, 1, 1,
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-  ]
-  var verticalExpected = [
-    0, 0, 1, 0, 0,
-    0, 0, 1, 0, 0,
-    0, 0, 1, 0, 0,
-    0, 0, 1, 0, 0,
-    0, 0, 1, 0, 0,
-  ]
-  var crossExpected = [
-    0, 0, 1, 0, 0,
-    0, 0, 1, 0, 0,
-    1, 1, 1, 1, 1,
-    0, 0, 1, 0, 0,
-    0, 0, 1, 0, 0,
-  ]
-
-  function check (body, expected, name) {
-    regl.clear({
-      color: [0, 0, 0, 0],
-    })
-    body()
-    var actual = regl.read()
-    var actualStr = []
-    var exptectedStr = []
-    for (var i = 0; i < 5; ++i) {
-      for (var j = 0; j < 5; ++j) {
-        var ptr = 5 * i + j
-        exptectedStr.push(expected[ptr])
-        actualStr.push(actual[4 * ptr] ? 1 : 0)
-      }
-      actualStr.push('\n')
-      exptectedStr.push('\n')
-    }
-    t.equals(actualStr.join(''), exptectedStr.join(''), name)
-  }
-
-  var staticScope = regl({
-    vao: vaoVertical
-  });
-
-  var dynamicScope = regl({
-    vao: regl.prop('vao')
-  })
-
-  var drawContext = regl(baseCommand)
-
-  var drawStatic = regl(Object.assign({
-    vao: vaoHorizontal
-  }, baseCommand))
-
-  var drawDynamic = regl(Object.assign({
-    vao: regl.prop('vao')
-  }, baseCommand))
-
-  check(function () {
-    drawStatic()
-  }, horizontalExpected, 'draw/static')
-
-  check(function () {
-    drawDynamic({
-      vao: vaoVerticalResource
-    })
-  }, verticalExpected, 'draw/prop')
-
-  check(function () {
-    staticScope(function () {
-      drawContext()
-    })
-  }, verticalExpected, 'draw/scope/static')
-
-  check(function () {
-    dynamicScope(
-      { vao: vaoHorizontalResource },
-      function () {
-        drawContext()
-      })
-  }, horizontalExpected, 'draw/scope/dynamic')
-  
-  check(function () {
-    drawStatic(1)
-  }, horizontalExpected, 'batch/static')
-
-  check(function () {
-    drawDynamic([
-      { vao: vaoVerticalResource },
-      { vao: vaoHorizontalResource },
-    ])
-  }, crossExpected, 'batch/prop')
-
-  check(function () {
-    staticScope(function () {
-      drawContext(1)
-    })
-  }, verticalExpected, 'batch/scope/static')
-
-  check(function () {
-    dynamicScope(
-      { vao: vaoHorizontalResource },
-      function () {
-        drawContext(1)
-      })
-  }, horizontalExpected, 'batch/scope/dynamic')
+  testVAO(regl, t)
 
   regl.destroy()
   t.equals(gl.getError(), 0, 'error ok')
