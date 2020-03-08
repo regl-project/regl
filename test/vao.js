@@ -4,18 +4,18 @@ var createREGL = require('../regl')
 
 function testVAO (regl, t) {
   var frag = [
-    'precision mediump float;',
+    'precision highp float;',
     'void main() {',
     'gl_FragColor = vec4(1, 1, 1, 1);',
     '}'
   ].join('\n')
 
   var vert = [
-    'precision mediump float;',
+    'precision highp float;',
     'attribute vec2 position;',
     'varying vec4 fragColor;',
     'void main() {',
-    'gl_Position=vec4((position - 2.5) / 2.5, 0, 1);',
+    'gl_Position=vec4(2.0 * (position + 0.5) / 5.0 - 1.0, 0, 1);',
     'gl_PointSize=1.;',
     '}'
   ].join('\n')
