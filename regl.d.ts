@@ -217,7 +217,7 @@ declare namespace REGL {
     framebufferCube(options: REGL.FramebufferCubeOptions): REGL.FramebufferCube;
 
     /* Creates a vertex array object */
-    vao(attributes: REGL.AttributeConfig[]) : REGL.VertexArrayObject;
+    vao(attributes: REGL.AttributeState[]) : REGL.VertexArrayObject;
 
     /* Events and listeners */
 
@@ -487,7 +487,7 @@ declare namespace REGL {
     /**
      * Configuration of vertex array object
      */
-    vao?: REGL.MaybeDynamic<REGL.VertexArrayObject | AttributeConfig[], ParentContext & OwnContext, Props>,
+    vao?: REGL.MaybeDynamic<REGL.VertexArrayObject | AttributeState[], ParentContext & OwnContext, Props>,
 
     /* Drawing */
 
@@ -662,12 +662,15 @@ declare namespace REGL {
     [Key in keyof Uniforms]: MaybeDynamic<Uniforms[Key], Context, Props>;
   }
 
-  type Attribute =
-    number |
+  type AttributeState =
     ConstantAttribute |
     AttributeConfig |
     REGL.Buffer |
     REGL.BufferData;
+
+  type Attribute =
+    number |
+    AttributeState;
 
   interface Attributes {
     [name: string]: Attribute;
@@ -687,17 +690,19 @@ declare namespace REGL {
 
   interface AttributeConfig {
     /** A REGLBuffer wrapping the buffer object. (Default: null) */
-    buffer?: REGL.Buffer;
+    buffer?: REGL.Buffer|undefined|null|false;
     /** The offset of the vertexAttribPointer in bytes. (Default: 0) */
-    offset?: number;
+    offset?: number|undefined;
     /** The stride of the vertexAttribPointer in bytes. (Default: 0) */
-    stride?: number;
+    stride?: number|undefined;
     /** Whether the pointer is normalized. (Default: false) */
     normalized?: boolean;
     /** The size of the vertex attribute. (Default: Inferred from shader) */
-    size?: number;
+    size?: number|undefined;
     /** Sets gl.vertexAttribDivisorANGLE. Only supported if the ANGLE_instanced_arrays extension is available. (Default: 0) */
-    divisor?: number;
+    divisor?: number|undefined;
+    /** Data type for attribute */
+    type?: 'uint8'|'uint16'|'uint32'|'float'|'int8'|'int16'|'int32';
   }
 
   interface DepthTestOptions {
@@ -948,7 +953,7 @@ declare namespace REGL {
   }
 
   interface VertexArrayObject extends REGL.Resource {
-    (attributes: REGL.AttributeConfig[]): REGL.VertexArrayObject;
+    (attributes:REGL.AttributeState[]) : REGL.VertexArrayObject;
   }
 
   interface Buffer extends REGL.Resource {
