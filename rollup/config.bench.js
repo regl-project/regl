@@ -5,22 +5,20 @@ var htmlWrap = require('./plugins/html-wrap')
 var removeCheck = require('./plugins/remove-check.js')
 
 module.exports = {
-  input: 'bench/bench.js',
-  output: {
-    file: 'www/bench.html',
-    format: 'iife',
-    moduleName: 'bundle',
-    plugins: [
-      json(),
-      nodeResolve({ browser: true }),
-      commonjs(),
-      removeCheck(),
-      htmlWrap()
-    ],
-    external: ['fs', 'path'],
-    globals: {
-      fs: '{}',
-      path: '{}'
-    }
+  entry: 'bench/bench.js',
+  dest: 'www/bench.html',
+  format: 'iife',
+  moduleName: 'bundle',
+  plugins: [
+    json(),
+    nodeResolve({ browser: true }),
+    commonjs(),
+    removeCheck(),
+    htmlWrap()
+  ],
+  external: ['fs', 'path'],
+  globals: {
+    fs: '{}',
+    path: '{}'
   }
 }

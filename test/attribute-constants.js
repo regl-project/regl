@@ -18,7 +18,10 @@ tape('attribute constants', function (t) {
   createContext.refreshCanvas()
 
   var gl = createContext(2, 2)
-  var regl = createREGL(gl)
+  var regl = createREGL({
+    gl: gl,
+    optionalExtensions: [ 'oes_vertex_array_object' ]
+  })
 
   var vert = [
     'precision highp float;',

@@ -7,13 +7,15 @@
     -   [Quick start](#quick-start)
 
         -   [As a fullscreen canvas](#as-a-fullscreen-canvas)
-        -   [From a query selector](#from-a-selector-string)
+        -   [From a selector string](#from-a-selector-string)
         -   [From a container div](#from-a-container-div)
         -   [From a canvas](#from-a-canvas)
         -   [From a WebGL context](#from-a-webgl-context)
         -   [From a headless context](#from-a-headless-context)
 
     -   [All initialization options](#all-initialization-options)
+
+    -   [Error messages and debug mode](#error-messages-and-debug-mode)
 
 -   [Commands](#commands)
 
@@ -65,6 +67,12 @@
 
         -   [Profiling info](#profiling-info)
 
+    -   [Vertex array objects](#vertex-array-objects)
+
+        -   [Vertex array object constructor](#vertex-array-object-constructor)
+        -   [Vertex array object update](#vertex-array-object-update)
+        -   [Vertex array object destructor](#vertex-array-object-destructor)
+
     -   [Elements](#elements)
 
         -   [Element constructor](#element-constructor)
@@ -83,8 +91,8 @@
 
             -   [Texture subimage](#texture-subimage)
             -   [Texture resize](#texture-resize)
+            -   [Texture properties](#texture-properties)
 
-        -   [Texture properties](#texture-properties)
         -   [Texture destructor](#texture-destructor)
 
         -   [Texture profiling](#texture-profiling)
@@ -98,6 +106,7 @@
             -   [Cube map subimage](#cube-map-subimage)
 
         -   [Cube map resize](#cube-map-resize)
+
         -   [Cube map properties](#cube-map-properties)
 
         -   [Cube map profiling](#cube-map-profiling)
@@ -111,6 +120,7 @@
         -   [Renderbuffer update](#renderbuffer-update)
 
             -   [Renderbuffer resize](#renderbuffer-resize)
+
         -   [Renderbuffer properties](#renderbuffer-properties)
 
         -   [Renderbuffers destructor](#renderbuffers-destructor)
@@ -123,6 +133,7 @@
 
         -   [Framebuffer update](#framebuffer-update)
 
+            -   [Framebuffer binding](#framebuffer-binding)
             -   [Framebuffer resize](#framebuffer-resize)
 
         -   [Framebuffer destructor](#framebuffer-destructor)
@@ -241,7 +252,7 @@ var regl = require('regl')(require('gl')(256, 256))
 | Options              | Meaning                                                                                                                                                                       |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `gl`                 | A reference to a WebGL rendering context. (Default created from canvas)                                                                                                       |
-| `canvas`             | A reference to an HTML canvas element. (Default created and appended to container)                                                                                           |
+| `canvas`             | A reference to an HTML canvas element. (Default created and appended to container)                                                                                            |
 | `container`          | A container element into which regl inserts a canvas. (Default `document.body`)                                                                                               |
 | `attributes`         | The [context creation attributes](https://www.khronos.org/registry/webgl/specs/1.0/#WEBGLCONTEXTATTRIBUTES) passed to the WebGL context constructor.  See below for defaults. |
 | `pixelRatio`         | A multiplier which is used to scale the canvas size relative to the container.  (Default `window.devicePixelRatio`)                                                           |
@@ -949,12 +960,12 @@ var command = regl({
 })
 ```
 
-| Property   | Description                         | Default                                       |
-| ---------- | ----------------------------------- | --------------------------------------------- |
-| `enable`   | Toggles `gl.enable(gl.BLEND)`       | `false`                                       |
-| `equation` | Sets `gl.blendEquation` (see table) | `'add'`                                       |
+| Property   | Description                         | Default                 |
+| ---------- | ----------------------------------- | ----------------------- |
+| `enable`   | Toggles `gl.enable(gl.BLEND)`       | `false`                 |
+| `equation` | Sets `gl.blendEquation` (see table) | `'add'`                 |
 | `func`     | Sets `gl.blendFunc` (see table)     | `{src:'one',dst:'one'}` |
-| `color`    | Sets `gl.blendColor`                | `[0, 0, 0, 0]`                                |
+| `color`    | Sets `gl.blendColor`                | `[0, 0, 0, 0]`          |
 
 **Notes**
 
@@ -1031,14 +1042,14 @@ var command = regl({
 })
 ```
 
-| Property  | Description                                | Default                                  |
-| --------- | ------------------------------------------ | ---------------------------------------- |
-| `enable`  | Toggles `gl.enable(gl.STENCIL_TEST)`       | `false`                                  |
-| `mask`    | Sets `gl.stencilMask`                      | `-1`                                     |
-| `func`    | Sets `gl.stencilFunc`                      | `{cmp:'always',ref:0,mask:-1}`           |
+| Property  | Description                                | Default                                   |
+| --------- | ------------------------------------------ | ----------------------------------------- |
+| `enable`  | Toggles `gl.enable(gl.STENCIL_TEST)`       | `false`                                   |
+| `mask`    | Sets `gl.stencilMask`                      | `-1`                                      |
+| `func`    | Sets `gl.stencilFunc`                      | `{cmp:'always',ref:0,mask:-1}`            |
 | `opFront` | Sets `gl.stencilOpSeparate` for front face | `{fail:'keep',zfail:'keep',zpass:'keep'}` |
 | `opBack`  | Sets `gl.stencilOpSeparate` for back face  | `{fail:'keep',zfail:'keep',zpass:'keep'}` |
-| `op` | Sets `opFront` and `opBack` simultaneously | |
+| `op`      | Sets `opFront` and `opBack` simultaneously |                                           |
 
 **Notes**
 
@@ -1404,9 +1415,9 @@ var positionBuffer = regl.buffer([
 | `data`   | The data for the vertex buffer (see below)                       | `null`     |
 | `length` | If `data` is `null` or not present reserves space for the buffer | `0`        |
 | `usage`  | Sets array buffer usage hint                                     | `'static'` |
-| `type`   | Data type for vertex buffer                                    | `'uint8'` |
+| `type`   | Data type for vertex buffer                                      | `'uint8'`  |
 
-- `usage` can be one of the following values
+-   `usage` can be one of the following values
 
 | Usage Hint  | Description       |
 | ----------- | ----------------- |
@@ -1414,17 +1425,17 @@ var positionBuffer = regl.buffer([
 | `'dynamic'` | `gl.DYNAMIC_DRAW` |
 | `'stream'`  | `gl.STREAM_DRAW`  |
 
- - `type` can be one of the following data types
+-   `type` can be one of the following data types
 
-| Data type          | Description          |
-| ------------------ | ---------------------|
-| `'uint8'`          | `gl.UNSIGNED_BYTE`   |
-| `'int8'`           | `gl.BYTE`            |
-| `'uint16'`         | `gl.UNSIGNED_SHORT`  |
-| `'int16'`          | `gl.SHORT`           |
-| `'uint32'`         | `gl.UNSIGNED_INT`    |
-| `'int32'`          | `gl.INT`             |
-| `'float32'`, `'float'`  | `gl.FLOAT`      |
+| Data type              | Description         |
+| ---------------------- | ------------------- |
+| `'uint8'`              | `gl.UNSIGNED_BYTE`  |
+| `'int8'`               | `gl.BYTE`           |
+| `'uint16'`             | `gl.UNSIGNED_SHORT` |
+| `'int16'`              | `gl.SHORT`          |
+| `'uint32'`             | `gl.UNSIGNED_INT`   |
+| `'int32'`              | `gl.INT`            |
+| `'float32'`, `'float'` | `gl.FLOAT`          |
 
 **Relevant WebGL APIs**
 
@@ -1514,6 +1525,79 @@ The following stats are tracked for each buffer in the `.stats` property:
 
 * * *
 
+### Vertex array objects
+
+`regl.vao` wraps WebGL vertex array objects.  A vertex array object is a complete binding state for the set of all attributes for a given shader.  This feature requires some caution when it is used since it depends on the specific ordering of vertex attributes which is determined at program link time.  This will only have a performance benefit when the `OES_vertex_array_object` extension is enabled.  If `OES_vertex_array_object` is not enabled, then vertex array objects are emulated.
+
+If `OES_vertex_array_object` is enabled then regl will try to optimize static draw commands when possible to user vertex array objects.
+
+#### Vertex array object constructor
+
+A vertex array object constructor takes as input an array of vertex bindings:
+
+```javascript
+// First we create the VAO object
+var vao = regl.vao([
+  // first attribute is a triangle
+  [ [0, 1], [1, 0], [1, 1] ],
+
+  // second attribute is a color
+  { x: 1, y: 0, z: 1 }
+])
+
+// then we create the command
+var command = regl({
+  frag: `
+  precision highp float;
+  varying vec3 fragColor;
+  void main () {
+    gl_FragColor = vec4(fragColor, 1.);
+  }`
+  
+  vert: `
+  precision highp float;
+  attribute vec2 position;
+  attribute vec3 color;
+  varying vec3 fragColor;
+  void main () {
+    fragColor = color;
+    gl_Position = vec4(position, 0, 1);
+  }`,
+
+  // specify the vertex array object for this command
+  vao: vao,
+
+  // when using a VAO object we give numerical ids for each attribute binding location
+  attributes: {
+    position: 0,
+    color: 1
+  },
+
+  count: 3
+})
+```
+
+**Relevant WebGL APIs**
+
+-   [`OES_vertex_array_object`](https://www.khronos.org/registry/webgl/extensions/OES_vertex_array_object/)
+
+#### Vertex array object update
+
+You can update a vertex array object just like a buffer,
+
+```javascript
+vao([
+  [ [0, 1], [1, 0], [0.5, 1] ],
+  { x: 1, y: 1, z: 0 }
+])
+```
+
+#### Vertex array object destructor
+
+```javascript
+vao.destroy()
+```
+
 ### Elements
 
 `regl.elements` wraps WebGL element array buffer objects.  Each `regl.elements` object stores a buffer object as well as the primitive type and vertex count.
@@ -1564,13 +1648,11 @@ var starElements = regl.elements({
 
 -   `type` can be one of the following data types
 
-| Data type          | Description          | Extension? |
-| ------------------ | ---------------------|------------|
-| `'uint8'`          | `gl.UNSIGNED_BYTE`   |            |
-| `'uint16'`         | `gl.UNSIGNED_SHORT`  |            |
-| `'uint32'`         | `gl.UNSIGNED_INT`    | [OES_element_index_uint](https://www.khronos.org/registry/webgl/extensions/OES_element_index_uint/)               |
-
-
+| Data type  | Description         | Extension?                                                                                          |
+| ---------- | ------------------- | --------------------------------------------------------------------------------------------------- |
+| `'uint8'`  | `gl.UNSIGNED_BYTE`  |                                                                                                     |
+| `'uint16'` | `gl.UNSIGNED_SHORT` |                                                                                                     |
+| `'uint32'` | `gl.UNSIGNED_INT`   | [OES_element_index_uint](https://www.khronos.org/registry/webgl/extensions/OES_element_index_uint/) |
 
 **Notes**
 
@@ -1733,26 +1815,26 @@ A data source from an image can be one of the following types:
 | Canvas                      | A canvas element                                                                                        |
 | Context 2D                  | A canvas 2D context                                                                                     |
 
-| Property           | Description                                                                                                                                                      | Default     |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| `width`            | Width of texture                                                                                                                                                 | `0`         |
-| `height`           | Height of texture                                                                                                                                                | `0`         |
-| `mag`              | Sets magnification filter (see table)                                                                                                                            | `'nearest'` |
-| `min`              | Sets minification filter (see table)                                                                                                                             | `'nearest'` |
-| `wrapS`            | Sets wrap mode on S axis (see table)                                                                                                                             | `'clamp'`  |
-| `wrapT`            | Sets wrap mode on T axis (see table)                                                                                                                             | `'clamp'`  |
-| `aniso`            | Sets number of anisotropic samples, requires [EXT_texture_filter_anisotropic](https://www.khronos.org/registry/webgl/extensions/EXT_texture_filter_anisotropic/) | `0`         |
-| `format`           | Texture format (see table)                                                                                                                                       | `'rgba'`    |
-| `type`             | Texture type (see table)                                                                                                                                         | `'uint8'`   |
-| `data`             | Input data (see below)                                                                                                                                           |             |
-| `mipmap`           | See below for a description                                                                                                                                      | `false`     |
-| `flipY`            | Flips textures vertically when uploading                                                                                                                         | `false`     |
-| `alignment`        | Sets unpack alignment per row                                                                                                                                  | `1`         |
-| `premultiplyAlpha` | Premultiply alpha when unpacking                                                                                                                                 | `false`     |
-| `colorSpace`       | Sets colorspace conversion                                                                                                                                       | `'none'`    |
-| `data`             | Image data for the texture                                                                                                                                       | `null`      |
-| `copy`    |        | Copy the pixels in the current frame buffer. Cannot be used with `data` prop.                                                                                    | `false`     |
-| `channels`             | Number of channels for the texture format                                                                                                                                       | `null`      |
+| Property           | Description                                                                                                                                                      | Default                                                                       |         |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------- |
+| `width`            | Width of texture                                                                                                                                                 | `0`                                                                           |         |
+| `height`           | Height of texture                                                                                                                                                | `0`                                                                           |         |
+| `mag`              | Sets magnification filter (see table)                                                                                                                            | `'nearest'`                                                                   |         |
+| `min`              | Sets minification filter (see table)                                                                                                                             | `'nearest'`                                                                   |         |
+| `wrapS`            | Sets wrap mode on S axis (see table)                                                                                                                             | `'clamp'`                                                                     |         |
+| `wrapT`            | Sets wrap mode on T axis (see table)                                                                                                                             | `'clamp'`                                                                     |         |
+| `aniso`            | Sets number of anisotropic samples, requires [EXT_texture_filter_anisotropic](https://www.khronos.org/registry/webgl/extensions/EXT_texture_filter_anisotropic/) | `0`                                                                           |         |
+| `format`           | Texture format (see table)                                                                                                                                       | `'rgba'`                                                                      |         |
+| `type`             | Texture type (see table)                                                                                                                                         | `'uint8'`                                                                     |         |
+| `data`             | Input data (see below)                                                                                                                                           |                                                                               |         |
+| `mipmap`           | See below for a description                                                                                                                                      | `false`                                                                       |         |
+| `flipY`            | Flips textures vertically when uploading                                                                                                                         | `false`                                                                       |         |
+| `alignment`        | Sets unpack alignment per row                                                                                                                                    | `1`                                                                           |         |
+| `premultiplyAlpha` | Premultiply alpha when unpacking                                                                                                                                 | `false`                                                                       |         |
+| `colorSpace`       | Sets colorspace conversion                                                                                                                                       | `'none'`                                                                      |         |
+| `data`             | Image data for the texture                                                                                                                                       | `null`                                                                        |         |
+| `copy`             |                                                                                                                                                                  | Copy the pixels in the current frame buffer. Cannot be used with `data` prop. | `false` |
+| `channels`         | Number of channels for the texture format                                                                                                                        | `null`                                                                        |         |
 
 -   `mipmap`. If `boolean`, then it sets whether or not we should regenerate the mipmaps. If a `string`, it allows you to specify a hint to the mipmap generator. It can be one of the hints below
 
@@ -1782,14 +1864,12 @@ regl.texture({
 -   `shape` can be used as an array shortcut for `[width, height, channels]` of image
 -   `channels` can be used to set the number of color channels of the texture. Examples:
 
-```
-var t1 = regl.texture({width: 1, height: 1, channels: 3}) // 'format' will be 'rgb'
-var t2 = regl.texture({shape: [2, 2, 2]}) // 'format' will be 'luminance alpha'
-var t3 = regl.texture({shape: [2, 2, 4]}) // 'format' will be 'rgba'
-```
+
+    var t1 = regl.texture({width: 1, height: 1, channels: 3}) // 'format' will be 'rgb'
+    var t2 = regl.texture({shape: [2, 2, 2]}) // 'format' will be 'luminance alpha'
+    var t3 = regl.texture({shape: [2, 2, 4]}) // 'format' will be 'rgba'
 
 So it can be used as an alternative to `format`.
-
 
 -   `radius` can be specified for square images and sets both `width` and `height`
 -   `data` can take one of the following values,
@@ -1955,16 +2035,16 @@ texture.resize(3, 7)
 
 The following properties contains information about the texture.
 
-| Property           | Description                      |
-| ------------------ | -------------------------------- |
-| `width`            | Width of texture                 |
-| `height`           | Height of texture                |
-| `format`           | Texture Format                   |
-| `type`             | Texture Type                     |
-| `mag`              | Texture magnification filter     |
-| `min`              | Texture minification filter      |
-| `wrapS`            | Texture wrap mode on S axis      |
-| `wrapT`            | Texture wrap mode on T axis      |
+| Property | Description                  |
+| -------- | ---------------------------- |
+| `width`  | Width of texture             |
+| `height` | Height of texture            |
+| `format` | Texture Format               |
+| `type`   | Texture Type                 |
+| `mag`    | Texture magnification filter |
+| `min`    | Texture minification filter  |
+| `wrapS`  | Texture wrap mode on S axis  |
+| `wrapT`  | Texture wrap mode on T axis  |
 
 They can be accessed after texture creation like this:
 
@@ -2094,16 +2174,16 @@ cubemap.resize(16)
 
 The following properties contains information about the cube map.
 
-| Property           | Description                      |
-| ------------------ | -------------------------------- |
-| `width`            | Width of a single cube map face                 |
-| `height`           | Height of a single cube map face                |
-| `format`           | Texture Format                   |
-| `type`             | Texture Type                     |
-| `mag`              | Texture magnification filter     |
-| `min`              | Texture minification filter      |
-| `wrapS`            | Texture wrap mode on S axis      |
-| `wrapT`            | Texture wrap mode on T axis      |
+| Property | Description                      |
+| -------- | -------------------------------- |
+| `width`  | Width of a single cube map face  |
+| `height` | Height of a single cube map face |
+| `format` | Texture Format                   |
+| `type`   | Texture Type                     |
+| `mag`    | Texture magnification filter     |
+| `min`    | Texture minification filter      |
+| `wrapS`  | Texture wrap mode on S axis      |
+| `wrapT`  | Texture wrap mode on T axis      |
 
 They can be accessed after cube map creation like this:
 
@@ -2210,11 +2290,11 @@ renderbuffer.resize(32, 32)
 
 The following properties contains information about the renderbuffer.
 
-| Property           | Description                      |
-| ------------------ | -------------------------------- |
-| `width`            | Width of the renderbuffer                 |
-| `height`           | Height of the renderbuffer                 |
-| `format`           | Format of the renderbuffer                   |
+| Property | Description                |
+| -------- | -------------------------- |
+| `width`  | Width of the renderbuffer  |
+| `height` | Height of the renderbuffer |
+| `format` | Format of the renderbuffer |
 
 They can be accessed after renderbuffer creation like this:
 
@@ -2462,11 +2542,11 @@ regl.clear({
 })
 ```
 
-| Property  | Description                  |
-| --------- | ---------------------------- |
-| `color`   | Sets the clear color         |
-| `depth`   | Sets the clear depth value   |
-| `stencil` | Sets the clear stencil value |
+| Property      | Description                                                                                |
+| ------------- | ------------------------------------------------------------------------------------------ |
+| `color`       | Sets the clear color                                                                       |
+| `depth`       | Sets the clear depth value                                                                 |
+| `stencil`     | Sets the clear stencil value                                                               |
 | `framebuffer` | Sets the target framebuffer to clear (if unspecified, uses the current framebuffer object) |
 
 If an option is not present, then the corresponding buffer is not cleared
@@ -2514,14 +2594,14 @@ regl({framebuffer: fbo})(() => {
 })
 ```
 
-| Property | Description                                                               | Default                    |
-| -------- | ------------------------------------------------------------------------- | -------------------------- |
-| `data`   | An optional `ArrayBufferView` which gets the result of reading the pixels | `null`                     |
-| `x`      | The x-offset of the upper-left corner of the rectangle in pixels          | `0`                        |
-| `y`      | The y-offset of the upper-left corner of the rectangle in pixels          | `0`                        |
-| `width`  | The width of the rectangle in pixels                                      | Current framebuffer width  |
-| `height` | The height of the rectangle in pixels                                     | Current framebuffer height |
-| `framebuffer` | Sets the framebuffer to read pixels from | The currently bound framebuffer |
+| Property      | Description                                                               | Default                         |
+| ------------- | ------------------------------------------------------------------------- | ------------------------------- |
+| `data`        | An optional `ArrayBufferView` which gets the result of reading the pixels | `null`                          |
+| `x`           | The x-offset of the upper-left corner of the rectangle in pixels          | `0`                             |
+| `y`           | The y-offset of the upper-left corner of the rectangle in pixels          | `0`                             |
+| `width`       | The width of the rectangle in pixels                                      | Current framebuffer width       |
+| `height`      | The height of the rectangle in pixels                                     | Current framebuffer height      |
+| `framebuffer` | Sets the framebuffer to read pixels from                                  | The currently bound framebuffer |
 
 **Notes**
 
@@ -2627,8 +2707,8 @@ regl exposes info about the WebGL context limits and capabilities via the `regl.
 | `vendor`                  | `gl.VENDOR`                                                         |
 | `version`                 | `gl.VERSION`                                                        |
 | `textureFormats`          | A list of all supported texture formats                             |
-| `readFloat`               | If reading float numbers is supported |
-| `npotTextureCube`         | If non power of two cube texture dimensions are supported |
+| `readFloat`               | If reading float numbers is supported                               |
+| `npotTextureCube`         | If non power of two cube texture dimensions are supported           |
 
 **Relevant WebGL APIs**
 
@@ -2657,8 +2737,8 @@ regl exposes info about the WebGL context limits and capabilities via the `regl.
 | `getMaxAttributesCount()`    | The maximum number of attributes in any shader                             |
 
 **Notes**
--   The functions `getTotalTextureSize`, `getTotalBufferSize`, `getTotalRenderbufferSize`, `getMaxUniformsCount`, and `getMaxAttributesCount` are only available if `regl` is initialized with the option `profile: true`.
 
+-   The functions `getTotalTextureSize`, `getTotalBufferSize`, `getTotalRenderbufferSize`, `getMaxUniformsCount`, and `getMaxAttributesCount` are only available if `regl` is initialized with the option `profile: true`.
 
 * * *
 
