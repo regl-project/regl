@@ -4412,6 +4412,7 @@ function wrapAttributeState (
     }
 
     updateVAO._vao = vao
+    updateVAO._reglType = 'vao'
 
     return updateVAO(_attr)
   }
@@ -6547,7 +6548,7 @@ function reglCore (
     var dynamicOptions = options.dynamic
     if (S_VAO in staticOptions) {
       var vao = staticOptions[S_VAO]
-      if (vao !== null && !vao._vao) {
+      if (vao !== null && attributeState.getVAO(vao) === null) {
         vao = attributeState.createVAO(vao)
       }
       return createStaticDecl(function (env) {
