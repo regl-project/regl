@@ -88,6 +88,10 @@ function testVAO (regl, t) {
     vao: vaoVertical
   })
 
+  var staticResourceScope = regl({
+    vao: vaoVerticalResource
+  })
+
   var dynamicScope = regl({
     vao: regl.prop('vao')
   })
@@ -98,6 +102,10 @@ function testVAO (regl, t) {
     vao: vaoHorizontal
   }, baseCommand))
 
+  var drawStaticResource = regl(Object.assign({
+    vao: vaoHorizontalResource
+  }, baseCommand))
+
   var drawDynamic = regl(Object.assign({
     vao: regl.prop('vao')
   }, baseCommand))
@@ -105,6 +113,10 @@ function testVAO (regl, t) {
   check(function () {
     drawStatic()
   }, horizontalExpected, 'draw/static')
+
+  check(function () {
+    drawStaticResource()
+  }, horizontalExpected, 'draw/static-resource')
 
   check(function () {
     drawDynamic({
@@ -131,6 +143,10 @@ function testVAO (regl, t) {
   }, horizontalExpected, 'batch/static')
 
   check(function () {
+    drawStaticResource(1)
+  }, horizontalExpected, 'batch/static-resource')
+
+  check(function () {
     drawDynamic([
       { vao: vaoVerticalResource },
       { vao: vaoHorizontalResource }
@@ -142,6 +158,12 @@ function testVAO (regl, t) {
       drawContext(1)
     })
   }, verticalExpected, 'batch/scope/static')
+
+  check(function () {
+    staticResourceScope(function () {
+      drawContext(1)
+    })
+  }, verticalExpected, 'batch/scope/static-resource')
 
   check(function () {
     dynamicScope(
