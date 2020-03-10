@@ -1,6 +1,14 @@
 # Release notes
 
-## Next
+## 1.4.1
+
+* Fix a bug in vertex array objects when used as static resources
+
+## 1.4.0
+
+* Add vertex array objects via regl.vao
+
+## 1.3.0
 
 * Add `framebuffer.use()` method for quickly setting up framebuffer objects
 * `regl.clear` and `regl.read` now accept a framebuffer as a parameter
