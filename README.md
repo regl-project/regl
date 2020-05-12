@@ -236,6 +236,7 @@ The following is an incomplete list of projects using regl:
 * [CitiBike Commute](https://tbaldw.in/citibike-trips)
 * [Audiofabric](https://tbaldw.in/audiofabric)
 * [All the Buildings in Manhattan](https://tbaldw.in/nyc-buildings)
+* [Interactive Electromagnetic Field Simulation](https://cemsim.com)
 
 If you have a project using regl that isn't on this list that you would like to see added, [please send us a pull request!](https://github.com/regl-project/regl/edit/gh-pages/README.md)
 
