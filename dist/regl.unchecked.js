@@ -161,10 +161,25 @@ function createCanvas (element, onDone, pixelRatio) {
     })
   }
 
-  window.addEventListener('resize', resize, false)
+  var resizeObserver
+  if (element !== document.body && typeof ResizeObserver === 'function') {
+    // ignore 'ResizeObserver' is not defined
+    // eslint-disable-next-line
+    resizeObserver = new ResizeObserver(function () {
+      // setTimeout to avoid flicker
+      setTimeout(resize)
+    })
+    resizeObserver.observe(element)
+  } else {
+    window.addEventListener('resize', resize, false)
+  }
 
   function onDestroy () {
-    window.removeEventListener('resize', resize)
+    if (resizeObserver) {
+      resizeObserver.disconnect()
+    } else {
+      window.removeEventListener('resize', resize)
+    }
     element.removeChild(canvas)
   }
 
