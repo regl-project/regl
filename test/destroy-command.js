@@ -36,7 +36,7 @@ tape('destroy command', function (t) {
 
     primitive: 'points',
     count: 3
-  })()
+  })
 
   a1.destroy()
   a2.destroy()
