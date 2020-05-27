@@ -4518,7 +4518,7 @@ function wrapShaderState (gl, stringStore, stats, config) {
     gl.attachShader(program, fragShader)
     gl.attachShader(program, vertShader)
     if (attributeLocations) {
-      for (let i = 0; i < attributeLocations.length; ++i) {
+      for (i = 0; i < attributeLocations.length; ++i) {
         var binding = attributeLocations[i]
         gl.bindAttribLocation(program, binding[0], binding[1])
       }
