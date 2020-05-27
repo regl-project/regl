@@ -4255,7 +4255,7 @@ function wrapAttributeState (
       vao.bindAttrs()
     } else {
       var exti = extInstanced()
-      for (let i = 0; i < attributeBindings.length; ++i) {
+      for (var i = 0; i < attributeBindings.length; ++i) {
         var binding = attributeBindings[i]
         if (binding.buffer) {
           gl.enableVertexAttribArray(i)
@@ -4272,8 +4272,8 @@ function wrapAttributeState (
     state.currentVAO = vao
   }
 
-  function destroyVAOEXT (vao) {
-    values(vaoSet).forEach((vao) => {
+  function destroyVAOEXT () {
+    values(vaoSet).forEach(function (vao) {
       vao.destroy()
     })
   }
