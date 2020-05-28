@@ -986,7 +986,7 @@ function parseArgs (args_) {
       onDestroy = result.onDestroy
     }
     // workaround for chromium bug, premultiplied alpha value is platform dependent
-    contextAttributes.premultipliedAlpha = contextAttributes.premultipliedAlpha || true
+    if (contextAttributes.premultipliedAlpha === undefined) contextAttributes.premultipliedAlpha = true
     gl = createContext(canvas, contextAttributes)
   }
 
