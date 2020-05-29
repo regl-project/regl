@@ -390,7 +390,10 @@ module.exports = function wrapREGL (args) {
     }
 
     return extend(REGLCommand, {
-      stats: stats
+      stats: stats,
+      destroy: function () {
+        compiled.destroy()
+      }
     })
   }
 
