@@ -2,7 +2,7 @@
 
 ## 1.6.1
 
-* Browsers select their own, perhaps inconsistent, default for the `premultipledAlpha` context creation attribute. Regl enforces consistency by filling in unspecified values, but since 1.4.0 has enforced `false` if unspecified, which seems to be nonstandard and in the minority. This PR sets `premultipledAlpha: true` for improved backward compatibility when not specified. ([#566](https://github.com/regl-project/regl/pull/566), [#567](https://github.com/regl-project/regl/pull/567))
+* Browsers select their own, perhaps inconsistent, default for the `premultipledAlpha` context creation attribute. Regl enforces consistency by filling in unspecified values but since 1.4.0 has enforced `false` if unspecified, which seems to be nonstandard and in the minority. For improved backward compatibility, this PR sets `premultipledAlpha: true` when not explicitly specified. ([#566](https://github.com/regl-project/regl/pull/566), [#567](https://github.com/regl-project/regl/pull/567))
 
 ## 1.6.0 (Do not use)
 
