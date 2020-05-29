@@ -1,5 +1,29 @@
 # Release notes
 
+## 1.6.1
+
+* Browsers select their own, perhaps inconsistent, default for the `premultipledAlpha` context creation attribute. Regl enforces consistency by filling in unspecified values, but since 1.4.0 has enforced `false` if unspecified, which seems to be nonstandard and in the minority. This PR sets `premultipledAlpha: true` for improved backward compatibility when not specified. ([#566](https://github.com/regl-project/regl/pull/566), [#567](https://github.com/regl-project/regl/pull/567))
+
+## 1.6.0 (Do not use)
+
+* Faulty fix for [#566](https://github.com/regl-project/regl/pull/566)
+
+## 1.5.2
+
+* Remove an additional ES6 keyword ([#564](https://github.com/regl-project/regl/pull/564))
+
+## 1.5.1
+
+* Remove accidental inclusion of ES6 keywords ([#562](https://github.com/regl-project/regl/pull/562))
+
+## 1.5.0
+
+* Resize canvas using ResizeObserver, if available. ([#556](https://github.com/regl-project/regl/pull/556))
+
+## 1.4.2
+
+* Fix publishing error. Rebuild files in `dist` to match source.
+
 ## 1.4.1
 
 * Fix a bug in vertex array objects when used as static resources
