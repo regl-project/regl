@@ -20,10 +20,10 @@
 const numColumns = 60
 const glyphTextureColumns = 8
 const glyphSequenceLength = 57
-const msdfURL = "assets/matrix_glyphs_msdf.png"
-const paletteURL = "assets/matrix_palette.png"
+const msdfURL = 'assets/matrix_glyphs_msdf.png'
+const paletteURL = 'assets/matrix_palette.png'
 
-document.body.style = "background-color: black;"
+document.body.style = 'background-color: black;'
 document.addEventListener('touchmove', e => e.preventDefault(), { passive: false })
 const canvas = document.body.appendChild(document.createElement('canvas'))
 const fit = require('canvas-fit')
@@ -33,14 +33,14 @@ const regl = require('../regl')({
   canvas,
   extensions: [
     'OES_texture_half_float',
-    'OES_texture_half_float_linear',
+    'OES_texture_half_float_linear'
   ],
   optionalExtensions: [
     // These extensions are also needed, but Safari misreports that they are missing
     'EXT_color_buffer_half_float',
     'WEBGL_color_buffer_float',
     'OES_standard_derivatives'
-  ],
+  ]
 })
 
 // These two framebuffers are used to compute the raining code.
@@ -152,12 +152,11 @@ const updateRain = regl({
 
   uniforms: {
     glyphSequenceLength,
-    time: regl.context('time'),
+    time: regl.context('time')
   },
 
-  framebuffer: ({tick}) => state[(tick + 1) % 2] // The crucial state FBO alternator
+  framebuffer: ({ tick }) => state[(tick + 1) % 2] // The crucial state FBO alternator
 })
-
 
 // We render the code into an FBO using MSDFs: https://github.com/Chlumsky/msdfgen
 const renderRain = regl({
@@ -173,7 +172,7 @@ const renderRain = regl({
   }
   `,
 
-  frag:`
+  frag: `
     #ifdef GL_OES_standard_derivatives
     #extension GL_OES_standard_derivatives: enable
     #endif
@@ -211,9 +210,9 @@ const renderRain = regl({
   `,
 
   uniforms: {
-    glyphMSDF: regl.prop("glyphMSDF"),
+    glyphMSDF: regl.prop('glyphMSDF'),
     width: regl.context('viewportHeight'),
-    height: regl.context('viewportWidth'),
+    height: regl.context('viewportWidth')
   },
 
   framebuffer: renderedFBO
@@ -237,10 +236,10 @@ const highPass = regl({
   }
   `,
   uniforms: {
-    tex: regl.prop("tex"),
+    tex: regl.prop('tex'),
     threshold: 0.3
   },
-  framebuffer: regl.prop("fbo")
+  framebuffer: regl.prop('fbo')
 })
 
 // A 2D gaussian blur is just a 1D blur done horizontally, then done vertically.
@@ -264,12 +263,12 @@ const blur = regl({
   }
   `,
   uniforms: {
-    tex: regl.prop("tex"),
-    direction: regl.prop("direction"),
+    tex: regl.prop('tex'),
+    direction: regl.prop('direction'),
     height: regl.context('viewportWidth'),
-    width: regl.context('viewportHeight'),
+    width: regl.context('viewportHeight')
   },
-  framebuffer: regl.prop("fbo")
+  framebuffer: regl.prop('fbo')
 })
 
 // The pyramid of textures gets flattened onto the source texture.
@@ -277,16 +276,16 @@ const combineBloom = regl({
   frag: `
   precision mediump float;
   varying vec2 vUV;
-  ${verticalBlurPyramid.map((_, index) => `uniform sampler2D tex_${index};`).join("\n")}
+  ${verticalBlurPyramid.map((_, index) => `uniform sampler2D tex_${index};`).join('\n')}
   uniform sampler2D tex;
   void main() {
     vec4 total = vec4(0.);
-    ${verticalBlurPyramid.map((_, index) => `total += texture2D(tex_${index}, vUV);`).join("\n")}
+    ${verticalBlurPyramid.map((_, index) => `total += texture2D(tex_${index}, vUV);`).join('\n')}
     gl_FragColor = total + texture2D(tex, vUV);
   }
   `,
-  uniforms: Object.assign({ tex: regl.prop("tex") }, pyramidUniforms(verticalBlurPyramid)),
-  framebuffer: regl.prop("fbo")
+  uniforms: Object.assign({ tex: regl.prop('tex') }, pyramidUniforms(verticalBlurPyramid)),
+  framebuffer: regl.prop('fbo')
 })
 
 // Finally, the values are mapped to colors in a palette texture.
@@ -320,7 +319,7 @@ const colorizeByPalette = regl({
 
   uniforms: {
     ditherMagnitude: 0.05,
-    palette: regl.prop("palette"),
+    palette: regl.prop('palette'),
     tex: bloomedFBO,
     time: regl.context('time')
   }
@@ -342,9 +341,9 @@ const setupQuad = regl({
   },
 
   uniforms: {
-    lastState: ({tick}) => state[tick % 2],
+    lastState: ({ tick }) => state[tick % 2],
     numColumns,
-    glyphTextureColumns,
+    glyphTextureColumns
   },
 
   depth: { enable: false },
@@ -375,7 +374,7 @@ require('resl')({
   },
   onDone: resources => {
     setupQuad({}, updateRain)
-    regl.frame(({viewportWidth, viewportHeight}) => {
+    regl.frame(({ viewportWidth, viewportHeight }) => {
       // All the FBOs except the compute FBOs need to be sized to the window.
       renderedFBO.resize(viewportWidth, viewportHeight)
       bloomedFBO.resize(viewportWidth, viewportHeight)
@@ -389,10 +388,10 @@ require('resl')({
       setupQuad(() => {
         updateRain()
         renderRain(resources)
-        highPassPyramid.forEach(fbo => highPass({fbo, tex: renderedFBO}))
-        horizontalBlurPyramid.forEach((fbo, index) => blur({ fbo, tex: highPassPyramid[index], direction: [1, 0]}))
-        verticalBlurPyramid.forEach((fbo, index) => blur({ fbo, tex: horizontalBlurPyramid[index], direction: [0, 1]}))
-        combineBloom({tex: renderedFBO, fbo: bloomedFBO})
+        highPassPyramid.forEach(fbo => highPass({ fbo, tex: renderedFBO }))
+        horizontalBlurPyramid.forEach((fbo, index) => blur({ fbo, tex: highPassPyramid[index], direction: [1, 0] }))
+        verticalBlurPyramid.forEach((fbo, index) => blur({ fbo, tex: horizontalBlurPyramid[index], direction: [0, 1] }))
+        combineBloom({ tex: renderedFBO, fbo: bloomedFBO })
         colorizeByPalette(resources)
       })
     })

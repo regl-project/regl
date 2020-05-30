@@ -334,7 +334,7 @@ function generateGallery (files) {
       </body>
     </html>`
 
-  fs.writeFile('www/gallery.html', html, function(err){
+  fs.writeFile('www/gallery.html', html, function (err) {
     if (err) {
       throw err
     }
@@ -372,7 +372,7 @@ mkdirp('www/gallery', function (err) {
       b.transform(es2020)
       b.bundle(function (err, bundle) {
         if (err) {
-          console.log ("Problem with", file);
+          console.log('Problem with', file)
           throw err
         }
         console.log('bundled', file)
