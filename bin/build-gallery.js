@@ -356,9 +356,6 @@ mkdirp('www/gallery', function (err) {
     if (err) { throw err }
 
     files.forEach(function (file, _, i) {
-
-      console.log(file);
-
       var currentFileStats = fs.statSync(file)
       var targetFile = jsName(file).replace('.js', '.min.js')
       var targetFileStats = fs.existsSync(targetFile) && fs.statSync(targetFile)
