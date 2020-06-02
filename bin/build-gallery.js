@@ -60,6 +60,11 @@ p a:hover {
   font-size: 1.0em;
 }
 
+#exList li {
+  list-style-type: disc;
+  margin-left: 1em;
+}
+
 #exList > li > a {
   text-decoration: none;
   color: #000;
@@ -83,6 +88,7 @@ p a:hover {
 #exList > li {
   padding-top: 50px;
   padding-bottom: 50px;
+  margin-left: 0;
 
   overflow: auto;
   list-style-type: none;
@@ -328,7 +334,11 @@ function generateGallery (files) {
       </body>
     </html>`
 
-  fs.writeFile('www/gallery.html', html)
+  fs.writeFile('www/gallery.html', html, function (err) {
+    if (err) {
+      throw err
+    }
+  })
 }
 
 mkdirp('www/gallery', function (err) {
@@ -362,6 +372,7 @@ mkdirp('www/gallery', function (err) {
       b.transform(es2020)
       b.bundle(function (err, bundle) {
         if (err) {
+          console.log('Problem with', file)
           throw err
         }
         console.log('bundled', file)
@@ -390,13 +401,13 @@ function minifyAndGenPage (file, bundle) {
     })
 
     closureCompiler.run(function (exitCode, stdOut, stdErr) {
+      console.log('minified ', minFile)
+      console.log('stdout: ', stdOut)
+      console.log('stderr: ', stdErr)
       fs.readFile(minFile, function (err, data) {
         if (err) {
           throw err
         }
-        console.log('minified ', minFile)
-        console.log('stdout: ', stdOut)
-        console.log('stderr: ', stdErr)
         writePage(file, data)
       })
     })
