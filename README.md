@@ -227,6 +227,7 @@ These measurements were taken using our custom scripts `bench-history` and
 
 The following is an incomplete list of projects using regl:
 
+* [Repper Patterns](https://repper.app)
 * [538 Gun Deaths](http://fivethirtyeight.com/features/gun-deaths/)
 * [Infinite Terrain Demo](https://github.com/Erkaman/wireframe-world)
 * [GPGPU Smooth Life](https://github.com/rreusser/regl-smooth-life)
