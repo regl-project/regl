@@ -25,7 +25,7 @@
   "devDependencies": {
     "angle-normals": "^1.0.0",
     "baboon-image": "^2.0.0",
-    "bl": "^1.1.2",
+    "bl": "^4.0.3",
     "browserify": "^13.1.1",
     "budo": "^8.1.0",
     "bunny": "^1.0.1",
