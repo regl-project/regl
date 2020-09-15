@@ -153,7 +153,6 @@ tape('uniforms', function (t) {
         if (!Array.isArray(input)) {
           return baseConstructors.constant(frag, vert, input)
         }
-        console.log(input);
         return regl(extend(commandDesc, {
           vert: vert,
           frag: frag,
