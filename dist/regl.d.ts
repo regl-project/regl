@@ -659,7 +659,7 @@ declare namespace REGL {
     Context extends REGL.DefaultContext,
     Props extends {}
   > = {
-    [Key in keyof Uniforms]: MaybeDynamic<Uniforms[Key], Context, Props>;
+    [Key in keyof Uniforms]: MaybeDynamic<Uniforms[Key], Context, Props>|MaybeDynamic<Uniforms[Key], Context, Props>[];
   }
 
   type AttributeState =

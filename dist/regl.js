@@ -681,6 +681,8 @@ var check$1 = extend(check, {
 var VARIABLE_COUNTER = 0
 
 var DYN_FUNC = 0
+var DYN_CONSTANT = 5
+var DYN_ARRAY = 6
 
 function DynamicVariable (type, data) {
   this.id = (VARIABLE_COUNTER++)
@@ -736,15 +738,20 @@ function defineDynamic (type, data) {
 }
 
 function isDynamic (x) {
-  return (typeof x === 'function' && !x._reglType) ||
-         x instanceof DynamicVariable
+  return (typeof x === 'function' && !x._reglType) || (x instanceof DynamicVariable)
 }
 
 function unbox (x, path) {
   if (typeof x === 'function') {
     return new DynamicVariable(DYN_FUNC, x)
+  } else if (typeof x === 'number' || typeof x === 'boolean') {
+    return new DynamicVariable(DYN_CONSTANT, x)
+  } else if (Array.isArray(x)) {
+    return new DynamicVariable(DYN_ARRAY, x.map((y, i) => unbox(y, path + '[' + i + ']')))
+  } else if (x instanceof DynamicVariable) {
+    return x
   }
-  return x
+  check$1(false, 'invalid option type in uniform ' + path)
 }
 
 var dynamic = {
@@ -3845,6 +3852,20 @@ function createTextureSet (
     })
   }
 
+  function refreshTextures () {
+    for (var i = 0; i < numTexUnits; ++i) {
+      var tex = textureUnits[i]
+      if (tex) {
+        tex.bindCount = 0
+        tex.unit = -1
+        textureUnits[i] = null
+      }
+      gl.activeTexture(GL_TEXTURE0$1 + i)
+      gl.bindTexture(GL_TEXTURE_2D$1, null)
+      gl.bindTexture(GL_TEXTURE_CUBE_MAP$1, null)
+    }
+  }
+
   return {
     create2D: createTexture2D,
     createCube: createTextureCube,
@@ -3852,7 +3873,8 @@ function createTextureSet (
     getTexture: function (wrapper) {
       return null
     },
-    restore: restoreTextures
+    restore: restoreTextures,
+    refresh: refreshTextures
   }
 }
 
@@ -5121,7 +5143,7 @@ function wrapAttributeState (
         if (binding.buffer) {
           gl.enableVertexAttribArray(i)
           gl.vertexAttribPointer(i, binding.size, binding.type, binding.normalized, binding.stride, binding.offfset)
-          if (exti) {
+          if (exti && binding.divisor) {
             exti.vertexAttribDivisorANGLE(i, binding.divisor)
           }
         } else {
@@ -5161,7 +5183,7 @@ function wrapAttributeState (
         gl.enableVertexAttribArray(i)
         gl.bindBuffer(GL_ARRAY_BUFFER$1, attr.buffer.buffer)
         gl.vertexAttribPointer(i, attr.size, attr.type, attr.normalized, attr.stride, attr.offset)
-        if (exti) {
+        if (exti && attr.divisor) {
           exti.vertexAttribDivisorANGLE(i, attr.divisor)
         }
       } else {
@@ -5217,18 +5239,27 @@ function wrapAttributeState (
       check$1(attributes.length < NUM_ATTRIBUTES, 'too many attributes')
       check$1(attributes.length > 0, 'must specify at least one attribute')
 
-      for (var j = 0; j < vao.buffers.length; ++j) {
-        vao.buffers[j].destroy()
-      }
-      vao.buffers.length = 0
-
+      var bufUpdated = {}
       var nattributes = vao.attributes
       nattributes.length = attributes.length
       for (var i = 0; i < attributes.length; ++i) {
         var spec = attributes[i]
         var rec = nattributes[i] = new AttributeRecord()
-        if (Array.isArray(spec) || isTypedArray(spec) || isNDArrayLike(spec)) {
-          var buf = bufferState.create(spec, GL_ARRAY_BUFFER$1, false, true)
+        var data = spec.data || spec
+        if (Array.isArray(data) || isTypedArray(data) || isNDArrayLike(data)) {
+          var buf
+          if (vao.buffers[i]) {
+            buf = vao.buffers[i]
+            if (isTypedArray(data) && buf._buffer.byteLength >= data.byteLength) {
+              buf.subdata(data)
+            } else {
+              buf.destroy()
+              vao.buffers[i] = null
+            }
+          }
+          if (!vao.buffers[i]) {
+            buf = vao.buffers[i] = bufferState.create(spec, GL_ARRAY_BUFFER$1, false, true)
+          }
           rec.buffer = bufferState.getBuffer(buf)
           rec.size = rec.buffer.dimension | 0
           rec.normalized = false
@@ -5237,7 +5268,7 @@ function wrapAttributeState (
           rec.stride = 0
           rec.divisor = 0
           rec.state = 1
-          vao.buffers.push(buf)
+          bufUpdated[i] = 1
         } else if (bufferState.getBuffer(spec)) {
           rec.buffer = bufferState.getBuffer(spec)
           rec.size = rec.buffer.dimension | 0
@@ -5279,11 +5310,25 @@ function wrapAttributeState (
         }
       }
 
+      // retire unused buffers
+      for (var j = 0; j < vao.buffers.length; ++j) {
+        if (!bufUpdated[j] && vao.buffers[j]) {
+          vao.buffers[j].destroy()
+          vao.buffers[j] = null
+        }
+      }
+
       vao.refresh()
       return updateVAO
     }
 
     updateVAO.destroy = function () {
+      for (var j = 0; j < vao.buffers.length; ++j) {
+        if (vao.buffers[j]) {
+          vao.buffers[j].destroy()
+        }
+      }
+      vao.buffers.length = 0
       vao.destroy()
     }
 
@@ -5357,6 +5402,7 @@ function wrapShaderState (gl, stringStore, stats, config) {
     this.program = null
     this.uniforms = []
     this.attributes = []
+    this.refCount = 1
 
     if (config.profile) {
       this.stats = {
@@ -5502,8 +5548,11 @@ function wrapShaderState (gl, stringStore, stats, config) {
         cache = programCache[fragId] = {}
       }
       var prevProgram = cache[vertId]
-      if (prevProgram && !attribLocations) {
-        return prevProgram
+      if (prevProgram) {
+        prevProgram.refCount++
+        if (!attribLocations) {
+          return prevProgram
+        }
       }
       var program = new REGLProgram(fragId, vertId)
       stats.shaderCount++
@@ -5512,7 +5561,29 @@ function wrapShaderState (gl, stringStore, stats, config) {
         cache[vertId] = program
       }
       programList.push(program)
-      return program
+      return extend(program, {
+        destroy: function () {
+          program.refCount--
+          if (program.refCount <= 0) {
+            gl.deleteProgram(program.program)
+            var idx = programList.indexOf(program)
+            programList.splice(idx, 1)
+            stats.shaderCount--
+          }
+          // no program is linked to this vert anymore
+          if (cache[program.vertId].refCount <= 0) {
+            gl.deleteShader(vertShaders[program.vertId])
+            delete vertShaders[program.vertId]
+            delete programCache[program.fragId][program.vertId]
+          }
+          // no program is linked to this frag anymore
+          if (!Object.keys(programCache[program.fragId]).length) {
+            gl.deleteShader(fragShaders[program.fragId])
+            delete fragShaders[program.fragId]
+            delete programCache[program.fragId]
+          }
+        }
+      })
     },
 
     restore: restoreShaders,
@@ -5851,6 +5922,8 @@ var DYN_PROP$1 = 1
 var DYN_CONTEXT$1 = 2
 var DYN_STATE$1 = 3
 var DYN_THUNK = 4
+var DYN_CONSTANT$1 = 5
+var DYN_ARRAY$1 = 6
 
 var S_DITHER = 'dither'
 var S_BLEND_ENABLE = 'blend.enable'
@@ -6094,6 +6167,44 @@ function createDynamicDecl (dyn, append) {
       data.thisDep,
       data.contextDep,
       data.propDep,
+      append)
+  } else if (type === DYN_CONSTANT$1) {
+    return new Declaration(
+      false,
+      false,
+      false,
+      append)
+  } else if (type === DYN_ARRAY$1) {
+    var thisDep = false
+    var contextDep = false
+    var propDep = false
+    for (var i = 0; i < dyn.data.length; ++i) {
+      var subDyn = dyn.data[i]
+      if (subDyn.type === DYN_PROP$1) {
+        propDep = true
+      } else if (subDyn.type === DYN_CONTEXT$1) {
+        contextDep = true
+      } else if (subDyn.type === DYN_STATE$1) {
+        thisDep = true
+      } else if (subDyn.type === DYN_FUNC$1) {
+        thisDep = true
+        var subArgs = subDyn.data
+        if (subArgs >= 1) {
+          contextDep = true
+        }
+        if (subArgs >= 2) {
+          propDep = true
+        }
+      } else if (subDyn.type === DYN_THUNK) {
+        thisDep = thisDep || subDyn.data.thisDep
+        contextDep = contextDep || subDyn.data.contextDep
+        propDep = propDep || subDyn.data.propDep
+      }
+    }
+    return new Declaration(
+      thisDep,
+      contextDep,
+      propDep,
       append)
   } else {
     return new Declaration(
@@ -6353,6 +6464,12 @@ function reglCore (
         case DYN_THUNK:
           x.data.append(env, block)
           return x.data.ref
+        case DYN_CONSTANT$1:
+          return x.data.toString()
+        case DYN_ARRAY$1:
+          return x.data.map(function (y) {
+            return env.invoke(block, y)
+          })
       }
     }
 
@@ -7855,7 +7972,12 @@ function reglCore (
     Object.keys(context).forEach(function (name) {
       scope.save(CONTEXT, '.' + name)
       var defn = context[name]
-      contextEnter(CONTEXT, '.', name, '=', defn.append(env, scope), ';')
+      var value = defn.append(env, scope)
+      if (Array.isArray(value)) {
+        contextEnter(CONTEXT, '.', name, '=[', value.join(), '];')
+      } else {
+        contextEnter(CONTEXT, '.', name, '=', value, ';')
+      }
     })
 
     scope(contextEnter)
@@ -8385,11 +8507,13 @@ function reglCore (
       }
 
       if (type === GL_SAMPLER_2D) {
+        check$1(!Array.isArray(VALUE), 'must specify a scalar prop for textures')
         scope(
           'if(', VALUE, '&&', VALUE, '._reglType==="framebuffer"){',
           VALUE, '=', VALUE, '.color[0];',
           '}')
       } else if (type === GL_SAMPLER_CUBE) {
+        check$1(!Array.isArray(VALUE), 'must specify a scalar prop for cube maps')
         scope(
           'if(', VALUE, '&&', VALUE, '._reglType==="framebufferCube"){',
           VALUE, '=', VALUE, '.color[0];',
@@ -8398,25 +8522,31 @@ function reglCore (
 
       // perform type validation
       check$1.optional(function () {
-        function check (pred, message) {
+        function emitCheck (pred, message) {
           env.assert(scope, pred,
             'bad data or missing for uniform "' + name + '".  ' + message)
         }
 
         function checkType (type) {
-          check(
+          check$1(!Array.isArray(VALUE), 'must not specify an array type for uniform')
+          emitCheck(
             'typeof ' + VALUE + '==="' + type + '"',
             'invalid type, expected ' + type)
         }
 
         function checkVector (n, type) {
-          check(
-            shared.isArrayLike + '(' + VALUE + ')&&' + VALUE + '.length===' + n,
-            'invalid vector, should have length ' + n, env.commandStr)
+          if (Array.isArray(VALUE)) {
+            check$1(VALUE.length === n, 'must have length ' + n)
+          } else {
+            emitCheck(
+              shared.isArrayLike + '(' + VALUE + ')&&' + VALUE + '.length===' + n,
+              'invalid vector, should have length ' + n, env.commandStr)
+          }
         }
 
         function checkTexture (target) {
-          check(
+          check$1(!Array.isArray(VALUE), 'must not specify a value type')
+          emitCheck(
             'typeof ' + VALUE + '==="function"&&' +
             VALUE + '._reglType==="texture' +
             (target === GL_TEXTURE_2D$3 ? '2d' : 'Cube') + '"',
@@ -8546,16 +8676,25 @@ function reglCore (
       if (infix.charAt(0) === 'M') {
         var matSize = Math.pow(type - GL_FLOAT_MAT2 + 2, 2)
         var STORAGE = env.global.def('new Float32Array(', matSize, ')')
-        scope(
-          'false,(Array.isArray(', VALUE, ')||', VALUE, ' instanceof Float32Array)?', VALUE, ':(',
-          loop(matSize, function (i) {
-            return STORAGE + '[' + i + ']=' + VALUE + '[' + i + ']'
-          }), ',', STORAGE, ')')
+        if (Array.isArray(VALUE)) {
+          scope(
+            'false,(',
+            loop(matSize, function (i) {
+              return STORAGE + '[' + i + ']=' + VALUE[i]
+            }), ',', STORAGE, ')')
+        } else {
+          scope(
+            'false,(Array.isArray(', VALUE, ')||', VALUE, ' instanceof Float32Array)?', VALUE, ':(',
+            loop(matSize, function (i) {
+              return STORAGE + '[' + i + ']=' + VALUE + '[' + i + ']'
+            }), ',', STORAGE, ')')
+        }
       } else if (unroll > 1) {
         scope(loop(unroll, function (i) {
-          return VALUE + '[' + i + ']'
+          return Array.isArray(VALUE) ? VALUE[i] : VALUE + '[' + i + ']'
         }))
       } else {
+        check$1(!Array.isArray(VALUE), 'uniform value must not be an array')
         scope(VALUE)
       }
       scope(');')
@@ -9046,10 +9185,14 @@ function reglCore (
       })
 
     Object.keys(args.uniforms).forEach(function (opt) {
+      var value = args.uniforms[opt].append(env, scope)
+      if (Array.isArray(value)) {
+        value = '[' + value.join() + ']'
+      }
       scope.set(
         shared.uniforms,
         '[' + stringStore.id(opt) + ']',
-        args.uniforms[opt].append(env, scope))
+        value)
     })
 
     Object.keys(args.attributes).forEach(function (name) {
@@ -9184,7 +9327,11 @@ function reglCore (
     emitScopeProc(env, args)
     emitBatchProc(env, args)
 
-    return env.compile()
+    return extend(env.compile(), {
+      destroy: function () {
+        args.shader.program.destroy()
+      }
+    })
   }
 
   // ===========================================================================
@@ -9761,16 +9908,23 @@ function wrapREGL (args) {
       return result
     }
 
-    function separateDynamic (object) {
+    function separateDynamic (object, useArrays) {
       var staticItems = {}
       var dynamicItems = {}
       Object.keys(object).forEach(function (option) {
         var value = object[option]
         if (dynamic.isDynamic(value)) {
           dynamicItems[option] = dynamic.unbox(value, option)
-        } else {
-          staticItems[option] = value
+          return
+        } else if (useArrays && Array.isArray(value)) {
+          for (var i = 0; i < value.length; ++i) {
+            if (dynamic.isDynamic(value[i])) {
+              dynamicItems[option] = dynamic.unbox(value, option)
+              return
+            }
+          }
         }
+        staticItems[option] = value
       })
       return {
         dynamic: dynamicItems,
@@ -9779,10 +9933,10 @@ function wrapREGL (args) {
     }
 
     // Treat context variables separate from other dynamic variables
-    var context = separateDynamic(options.context || {})
-    var uniforms = separateDynamic(options.uniforms || {})
-    var attributes = separateDynamic(options.attributes || {})
-    var opts = separateDynamic(flattenNestedOptions(options))
+    var context = separateDynamic(options.context || {}, true)
+    var uniforms = separateDynamic(options.uniforms || {}, true)
+    var attributes = separateDynamic(options.attributes || {}, false)
+    var opts = separateDynamic(flattenNestedOptions(options), false)
 
     var stats$$1 = {
       gpuTime: 0.0,
@@ -9839,7 +9993,10 @@ function wrapREGL (args) {
     }
 
     return extend(REGLCommand, {
-      stats: stats$$1
+      stats: stats$$1,
+      destroy: function () {
+        compiled.destroy()
+      }
     })
   }
 
@@ -9942,6 +10099,7 @@ function wrapREGL (args) {
   }
 
   function refresh () {
+    textureState.refresh()
     pollViewport()
     core.procs.refresh()
     if (timer) {
