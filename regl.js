@@ -312,16 +312,23 @@ module.exports = function wrapREGL (args) {
       return result
     }
 
-    function separateDynamic (object) {
+    function separateDynamic (object, useArrays) {
       var staticItems = {}
       var dynamicItems = {}
       Object.keys(object).forEach(function (option) {
         var value = object[option]
         if (dynamic.isDynamic(value)) {
           dynamicItems[option] = dynamic.unbox(value, option)
-        } else {
-          staticItems[option] = value
+          return
+        } else if (useArrays && Array.isArray(value)) {
+          for (var i = 0; i < value.length; ++i) {
+            if (dynamic.isDynamic(value[i])) {
+              dynamicItems[option] = dynamic.unbox(value, option)
+              return
+            }
+          }
         }
+        staticItems[option] = value
       })
       return {
         dynamic: dynamicItems,
@@ -330,10 +337,10 @@ module.exports = function wrapREGL (args) {
     }
 
     // Treat context variables separate from other dynamic variables
-    var context = separateDynamic(options.context || {})
-    var uniforms = separateDynamic(options.uniforms || {})
-    var attributes = separateDynamic(options.attributes || {})
-    var opts = separateDynamic(flattenNestedOptions(options))
+    var context = separateDynamic(options.context || {}, true)
+    var uniforms = separateDynamic(options.uniforms || {}, true)
+    var attributes = separateDynamic(options.attributes || {}, false)
+    var opts = separateDynamic(flattenNestedOptions(options), false)
 
     var stats = {
       gpuTime: 0.0,
