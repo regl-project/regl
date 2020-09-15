@@ -503,6 +503,7 @@ module.exports = function wrapREGL (args) {
   }
 
   function refresh () {
+    textureState.refresh()
     pollViewport()
     core.procs.refresh()
     if (timer) {
