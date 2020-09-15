@@ -139,27 +139,27 @@ tape('uniforms', function (t) {
       propArray: function (frag, vert, input) {
         if (!Array.isArray(input)) {
           return baseConstructors.constant(frag, vert, input)
-        } 
+        }
         return regl(extend(commandDesc, {
           vert: vert,
           frag: frag,
           uniforms: {
-            data: input.map((_, i) => regl.prop('data[' + i + ']')),
-          },
+            data: input.map((_, i) => regl.prop('data[' + i + ']'))
+          }
         }))
       },
 
       propArrayMixed: function (frag, vert, input) {
         if (!Array.isArray(input)) {
           return baseConstructors.constant(frag, vert, input)
-        } 
+        }
         console.log(input);
         return regl(extend(commandDesc, {
           vert: vert,
           frag: frag,
           uniforms: {
-            data: input.map((_, i) => i === 0 ? regl.prop('data[' + i + ']') : input[i]),
-          },
+            data: input.map((_, i) => i === 0 ? regl.prop('data[' + i + ']') : input[i])
+          }
         }))
       },
 
@@ -174,10 +174,10 @@ tape('uniforms', function (t) {
             data: input.map((_, i) => regl.context('data[' + i + ']'))
           },
           context: {
-            data: input.map((_, i) => regl.prop('data[' + i + ']')),
+            data: input.map((_, i) => regl.prop('data[' + i + ']'))
           }
         }))
-      },
+      }
     }
 
     var constructors = {}
