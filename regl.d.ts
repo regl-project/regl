@@ -1,4 +1,4 @@
-// Type definitions for regl 1.3.1
+// Type definitions for regl 2.0.0
 // Project: regl
 // Definitions by: Stepan Stolyarov <stepan.stolyarov@gmail.com>, David Schneider <github.com/davschne>
 
@@ -217,7 +217,7 @@ declare namespace REGL {
     framebufferCube(options: REGL.FramebufferCubeOptions): REGL.FramebufferCube;
 
     /* Creates a vertex array object */
-    vao(attributes: REGL.AttributeState[]) : REGL.VertexArrayObject;
+    vao(attributes: REGL.AttributeState[] | REGL.VertexArrayOptions) : REGL.VertexArrayObject;
 
     /* Events and listeners */
 
@@ -1072,6 +1072,15 @@ declare namespace REGL {
     "uint8" |
     "uint16" |
     "uint32";
+
+  interface VertexArrayOptions {
+    attributes: AttributeState[];
+    elements?: REGL.Elements | REGL.ElementsOptions | REGL.ElementsData | null;
+    count?:number;
+    offset?:number;
+    primitive?:PrimitiveType;
+    instances?:number;
+  }
 
   interface Texture extends Resource {
     readonly stats: {

@@ -26,12 +26,12 @@ function testVAO (regl, t) {
     attributes: {
       position: 0
     },
-    depth: false,
+    depth: false
   }
 
   var vaoHorizontal = {
     attributes: [
-        [ [-10, 0], [10, 0] ]
+      [ [-10, 0], [10, 0] ]
     ],
     elements: [ [0, 1] ]
   }
