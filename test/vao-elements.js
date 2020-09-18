@@ -41,7 +41,8 @@ function testVAO (regl, t) {
       [ [0, -10], [0, 10] ]
     ],
     elements: null,
-    primitive: 'lines'
+    primitive: 'lines',
+    count: 2
   }
 
   var vaoHorizontalResource = regl.vao(vaoHorizontal)
