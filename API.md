@@ -1577,6 +1577,21 @@ var command = regl({
 })
 ```
 
+You can also bake the element state into a vao:
+
+
+```javascript
+// First we create the VAO object
+var vao = regl.vao({
+  attributes: [
+    [ [0, 1], [1, 0], [1, 1] ],
+  },
+
+  // if not specified, then default is no elements
+  elements: [[ 0, 1, 2 ]],
+])
+```
+
 **Relevant WebGL APIs**
 
 -   [`OES_vertex_array_object`](https://www.khronos.org/registry/webgl/extensions/OES_vertex_array_object/)
