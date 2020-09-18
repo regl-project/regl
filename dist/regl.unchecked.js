@@ -2905,10 +2905,7 @@ function createTextureSet (
       }
 
       copyFlags(texture, faces[0])
-
-      if (!limits.npotTextureCube) {
-        
-      }
+      
 
       if (texInfo.genMipmaps) {
         texture.mipmask = (faces[0].width << 1) - 1
@@ -3768,11 +3765,7 @@ function wrapFBOState (
             } else if (colorRenderbufferFormats.indexOf(colorFormat) >= 0) {
               colorTexture = false
             } else {
-              if (colorTexture) {
-                
-              } else {
-                
-              }
+              
             }
           }
         }
@@ -4851,15 +4844,7 @@ function wrapReadPixels (
       
       type = framebufferState.next.colorAttachments[0].texture._texture.type
 
-      if (extensions.oes_texture_float) {
-        
-
-        if (type === GL_FLOAT$6) {
-          
-        }
-      } else {
-        
-      }
+      
     }
 
     var x = 0
@@ -6774,11 +6759,6 @@ function reglCore (
             }
 
             var divisor = value.divisor | 0
-            if ('divisor' in value) {
-              
-              
-            }
-
             
 
             record.buffer = buffer
@@ -7395,7 +7375,7 @@ function reglCore (
     })
   }
 
-  function emitUniforms (env, scope, args, uniforms, filter) {
+  function emitUniforms (env, scope, args, uniforms, filter, isBatchInnerLoop) {
     var shared = env.shared
     var GL = shared.gl
 
@@ -7584,8 +7564,8 @@ function reglCore (
           break
       }
 
-      scope(GL, '.uniform', infix, '(', LOCATION, ',')
       if (infix.charAt(0) === 'M') {
+        scope(GL, '.uniform', infix, '(', LOCATION, ',')
         var matSize = Math.pow(type - GL_FLOAT_MAT2 + 2, 2)
         var STORAGE = env.global.def('new Float32Array(', matSize, ')')
         if (Array.isArray(VALUE)) {
@@ -7601,15 +7581,43 @@ function reglCore (
               return STORAGE + '[' + i + ']=' + VALUE + '[' + i + ']'
             }), ',', STORAGE, ')')
         }
+        scope(');')
       } else if (unroll > 1) {
-        scope(loop(unroll, function (i) {
-          return Array.isArray(VALUE) ? VALUE[i] : VALUE + '[' + i + ']'
-        }))
+        var prev = []
+        var cur = []
+        for (var j = 0; j < unroll; ++j) {
+          if (Array.isArray(VALUE)) {
+            cur.push(VALUE[j])
+          } else {
+            cur.push(scope.def(VALUE + '[' + j + ']'))
+          }
+          if (isBatchInnerLoop) {
+            prev.push(scope.def())
+          }
+        }
+        if (isBatchInnerLoop) {
+          scope('if(!', env.batchId, '||', prev.map(function (p, i) {
+            return p + '!==' + cur[i]
+          }).join('||'), '){', prev.map(function (p, i) {
+            return p + '=' + cur[i] + ';'
+          }).join(''))
+        }
+        scope(GL, '.uniform', infix, '(', LOCATION, ',', cur.join(','), ');')
+        if (isBatchInnerLoop) {
+          scope('}')
+        }
       } else {
         
-        scope(VALUE)
+        if (isBatchInnerLoop) {
+          var prevS = scope.def()
+          scope('if(!', env.batchId, '||', prevS, '!==', VALUE, '){',
+            prevS, '=', VALUE, ';')
+        }
+        scope(GL, '.uniform', infix, '(', LOCATION, ',', VALUE, ');')
+        if (isBatchInnerLoop) {
+          scope('}')
+        }
       }
-      scope(');')
     }
   }
 
@@ -7811,7 +7819,7 @@ function reglCore (
     }
     emitUniforms(env, draw, args, program.uniforms, function () {
       return true
-    })
+    }, false)
     emitDraw(env, draw, draw, args)
   }
 
@@ -7870,7 +7878,7 @@ function reglCore (
     }
 
     emitAttributes(env, scope, args, program.attributes, all)
-    emitUniforms(env, scope, args, program.uniforms, all)
+    emitUniforms(env, scope, args, program.uniforms, all, false)
     emitDraw(env, scope, scope, args)
   }
 
@@ -7950,8 +7958,8 @@ function reglCore (
         emitAttributes(env, outer, args, program.attributes, isOuterDefn)
         emitAttributes(env, inner, args, program.attributes, isInnerDefn)
       }
-      emitUniforms(env, outer, args, program.uniforms, isOuterDefn)
-      emitUniforms(env, inner, args, program.uniforms, isInnerDefn)
+      emitUniforms(env, outer, args, program.uniforms, isOuterDefn, false)
+      emitUniforms(env, inner, args, program.uniforms, isInnerDefn, true)
       emitDraw(env, outer, inner, args)
     }
   }
