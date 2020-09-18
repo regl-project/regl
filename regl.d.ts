@@ -953,7 +953,7 @@ declare namespace REGL {
   }
 
   interface VertexArrayObject extends REGL.Resource {
-    (attributes:REGL.AttributeState[]) : REGL.VertexArrayObject;
+    (attributes:REGL.AttributeState[] | REGL.VertexArrayOptions) : REGL.VertexArrayObject;
   }
 
   interface Buffer extends REGL.Resource {
