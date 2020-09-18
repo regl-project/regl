@@ -91,16 +91,18 @@ module.exports = function wrapREGL (args) {
     stats,
     config,
     destroyBuffer)
+  var elementState = wrapElements(gl, extensions, bufferState, stats)
   var attributeState = wrapAttributes(
     gl,
     extensions,
     limits,
     stats,
-    bufferState)
+    bufferState,
+    elementState,
+    drawState)
   function destroyBuffer (buffer) {
     return attributeState.destroyBuffer(buffer)
   }
-  var elementState = wrapElements(gl, extensions, bufferState, stats)
   var shaderState = wrapShaders(gl, stringStore, stats, config)
   var textureState = wrapTextures(
     gl,
@@ -258,10 +260,10 @@ module.exports = function wrapREGL (args) {
     shaderState.clear()
     framebufferState.clear()
     renderbufferState.clear()
+    attributeState.clear()
     textureState.clear()
     elementState.clear()
     bufferState.clear()
-    attributeState.clear()
 
     if (timer) {
       timer.clear()
