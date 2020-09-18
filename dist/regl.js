@@ -747,7 +747,7 @@ function unbox (x, path) {
   } else if (typeof x === 'number' || typeof x === 'boolean') {
     return new DynamicVariable(DYN_CONSTANT, x)
   } else if (Array.isArray(x)) {
-    return new DynamicVariable(DYN_ARRAY, x.map((y, i) => unbox(y, path + '[' + i + ']')))
+    return new DynamicVariable(DYN_ARRAY, x.map(function (y, i) { return unbox(y, path + '[' + i + ']') }))
   } else if (x instanceof DynamicVariable) {
     return x
   }
@@ -5046,6 +5046,16 @@ function wrapFBOState (
 
 var GL_FLOAT$6 = 5126
 var GL_ARRAY_BUFFER$1 = 34962
+var GL_ELEMENT_ARRAY_BUFFER$1 = 34963
+
+var VAO_OPTIONS = [
+  'attributes',
+  'elements',
+  'offset',
+  'count',
+  'primitive',
+  'instances'
+]
 
 function AttributeRecord () {
   this.state = 0
@@ -5069,7 +5079,9 @@ function wrapAttributeState (
   extensions,
   limits,
   stats,
-  bufferState) {
+  bufferState,
+  elementState,
+  drawState) {
   var NUM_ATTRIBUTES = limits.maxAttributes
   var attributeBindings = new Array(NUM_ATTRIBUTES)
   for (var i = 0; i < NUM_ATTRIBUTES; ++i) {
@@ -5142,6 +5154,7 @@ function wrapAttributeState (
         var binding = attributeBindings[i]
         if (binding.buffer) {
           gl.enableVertexAttribArray(i)
+          binding.buffer.bind()
           gl.vertexAttribPointer(i, binding.size, binding.type, binding.normalized, binding.stride, binding.offfset)
           if (exti && binding.divisor) {
             exti.vertexAttribDivisorANGLE(i, binding.divisor)
@@ -5150,6 +5163,11 @@ function wrapAttributeState (
           gl.disableVertexAttribArray(i)
           gl.vertexAttrib4f(i, binding.x, binding.y, binding.z, binding.w)
         }
+      }
+      if (drawState.elements) {
+        gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER$1, drawState.elements.buffer.buffer)
+      } else {
+        gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER$1, null)
       }
     }
     state.currentVAO = vao
@@ -5164,6 +5182,12 @@ function wrapAttributeState (
   function REGLVAO () {
     this.id = ++vaoCount
     this.attributes = []
+    this.elements = null
+    this.ownsElements = false
+    this.count = 0
+    this.offset = 0
+    this.instances = -1
+    this.primitive = 4
     var extension = extVAO()
     if (extension) {
       this.vao = extension.createVertexArrayOES()
@@ -5194,6 +5218,12 @@ function wrapAttributeState (
     for (var j = attributes.length; j < NUM_ATTRIBUTES; ++j) {
       gl.disableVertexAttribArray(j)
     }
+    var elements = elementState.getElements(this.elements)
+    if (elements) {
+      gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER$1, elements.buffer.buffer)
+    } else {
+      gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER$1, null)
+    }
   }
 
   REGLVAO.prototype.refresh = function () {
@@ -5215,6 +5245,11 @@ function wrapAttributeState (
       extension.deleteVertexArrayOES(this.vao)
       this.vao = null
     }
+    if (this.ownsElements) {
+      this.elements.destroy()
+      this.elements = null
+      this.ownsElements = false
+    }
     if (vaoSet[this.id]) {
       delete vaoSet[this.id]
       stats.vaoCount -= 1
@@ -5234,8 +5269,80 @@ function wrapAttributeState (
     var vao = new REGLVAO()
     stats.vaoCount += 1
 
-    function updateVAO (attributes) {
-      check$1(Array.isArray(attributes), 'arguments to vertex array constructor must be an array')
+    function updateVAO (options) {
+      var attributes
+      if (Array.isArray(options)) {
+        attributes = options
+        if (vao.elements && vao.ownsElements) {
+          vao.elements.destroy()
+        }
+        vao.elements = null
+        vao.ownsElements = false
+        vao.offset = 0
+        vao.count = 0
+        vao.instances = -1
+        vao.primitive = 4
+      } else {
+        check$1(typeof options === 'object', 'invalid arguments for create vao')
+        check$1('attributes' in options, 'must specify attributes for vao')
+        if (options.elements) {
+          var elements = options.elements
+          if (vao.ownsElements) {
+            if (typeof elements === 'function' && elements._reglType === 'elements') {
+              vao.elements.destroy()
+              vao.ownsElements = false
+            } else {
+              vao.elements(elements)
+              vao.ownsElements = false
+            }
+          } else if (elementState.getElements(options.elements)) {
+            vao.elements = options.elements
+            vao.ownsElements = false
+          } else {
+            vao.elements = elementState.create(options.elements)
+            vao.ownsElements = true
+          }
+        } else {
+          vao.elements = null
+          vao.ownsElements = false
+        }
+        attributes = options.attributes
+
+        // set default vao
+        vao.offset = 0
+        vao.count = -1
+        vao.instances = -1
+        vao.primitive = 4
+
+        // copy element properties
+        if (vao.elements) {
+          vao.count = vao.elements._elements.vertCount
+          vao.primitive = vao.elements._elements.primType
+        }
+
+        if ('offset' in options) {
+          vao.offset = options.offset | 0
+        }
+        if ('count' in options) {
+          vao.count = options.count | 0
+        }
+        if ('instances' in options) {
+          vao.instances = options.instances | 0
+        }
+        if ('primitive' in options) {
+          check$1(options.primitive in primTypes, 'bad primitive type: ' + options.primitive)
+          vao.primitive = primTypes[options.primitive]
+        }
+
+        check$1.optional(() => {
+          var keys = Object.keys(options)
+          for (var i = 0; i < keys.length; ++i) {
+            check$1(VAO_OPTIONS.indexOf(keys[i]) >= 0, 'invalid option for vao: "' + keys[i] + '" valid options are ' + VAO_OPTIONS)
+          }
+        })
+        check$1(Array.isArray(attributes), 'attributes must be an array')
+      }
+
       check$1(attributes.length < NUM_ATTRIBUTES, 'too many attributes')
       check$1(attributes.length > 0, 'must specify at least one attribute')
 
@@ -5329,6 +5436,13 @@ function wrapAttributeState (
         }
       }
       vao.buffers.length = 0
+
+      if (vao.ownsElements) {
+        vao.elements.destroy()
+        vao.elements = null
+        vao.ownsElements = false
+      }
+
       vao.destroy()
     }
 
@@ -5989,7 +6103,7 @@ var NESTED_OPTIONS = [
 ]
 
 var GL_ARRAY_BUFFER$2 = 34962
-var GL_ELEMENT_ARRAY_BUFFER$1 = 34963
+var GL_ELEMENT_ARRAY_BUFFER$2 = 34963
 
 var GL_FRAGMENT_SHADER$1 = 35632
 var GL_VERTEX_SHADER$1 = 35633
@@ -6247,6 +6361,7 @@ function reglCore (
 
   var extInstancing = extensions.angle_instanced_arrays
   var extDrawBuffers = extensions.webgl_draw_buffers
+  var extVertexArrays = extensions.oes_vertex_array_object
 
   // ===================================================
   // ===================================================
@@ -6831,15 +6946,67 @@ function reglCore (
     var staticOptions = options.static
     var dynamicOptions = options.dynamic
 
+    // TODO: should use VAO to get default values for offset properties
+    // should move vao parse into here and out of the old stuff
+
+    var staticDraw = {}
+    var vaoActive = false
+    var vaoLive = false
+
+    function parseVAO () {
+      if (S_VAO in staticOptions) {
+        check$1(!staticOptions.elements && !dynamicOptions.elements, 'cannot specify elements with vao')
+
+        var vao = staticOptions[S_VAO]
+        if (vao !== null && attributeState.getVAO(vao) === null) {
+          vao = attributeState.createVAO(vao)
+        }
+
+        vaoActive = true
+        vaoLive = !!vao
+        staticDraw.vao = vao
+
+        return createStaticDecl(function (env) {
+          var vaoRef = attributeState.getVAO(vao)
+          if (vaoRef) {
+            return env.link(vaoRef)
+          } else {
+            return 'null'
+          }
+        })
+      } else if (S_VAO in dynamicOptions) {
+        check$1(!staticOptions.elements && !dynamicOptions.elements, 'cannot specify elements with vao')
+        vaoActive = true
+        vaoLive = true
+        var dyn = dynamicOptions[S_VAO]
+        return createDynamicDecl(dyn, function (env, scope) {
+          var vaoRef = env.invoke(scope, dyn)
+          return scope.def(env.shared.vao + '.getVAO(' + vaoRef + ')')
+        })
+      }
+      return null
+    }
+
+    var vao = parseVAO()
+
+    var elementsActive = false
+
     function parseElements () {
       if (S_ELEMENTS in staticOptions) {
+        check$1(!vaoLive, 'must not specify vao and elements')
+
         var elements = staticOptions[S_ELEMENTS]
+        staticDraw.elements = elements
         if (isBufferArgs(elements)) {
-          elements = elementState.getElements(elementState.create(elements, true))
+          var e = staticDraw.elements = elementState.create(elements, true)
+          elements = elementState.getElements(e)
+          elementsActive = true
         } else if (elements) {
           elements = elementState.getElements(elements)
+          elementsActive = true
           check$1.command(elements, 'invalid elements', env.commandStr)
         }
+
         var result = createStaticDecl(function (env, scope) {
           if (elements) {
             var result = env.link(elements)
@@ -6852,6 +7019,9 @@ function reglCore (
         result.value = elements
         return result
       } else if (S_ELEMENTS in dynamicOptions) {
+        check$1(!vaoLive, 'must not specify vao and elements')
+        elementsActive = true
+
         var dyn = dynamicOptions[S_ELEMENTS]
         return createDynamicDecl(dyn, function (env, scope) {
           var shared = env.shared
@@ -6882,16 +7052,29 @@ function reglCore (
 
           return elements
         })
+      } else if (vaoActive) {
+        return new Declaration(
+          vao.thisDep,
+          vao.contextDep,
+          vao.propDep,
+          function (env, scope) {
+            return scope.def(env.shared.vao + '.currentVAO?' + env.shared.elements + '.getElements(' + env.shared.vao + '.currentVAO.elements):null')
+          })
       }
-
       return null
     }
 
     var elements = parseElements()
+    if (elementsActive) {
+      vao = createStaticDecl(function () {
+        return 'null'
+      })
+    }
 
     function parsePrimitive () {
       if (S_PRIMITIVE in staticOptions) {
         var primitive = staticOptions[S_PRIMITIVE]
+        staticDraw.primitive = primitive
         check$1.commandParameter(primitive, primTypes, 'invalid primitve', env.commandStr)
         return createStaticDecl(function (env, scope) {
           return primTypes[primitive]
@@ -6908,7 +7091,7 @@ function reglCore (
           })
           return scope.def(PRIM_TYPES, '[', prim, ']')
         })
-      } else if (elements) {
+      } else if (elementsActive) {
         if (isStatic(elements)) {
           if (elements.value) {
             return createStaticDecl(function (env, scope) {
@@ -6929,6 +7112,14 @@ function reglCore (
               return scope.def(elements, '?', elements, '.primType:', GL_TRIANGLES$1)
             })
         }
+      } else if (vaoActive) {
+        return new Declaration(
+          vao.thisDep,
+          vao.contextDep,
+          vao.propDep,
+          function (env, scope) {
+            return scope.def(env.shared.vao + '.currentVAO?' + env.shared.vao + '.currentVAO.primitive:' + GL_TRIANGLES$1)
+          })
       }
       return null
     }
@@ -6936,6 +7127,11 @@ function reglCore (
     function parseParam (param, isOffset) {
       if (param in staticOptions) {
         var value = staticOptions[param] | 0
+        if (isOffset) {
+          staticDraw.offset = value
+        } else {
+          staticDraw.instances = value
+        }
         check$1.command(!isOffset || value >= 0, 'invalid ' + param, env.commandStr)
         return createStaticDecl(function (env, scope) {
           if (isOffset) {
@@ -6957,11 +7153,29 @@ function reglCore (
           }
           return result
         })
-      } else if (isOffset && elements) {
-        return createStaticDecl(function (env, scope) {
-          env.OFFSET = '0'
-          return 0
-        })
+      } else if (isOffset) {
+        if (elementsActive) {
+          return createStaticDecl(function (env, scope) {
+            env.OFFSET = 0
+            return 0
+          })
+        } else if (vaoActive) {
+          return new Declaration(
+            vao.thisDep,
+            vao.contextDep,
+            vao.propDep,
+            function (env, scope) {
+              return scope.def(env.shared.vao + '.currentVAO?' + env.shared.vao + '.currentVAO.offset:0')
+            })
+        }
+      } else if (vaoActive) {
+        return new Declaration(
+          vao.thisDep,
+          vao.contextDep,
+          vao.propDep,
+          function (env, scope) {
+            return scope.def(env.shared.vao + '.currentVAO?' + env.shared.vao + '.currentVAO.instances:-1')
+          })
       }
       return null
     }
@@ -6971,6 +7185,7 @@ function reglCore (
     function parseVertCount () {
       if (S_COUNT in staticOptions) {
         var count = staticOptions[S_COUNT] | 0
+        staticDraw.count = count
         check$1.command(
           typeof count === 'number' && count >= 0, 'invalid vertex count', env.commandStr)
         return createStaticDecl(function () {
@@ -6989,7 +7204,7 @@ function reglCore (
           })
           return result
         })
-      } else if (elements) {
+      } else if (elementsActive) {
         if (isStatic(elements)) {
           if (elements) {
             if (OFFSET) {
@@ -7041,16 +7256,36 @@ function reglCore (
           })
           return variable
         }
+      } else if (vaoActive) {
+        var countVariable = new Declaration(
+          vao.thisDep,
+          vao.contextDep,
+          vao.propDep,
+          function (env, scope) {
+            return scope.def(env.shared.vao, '.currentVAO?', env.shared.vao, '.currentVAO.count:-1')
+          })
+        return countVariable
       }
       return null
     }
 
+    var primitive = parsePrimitive()
+    var count = parseVertCount()
+    var instances = parseParam(S_INSTANCES, false)
+
     return {
       elements: elements,
-      primitive: parsePrimitive(),
-      count: parseVertCount(),
-      instances: parseParam(S_INSTANCES, false),
-      offset: OFFSET
+      primitive: primitive,
+      count: count,
+      instances: instances,
+      offset: OFFSET,
+      vao: vao,
+
+      vaoActive: vaoActive,
+      elementsActive: elementsActive,
+
+      // static draw props
+      static: staticDraw
     }
   }
 
@@ -7821,27 +8056,6 @@ function reglCore (
     return attributeDefs
   }
 
-  function parseVAO (options, env) {
-    var staticOptions = options.static
-    var dynamicOptions = options.dynamic
-    if (S_VAO in staticOptions) {
-      var vao = staticOptions[S_VAO]
-      if (vao !== null && attributeState.getVAO(vao) === null) {
-        vao = attributeState.createVAO(vao)
-      }
-      return createStaticDecl(function (env) {
-        return env.link(attributeState.getVAO(vao))
-      })
-    } else if (S_VAO in dynamicOptions) {
-      var dyn = dynamicOptions[S_VAO]
-      return createDynamicDecl(dyn, function (env, scope) {
-        var vaoRef = env.invoke(scope, dyn)
-        return scope.def(env.shared.vao + '.getVAO(' + vaoRef + ')')
-      })
-    }
-    return null
-  }
-
   function parseContext (context) {
     var staticContext = context.static
     var dynamicContext = context.dynamic
@@ -7932,9 +8146,13 @@ function reglCore (
 
     result.profile = parseProfile(options, env)
     result.uniforms = parseUniforms(uniforms, env)
-    result.drawVAO = result.scopeVAO = parseVAO(options, env)
+    result.drawVAO = result.scopeVAO = draw.vao
     // special case: check if we can statically allocate a vertex array object for this program
-    if (!result.drawVAO && shader.program && !attribLocations && extensions.angle_instanced_arrays) {
+    if (!result.drawVAO &&
+      shader.program &&
+      !attribLocations &&
+      extensions.angle_instanced_arrays &&
+      draw.static.elements) {
       var useVAO = true
       var staticBindings = shader.program.attributes.map(function (attr) {
         var binding = attributes.static[attr]
@@ -7942,7 +8160,10 @@ function reglCore (
         return binding
       })
       if (useVAO && staticBindings.length > 0) {
-        var vao = attributeState.getVAO(attributeState.createVAO(staticBindings))
+        var vao = attributeState.getVAO(attributeState.createVAO({
+          attributes: staticBindings,
+          elements: draw.static.elements
+        }))
         result.drawVAO = new Declaration(null, null, null, function (env, scope) {
           return env.link(vao)
         })
@@ -7950,6 +8171,7 @@ function reglCore (
       }
     }
     if (attribLocations) {
+      check$1(!draw.elementsActive, 'can not combine elements and vertex array objects. element binding state must be specified in vertex array object')
       result.useVAO = true
     } else {
       result.attributes = parseAttributes(attributes, env)
@@ -8716,14 +8938,23 @@ function reglCore (
         if ((defn.contextDep && args.contextDynamic) || defn.propDep) {
           scope = inner
         }
-        ELEMENTS = defn.append(env, scope)
+        if (drawOptions.vaoActive) {
+          ELEMENTS = defn.append(env, scope)
+        } else {
+          ELEMENTS = defn.append(env, scope)
+          scope(
+            'if(' + ELEMENTS + ')' +
+            GL + '.bindBuffer(' + GL_ELEMENT_ARRAY_BUFFER$2 + ',' + ELEMENTS + '.buffer.buffer);')
+        }
       } else {
-        ELEMENTS = scope.def(DRAW_STATE, '.', S_ELEMENTS)
-      }
-      if (ELEMENTS) {
-        scope(
-          'if(' + ELEMENTS + ')' +
-          GL + '.bindBuffer(' + GL_ELEMENT_ARRAY_BUFFER$1 + ',' + ELEMENTS + '.buffer.buffer);')
+        ELEMENTS = scope.def()
+        scope('if(', shared.vao, '.currentVAO){',
+          ELEMENTS, '=', env.shared.elements + '.getElements(' + shared.vao, '.currentVAO.elements);',
+          (!extVertexArrays ? 'if(' + ELEMENTS + ')' + GL + '.bindBuffer(' + GL_ELEMENT_ARRAY_BUFFER$2 + ',' + ELEMENTS + '.buffer.buffer);' : ''),
+          '}else{',
+          ELEMENTS, '=', DRAW_STATE, '.', S_ELEMENTS, ';',
+          'if(', ELEMENTS, '){',
+          GL, '.bindBuffer(', GL_ELEMENT_ARRAY_BUFFER$2, ',', ELEMENTS, '.buffer.buffer);}}')
       }
       return ELEMENTS
     }
@@ -8789,7 +9020,7 @@ function reglCore (
 
     var ELEMENT_TYPE = ELEMENTS + '.type'
 
-    var elementsStatic = drawOptions.elements && isStatic(drawOptions.elements)
+    var elementsStatic = drawOptions.elements && isStatic(drawOptions.elements) && !drawOptions.vaoActive
 
     function emitInstancing () {
       function drawElements () {
@@ -8807,7 +9038,7 @@ function reglCore (
           [PRIMITIVE, OFFSET, COUNT, INSTANCES], ');')
       }
 
-      if (ELEMENTS) {
+      if (ELEMENTS && ELEMENTS !== 'null') {
         if (!elementsStatic) {
           inner('if(', ELEMENTS, '){')
           drawElements()
@@ -8836,7 +9067,7 @@ function reglCore (
         inner(GL + '.drawArrays(' + [PRIMITIVE, OFFSET, COUNT] + ');')
       }
 
-      if (ELEMENTS) {
+      if (ELEMENTS && ELEMENTS !== 'null') {
         if (!elementsStatic) {
           inner('if(', ELEMENTS, '){')
           drawElements()
@@ -9687,16 +9918,18 @@ function wrapREGL (args) {
     stats$$1,
     config,
     destroyBuffer)
+  var elementState = wrapElementsState(gl, extensions, bufferState, stats$$1)
   var attributeState = wrapAttributeState(
     gl,
     extensions,
     limits,
     stats$$1,
-    bufferState)
+    bufferState,
+    elementState,
+    drawState)
   function destroyBuffer (buffer) {
     return attributeState.destroyBuffer(buffer)
   }
-  var elementState = wrapElementsState(gl, extensions, bufferState, stats$$1)
   var shaderState = wrapShaderState(gl, stringStore, stats$$1, config)
   var textureState = createTextureSet(
     gl,
@@ -9854,10 +10087,10 @@ function wrapREGL (args) {
     shaderState.clear()
     framebufferState.clear()
     renderbufferState.clear()
+    attributeState.clear()
     textureState.clear()
     elementState.clear()
     bufferState.clear()
-    attributeState.clear()
 
     if (timer) {
       timer.clear()
