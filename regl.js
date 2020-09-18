@@ -260,10 +260,10 @@ module.exports = function wrapREGL (args) {
     shaderState.clear()
     framebufferState.clear()
     renderbufferState.clear()
+    attributeState.clear()
     textureState.clear()
     elementState.clear()
     bufferState.clear()
-    attributeState.clear()
 
     if (timer) {
       timer.clear()
