@@ -6,15 +6,21 @@
  */
 
 // Lets inject into a div that is resized dynamically
-const div = document.createElement('div')
-div.style.width = '100%'
-div.style.height = '100vh'
-document.body.appendChild(div)
+const container = document.createElement('div')
+container.style.width = '100%'
+container.style.height = '100vh'
+container.style.border = '10px solid green'
+container.style.margin = '10px'
+document.body.appendChild(container)
 document.body.style.margin = '0'
 
-const regl = require('../regl')({
-  container: div
+// on mouse move make div different size
+window.addEventListener('mousemove', ev => {
+  container.style.width = ev.clientX.toFixed(0) + 'px'
+  container.style.height = ev.clientY.toFixed(0) + 'px'
 })
+
+const regl = require('../regl')({ container })
 
 const drawcmd = regl({
 
@@ -58,9 +64,3 @@ function draw () {
 }
 
 regl.frame(() => draw())
-
-// on mouse move make div different size
-window.addEventListener('mousemove', ev => {
-  div.style.width = ev.clientX.toFixed(0) + 'px'
-  div.style.height = ev.clientY.toFixed(0) + 'px'
-})
