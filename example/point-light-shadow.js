@@ -289,9 +289,10 @@ regl.frame(({ tick }) => {
 
   globalScope(() => {
     drawDepth(6, () => {
+      regl.clear({ depth: 1 })
       drawMeshes()
     })
-
+    regl.clear({ color: [0, 0, 0, 1] })
     drawNormal(() => {
       drawMeshes()
     })
