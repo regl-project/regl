@@ -805,7 +805,9 @@ function createCanvas (element, onDone, pixelRatio) {
     margin: 0,
     padding: 0,
     top: 0,
-    left: 0
+    left: 0,
+    width: '100%',
+    height: '100%'
   })
   element.appendChild(canvas)
 
@@ -821,16 +823,12 @@ function createCanvas (element, onDone, pixelRatio) {
     var w = window.innerWidth
     var h = window.innerHeight
     if (element !== document.body) {
-      var bounds = element.getBoundingClientRect()
+      var bounds = canvas.getBoundingClientRect()
       w = bounds.right - bounds.left
       h = bounds.bottom - bounds.top
     }
     canvas.width = pixelRatio * w
     canvas.height = pixelRatio * h
-    extend(canvas.style, {
-      width: w + 'px',
-      height: h + 'px'
-    })
   }
 
   var resizeObserver
@@ -5234,7 +5232,8 @@ function wrapAttributeState (
     if (ext) {
       ext.bindVertexArrayOES(this.vao)
       this.bindAttrs()
-      state.currentVAO = this
+      state.currentVAO = null
+      ext.bindVertexArrayOES(null)
     }
   }
 
@@ -5576,13 +5575,16 @@ function wrapShaderState (gl, stringStore, stats, config) {
               gl.getUniformLocation(program, name),
               info))
           }
-        } else {
-          insertActiveInfo(uniforms, new ActiveInfo(
-            info.name,
-            stringStore.id(info.name),
-            gl.getUniformLocation(program, info.name),
-            info))
         }
+        var uniName = info.name
+        if (info.size > 1) {
+          uniName = uniName.replace('[0]', '')
+        }
+        insertActiveInfo(uniforms, new ActiveInfo(
+          uniName,
+          stringStore.id(uniName),
+          gl.getUniformLocation(program, uniName),
+          info))
       }
     }
 
@@ -6956,19 +6958,15 @@ function reglCore (
 
     var staticDraw = {}
     var vaoActive = false
-    var vaoLive = false
 
     function parseVAO () {
       if (S_VAO in staticOptions) {
-        check$1(!staticOptions.elements && !dynamicOptions.elements, 'cannot specify elements with vao')
-
         var vao = staticOptions[S_VAO]
         if (vao !== null && attributeState.getVAO(vao) === null) {
           vao = attributeState.createVAO(vao)
         }
 
         vaoActive = true
-        vaoLive = !!vao
         staticDraw.vao = vao
 
         return createStaticDecl(function (env) {
@@ -6980,9 +6978,7 @@ function reglCore (
           }
         })
       } else if (S_VAO in dynamicOptions) {
-        check$1(!staticOptions.elements && !dynamicOptions.elements, 'cannot specify elements with vao')
         vaoActive = true
-        vaoLive = true
         var dyn = dynamicOptions[S_VAO]
         return createDynamicDecl(dyn, function (env, scope) {
           var vaoRef = env.invoke(scope, dyn)
@@ -6998,8 +6994,6 @@ function reglCore (
 
     function parseElements () {
       if (S_ELEMENTS in staticOptions) {
-        check$1(!vaoLive, 'must not specify vao and elements')
-
         var elements = staticOptions[S_ELEMENTS]
         staticDraw.elements = elements
         if (isBufferArgs(elements)) {
@@ -7024,7 +7018,6 @@ function reglCore (
         result.value = elements
         return result
       } else if (S_ELEMENTS in dynamicOptions) {
-        check$1(!vaoLive, 'must not specify vao and elements')
         elementsActive = true
 
         var dyn = dynamicOptions[S_ELEMENTS]
@@ -7070,11 +7063,6 @@ function reglCore (
     }
 
     var elements = parseElements()
-    if (elementsActive) {
-      vao = createStaticDecl(function () {
-        return 'null'
-      })
-    }
 
     function parsePrimitive () {
       if (S_PRIMITIVE in staticOptions) {
@@ -8176,7 +8164,6 @@ function reglCore (
       }
     }
     if (attribLocations) {
-      check$1(!draw.elementsActive, 'can not combine elements and vertex array objects. element binding state must be specified in vertex array object')
       result.useVAO = true
     } else {
       result.attributes = parseAttributes(attributes, env)
@@ -8593,12 +8580,25 @@ function reglCore (
     var shared = env.shared
     var GL = shared.gl
 
+    var definedArrUniforms = {}
     var infix
     for (var i = 0; i < uniforms.length; ++i) {
       var uniform = uniforms[i]
       var name = uniform.name
       var type = uniform.info.type
+      var size = uniform.info.size
       var arg = args.uniforms[name]
+      if (size > 1) {
+        // either foo[n] or foos, avoid define both
+        if (!arg) {
+          continue
+        }
+        var arrUniformName = name.replace('[0]', '')
+        if (definedArrUniforms[arrUniformName]) {
+          continue
+        }
+        definedArrUniforms[arrUniformName] = 1
+      }
       var UNIFORM = env.link(uniform)
       var LOCATION = UNIFORM + '.location'
 
@@ -8652,74 +8652,99 @@ function reglCore (
           } else {
             switch (type) {
               case GL_FLOAT$8:
-                check$1.commandType(value, 'number', 'uniform ' + name, env.commandStr)
+                if (size === 1) {
+                  check$1.commandType(value, 'number', 'uniform ' + name, env.commandStr)
+                } else {
+                  check$1.command(
+                    isArrayLike(value) && (value.length === size),
+                    'uniform ' + name, env.commandStr)
+                }
                 infix = '1f'
                 break
               case GL_FLOAT_VEC2:
                 check$1.command(
-                  isArrayLike(value) && value.length === 2,
+                  isArrayLike(value) && (value.length && value.length % 2 === 0 && value.length <= size * 2),
                   'uniform ' + name, env.commandStr)
                 infix = '2f'
                 break
               case GL_FLOAT_VEC3:
                 check$1.command(
-                  isArrayLike(value) && value.length === 3,
+                  isArrayLike(value) && (value.length && value.length % 3 === 0 && value.length <= size * 3),
                   'uniform ' + name, env.commandStr)
                 infix = '3f'
                 break
               case GL_FLOAT_VEC4:
                 check$1.command(
-                  isArrayLike(value) && value.length === 4,
+                  isArrayLike(value) && (value.length && value.length % 4 === 0 && value.length <= size * 4),
                   'uniform ' + name, env.commandStr)
                 infix = '4f'
                 break
               case GL_BOOL:
-                check$1.commandType(value, 'boolean', 'uniform ' + name, env.commandStr)
+                if (size === 1) {
+                  check$1.commandType(value, 'boolean', 'uniform ' + name, env.commandStr)
+                } else {
+                  check$1.command(
+                    isArrayLike(value) && (value.length === size),
+                    'uniform ' + name, env.commandStr)
+                }
                 infix = '1i'
                 break
               case GL_INT$3:
-                check$1.commandType(value, 'number', 'uniform ' + name, env.commandStr)
+                if (size === 1) {
+                  check$1.commandType(value, 'number', 'uniform ' + name, env.commandStr)
+                } else {
+                  check$1.command(
+                    isArrayLike(value) && (value.length === size),
+                    'uniform ' + name, env.commandStr)
+                }
                 infix = '1i'
                 break
               case GL_BOOL_VEC2:
                 check$1.command(
-                  isArrayLike(value) && value.length === 2,
+                  isArrayLike(value) && (value.length && value.length % 2 === 0 && value.length <= size * 2),
                   'uniform ' + name, env.commandStr)
                 infix = '2i'
                 break
               case GL_INT_VEC2:
                 check$1.command(
-                  isArrayLike(value) && value.length === 2,
+                  isArrayLike(value) && (value.length && value.length % 2 === 0 && value.length <= size * 2),
                   'uniform ' + name, env.commandStr)
                 infix = '2i'
                 break
               case GL_BOOL_VEC3:
                 check$1.command(
-                  isArrayLike(value) && value.length === 3,
+                  isArrayLike(value) && (value.length && value.length % 3 === 0 && value.length <= size * 3),
                   'uniform ' + name, env.commandStr)
                 infix = '3i'
                 break
               case GL_INT_VEC3:
                 check$1.command(
-                  isArrayLike(value) && value.length === 3,
+                  isArrayLike(value) && (value.length && value.length % 3 === 0 && value.length <= size * 3),
                   'uniform ' + name, env.commandStr)
                 infix = '3i'
                 break
               case GL_BOOL_VEC4:
                 check$1.command(
-                  isArrayLike(value) && value.length === 4,
+                  isArrayLike(value) && (value.length && value.length % 4 === 0 && value.length <= size * 4),
                   'uniform ' + name, env.commandStr)
                 infix = '4i'
                 break
               case GL_INT_VEC4:
                 check$1.command(
-                  isArrayLike(value) && value.length === 4,
+                  isArrayLike(value) && (value.length && value.length % 4 === 0 && value.length <= size * 4),
                   'uniform ' + name, env.commandStr)
                 infix = '4i'
                 break
             }
+            if (size > 1) {
+              infix += 'v'
+              value = env.global.def('[' +
+              Array.prototype.slice.call(value) + ']')
+            } else {
+              value = isArrayLike(value) ? Array.prototype.slice.call(value) : value
+            }
             scope(GL, '.uniform', infix, '(', LOCATION, ',',
-              isArrayLike(value) ? Array.prototype.slice.call(value) : value,
+              value,
               ');')
           }
           continue
@@ -8754,20 +8779,24 @@ function reglCore (
             'bad data or missing for uniform "' + name + '".  ' + message)
         }
 
-        function checkType (type) {
-          check$1(!Array.isArray(VALUE), 'must not specify an array type for uniform')
+        function checkType (type, size) {
+          if (size === 1) {
+            check$1(!Array.isArray(VALUE), 'must not specify an array type for uniform')
+          }
           emitCheck(
-            'typeof ' + VALUE + '==="' + type + '"',
+            'Array.isArray(' + VALUE + ') && typeof ' + VALUE + '[0]===" ' + type + '"' +
+            ' || typeof ' + VALUE + '==="' + type + '"',
             'invalid type, expected ' + type)
         }
 
-        function checkVector (n, type) {
+        function checkVector (n, type, size) {
           if (Array.isArray(VALUE)) {
-            check$1(VALUE.length === n, 'must have length ' + n)
+            check$1(VALUE.length && VALUE.length % n === 0 && VALUE.length <= n * size, 'must have length of ' + (size === 1 ? '' : 'n * ') + n)
           } else {
             emitCheck(
-              shared.isArrayLike + '(' + VALUE + ')&&' + VALUE + '.length===' + n,
-              'invalid vector, should have length ' + n, env.commandStr)
+              shared.isArrayLike + '(' + VALUE + ')&&' + VALUE + '.length && ' + VALUE + '.length % ' + n + ' === 0' +
+              ' && ' + VALUE + '.length<=' + n * size,
+              'invalid vector, should have length of ' + (size === 1 ? '' : 'n * ') + n, env.commandStr)
           }
         }
 
@@ -8782,49 +8811,49 @@ function reglCore (
 
         switch (type) {
           case GL_INT$3:
-            checkType('number')
+            checkType('number', size)
             break
           case GL_INT_VEC2:
-            checkVector(2, 'number')
+            checkVector(2, 'number', size)
             break
           case GL_INT_VEC3:
-            checkVector(3, 'number')
+            checkVector(3, 'number', size)
             break
           case GL_INT_VEC4:
-            checkVector(4, 'number')
+            checkVector(4, 'number', size)
             break
           case GL_FLOAT$8:
-            checkType('number')
+            checkType('number', size)
             break
           case GL_FLOAT_VEC2:
-            checkVector(2, 'number')
+            checkVector(2, 'number', size)
             break
           case GL_FLOAT_VEC3:
-            checkVector(3, 'number')
+            checkVector(3, 'number', size)
             break
           case GL_FLOAT_VEC4:
-            checkVector(4, 'number')
+            checkVector(4, 'number', size)
             break
           case GL_BOOL:
-            checkType('boolean')
+            checkType('boolean', size)
             break
           case GL_BOOL_VEC2:
-            checkVector(2, 'boolean')
+            checkVector(2, 'boolean', size)
             break
           case GL_BOOL_VEC3:
-            checkVector(3, 'boolean')
+            checkVector(3, 'boolean', size)
             break
           case GL_BOOL_VEC4:
-            checkVector(4, 'boolean')
+            checkVector(4, 'boolean', size)
             break
           case GL_FLOAT_MAT2:
-            checkVector(4, 'number')
+            checkVector(4, 'number', size)
             break
           case GL_FLOAT_MAT3:
-            checkVector(9, 'number')
+            checkVector(9, 'number', size)
             break
           case GL_FLOAT_MAT4:
-            checkVector(16, 'number')
+            checkVector(16, 'number', size)
             break
           case GL_SAMPLER_2D:
             checkTexture(GL_TEXTURE_2D$3)
@@ -8899,6 +8928,11 @@ function reglCore (
           break
       }
 
+      if (infix.indexOf('Matrix') === -1 && size > 1) {
+        infix += 'v'
+        unroll = 1
+      }
+
       if (infix.charAt(0) === 'M') {
         scope(GL, '.uniform', infix, '(', LOCATION, ',')
         var matSize = Math.pow(type - GL_FLOAT_MAT2 + 2, 2)
@@ -8971,23 +9005,22 @@ function reglCore (
         if ((defn.contextDep && args.contextDynamic) || defn.propDep) {
           scope = inner
         }
-        if (drawOptions.vaoActive) {
-          ELEMENTS = defn.append(env, scope)
-        } else {
-          ELEMENTS = defn.append(env, scope)
+        ELEMENTS = defn.append(env, scope)
+        if (drawOptions.elementsActive) {
           scope(
             'if(' + ELEMENTS + ')' +
             GL + '.bindBuffer(' + GL_ELEMENT_ARRAY_BUFFER$2 + ',' + ELEMENTS + '.buffer.buffer);')
         }
       } else {
         ELEMENTS = scope.def()
-        scope('if(', shared.vao, '.currentVAO){',
-          ELEMENTS, '=', env.shared.elements + '.getElements(' + shared.vao, '.currentVAO.elements);',
-          (!extVertexArrays ? 'if(' + ELEMENTS + ')' + GL + '.bindBuffer(' + GL_ELEMENT_ARRAY_BUFFER$2 + ',' + ELEMENTS + '.buffer.buffer);' : ''),
-          '}else{',
+        scope(
           ELEMENTS, '=', DRAW_STATE, '.', S_ELEMENTS, ';',
           'if(', ELEMENTS, '){',
-          GL, '.bindBuffer(', GL_ELEMENT_ARRAY_BUFFER$2, ',', ELEMENTS, '.buffer.buffer);}}')
+          GL, '.bindBuffer(', GL_ELEMENT_ARRAY_BUFFER$2, ',', ELEMENTS, '.buffer.buffer);}',
+          'else if(', shared.vao, '.currentVAO){',
+          ELEMENTS, '=', env.shared.elements + '.getElements(' + shared.vao, '.currentVAO.elements);',
+          (!extVertexArrays ? 'if(' + ELEMENTS + ')' + GL + '.bindBuffer(' + GL_ELEMENT_ARRAY_BUFFER$2 + ',' + ELEMENTS + '.buffer.buffer);' : ''),
+          '}')
       }
       return ELEMENTS
     }
@@ -9207,6 +9240,9 @@ function reglCore (
     if (Object.keys(args.state).length > 0) {
       draw(env.shared.current, '.dirty=true;')
     }
+    if (env.shared.vao) {
+      draw(env.shared.vao, '.setVAO(null);')
+    }
   }
 
   // ===================================================
@@ -9404,6 +9440,10 @@ function reglCore (
 
     if (Object.keys(args.state).length > 0) {
       batch(env.shared.current, '.dirty=true;')
+    }
+
+    if (env.shared.vao) {
+      batch(env.shared.vao, '.setVAO(null);')
     }
   }
 

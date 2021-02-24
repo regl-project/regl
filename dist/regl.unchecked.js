@@ -140,7 +140,9 @@ function createCanvas (element, onDone, pixelRatio) {
     margin: 0,
     padding: 0,
     top: 0,
-    left: 0
+    left: 0,
+    width: '100%',
+    height: '100%'
   })
   element.appendChild(canvas)
 
@@ -156,16 +158,12 @@ function createCanvas (element, onDone, pixelRatio) {
     var w = window.innerWidth
     var h = window.innerHeight
     if (element !== document.body) {
-      var bounds = element.getBoundingClientRect()
+      var bounds = canvas.getBoundingClientRect()
       w = bounds.right - bounds.left
       h = bounds.bottom - bounds.top
     }
     canvas.width = pixelRatio * w
     canvas.height = pixelRatio * h
-    extend(canvas.style, {
-      width: w + 'px',
-      height: h + 'px'
-    })
   }
 
   var resizeObserver
@@ -4354,7 +4352,8 @@ function wrapAttributeState (
     if (ext) {
       ext.bindVertexArrayOES(this.vao)
       this.bindAttrs()
-      state.currentVAO = this
+      state.currentVAO = null
+      ext.bindVertexArrayOES(null)
     }
   }
 
@@ -4686,13 +4685,16 @@ function wrapShaderState (gl, stringStore, stats, config) {
               gl.getUniformLocation(program, name),
               info))
           }
-        } else {
-          insertActiveInfo(uniforms, new ActiveInfo(
-            info.name,
-            stringStore.id(info.name),
-            gl.getUniformLocation(program, info.name),
-            info))
         }
+        var uniName = info.name
+        if (info.size > 1) {
+          uniName = uniName.replace('[0]', '')
+        }
+        insertActiveInfo(uniforms, new ActiveInfo(
+          uniName,
+          stringStore.id(uniName),
+          gl.getUniformLocation(program, uniName),
+          info))
       }
     }
 
@@ -5975,19 +5977,15 @@ function reglCore (
 
     var staticDraw = {}
     var vaoActive = false
-    var vaoLive = false
 
     function parseVAO () {
       if (S_VAO in staticOptions) {
-        
-
         var vao = staticOptions[S_VAO]
         if (vao !== null && attributeState.getVAO(vao) === null) {
           vao = attributeState.createVAO(vao)
         }
 
         vaoActive = true
-        vaoLive = !!vao
         staticDraw.vao = vao
 
         return createStaticDecl(function (env) {
@@ -5999,9 +5997,7 @@ function reglCore (
           }
         })
       } else if (S_VAO in dynamicOptions) {
-        
         vaoActive = true
-        vaoLive = true
         var dyn = dynamicOptions[S_VAO]
         return createDynamicDecl(dyn, function (env, scope) {
           var vaoRef = env.invoke(scope, dyn)
@@ -6017,8 +6013,6 @@ function reglCore (
 
     function parseElements () {
       if (S_ELEMENTS in staticOptions) {
-        
-
         var elements = staticOptions[S_ELEMENTS]
         staticDraw.elements = elements
         if (isBufferArgs(elements)) {
@@ -6043,7 +6037,6 @@ function reglCore (
         result.value = elements
         return result
       } else if (S_ELEMENTS in dynamicOptions) {
-        
         elementsActive = true
 
         var dyn = dynamicOptions[S_ELEMENTS]
@@ -6085,11 +6078,6 @@ function reglCore (
     }
 
     var elements = parseElements()
-    if (elementsActive) {
-      vao = createStaticDecl(function () {
-        return 'null'
-      })
-    }
 
     function parsePrimitive () {
       if (S_PRIMITIVE in staticOptions) {
@@ -6966,7 +6954,6 @@ function reglCore (
       }
     }
     if (attribLocations) {
-      
       result.useVAO = true
     } else {
       result.attributes = parseAttributes(attributes, env)
@@ -7379,12 +7366,25 @@ function reglCore (
     var shared = env.shared
     var GL = shared.gl
 
+    var definedArrUniforms = {}
     var infix
     for (var i = 0; i < uniforms.length; ++i) {
       var uniform = uniforms[i]
       var name = uniform.name
       var type = uniform.info.type
+      var size = uniform.info.size
       var arg = args.uniforms[name]
+      if (size > 1) {
+        // either foo[n] or foos, avoid define both
+        if (!arg) {
+          continue
+        }
+        var arrUniformName = name.replace('[0]', '')
+        if (definedArrUniforms[arrUniformName]) {
+          continue
+        }
+        definedArrUniforms[arrUniformName] = 1
+      }
       var UNIFORM = env.link(uniform)
       var LOCATION = UNIFORM + '.location'
 
@@ -7420,7 +7420,11 @@ function reglCore (
           } else {
             switch (type) {
               case GL_FLOAT$7:
-                
+                if (size === 1) {
+                  
+                } else {
+                  
+                }
                 infix = '1f'
                 break
               case GL_FLOAT_VEC2:
@@ -7436,11 +7440,19 @@ function reglCore (
                 infix = '4f'
                 break
               case GL_BOOL:
-                
+                if (size === 1) {
+                  
+                } else {
+                  
+                }
                 infix = '1i'
                 break
               case GL_INT$2:
-                
+                if (size === 1) {
+                  
+                } else {
+                  
+                }
                 infix = '1i'
                 break
               case GL_BOOL_VEC2:
@@ -7468,8 +7480,15 @@ function reglCore (
                 infix = '4i'
                 break
             }
+            if (size > 1) {
+              infix += 'v'
+              value = env.global.def('[' +
+              Array.prototype.slice.call(value) + ']')
+            } else {
+              value = isArrayLike(value) ? Array.prototype.slice.call(value) : value
+            }
             scope(GL, '.uniform', infix, '(', LOCATION, ',',
-              isArrayLike(value) ? Array.prototype.slice.call(value) : value,
+              value,
               ');')
           }
           continue
@@ -7564,6 +7583,11 @@ function reglCore (
           break
       }
 
+      if (infix.indexOf('Matrix') === -1 && size > 1) {
+        infix += 'v'
+        unroll = 1
+      }
+
       if (infix.charAt(0) === 'M') {
         scope(GL, '.uniform', infix, '(', LOCATION, ',')
         var matSize = Math.pow(type - GL_FLOAT_MAT2 + 2, 2)
@@ -7636,23 +7660,22 @@ function reglCore (
         if ((defn.contextDep && args.contextDynamic) || defn.propDep) {
           scope = inner
         }
-        if (drawOptions.vaoActive) {
-          ELEMENTS = defn.append(env, scope)
-        } else {
-          ELEMENTS = defn.append(env, scope)
+        ELEMENTS = defn.append(env, scope)
+        if (drawOptions.elementsActive) {
           scope(
             'if(' + ELEMENTS + ')' +
             GL + '.bindBuffer(' + GL_ELEMENT_ARRAY_BUFFER$2 + ',' + ELEMENTS + '.buffer.buffer);')
         }
       } else {
         ELEMENTS = scope.def()
-        scope('if(', shared.vao, '.currentVAO){',
-          ELEMENTS, '=', env.shared.elements + '.getElements(' + shared.vao, '.currentVAO.elements);',
-          (!extVertexArrays ? 'if(' + ELEMENTS + ')' + GL + '.bindBuffer(' + GL_ELEMENT_ARRAY_BUFFER$2 + ',' + ELEMENTS + '.buffer.buffer);' : ''),
-          '}else{',
+        scope(
           ELEMENTS, '=', DRAW_STATE, '.', S_ELEMENTS, ';',
           'if(', ELEMENTS, '){',
-          GL, '.bindBuffer(', GL_ELEMENT_ARRAY_BUFFER$2, ',', ELEMENTS, '.buffer.buffer);}}')
+          GL, '.bindBuffer(', GL_ELEMENT_ARRAY_BUFFER$2, ',', ELEMENTS, '.buffer.buffer);}',
+          'else if(', shared.vao, '.currentVAO){',
+          ELEMENTS, '=', env.shared.elements + '.getElements(' + shared.vao, '.currentVAO.elements);',
+          (!extVertexArrays ? 'if(' + ELEMENTS + ')' + GL + '.bindBuffer(' + GL_ELEMENT_ARRAY_BUFFER$2 + ',' + ELEMENTS + '.buffer.buffer);' : ''),
+          '}')
       }
       return ELEMENTS
     }
@@ -7860,6 +7883,9 @@ function reglCore (
     if (Object.keys(args.state).length > 0) {
       draw(env.shared.current, '.dirty=true;')
     }
+    if (env.shared.vao) {
+      draw(env.shared.vao, '.setVAO(null);')
+    }
   }
 
   // ===================================================
@@ -8057,6 +8083,10 @@ function reglCore (
 
     if (Object.keys(args.state).length > 0) {
       batch(env.shared.current, '.dirty=true;')
+    }
+
+    if (env.shared.vao) {
+      batch(env.shared.vao, '.setVAO(null);')
     }
   }
 
