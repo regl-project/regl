@@ -1549,7 +1549,7 @@ var starElements = regl.elements({
 
 **Notes**
 
--   `primitive`, `count` and `length` are inferred from from the vertex data
+-   `primitive`, `count` and `length` are inferred from the vertex data
 
 **Relevant WebGL APIs**
 
