@@ -47,4 +47,3 @@ function updateDOM () {
 }
 
 require('./index')
-require('./uniform-array')
