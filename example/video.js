@@ -71,13 +71,25 @@ require('resl')({
   },
 
   onDone: ({ video }) => {
-    video.autoplay = true
+    video.autoplay = false
     video.loop = true
-    video.play()
 
-    const texture = regl.texture(video)
-    regl.frame(() => {
-      drawDoggie({ video: texture.subimage(video) })
+    video.preload = 'auto'
+    video.autoload = true
+    video.load()
+
+    const startBtn = document.createElement('button')
+    startBtn.style = 'position:absolute;left:50%;top:50%'
+    startBtn.innerText = 'start'
+    document.body.appendChild(startBtn)
+
+    startBtn.addEventListener('click', () => {
+      video.play()
+      const texture = regl.texture(video)
+      regl.frame(() => {
+        drawDoggie({ video: texture.subimage(video) })
+      })
+      startBtn.parentNode.removeChild(startBtn)
     })
   }
 })
