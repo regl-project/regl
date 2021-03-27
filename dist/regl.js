@@ -924,7 +924,7 @@ function parseArgs (args_) {
   if (typeof args === 'string') {
     check$1(
       typeof document !== 'undefined',
-      'selector queries only supported in DOM enviroments')
+      'selector queries only supported in DOM environments')
     element = document.querySelector(args)
     check$1(element, 'invalid query string for element')
   } else if (typeof args === 'object') {
