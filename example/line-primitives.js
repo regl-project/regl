@@ -60,10 +60,7 @@ var globalState = regl({
 })
 
 // make sure to respect system limitations.
-var lineWidth = 3
-if (lineWidth > regl.limits.lineWidthDims[1]) {
-  lineWidth = regl.limits.lineWidthDims[1]
-}
+var lineWidth = Math.max(3, regl.limits.lineWidthDims[1])
 
 // this creates a drawCall that allows you to do draw single line primitive.
 function createDrawCall (props) {
