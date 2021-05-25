@@ -362,10 +362,7 @@ const renderPoints = regl({
   elements: null
 })
 
-var lineWidth = 2
-if (lineWidth > regl.limits.lineWidthDims[1]) {
-  lineWidth = regl.limits.lineWidthDims[1]
-}
+var lineWidth = Math.max(2, regl.limits.lineWidthDims[1])
 
 const renderEdges = regl({
   vert: `
