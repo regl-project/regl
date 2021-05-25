@@ -27,7 +27,7 @@ const drawBunny = regl({
     position: bunny.positions
   },
 
-  // and this converts the faces fo the mesh into elements
+  // and this converts the faces of the mesh into elements
   elements: bunny.cells,
 
   uniforms: {
