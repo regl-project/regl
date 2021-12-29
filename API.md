@@ -755,6 +755,7 @@ Each attribute can have any of the following optional properties,
 | `normalized` | Whether the pointer is normalized                | `false`              |
 | `size`       | The size of the vertex attribute                 | Inferred from shader |
 | `divisor`    | Sets `gl.vertexAttribDivisorANGLE`               | `0` \*               |
+| `type`       | Data type (see [buffer constructor](#buffer-constructor) for options) | Inferred from buffer |
 
 **Notes**
 
