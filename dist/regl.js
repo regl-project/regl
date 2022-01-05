@@ -9432,10 +9432,20 @@ function reglCore (
       var value = defn.append(env, scope)
       if (isArrayLike(value)) {
         value.forEach(function (v, i) {
-          scope.set(env.next[name], '[' + i + ']', v)
+          if (isNaN(v)) {
+            scope.set(env.next[name], '[' + i + ']', v)
+          } else {
+            // Array values here have only been literal when they were
+            // numbers, so it's enough to check here.
+            scope.set(env.next[name], '[' + i + ']', env.link(v))
+          }
         })
       } else {
-        scope.set(shared.next, '.' + name, value)
+        if (isStatic(defn)) {
+          scope.set(shared.next, '.' + name, env.link(value))
+        } else {
+          scope.set(shared.next, '.' + name, value)
+        }
       }
     })
 
@@ -9447,17 +9457,27 @@ function reglCore (
         if (!variable) {
           return
         }
-        scope.set(shared.draw, '.' + opt, '' + variable.append(env, scope))
+        var VARIABLE = variable.append(env, scope)
+        if (isNaN(VARIABLE)) {
+          scope.set(shared.draw, '.' + opt, VARIABLE)
+        } else {
+          scope.set(shared.draw, '.' + opt, env.link(VARIABLE))
+        }
       })
 
     Object.keys(args.uniforms).forEach(function (opt) {
       var value = args.uniforms[opt].append(env, scope)
       if (Array.isArray(value)) {
-        value = '[' + value.join() + ']'
+        value = '[' + value.map(function (v) {
+          if (!isNaN(v)) {
+            return env.link(v)
+          }
+          return v
+        }) + ']'
       }
       scope.set(
         shared.uniforms,
-        '[' + stringStore.id(opt) + ']',
+        '[' + env.link(stringStore.id(opt)) + ']',
         value)
     })
 
@@ -9470,13 +9490,23 @@ function reglCore (
     })
 
     if (args.scopeVAO) {
-      scope.set(shared.vao, '.targetVAO', args.scopeVAO.append(env, scope))
+      var VARIABLE = args.scopeVAO.append(env, scope)
+      if (!isNaN(VARIABLE)) {
+        scope.set(shared.vao, '.targetVAO', env.link(VARIABLE))
+      } else {
+        scope.set(shared.vao, '.targetVAO', VARIABLE)
+      }
     }
 
     function saveShader (name) {
       var shader = args.shader[name]
       if (shader) {
-        scope.set(shared.shader, '.' + name, shader.append(env, scope))
+        var VARIABLE = shader.append(env, scope)
+        if (!isNaN(VARIABLE)) {
+          scope.set(shared.shader, '.' + name, env.link(VARIABLE))
+        } else {
+          scope.set(shared.shader, '.' + name, VARIABLE)
+        }
       }
     }
     saveShader(S_VERT)
