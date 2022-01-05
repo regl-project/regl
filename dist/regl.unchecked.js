@@ -7095,6 +7095,7 @@ function reglCore (
     var CURRENT_VARS = env.current
     var CURRENT_STATE = shared.current
     var GL = shared.gl
+    var VALUE
     sortState(Object.keys(options)).forEach(function (param) {
       var defn = options[param]
       if (filter && !filter(defn)) {
@@ -7104,17 +7105,19 @@ function reglCore (
       if (GL_FLAGS[param]) {
         var flag = GL_FLAGS[param]
         if (isStatic(defn)) {
-          if (variable) {
-            scope(GL, '.enable(', flag, ');')
-          } else {
-            scope(GL, '.disable(', flag, ');')
-          }
+          // keep this linked so that the resulting code is the
+          // same for all flag configurations.
+          VALUE = env.link(variable)
+          scope(env.cond(VALUE)
+            .then(GL, '.enable(', flag, ');')
+            .else(GL, '.disable(', flag, ');'))
+          scope(CURRENT_STATE, '.', param, '=', VALUE, ';')
         } else {
           scope(env.cond(variable)
             .then(GL, '.enable(', flag, ');')
             .else(GL, '.disable(', flag, ');'))
+          scope(CURRENT_STATE, '.', param, '=', variable, ';')
         }
-        scope(CURRENT_STATE, '.', param, '=', variable, ';')
       } else if (isArrayLike(variable)) {
         var CURRENT = CURRENT_VARS[param]
         scope(
@@ -7123,9 +7126,18 @@ function reglCore (
             return CURRENT + '[' + i + ']=' + v
           }).join(';'), ';')
       } else {
-        scope(
-          GL, '.', GL_VARIABLES[param], '(', variable, ');',
-          CURRENT_STATE, '.', param, '=', variable, ';')
+        if (isStatic(defn)) {
+          // keep this linked so that the resulting code is the
+          // same for all flag configurations.
+          VALUE = env.link(variable)
+          scope(
+            GL, '.', GL_VARIABLES[param], '(', VALUE, ');',
+            CURRENT_STATE, '.', param, '=', VALUE, ';')
+        } else {
+          scope(
+            GL, '.', GL_VARIABLES[param], '(', variable, ');',
+            CURRENT_STATE, '.', param, '=', variable, ';')
+        }
       }
     })
   }
@@ -8278,7 +8290,7 @@ function reglCore (
         refresh(env.link(extensions.oes_vertex_array_object), '.bindVertexArrayOES(null);')
       }
       var BINDING = refresh.def(shared.attributes)
-      var TEMP_BINDING = refresh.def("null")
+      var TEMP_BINDING = refresh.def(0)
 
       var ifte = env.cond(TEMP_BINDING, '.buffer')
       ifte.then(
