@@ -9619,6 +9619,15 @@ function reglCore (
 
     var args = parseArguments(options, attributes, uniforms, context, env)
 
+    if (args.shader.program) {
+      args.shader.program.attributes.sort(function (a, b) {
+        return a.name < b.name ? -1 : 1
+      })
+      args.shader.program.uniforms.sort(function (a, b) {
+        return a.name < b.name ? -1 : 1
+      })
+    }
+
     emitDrawProc(env, args)
     emitScopeProc(env, args)
     emitBatchProc(env, args)
