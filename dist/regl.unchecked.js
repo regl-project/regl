@@ -4685,16 +4685,13 @@ function wrapShaderState (gl, stringStore, stats, config) {
               gl.getUniformLocation(program, name),
               info))
           }
+        } else {
+          insertActiveInfo(uniforms, new ActiveInfo(
+            info.name,
+            stringStore.id(info.name),
+            gl.getUniformLocation(program, info.name),
+            info))
         }
-        var uniName = info.name
-        if (info.size > 1) {
-          uniName = uniName.replace('[0]', '')
-        }
-        insertActiveInfo(uniforms, new ActiveInfo(
-          uniName,
-          stringStore.id(uniName),
-          gl.getUniformLocation(program, uniName),
-          info))
       }
     }
 
@@ -7366,25 +7363,12 @@ function reglCore (
     var shared = env.shared
     var GL = shared.gl
 
-    var definedArrUniforms = {}
     var infix
     for (var i = 0; i < uniforms.length; ++i) {
       var uniform = uniforms[i]
       var name = uniform.name
       var type = uniform.info.type
-      var size = uniform.info.size
       var arg = args.uniforms[name]
-      if (size > 1) {
-        // either foo[n] or foos, avoid define both
-        if (!arg) {
-          continue
-        }
-        var arrUniformName = name.replace('[0]', '')
-        if (definedArrUniforms[arrUniformName]) {
-          continue
-        }
-        definedArrUniforms[arrUniformName] = 1
-      }
       var UNIFORM = env.link(uniform)
       var LOCATION = UNIFORM + '.location'
 
@@ -7420,11 +7404,7 @@ function reglCore (
           } else {
             switch (type) {
               case GL_FLOAT$7:
-                if (size === 1) {
-                  
-                } else {
-                  
-                }
+                
                 infix = '1f'
                 break
               case GL_FLOAT_VEC2:
@@ -7440,19 +7420,11 @@ function reglCore (
                 infix = '4f'
                 break
               case GL_BOOL:
-                if (size === 1) {
-                  
-                } else {
-                  
-                }
+                
                 infix = '1i'
                 break
               case GL_INT$2:
-                if (size === 1) {
-                  
-                } else {
-                  
-                }
+                
                 infix = '1i'
                 break
               case GL_BOOL_VEC2:
@@ -7480,15 +7452,8 @@ function reglCore (
                 infix = '4i'
                 break
             }
-            if (size > 1) {
-              infix += 'v'
-              value = env.global.def('[' +
-              Array.prototype.slice.call(value) + ']')
-            } else {
-              value = isArrayLike(value) ? Array.prototype.slice.call(value) : value
-            }
             scope(GL, '.uniform', infix, '(', LOCATION, ',',
-              value,
+              isArrayLike(value) ? Array.prototype.slice.call(value) : value,
               ');')
           }
           continue
@@ -7581,11 +7546,6 @@ function reglCore (
         case GL_FLOAT_MAT4:
           infix = 'Matrix4fv'
           break
-      }
-
-      if (infix.indexOf('Matrix') === -1 && size > 1) {
-        infix += 'v'
-        unroll = 1
       }
 
       if (infix.charAt(0) === 'M') {
@@ -8317,37 +8277,42 @@ function reglCore (
       if (extensions.oes_vertex_array_object) {
         refresh(env.link(extensions.oes_vertex_array_object), '.bindVertexArrayOES(null);')
       }
-      for (var i = 0; i < limits.maxAttributes; ++i) {
-        var BINDING = refresh.def(shared.attributes, '[', i, ']')
-        var ifte = env.cond(BINDING, '.buffer')
-        ifte.then(
-          GL, '.enableVertexAttribArray(', i, ');',
-          GL, '.bindBuffer(',
-          GL_ARRAY_BUFFER$2, ',',
-          BINDING, '.buffer.buffer);',
-          GL, '.vertexAttribPointer(',
-          i, ',',
-          BINDING, '.size,',
-          BINDING, '.type,',
-          BINDING, '.normalized,',
-          BINDING, '.stride,',
-          BINDING, '.offset);'
-        ).else(
-          GL, '.disableVertexAttribArray(', i, ');',
-          GL, '.vertexAttrib4f(',
-          i, ',',
-          BINDING, '.x,',
-          BINDING, '.y,',
-          BINDING, '.z,',
-          BINDING, '.w);',
-          BINDING, '.buffer=null;')
-        refresh(ifte)
-        if (extInstancing) {
-          refresh(
-            INSTANCING, '.vertexAttribDivisorANGLE(',
-            i, ',',
-            BINDING, '.divisor);')
-        }
+      var BINDING = refresh.def(shared.attributes)
+      var TEMP_BINDING = refresh.def("null")
+
+      var ifte = env.cond(TEMP_BINDING, '.buffer')
+      ifte.then(
+        GL, '.enableVertexAttribArray(i);',
+        GL, '.bindBuffer(',
+        GL_ARRAY_BUFFER$2, ',',
+        TEMP_BINDING, '.buffer.buffer);',
+        GL, '.vertexAttribPointer(i,',
+        TEMP_BINDING, '.size,',
+        TEMP_BINDING, '.type,',
+        TEMP_BINDING, '.normalized,',
+        TEMP_BINDING, '.stride,',
+        TEMP_BINDING, '.offset);'
+      ).else(
+        GL, '.disableVertexAttribArray(i);',
+        GL, '.vertexAttrib4f(i,',
+        TEMP_BINDING, '.x,',
+        TEMP_BINDING, '.y,',
+        TEMP_BINDING, '.z,',
+        TEMP_BINDING, '.w);',
+        TEMP_BINDING, '.buffer=null;')
+      refresh(
+        'for(var i=0;i<', Number(limits.maxAttributes), ';++i){',
+        TEMP_BINDING, '=', BINDING, '[i];',
+        ifte,
+        '}'
+      )
+
+      if (extInstancing) {
+        refresh(
+          'for(var i=0;i<', Number(limits.maxAttributes), ';++i){',
+          INSTANCING, '.vertexAttribDivisorANGLE(i,',
+          BINDING, '[i].divisor);',
+          '}')
       }
       refresh(
         env.shared.vao, '.currentVAO=null;',
