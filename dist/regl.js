@@ -5854,7 +5854,12 @@ function join (x) {
   return slice(x).join('')
 }
 
+window.__regl_codegen_cache = (window.__regl_codegen_cache || {})
+window.__num_compiles = 0;
+
 function createEnvironment () {
+  var cache = window.__regl_codegen_cache
+
   // Unique variable id counter
   var varCounter = 0
 
@@ -5863,16 +5868,21 @@ function createEnvironment () {
   // the variable name which it is bound to
   var linkedNames = []
   var linkedValues = []
-  function link (value) {
-    for (var i = 0; i < linkedValues.length; ++i) {
-      if (linkedValues[i] === value) {
-        return linkedNames[i]
+  var isStable = []
+  function link (value, options) {
+    var stable = options && options.stable
+    if (!stable) {
+      for (var i = 0; i < linkedValues.length; ++i) {
+        if (linkedValues[i] === value && !isStable[i]) {
+          return linkedNames[i]
+        }
       }
     }
 
     var name = 'g' + (varCounter++)
     linkedNames.push(name)
     linkedValues.push(value)
+    isStable.push(stable)
     return name
   }
 
@@ -6012,7 +6022,37 @@ function createEnvironment () {
       .replace(/;/g, ';\n')
       .replace(/}/g, '}\n')
       .replace(/{/g, '{\n')
+    
+    __num_compiles ++;
+    
+    fetch('http://localhost:8080/code', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          code: src,
+          linkedNames: linkedNames,
+          stackTrace: Error().stack,
+          location: {
+            agent: window.navigator.userAgent,
+            href: window.location.href,
+          } 
+        })
+      });
+
+
+    if (cache) {
+      if (cache[src]) {
+        return cache[src].apply(null, linkedValues)
+      }
+    }
+
     var proc = Function.apply(null, linkedNames.concat(src))
+
+    if (cache) {
+      cache[src] = proc
+    }
     return proc.apply(null, linkedValues)
   }
 
@@ -8315,9 +8355,7 @@ function reglCore (
       if (GL_FLAGS[param]) {
         var flag = GL_FLAGS[param]
         if (isStatic(defn)) {
-          // keep this linked so that the resulting code is the
-          // same for all flag configurations.
-          VALUE = env.link(variable)
+          VALUE = env.link(variable, {stable: true})
           scope(env.cond(VALUE)
             .then(GL, '.enable(', flag, ');')
             .else(GL, '.disable(', flag, ');'))
@@ -8337,9 +8375,7 @@ function reglCore (
           }).join(';'), ';')
       } else {
         if (isStatic(defn)) {
-          // keep this linked so that the resulting code is the
-          // same for all flag configurations.
-          VALUE = env.link(variable)
+          VALUE = env.link(variable, {stable: true})
           scope(
             GL, '.', GL_VARIABLES[param], '(', VALUE, ');',
             CURRENT_STATE, '.', param, '=', VALUE, ';')
@@ -9435,14 +9471,12 @@ function reglCore (
           if (isNaN(v)) {
             scope.set(env.next[name], '[' + i + ']', v)
           } else {
-            // Array values here have only been literal when they were
-            // numbers, so it's enough to check here.
-            scope.set(env.next[name], '[' + i + ']', env.link(v))
+            scope.set(env.next[name], '[' + i + ']', env.link(v, {stable: true}))
           }
         })
       } else {
         if (isStatic(defn)) {
-          scope.set(shared.next, '.' + name, env.link(value))
+          scope.set(shared.next, '.' + name, env.link(value, {stable: true}))
         } else {
           scope.set(shared.next, '.' + name, value)
         }
@@ -9461,7 +9495,7 @@ function reglCore (
         if (isNaN(VARIABLE)) {
           scope.set(shared.draw, '.' + opt, VARIABLE)
         } else {
-          scope.set(shared.draw, '.' + opt, env.link(VARIABLE))
+          scope.set(shared.draw, '.' + opt, env.link(VARIABLE), {stable: true})
         }
       })
 
@@ -9470,14 +9504,14 @@ function reglCore (
       if (Array.isArray(value)) {
         value = '[' + value.map(function (v) {
           if (!isNaN(v)) {
-            return env.link(v)
+            return env.link(v, {stable: true})
           }
           return v
         }) + ']'
       }
       scope.set(
         shared.uniforms,
-        '[' + env.link(stringStore.id(opt)) + ']',
+        '[' + env.link(stringStore.id(opt), {stable: true}) + ']',
         value)
     })
 
@@ -9492,7 +9526,7 @@ function reglCore (
     if (args.scopeVAO) {
       var VARIABLE = args.scopeVAO.append(env, scope)
       if (!isNaN(VARIABLE)) {
-        scope.set(shared.vao, '.targetVAO', env.link(VARIABLE))
+        scope.set(shared.vao, '.targetVAO', env.link(VARIABLE, {stable: true}))
       } else {
         scope.set(shared.vao, '.targetVAO', VARIABLE)
       }
@@ -9503,7 +9537,7 @@ function reglCore (
       if (shader) {
         var VARIABLE = shader.append(env, scope)
         if (!isNaN(VARIABLE)) {
-          scope.set(shared.shader, '.' + name, env.link(VARIABLE))
+          scope.set(shared.shader, '.' + name, env.link(VARIABLE, {stable: true}))
         } else {
           scope.set(shared.shader, '.' + name, VARIABLE)
         }
