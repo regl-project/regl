@@ -1,8 +1,10 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-    typeof define === 'function' && define.amd ? define(factory) :
-    (global.createREGL = factory());
-}(this, (function () { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('crypto')) :
+    typeof define === 'function' && define.amd ? define(['crypto'], factory) :
+    (global.createREGL = factory(global.crypto));
+}(this, (function (crypto) { 'use strict';
+
+crypto = 'default' in crypto ? crypto['default'] : crypto;
 
 var extend = function (base, opts) {
   var keys = Object.keys(opts)
@@ -4935,7 +4937,6 @@ function join (x) {
 }
 
 window.__regl_codegen_cache = (window.__regl_codegen_cache || {})
-window.__num_compiles = 0;
 
 function createEnvironment () {
   var cache = window.__regl_codegen_cache
@@ -5102,36 +5103,21 @@ function createEnvironment () {
       .replace(/;/g, ';\n')
       .replace(/}/g, '}\n')
       .replace(/{/g, '{\n')
-    
-    __num_compiles ++;
-    
-    fetch('http://localhost:8080/code', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          code: src,
-          linkedNames: linkedNames,
-          stackTrace: Error().stack,
-          location: {
-            agent: window.navigator.userAgent,
-            href: window.location.href,
-          } 
-        })
-      });
 
+    var hash = crypto.createHash('sha256')
+    hash.update(src)
+    var key = hash.digest('hex')
 
     if (cache) {
-      if (cache[src]) {
-        return cache[src].apply(null, linkedValues)
+      if (cache[key]) {
+        return cache[key].apply(null, linkedValues)
       }
     }
 
     var proc = Function.apply(null, linkedNames.concat(src))
 
     if (cache) {
-      cache[src] = proc
+      cache[key] = proc
     }
     return proc.apply(null, linkedValues)
   }
