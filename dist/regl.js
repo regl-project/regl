@@ -6429,6 +6429,14 @@ function reglCore (
     }
     GL_VARIABLES[name] = func
   }
+  
+  function hasVariableReference (exp) {
+    if (!isNaN(exp)) {
+      return false;
+    }
+    // strengthen this function if variable values can be non-(null/number) literals.
+    return true;
+  }
 
   // Dithering
   stateFlag(S_DITHER, GL_DITHER)
@@ -9454,7 +9462,7 @@ function reglCore (
       var value = defn.append(env, scope)
       if (isArrayLike(value)) {
         value.forEach(function (v, i) {
-          if (isNaN(v)) {
+          if (hasVariableReference(v)) {
             scope.set(env.next[name], '[' + i + ']', v)
           } else {
             scope.set(env.next[name], '[' + i + ']', env.link(v, {stable: true}))
@@ -9478,7 +9486,7 @@ function reglCore (
           return
         }
         var VARIABLE = variable.append(env, scope)
-        if (isNaN(VARIABLE)) {
+        if (hasVariableReference(VARIABLE)) {
           scope.set(shared.draw, '.' + opt, VARIABLE)
         } else {
           scope.set(shared.draw, '.' + opt, env.link(VARIABLE), {stable: true})
@@ -9489,10 +9497,11 @@ function reglCore (
       var value = args.uniforms[opt].append(env, scope)
       if (Array.isArray(value)) {
         value = '[' + value.map(function (v) {
-          if (!isNaN(v)) {
+          if (hasVariableReference(v)) {
+            return v;
+          } else {
             return env.link(v, {stable: true})
           }
-          return v
         }) + ']'
       }
       scope.set(
@@ -9511,10 +9520,10 @@ function reglCore (
 
     if (args.scopeVAO) {
       var VARIABLE = args.scopeVAO.append(env, scope)
-      if (!isNaN(VARIABLE)) {
-        scope.set(shared.vao, '.targetVAO', env.link(VARIABLE, {stable: true}))
-      } else {
+      if (hasVariableReference(VARIABLE)) {
         scope.set(shared.vao, '.targetVAO', VARIABLE)
+      } else {
+        scope.set(shared.vao, '.targetVAO', env.link(VARIABLE, {stable: true}))
       }
     }
 
@@ -9522,10 +9531,10 @@ function reglCore (
       var shader = args.shader[name]
       if (shader) {
         var VARIABLE = shader.append(env, scope)
-        if (!isNaN(VARIABLE)) {
-          scope.set(shared.shader, '.' + name, env.link(VARIABLE, {stable: true}))
-        } else {
+        if (hasVariableReference(VARIABLE)) {
           scope.set(shared.shader, '.' + name, VARIABLE)
+        } else {
+          scope.set(shared.shader, '.' + name, env.link(VARIABLE, {stable: true}))
         }
       }
     }
