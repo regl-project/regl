@@ -1,10 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('crypto')) :
-    typeof define === 'function' && define.amd ? define(['crypto'], factory) :
-    (global.createREGL = factory(global.crypto));
-}(this, (function (crypto) { 'use strict';
-
-crypto = 'default' in crypto ? crypto['default'] : crypto;
+    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+    typeof define === 'function' && define.amd ? define(factory) :
+    (global.createREGL = factory());
+}(this, (function () { 'use strict';
 
 var extend = function (base, opts) {
   var keys = Object.keys(opts)
@@ -4687,13 +4685,16 @@ function wrapShaderState (gl, stringStore, stats, config) {
               gl.getUniformLocation(program, name),
               info))
           }
-        } else {
-          insertActiveInfo(uniforms, new ActiveInfo(
-            info.name,
-            stringStore.id(info.name),
-            gl.getUniformLocation(program, info.name),
-            info))
         }
+        var uniName = info.name
+        if (info.size > 1) {
+          uniName = uniName.replace('[0]', '')
+        }
+        insertActiveInfo(uniforms, new ActiveInfo(
+          uniName,
+          stringStore.id(uniName),
+          gl.getUniformLocation(program, uniName),
+          info))
       }
     }
 
@@ -4936,11 +4937,7 @@ function join (x) {
   return slice(x).join('')
 }
 
-window.__regl_codegen_cache = (window.__regl_codegen_cache || {})
-
 function createEnvironment () {
-  var cache = window.__regl_codegen_cache
-
   // Unique variable id counter
   var varCounter = 0
 
@@ -4949,21 +4946,16 @@ function createEnvironment () {
   // the variable name which it is bound to
   var linkedNames = []
   var linkedValues = []
-  var isStable = []
-  function link (value, options) {
-    var stable = options && options.stable
-    if (!stable) {
-      for (var i = 0; i < linkedValues.length; ++i) {
-        if (linkedValues[i] === value && !isStable[i]) {
-          return linkedNames[i]
-        }
+  function link (value) {
+    for (var i = 0; i < linkedValues.length; ++i) {
+      if (linkedValues[i] === value) {
+        return linkedNames[i]
       }
     }
 
     var name = 'g' + (varCounter++)
     linkedNames.push(name)
     linkedValues.push(value)
-    isStable.push(stable)
     return name
   }
 
@@ -5103,22 +5095,7 @@ function createEnvironment () {
       .replace(/;/g, ';\n')
       .replace(/}/g, '}\n')
       .replace(/{/g, '{\n')
-
-    var hash = crypto.createHash('sha256')
-    hash.update(src)
-    var key = hash.digest('hex')
-
-    if (cache) {
-      if (cache[key]) {
-        return cache[key].apply(null, linkedValues)
-      }
-    }
-
     var proc = Function.apply(null, linkedNames.concat(src))
-
-    if (cache) {
-      cache[key] = proc
-    }
     return proc.apply(null, linkedValues)
   }
 
@@ -5483,14 +5460,6 @@ function reglCore (
       currentState[name] = nextState[name] = init
     }
     GL_VARIABLES[name] = func
-  }
-  
-  function hasVariableReference (exp) {
-    if (!isNaN(exp)) {
-      return false;
-    }
-    // strengthen this function if variable values can be non-(null/number) literals.
-    return true;
   }
 
   // Dithering
@@ -7129,7 +7098,6 @@ function reglCore (
     var CURRENT_VARS = env.current
     var CURRENT_STATE = shared.current
     var GL = shared.gl
-    var VALUE
     sortState(Object.keys(options)).forEach(function (param) {
       var defn = options[param]
       if (filter && !filter(defn)) {
@@ -7139,17 +7107,17 @@ function reglCore (
       if (GL_FLAGS[param]) {
         var flag = GL_FLAGS[param]
         if (isStatic(defn)) {
-          VALUE = env.link(variable, {stable: true})
-          scope(env.cond(VALUE)
-            .then(GL, '.enable(', flag, ');')
-            .else(GL, '.disable(', flag, ');'))
-          scope(CURRENT_STATE, '.', param, '=', VALUE, ';')
+          if (variable) {
+            scope(GL, '.enable(', flag, ');')
+          } else {
+            scope(GL, '.disable(', flag, ');')
+          }
         } else {
           scope(env.cond(variable)
             .then(GL, '.enable(', flag, ');')
             .else(GL, '.disable(', flag, ');'))
-          scope(CURRENT_STATE, '.', param, '=', variable, ';')
         }
+        scope(CURRENT_STATE, '.', param, '=', variable, ';')
       } else if (isArrayLike(variable)) {
         var CURRENT = CURRENT_VARS[param]
         scope(
@@ -7158,16 +7126,9 @@ function reglCore (
             return CURRENT + '[' + i + ']=' + v
           }).join(';'), ';')
       } else {
-        if (isStatic(defn)) {
-          VALUE = env.link(variable, {stable: true})
-          scope(
-            GL, '.', GL_VARIABLES[param], '(', VALUE, ');',
-            CURRENT_STATE, '.', param, '=', VALUE, ';')
-        } else {
-          scope(
-            GL, '.', GL_VARIABLES[param], '(', variable, ');',
-            CURRENT_STATE, '.', param, '=', variable, ';')
-        }
+        scope(
+          GL, '.', GL_VARIABLES[param], '(', variable, ');',
+          CURRENT_STATE, '.', param, '=', variable, ';')
       }
     })
   }
@@ -7405,12 +7366,25 @@ function reglCore (
     var shared = env.shared
     var GL = shared.gl
 
+    var definedArrUniforms = {}
     var infix
     for (var i = 0; i < uniforms.length; ++i) {
       var uniform = uniforms[i]
       var name = uniform.name
       var type = uniform.info.type
+      var size = uniform.info.size
       var arg = args.uniforms[name]
+      if (size > 1) {
+        // either foo[n] or foos, avoid define both
+        if (!arg) {
+          continue
+        }
+        var arrUniformName = name.replace('[0]', '')
+        if (definedArrUniforms[arrUniformName]) {
+          continue
+        }
+        definedArrUniforms[arrUniformName] = 1
+      }
       var UNIFORM = env.link(uniform)
       var LOCATION = UNIFORM + '.location'
 
@@ -7446,7 +7420,11 @@ function reglCore (
           } else {
             switch (type) {
               case GL_FLOAT$7:
-                
+                if (size === 1) {
+                  
+                } else {
+                  
+                }
                 infix = '1f'
                 break
               case GL_FLOAT_VEC2:
@@ -7462,11 +7440,19 @@ function reglCore (
                 infix = '4f'
                 break
               case GL_BOOL:
-                
+                if (size === 1) {
+                  
+                } else {
+                  
+                }
                 infix = '1i'
                 break
               case GL_INT$2:
-                
+                if (size === 1) {
+                  
+                } else {
+                  
+                }
                 infix = '1i'
                 break
               case GL_BOOL_VEC2:
@@ -7494,8 +7480,15 @@ function reglCore (
                 infix = '4i'
                 break
             }
+            if (size > 1) {
+              infix += 'v'
+              value = env.global.def('[' +
+              Array.prototype.slice.call(value) + ']')
+            } else {
+              value = isArrayLike(value) ? Array.prototype.slice.call(value) : value
+            }
             scope(GL, '.uniform', infix, '(', LOCATION, ',',
-              isArrayLike(value) ? Array.prototype.slice.call(value) : value,
+              value,
               ');')
           }
           continue
@@ -7588,6 +7581,11 @@ function reglCore (
         case GL_FLOAT_MAT4:
           infix = 'Matrix4fv'
           break
+      }
+
+      if (infix.indexOf('Matrix') === -1 && size > 1) {
+        infix += 'v'
+        unroll = 1
       }
 
       if (infix.charAt(0) === 'M') {
@@ -8115,18 +8113,10 @@ function reglCore (
       var value = defn.append(env, scope)
       if (isArrayLike(value)) {
         value.forEach(function (v, i) {
-          if (hasVariableReference(v)) {
-            scope.set(env.next[name], '[' + i + ']', v)
-          } else {
-            scope.set(env.next[name], '[' + i + ']', env.link(v, {stable: true}))
-          }
+          scope.set(env.next[name], '[' + i + ']', v)
         })
       } else {
-        if (isStatic(defn)) {
-          scope.set(shared.next, '.' + name, env.link(value, {stable: true}))
-        } else {
-          scope.set(shared.next, '.' + name, value)
-        }
+        scope.set(shared.next, '.' + name, value)
       }
     })
 
@@ -8138,28 +8128,17 @@ function reglCore (
         if (!variable) {
           return
         }
-        var VARIABLE = variable.append(env, scope)
-        if (hasVariableReference(VARIABLE)) {
-          scope.set(shared.draw, '.' + opt, VARIABLE)
-        } else {
-          scope.set(shared.draw, '.' + opt, env.link(VARIABLE), {stable: true})
-        }
+        scope.set(shared.draw, '.' + opt, '' + variable.append(env, scope))
       })
 
     Object.keys(args.uniforms).forEach(function (opt) {
       var value = args.uniforms[opt].append(env, scope)
       if (Array.isArray(value)) {
-        value = '[' + value.map(function (v) {
-          if (hasVariableReference(v)) {
-            return v;
-          } else {
-            return env.link(v, {stable: true})
-          }
-        }) + ']'
+        value = '[' + value.join() + ']'
       }
       scope.set(
         shared.uniforms,
-        '[' + env.link(stringStore.id(opt), {stable: true}) + ']',
+        '[' + stringStore.id(opt) + ']',
         value)
     })
 
@@ -8172,23 +8151,13 @@ function reglCore (
     })
 
     if (args.scopeVAO) {
-      var VARIABLE = args.scopeVAO.append(env, scope)
-      if (hasVariableReference(VARIABLE)) {
-        scope.set(shared.vao, '.targetVAO', VARIABLE)
-      } else {
-        scope.set(shared.vao, '.targetVAO', env.link(VARIABLE, {stable: true}))
-      }
+      scope.set(shared.vao, '.targetVAO', args.scopeVAO.append(env, scope))
     }
 
     function saveShader (name) {
       var shader = args.shader[name]
       if (shader) {
-        var VARIABLE = shader.append(env, scope)
-        if (hasVariableReference(VARIABLE)) {
-          scope.set(shared.shader, '.' + name, VARIABLE)
-        } else {
-          scope.set(shared.shader, '.' + name, env.link(VARIABLE, {stable: true}))
-        }
+        scope.set(shared.shader, '.' + name, shader.append(env, scope))
       }
     }
     saveShader(S_VERT)
@@ -8301,15 +8270,6 @@ function reglCore (
 
     var args = parseArguments(options, attributes, uniforms, context, env)
 
-    if (args.shader.program) {
-      args.shader.program.attributes.sort(function (a, b) {
-        return a.name < b.name ? -1 : 1
-      })
-      args.shader.program.uniforms.sort(function (a, b) {
-        return a.name < b.name ? -1 : 1
-      })
-    }
-
     emitDrawProc(env, args)
     emitScopeProc(env, args)
     emitBatchProc(env, args)
@@ -8357,42 +8317,37 @@ function reglCore (
       if (extensions.oes_vertex_array_object) {
         refresh(env.link(extensions.oes_vertex_array_object), '.bindVertexArrayOES(null);')
       }
-      var BINDING = refresh.def(shared.attributes)
-      var TEMP_BINDING = refresh.def(0)
-
-      var ifte = env.cond(TEMP_BINDING, '.buffer')
-      ifte.then(
-        GL, '.enableVertexAttribArray(i);',
-        GL, '.bindBuffer(',
-        GL_ARRAY_BUFFER$2, ',',
-        TEMP_BINDING, '.buffer.buffer);',
-        GL, '.vertexAttribPointer(i,',
-        TEMP_BINDING, '.size,',
-        TEMP_BINDING, '.type,',
-        TEMP_BINDING, '.normalized,',
-        TEMP_BINDING, '.stride,',
-        TEMP_BINDING, '.offset);'
-      ).else(
-        GL, '.disableVertexAttribArray(i);',
-        GL, '.vertexAttrib4f(i,',
-        TEMP_BINDING, '.x,',
-        TEMP_BINDING, '.y,',
-        TEMP_BINDING, '.z,',
-        TEMP_BINDING, '.w);',
-        TEMP_BINDING, '.buffer=null;')
-      refresh(
-        'for(var i=0;i<', Number(limits.maxAttributes), ';++i){',
-        TEMP_BINDING, '=', BINDING, '[i];',
-        ifte,
-        '}'
-      )
-
-      if (extInstancing) {
-        refresh(
-          'for(var i=0;i<', Number(limits.maxAttributes), ';++i){',
-          INSTANCING, '.vertexAttribDivisorANGLE(i,',
-          BINDING, '[i].divisor);',
-          '}')
+      for (var i = 0; i < limits.maxAttributes; ++i) {
+        var BINDING = refresh.def(shared.attributes, '[', i, ']')
+        var ifte = env.cond(BINDING, '.buffer')
+        ifte.then(
+          GL, '.enableVertexAttribArray(', i, ');',
+          GL, '.bindBuffer(',
+          GL_ARRAY_BUFFER$2, ',',
+          BINDING, '.buffer.buffer);',
+          GL, '.vertexAttribPointer(',
+          i, ',',
+          BINDING, '.size,',
+          BINDING, '.type,',
+          BINDING, '.normalized,',
+          BINDING, '.stride,',
+          BINDING, '.offset);'
+        ).else(
+          GL, '.disableVertexAttribArray(', i, ');',
+          GL, '.vertexAttrib4f(',
+          i, ',',
+          BINDING, '.x,',
+          BINDING, '.y,',
+          BINDING, '.z,',
+          BINDING, '.w);',
+          BINDING, '.buffer=null;')
+        refresh(ifte)
+        if (extInstancing) {
+          refresh(
+            INSTANCING, '.vertexAttribDivisorANGLE(',
+            i, ',',
+            BINDING, '.divisor);')
+        }
       }
       refresh(
         env.shared.vao, '.currentVAO=null;',
