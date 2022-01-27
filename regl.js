@@ -58,6 +58,7 @@ module.exports = function wrapREGL (args) {
 
   var stringStore = createStringStore()
   var stats = createStats()
+  var cachedCode = config.cachedCode || {};
   var extensions = extensionState.extensions
   var timer = createTimer(gl, extensions)
 
@@ -135,6 +136,7 @@ module.exports = function wrapREGL (args) {
     drawState,
     contextState,
     timer,
+    cachedCode,
     config)
   var readPixels = wrapRead(
     gl,
@@ -553,6 +555,16 @@ module.exports = function wrapREGL (args) {
     }
   }
 
+  function getCachedCode() {
+    return cachedCode
+  }
+
+  function preloadCachedCode(moreCache) {
+    Object.entries(moreCache).forEach(function (kv) {
+      cachedCode[kv[0]] = kv[1]
+    })
+  }
+
   var regl = extend(compileProcedure, {
     // Clear current FBO
     clear: clear,
@@ -613,7 +625,11 @@ module.exports = function wrapREGL (args) {
     now: now,
 
     // regl Statistics Information
-    stats: stats
+    stats: stats,
+
+    // cache generated code
+    getCachedCode: getCachedCode,
+    preloadCachedCode: preloadCachedCode
   })
 
   config.onDone(null, regl)
