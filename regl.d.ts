@@ -648,7 +648,8 @@ declare namespace REGL {
     boolean[] |
     number[] |
     Float32Array |
-    Int32Array;
+    Int32Array | 
+    Texture;
 
   interface Uniforms {
     [name: string]: Uniform;
