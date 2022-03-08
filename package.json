@@ -1,5 +1,5 @@
 {
-  "name": "regl",
+  "name": "@plotly/regl",
   "version": "2.1.0",
   "description": "regl is a fast functional WebGL framework.",
   "main": "dist/regl.js",
