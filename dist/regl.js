@@ -10024,8 +10024,9 @@ function reglCore (
         TEMP_BINDING, '.z,',
         TEMP_BINDING, '.w);',
         TEMP_BINDING, '.buffer=null;')
+      var MAX_ATTRIBUTES = env.link(limits.maxAttributes, {stable: true})
       refresh(
-        'for(var i=0;i<', Number(limits.maxAttributes), ';++i){',
+        'for(var i=0;i<', MAX_ATTRIBUTES, ';++i){',
         TEMP_BINDING, '=', BINDING, '[i];',
         ifte,
         '}'
@@ -10033,7 +10034,7 @@ function reglCore (
 
       if (extInstancing) {
         refresh(
-          'for(var i=0;i<', Number(limits.maxAttributes), ';++i){',
+          'for(var i=0;i<', MAX_ATTRIBUTES, ';++i){',
           INSTANCING, '.vertexAttribDivisorANGLE(i,',
           BINDING, '[i].divisor);',
           '}')
