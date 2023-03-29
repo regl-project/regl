@@ -136,11 +136,11 @@ declare namespace REGL {
      */
 
     /* Retrieve the property `name` passed when the draw command is executed. */
-    prop<Props extends {}, Key extends keyof Props>(name: Key): DynamicVariable<Props[Key]>;
+    prop<Props extends {}, Key extends keyof Props = keyof Props>(name: Key): DynamicVariable<Props[Key]>;
     /* Retrieve the context property `name` when the draw command is executed. */
-    context<Context extends REGL.DefaultContext, K extends keyof Context>(name: K): DynamicVariable<Context[K]>;
+    context<Context extends REGL.DefaultContext, K extends keyof Context = keyof Context>(name: K): DynamicVariable<Context[K]>;
     /* Retrieve the property `name` of the object in whose context the draw command is executing. */
-    this<This extends {}, Key extends keyof This>(name: Key): DynamicVariable<This[Key]>;
+    this<This extends {}, Key extends keyof This = keyof This>(name: Key): DynamicVariable<This[Key]>;
 
     /* Drawing */
 
