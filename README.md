@@ -114,7 +114,7 @@ regl.frame(({time}) => {
 })
 ```
 
-See this example [live](http://regl.party/examples/?basic)
+See this example [live](https://regl-project.github.io/regl/www/gallery.html)
 
 ### [More examples](https://regl-project.github.io/regl/www/gallery.html)
 
@@ -122,11 +122,7 @@ Check out the [gallery](https://regl-project.github.io/regl/www/gallery.html). T
 
 ## Setup
 
-`regl` has no dependencies, so setting it up is pretty easy.  There are 3 basic ways to do this:
-
-### Live editing
-
-To try out regl right away, you can use the live editor in the [gallery](http://regl.party/examples).
+`regl` has no dependencies, so setting it up is pretty easy.  There are 2 basic ways to do this:
 
 ### npm
 
