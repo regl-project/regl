@@ -1647,6 +1647,10 @@ declare namespace REGL {
     version: string;
     /** A list of all supported texture formats */
     textureFormats: TextureFormatType[];
+    /** If reading float numbers is supported */
+    readFloat: boolean;
+    /** If non power of two cube texture dimensions are supported */
+    npotTextureCube: boolean;
   }
 
   interface Stats {
