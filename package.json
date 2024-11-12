@@ -100,7 +100,7 @@
     "bench-node": "node bench/bench-node.js",
     "bench-graph": "node bench/bench-graph.js",
     "bench-history": "node bench/bench-history",
-    "build": "npm run build-script && npm run build-min && npm run build-typescript",
+    "build": "mkdirp build && npm run build-script && npm run build-min && npm run build-typescript",
     "build-script": "rollup -c rollup/config.js",
     "build-min": "rollup -c rollup/config.unchecked.js && node bin/minify.js dist/regl.unchecked.js dist/regl.min.js",
     "build-bench": "rollup -c rollup/config.bench.js",
