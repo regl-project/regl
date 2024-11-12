@@ -27,5 +27,6 @@ jobs:
           npm install
 
       - name: Run tests
-        uses: coactions/setup-xvfb@v1
-        run: npm test
+        uses: coactions/setup-xvfb@v1.0.1
+        with:
+          run: npm test
