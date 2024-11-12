@@ -4,6 +4,8 @@ var createREGL = require('../regl')
 var ie = require('is-iexplorer')
 
 tape('regl constructor', function (t) {
+  t.equal(0, 1, 'Intentionally failing test, to see if anything is working')
+
   // loading from a bad selector string breaks
   t.throws(function () {
     createREGL('a bad selector')
