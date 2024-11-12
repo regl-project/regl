@@ -27,7 +27,7 @@
     "baboon-image": "^2.0.0",
     "bl": "^1.1.2",
     "browserify": "^13.1.1",
-    "budo": "^8.1.0",
+    "budo": "^11.8.4",
     "bunny": "^1.0.1",
     "canvas-fit": "^1.5.0",
     "canvas-orbit-camera": "^1.0.2",
