@@ -1,5 +1,5 @@
 // set minimal stacktrace to reduce obsessive logs
-if (require('is-travis')) Error.stackTraceLimit = 0
+if (process.env['GITHUB_ACTIONS'] === 'true') Error.stackTraceLimit = 0
 
 require('./destroy-bound-buffer')
 require('./flatten')

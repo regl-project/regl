@@ -1,0 +1,32 @@
+name: Run Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get install xvfb libxi-dev mesa-utils libgl1-mesa-dri libglapi-mesa libosmesa6 
+          npm install
+
+      - name: Run tests
+        uses: coactions/setup-xvfb@v1.0.1
+        with:
+          run: npm test
