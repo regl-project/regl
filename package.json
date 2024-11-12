@@ -73,7 +73,7 @@
     "remark-toc": "^3.1.0",
     "remark-validate-links": "^4.1.0",
     "resl": "^1.0.0",
-    "rollup": "0.36.1",
+    "rollup": "2.79.2",
     "rollup-plugin-buble": "0.14.0",
     "rollup-plugin-commonjs": "5.0.4",
     "rollup-plugin-json": "2.0.2",
