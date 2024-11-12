@@ -23,12 +23,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get install libxi-dev mesa-utils xvfb libgl1-mesa-dri libglapi-mesa libosmesa6 
+          sudo apt-get install libxi-dev mesa-utils libgl1-mesa-dri libglapi-mesa libosmesa6 
           npm install
 
       - name: Run tests
-        env:
-          DISPLAY: :99.0
-        run: |
-          sh -e /etc/init.d/xvfb start
-          npm test
+        uses: coactions/setup-xvfb@v1
+        run: npm test
