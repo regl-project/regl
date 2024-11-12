@@ -14,5 +14,5 @@ module.exports = {
   plugins: [
     es6(),
     json()
-  ],
+  ]
 }
