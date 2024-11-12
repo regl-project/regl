@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get libxi-dev mesa-utils xvfb libgl1-mesa-dri libglapi-mesa libosmesa6 
+          sudo apt-get install libxi-dev mesa-utils xvfb libgl1-mesa-dri libglapi-mesa libosmesa6 
           npm install
 
       - name: Run tests
