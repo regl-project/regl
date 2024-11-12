@@ -17,6 +17,4 @@ node_modules/*
 coverage/*
 bench/*.html
 www
-
 dist
-!dist/regl.d.ts
