@@ -1,5 +1,9 @@
 # Release notes
 
+## 2.1.1
+
+* A small maintenance release that removes dist files from source control ([#676](https://github.com/regl-project/regl/pull/676)), upgrades headless-gl for dev ([#675](https://github.com/regl-project/regl/pull/675)), and adds missing TypeScript declarations ([#674](https://github.com/regl-project/regl/pull/674)). It should contain no changes to runtime execution.
+
 ## 1.6.1
 
 * Browsers select their own, perhaps inconsistent, default for the `premultipledAlpha` context creation attribute. Regl enforces consistency by filling in unspecified values but since 1.4.0 has enforced `false` if unspecified, which seems to be nonstandard and in the minority. For improved backward compatibility, this PR sets `premultipledAlpha: true` when not explicitly specified. ([#566](https://github.com/regl-project/regl/pull/566), [#567](https://github.com/regl-project/regl/pull/567))
