@@ -22,11 +22,13 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Install dependencies
-        run: sudo apt-get libxi-dev mesa-utils xvfb libgl1-mesa-dri libglapi-mesa libosmesa6 
-        run: npm install
+        run: |
+          sudo apt-get libxi-dev mesa-utils xvfb libgl1-mesa-dri libglapi-mesa libosmesa6 
+          npm install
 
       - name: Run tests
         env:
           DISPLAY: :99.0
-        run: sh -e /etc/init.d/xvfb start
-        run: npm test
+        run: |
+          sh -e /etc/init.d/xvfb start
+          npm test
