@@ -214,7 +214,7 @@ If you have a project using regl that isn't on this list that you would like to 
 
 ## [Help Wanted](https://github.com/regl-project/regl/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
 
-regl is still under active developement, and anyone willing to contribute is very much welcome to do so. Right now, what we need the most is for people to write examples and demos with the framework. This will allow us to find bugs and deficiencies in the API. We have a list of examples we would like to be implemented [here](https://github.com/regl-project/regl/issues?q=is%3Aopen+is%3Aissue+label%3Aexample), but you are of course welcome to come up with your own examples. To add an example to our gallery of examples, [please send us a pull request!](https://github.com/regl-project/regl/pulls)
+regl is still under active development, and anyone willing to contribute is very much welcome to do so. Right now, what we need the most is for people to write examples and demos with the framework. This will allow us to find bugs and deficiencies in the API. We have a list of examples we would like to be implemented [here](https://github.com/regl-project/regl/issues?q=is%3Aopen+is%3Aissue+label%3Aexample), but you are of course welcome to come up with your own examples. To add an example to our gallery of examples, [please send us a pull request!](https://github.com/regl-project/regl/pulls)
 
 ## [API docs](https://github.com/regl-project/regl/blob/gh-pages/API.md)
 
