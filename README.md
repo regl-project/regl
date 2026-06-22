@@ -209,6 +209,7 @@ The following is an incomplete list of projects using regl:
 * [Bokeh](https://github.com/bokeh/bokeh)
 * [Deepscatter - Zoomable, animated scatterplots in the browser that scales over a billion points](https://github.com/nomic-ai/deepscatter)
 * [Allen Institute ABC Atlas - Brain science data explorer](https://knowledge.brain-map.org/abcatlas)
+* [GLadly - A lightweight, GPU-accelerated plotting library with a declarative API.](https://redhog.github.io/gladly/)
 
 If you have a project using regl that isn't on this list that you would like to see added, [please send us a pull request!](https://github.com/regl-project/regl/edit/gh-pages/README.md)
 
