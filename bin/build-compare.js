@@ -3,10 +3,10 @@ var os = require('os')
 var path = require('path')
 var glob = require('glob')
 var rollup = require('rollup')
-var commonjs = require('rollup-plugin-commonjs')
-var nodeResolve = require('rollup-plugin-node-resolve')
-var json = require('rollup-plugin-json')
-var buble = require('rollup-plugin-buble')
+var commonjs = require('@rollup/plugin-commonjs')
+var nodeResolve = require('@rollup/plugin-node-resolve')
+var json = require('@rollup/plugin-json')
+var buble = require('@rollup/plugin-buble')
 var removeCheck = require('../rollup/plugins/remove-check')
 var ncp = require('ncp')
 var mkdirp = require('mkdirp')
@@ -90,20 +90,20 @@ function handleCase (name, www, root, onComplete) {
     var minPath = path.join(TMP_DIR, name + '.bundle.min.js')
 
     rollup.rollup({
-      input: sourcePath
+      input: sourcePath,
+      plugins: [
+        nodeResolve(),
+        json(),
+        commonjs(),
+        removeCheck(),
+        buble()
+      ]
     }).then(function (bundle) {
       console.log(`writing to ${bundlePath}`)
       return bundle.write({
         format: 'iife',
-        moduleName: 'bundle',
-        file: bundlePath,
-        plugins: [
-          nodeResolve(),
-          json(),
-          commonjs(),
-          removeCheck(),
-          buble()
-        ]
+        name: 'bundle',
+        file: bundlePath
       })
     }).then(function () {
       var closureCompiler = new ClosureCompiler({
